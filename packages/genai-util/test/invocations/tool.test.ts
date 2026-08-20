@@ -6,8 +6,8 @@
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../../src/handler';
 import {
-  TelemetryHandler,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_DESCRIPTION,
@@ -16,7 +16,7 @@ import {
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-} from '../../src';
+} from '../../src/semconv';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,

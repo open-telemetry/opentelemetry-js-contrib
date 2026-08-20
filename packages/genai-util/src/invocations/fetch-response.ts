@@ -44,6 +44,8 @@ import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Fetch Response operation (fetching previously generated responses).
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class FetchResponseInvocation extends BaseInvocation {
   private readonly _providerName: string;

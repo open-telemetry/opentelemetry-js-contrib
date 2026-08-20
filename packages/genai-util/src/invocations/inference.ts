@@ -66,6 +66,8 @@ import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of an LLM / GenAI inference operation.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class InferenceInvocation extends BaseInvocation {
   private readonly _providerName: string;

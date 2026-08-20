@@ -31,6 +31,8 @@ import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Retrieval operation (vector database / RAG retrievers).
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class RetrievalInvocation extends BaseInvocation {
   private readonly _dataSourceId?: string;

@@ -10,11 +10,9 @@ import {
   SimpleSpanProcessor,
 } from '@opentelemetry/sdk-trace-base';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
-import {
-  TelemetryHandler,
-  isEventContentCaptureEnabled,
-  type CompletionResult,
-} from '../src';
+import { TelemetryHandler } from '../src/handler';
+import { isEventContentCaptureEnabled } from '../src/environment-variables';
+import type { CompletionResult } from '../src/types';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}

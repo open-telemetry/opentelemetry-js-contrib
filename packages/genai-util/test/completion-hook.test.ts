@@ -5,7 +5,8 @@
 
 import * as assert from 'assert';
 import { trace } from '@opentelemetry/api';
-import { CompletionHookManager, type CompletionResult } from '../src';
+import { CompletionHookManager } from '../src/completion-hook';
+import type { CompletionResult } from '../src/types';
 
 describe('CompletionHookManager', () => {
   it('should register and execute completion hooks', async () => {

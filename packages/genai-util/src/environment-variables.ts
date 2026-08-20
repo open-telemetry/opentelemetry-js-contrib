@@ -19,6 +19,8 @@ export const ENV_GENAI_COMPLETION_HOOK =
 
 /**
  * Parse an arbitrary input value into a valid ContentCaptureMode.
+ *
+ * @experimental This function is experimental and subject to change.
  */
 export function parseContentCaptureMode(
   value?: string | boolean | ContentCaptureMode
@@ -58,6 +60,8 @@ export function parseContentCaptureMode(
 
 /**
  * Resolve effective ContentCaptureMode based on explicit config and environment variable.
+ *
+ * @experimental This function is experimental and subject to change.
  */
 export function getContentCaptureMode(
   configVal?: boolean | ContentCaptureMode,
@@ -72,6 +76,8 @@ export function getContentCaptureMode(
 
 /**
  * Returns true if content should be attached to span attributes.
+ *
+ * @experimental This function is experimental and subject to change.
  */
 export function isSpanContentCaptureEnabled(mode: ContentCaptureMode): boolean {
   return mode === 'span_only' || mode === 'span_and_event';
@@ -79,6 +85,8 @@ export function isSpanContentCaptureEnabled(mode: ContentCaptureMode): boolean {
 
 /**
  * Returns true if content should be emitted via span events / logs.
+ *
+ * @experimental This function is experimental and subject to change.
  */
 export function isEventContentCaptureEnabled(
   mode: ContentCaptureMode

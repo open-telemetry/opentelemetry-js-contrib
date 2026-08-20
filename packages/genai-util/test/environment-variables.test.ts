@@ -10,7 +10,7 @@ import {
   parseContentCaptureMode,
   isSpanContentCaptureEnabled,
   isEventContentCaptureEnabled,
-} from '../src';
+} from '../src/environment-variables';
 
 describe('Environment Variables and Content Capture', () => {
   const origEnv = process.env[ENV_GENAI_CAPTURE_MESSAGE_CONTENT];

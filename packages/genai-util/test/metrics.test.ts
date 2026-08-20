@@ -17,9 +17,11 @@ import {
   GENAI_OPERATION_DURATION_BUCKETS,
   GENAI_TOKEN_USAGE_BUCKETS,
   GENAI_TIME_TO_FIRST_CHUNK_BUCKETS,
+} from '../src/metrics';
+import {
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
-} from '../src';
+} from '../src/semconv';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}

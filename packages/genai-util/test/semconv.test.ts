@@ -33,7 +33,7 @@ import {
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   EVENT_GEN_AI_EVALUATION_RESULT,
   EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,
-} from '../src';
+} from '../src/semconv';
 
 describe('GenAI Semantic Conventions', () => {
   it('should define expected attribute names', () => {

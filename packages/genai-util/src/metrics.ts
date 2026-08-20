@@ -17,6 +17,8 @@ import type { TokenUsage } from './types';
 
 /**
  * Standard explicit bucket boundaries for GenAI operation duration (in seconds).
+ *
+ * @experimental
  */
 export const GENAI_OPERATION_DURATION_BUCKETS = [
   0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48,
@@ -25,6 +27,8 @@ export const GENAI_OPERATION_DURATION_BUCKETS = [
 
 /**
  * Standard explicit bucket boundaries for GenAI token usage.
+ *
+ * @experimental
  */
 export const GENAI_TOKEN_USAGE_BUCKETS = [
   1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576, 4194304,
@@ -33,6 +37,8 @@ export const GENAI_TOKEN_USAGE_BUCKETS = [
 
 /**
  * Standard explicit bucket boundaries for GenAI client time to first chunk (in seconds).
+ *
+ * @experimental
  */
 export const GENAI_TIME_TO_FIRST_CHUNK_BUCKETS = [
   0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30,
@@ -42,6 +48,8 @@ export const GENAI_TIME_TO_FIRST_CHUNK_BUCKETS = [
  * Standard explicit bucket boundaries for GenAI time to first token (in seconds).
  *
  * Adopted from vLLM: https://github.com/vllm-project/vllm/blob/main/vllm/v1/metrics/loggers.py
+ *
+ * @experimental
  */
 export const GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS = [
   0.001, 0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25,
@@ -51,6 +59,8 @@ export const GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS = [
 
 /**
  * Options for creating GenAI metric instruments.
+ *
+ * @experimental
  */
 export interface MetricCreationOptions {
   /** Metric instrument name override. */
@@ -63,6 +73,8 @@ export interface MetricCreationOptions {
 
 /**
  * Create standard `gen_ai.client.operation.duration` histogram.
+ *
+ * @experimental
  */
 export function createDurationHistogram(
   meter: Meter,
@@ -82,6 +94,8 @@ export function createDurationHistogram(
 
 /**
  * Create standard `gen_ai.client.token.usage` histogram.
+ *
+ * @experimental
  */
 export function createTokenUsageHistogram(
   meter: Meter,
@@ -103,6 +117,8 @@ export function createTokenUsageHistogram(
 
 /**
  * Create standard `gen_ai.client.operation.time_to_first_chunk` histogram.
+ *
+ * @experimental
  */
 export function createTimeToFirstChunkHistogram(
   meter: Meter,
@@ -124,6 +140,8 @@ export function createTimeToFirstChunkHistogram(
 
 /**
  * Create standard `gen_ai.server.time_to_first_token` histogram.
+ *
+ * @experimental
  */
 export function createServerTimeToFirstTokenHistogram(
   meter: Meter,
@@ -159,6 +177,8 @@ function _recordDuration(
 
 /**
  * Record operation duration metric.
+ *
+ * @experimental
  */
 export function recordOperationDuration(
   histogram: Histogram | undefined,
@@ -170,6 +190,8 @@ export function recordOperationDuration(
 
 /**
  * Record token usage metrics (both input and output tokens if present).
+ *
+ * @experimental
  */
 export function recordTokenUsage(
   histogram: Histogram | undefined,
@@ -197,6 +219,8 @@ export function recordTokenUsage(
 
 /**
  * Record time to first chunk metric.
+ *
+ * @experimental
  */
 export function recordTimeToFirstChunk(
   histogram: Histogram | undefined,
@@ -208,6 +232,8 @@ export function recordTimeToFirstChunk(
 
 /**
  * Record server time to first token metric.
+ *
+ * @experimental
  */
 export function recordServerTimeToFirstToken(
   histogram: Histogram | undefined,

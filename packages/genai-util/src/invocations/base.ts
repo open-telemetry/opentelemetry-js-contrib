@@ -17,6 +17,8 @@ import { calculateDurationSeconds, getErrorType } from '../utils';
  * Base class for GenAI telemetry invocations.
  * Manages the underlying Span lifecycle, duration tracking, attribute manipulation,
  * error handling, and hooks for metric emission and completion callbacks.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export abstract class BaseInvocation {
   protected readonly _span: Span;

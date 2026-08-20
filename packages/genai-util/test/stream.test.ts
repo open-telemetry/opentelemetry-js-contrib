@@ -16,10 +16,9 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../src/handler';
+import { AsyncStreamWrapper, wrapAsyncStream } from '../src/stream';
 import {
-  TelemetryHandler,
-  AsyncStreamWrapper,
-  wrapAsyncStream,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
@@ -27,7 +26,7 @@ import {
   ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
-} from '../src';
+} from '../src/semconv';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}
