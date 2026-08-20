@@ -19,7 +19,7 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 import { METRIC_DB_CLIENT_OPERATION_DURATION } from '@opentelemetry/semantic-conventions';
-import * as oracleDBTypes from 'oracledb';
+import type * as oracleDBTypes from 'oracledb';
 import {
   ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
   ATTR_DB_CLIENT_CONNECTION_STATE,
@@ -34,6 +34,7 @@ let operationDuration!: Histogram;
 let connectionsCount!: UpDownCounter;
 let connectionPendingRequests!: UpDownCounter;
 let connectionsTimeouts!: Counter;
+let poolStatusOpen!: number;
 
 export interface PoolConnectionsCounter {
   idle: number;
@@ -67,7 +68,7 @@ function createEmptyCounterState(): PoolConnectionsCounter {
 }
 
 function getCurrentPoolState(pool: oracleDBTypes.Pool): PoolConnectionsCounter {
-  if (pool.status !== oracleDBTypes.POOL_STATUS_OPEN) {
+  if (pool.status !== poolStatusOpen) {
     return createEmptyCounterState();
   }
 
@@ -133,6 +134,10 @@ export function setMetricInstruments(meter: Meter) {
   );
 }
 
+export function setPoolStatusOpen(status: number): void {
+  poolStatusOpen = status;
+}
+
 export function updateCounter(pool: oracleDBTypes.Pool) {
   if (!pool) return;
 
@@ -160,7 +165,7 @@ export function updateCounter(pool: oracleDBTypes.Pool) {
   connectionPendingRequests.add(deltaPending, poolAttr);
   connectionsTimeouts.add(deltaTimeouts, poolAttr);
 
-  if (pool.status === oracleDBTypes.POOL_STATUS_OPEN) {
+  if (pool.status === poolStatusOpen) {
     connectionsCounterState.set(pool, curr);
   } else {
     connectionsCounterState.delete(pool);

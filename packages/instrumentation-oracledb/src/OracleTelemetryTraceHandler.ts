@@ -112,6 +112,7 @@ export function getOracleTelemetryTraceHandlerClass(
   if (!traceHandlerBase) {
     return undefined;
   }
+  metricsUtils.setPoolStatusOpen(obj.POOL_STATUS_OPEN);
 
   /**
    * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
