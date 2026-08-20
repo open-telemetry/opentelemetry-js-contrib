@@ -10,8 +10,8 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../../src/handler';
 import {
-  TelemetryHandler,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
@@ -19,7 +19,7 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-} from '../../src';
+} from '../../src/semconv';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,

@@ -3,6 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @fileoverview Type definitions for GenAI telemetry.
+ * All types and interfaces defined in this package are currently experimental.
+ *
+ * @experimental
+ */
+
 import type { Attributes, Span, Context } from '@opentelemetry/api';
 
 /**

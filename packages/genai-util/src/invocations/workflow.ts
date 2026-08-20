@@ -14,6 +14,8 @@ import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Workflow invocation.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class WorkflowInvocation extends BaseInvocation {
   constructor(span: Span, options?: WorkflowInvocationOptions) {

@@ -9,6 +9,8 @@ import type { CompletionHook, CompletionResult } from './types';
 
 /**
  * Manages registration and safe execution of GenAI completion hooks.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class CompletionHookManager {
   private _hooks: CompletionHook[] = [];

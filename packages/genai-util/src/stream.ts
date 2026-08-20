@@ -17,6 +17,8 @@ export interface AsyncStream<TChunk> extends AsyncIterable<TChunk> {
 
 /**
  * Options for wrapping an async stream with telemetry.
+ *
+ * @experimental This interface is experimental and subject to change.
  */
 export interface AsyncStreamWrapperOptions<TChunk> {
   /** The active invocation (InferenceInvocation or AgentInvocation). */
@@ -31,6 +33,8 @@ export interface AsyncStreamWrapperOptions<TChunk> {
 
 /**
  * Base class and proxy wrapper for asynchronous GenAI stream responses.
+ *
+ * @experimental This class is experimental and subject to change.
  *
  * Wraps an SDK async iterable/stream and intercepts iteration to:
  * 1. Track stream lifecycle (start -> chunks -> end/error).
@@ -228,6 +232,8 @@ export class AsyncStreamWrapper<
 
 /**
  * Wrap any async iterable stream with telemetry instrumentation.
+ *
+ * @experimental This function is experimental and subject to change.
  */
 export function wrapAsyncStream<TStream extends AsyncIterable<any>>(
   stream: TStream,

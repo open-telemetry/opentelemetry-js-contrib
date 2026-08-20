@@ -6,12 +6,12 @@
 import * as assert from 'assert';
 import { SpanStatusCode, SpanKind } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../../src/handler';
 import {
-  TelemetryHandler,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-} from '../../src';
+} from '../../src/semconv';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,

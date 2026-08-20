@@ -10,8 +10,8 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../../src/handler';
 import {
-  TelemetryHandler,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_RESPONSE_MODEL,
@@ -25,8 +25,8 @@ import {
   ATTR_GEN_AI_REQUEST_STREAM_CURSOR,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
   GEN_AI_RESPONSE_STATUS_VALUE_COMPLETED,
-  type CompletionResult,
-} from '../../src';
+} from '../../src/semconv';
+import type { CompletionResult } from '../../src/types';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,

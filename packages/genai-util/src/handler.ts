@@ -65,6 +65,8 @@ import { getSpanName } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
+ *
+ * @experimental This interface is experimental and subject to change.
  */
 export interface TelemetryHandlerOptions {
   /** Tracer instance. If not provided, standard global tracer is used. */
@@ -83,6 +85,8 @@ export interface TelemetryHandlerOptions {
 
 /**
  * Central lifecycle handler and façade for GenAI telemetry collection.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class TelemetryHandler {
   private _tracer: Tracer;

@@ -26,6 +26,8 @@ import { BaseInvocation } from './base';
 
 /**
  * Manages the lifecycle and telemetry of a Tool execution.
+ *
+ * @experimental This class is experimental and subject to change.
  */
 export class ToolInvocation extends BaseInvocation {
   private _toolArguments?: unknown;

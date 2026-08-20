@@ -6,7 +6,7 @@
 import * as assert from 'assert';
 import { SpanStatusCode, type HrTime } from '@opentelemetry/api';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import { BaseInvocation } from '../../src';
+import { BaseInvocation } from '../../src/invocations/base';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
