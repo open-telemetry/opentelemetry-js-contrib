@@ -621,6 +621,209 @@ describe('pg', () => {
       });
     });
 
+    describe('Check configuration maskStatement:true', () => {
+      const events: TimedEvent[] = [];
+
+      beforeEach(() => {
+        create({ maskStatement: true });
+      });
+
+      afterEach(() => {
+        create({});
+      });
+
+      it('leaves a fully parameterized query unchanged', done => {
+        const query = 'SELECT $1::text as msg';
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: query,
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, ['hello'], (err, res) => {
+            assert.strictEqual(err, null);
+            assert.strictEqual(res.rows[0].msg, 'hello');
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
+      it('masks a literal in a static query', done => {
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'SELECT ? as msg',
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query("SELECT 'hunter2' as msg", (err, res) => {
+            assert.strictEqual(err, null);
+            assert.strictEqual(res.rows[0].msg, 'hunter2');
+
+            const [pgSpan] = memoryExporter.getFinishedSpans();
+            assert.ok(
+              !(pgSpan.attributes[ATTR_DB_QUERY_TEXT] as string).includes(
+                'hunter2'
+              ),
+              'query text should not contain the literal'
+            );
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
+      it('drops a comment from the query text', done => {
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'SELECT ? as n',
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query('SELECT 42 as n -- secret', (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
+      it('masks the text of a prepared statement but keeps its name', done => {
+        const queryConfig = {
+          name: 'mask_test',
+          text: "SELECT * FROM pg_tables WHERE schemaname = 'public'",
+        };
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'SELECT * FROM pg_tables WHERE schemaname = ?',
+          [AttributeNames.PG_PLAN]: queryConfig.name,
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(queryConfig, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(Array.isArray(res.rows));
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
+      it('applies a custom hook without changing the query sent to the server', async () => {
+        create({
+          maskStatement: true,
+          maskStatementHook: () => 'REDACTED',
+        });
+
+        const query = "SELECT 'hunter2' as msg";
+        const span = tracer.startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          const res = await client.query(query);
+          assert.strictEqual(res.rows[0].msg, 'hunter2');
+
+          const [pgSpan] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(pgSpan.attributes[ATTR_DB_QUERY_TEXT], 'REDACTED');
+
+          // Masking is a telemetry concern only; the statement on the wire is
+          // whatever the application passed.
+          const executedQueries = getExecutedQueries();
+          assert.strictEqual(executedQueries.length, 1);
+          assert.strictEqual(executedQueries[0].text, query);
+        });
+      });
+
+      it('omits the query text when the hook throws, without failing the query', async () => {
+        create({
+          maskStatement: true,
+          maskStatementHook: () => {
+            throw new Error('hook failure');
+          },
+        });
+
+        const span = tracer.startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          const res = await client.query("SELECT 'hunter2' as msg");
+          assert.strictEqual(res.rows[0].msg, 'hunter2');
+
+          const [pgSpan] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            pgSpan.attributes[ATTR_DB_QUERY_TEXT],
+            undefined,
+            'query text should be omitted rather than fall back to the raw text'
+          );
+          assert.deepStrictEqual(pgSpan.attributes, DEFAULT_ATTRIBUTES);
+        });
+      });
+
+      it('does not record the sqlcommenter comment it appends to the wire query', async () => {
+        create({
+          maskStatement: true,
+          addSqlCommenterCommentToQueries: true,
+        });
+
+        const span = tracer.startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await client.query("SELECT 'hunter2' as msg");
+
+          const [pgSpan] = memoryExporter.getFinishedSpans();
+          assert.strictEqual(
+            pgSpan.attributes[ATTR_DB_QUERY_TEXT],
+            'SELECT ? as msg'
+          );
+
+          const executedQueries = getExecutedQueries();
+          assert.strictEqual(executedQueries.length, 1);
+          assert.ok(
+            executedQueries[0].text?.includes('traceparent'),
+            'the query sent to the server should carry the comment'
+          );
+        });
+      });
+
+      it('still records raw values when enhancedDatabaseReporting is also enabled', done => {
+        create({
+          maskStatement: true,
+          enhancedDatabaseReporting: true,
+        });
+
+        const query = 'SELECT $1::text as msg';
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: query,
+          [AttributeNames.PG_VALUES]: ['hello'],
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, ['hello'], (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+    });
+
+    describe('Check configuration maskStatement default', () => {
+      it('records a literal verbatim when masking is not enabled', done => {
+        const query = "SELECT 'hunter2' as msg";
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: query,
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, []);
+            done();
+          });
+        });
+      });
+    });
+
     describe('when specifying a requestHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';

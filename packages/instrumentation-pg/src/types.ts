@@ -33,12 +33,46 @@ export interface PgInstrumentationExecutionRequestHook {
   (span: api.Span, queryInfo: PgRequestHookInformation): void;
 }
 
+export interface PgInstrumentationQueryMaskingHook {
+  (query: string): string;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the query's parameters will be attached
    * the spans generated to represent the query.
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * If true, the query text is masked by {@link maskStatementHook} before it is
+   * recorded as the `db.query.text` attribute.
+   *
+   * This is independent of {@link enhancedDatabaseReporting}, which controls a
+   * separate attribute holding the raw parameter values. Enabling both records
+   * masked query text alongside unmasked values.
+   *
+   * @default false
+   * @see maskStatementHook
+   */
+  maskStatement?: boolean;
+
+  /**
+   * Hook that masks the query text before it is recorded as the
+   * `db.query.text` attribute. Only consulted when {@link maskStatement} is
+   * true, and never applied to the query sent to the server or to the text
+   * passed to {@link requestHook}.
+   *
+   * The default replaces literals with `?` while preserving parameter
+   * placeholders and identifiers. It is `sanitizeSql` from
+   * `@opentelemetry/sql-common`, so a custom hook can build on it.
+   *
+   * If the hook throws or returns something other than a string,
+   * `db.query.text` is omitted rather than falling back to the raw text.
+   *
+   * @default (query) => sanitizeSql(query, { dialect: 'postgresql' })
+   */
+  maskStatementHook?: PgInstrumentationQueryMaskingHook;
 
   /**
    * Hook that allows adding custom span attributes or updating the
