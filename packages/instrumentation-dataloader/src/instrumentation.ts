@@ -129,7 +129,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           promise = batchLoadFn.apply(this, args) as Promise<unknown[]>;
         } catch (err: any) {
           instrumentation._handleError(span, err);
-          return Promise.reject(err);
+          throw err;
         }
 
         return promise
@@ -139,7 +139,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           })
           .catch(err => {
             instrumentation._handleError(span, err);
-            return Promise.reject(err);
+            throw err;
           });
       });
     };
@@ -210,7 +210,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           promise = original.call(this, ...args);
         } catch (err: any) {
           instrumentation._handleError(span, err);
-          return Promise.reject(err);
+          throw err;
         }
 
         const result = promise
@@ -220,7 +220,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           })
           .catch(err => {
             instrumentation._handleError(span, err);
-            return Promise.reject(err);
+            throw err;
           });
 
         const loader = this as DataloaderInternal;
@@ -270,7 +270,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           promise = original.call(this, ...args);
         } catch (err: any) {
           instrumentation._handleError(span, err);
-          return Promise.reject(err);
+          throw err;
         }
 
         // .loadMany never rejects, as errors from internal .load
@@ -282,7 +282,7 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           })
           .catch(err => {
             instrumentation._handleError(span, err);
-            return Promise.reject(err);
+            throw err;
           });
       });
     };
