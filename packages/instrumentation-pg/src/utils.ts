@@ -41,6 +41,7 @@ import {
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { sanitizeSql } from '@opentelemetry/sql-common';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -179,6 +180,56 @@ export function shouldSkipInstrumentation(
   );
 }
 
+function defaultMaskStatementHook(query: string): string {
+  return sanitizeSql(query, { dialect: 'postgresql' });
+}
+
+/**
+ * Resolves the value for the `db.query.text` attribute, returning undefined
+ * when the attribute should be left off the span.
+ *
+ * A masking hook that fails is treated as a refusal to record the text rather
+ * than as a reason to fall back to it: falling back would turn a bug in the
+ * hook into the data leak that masking was enabled to prevent.
+ */
+export function maskQueryText(
+  text: string,
+  instrumentationConfig: PgInstrumentationConfig
+): string | undefined {
+  if (!instrumentationConfig.maskStatement) {
+    return text;
+  }
+
+  const hook =
+    instrumentationConfig.maskStatementHook ?? defaultMaskStatementHook;
+
+  // A plain try/catch rather than safeExecuteInTheMiddle: the hook returns a
+  // value, and that helper reports a throw as undefined -- indistinguishable
+  // from a hook missing a return statement, which is the likelier mistake and
+  // the one worth its own diagnostic.
+  let masked: unknown;
+  try {
+    masked = hook(text);
+  } catch (err) {
+    diag.warn(
+      'Error running maskStatementHook, omitting the db.query.text attribute',
+      err
+    );
+    return undefined;
+  }
+
+  if (typeof masked !== 'string') {
+    diag.warn(
+      'maskStatementHook returned a non-string value, omitting the db.query.text attribute'
+    );
+    return undefined;
+  }
+
+  // Empty text says less than no attribute does: a consumer cannot tell it
+  // apart from a statement that carried no text to begin with.
+  return masked === '' ? undefined : masked;
+}
+
 // Create a span from our normalized queryConfig object,
 // or return a basic span if no queryConfig was given/could be created.
 export function handleConfigQuery(
@@ -202,39 +253,44 @@ export function handleConfigQuery(
   }
 
   // Set attributes
-  if (queryConfig.text) {
-    span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);
-  }
-
-  if (
-    instrumentationConfig.enhancedDatabaseReporting &&
-    Array.isArray(queryConfig.values)
-  ) {
-    try {
-      const convertedValues = queryConfig.values.map(value => {
-        if (value == null) {
-          return 'null';
-        } else if (value instanceof Buffer) {
-          return value.toString();
-        } else if (typeof value === 'object') {
-          if (typeof value.toPostgres === 'function') {
-            return value.toPostgres();
-          }
-          return JSON.stringify(value);
-        } else {
-          //string, number
-          return value.toString();
-        }
-      });
-      span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
-    } catch (e) {
-      diag.error('failed to stringify ', queryConfig.values, e);
+  if (span.isRecording()) {
+    if (queryConfig.text) {
+      const queryText = maskQueryText(queryConfig.text, instrumentationConfig);
+      if (queryText !== undefined) {
+        span.setAttribute(ATTR_DB_QUERY_TEXT, queryText);
+      }
     }
-  }
 
-  // Set plan name attribute, if present
-  if (typeof queryConfig.name === 'string') {
-    span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
+    if (
+      instrumentationConfig.enhancedDatabaseReporting &&
+      Array.isArray(queryConfig.values)
+    ) {
+      try {
+        const convertedValues = queryConfig.values.map(value => {
+          if (value == null) {
+            return 'null';
+          } else if (value instanceof Buffer) {
+            return value.toString();
+          } else if (typeof value === 'object') {
+            if (typeof value.toPostgres === 'function') {
+              return value.toPostgres();
+            }
+            return JSON.stringify(value);
+          } else {
+            //string, number
+            return value.toString();
+          }
+        });
+        span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
+      } catch (e) {
+        diag.error('failed to stringify ', queryConfig.values, e);
+      }
+    }
+
+    // Set plan name attribute, if present
+    if (typeof queryConfig.name === 'string') {
+      span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
+    }
   }
 
   return span;

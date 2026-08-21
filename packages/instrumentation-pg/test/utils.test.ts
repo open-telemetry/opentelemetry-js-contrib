@@ -3,13 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  DiagLogLevel,
+  trace,
+  DiagLogger,
+} from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
   TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  AlwaysOffSampler,
 } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as pg from 'pg';
@@ -17,7 +24,27 @@ import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { PgClientExtended, PgPoolOptionsParams } from '../src/internal-types';
 import * as utils from '../src/utils';
-import { ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+
+/**
+ * Installs a diag logger that records warnings, so that tests can assert the
+ * instrumentation reported a failing hook rather than swallowing it.
+ */
+const captureDiagWarnings = () => {
+  const warnings: string[] = [];
+  const logger: DiagLogger = {
+    error: () => {},
+    warn: message => warnings.push(message),
+    info: () => {},
+    debug: () => {},
+    verbose: () => {},
+  };
+  diag.setLogger(logger, DiagLogLevel.WARN);
+  return warnings;
+};
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -42,6 +69,11 @@ describe('utils.ts', () => {
     spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('external');
+  const nonRecordingProvider = new TracerProvider({
+    sampler: new AlwaysOffSampler(),
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
+  });
+  const nonRecordingTracer = nonRecordingProvider.getTracer('external');
 
   const instrumentationConfig: PgInstrumentationConfig & InstrumentationConfig =
     {};
@@ -162,6 +194,110 @@ describe('utils.ts', () => {
     });
   });
 
+  describe('.maskQueryText()', () => {
+    const query = "SELECT * FROM t WHERE a = 'secret' AND b = 42";
+
+    afterEach(() => {
+      diag.disable();
+    });
+
+    it('returns the query unchanged when masking is not configured', () => {
+      assert.strictEqual(utils.maskQueryText(query, {}), query);
+    });
+
+    it('returns the query unchanged when masking is disabled', () => {
+      assert.strictEqual(
+        utils.maskQueryText(query, { maskStatement: false }),
+        query
+      );
+    });
+
+    it('applies the default hook when masking is enabled', () => {
+      assert.strictEqual(
+        utils.maskQueryText(query, { maskStatement: true }),
+        'SELECT * FROM t WHERE a = ? AND b = ?'
+      );
+    });
+
+    it('preserves parameter placeholders', () => {
+      assert.strictEqual(
+        utils.maskQueryText('SELECT * FROM t WHERE a = $1', {
+          maskStatement: true,
+        }),
+        'SELECT * FROM t WHERE a = $1'
+      );
+    });
+
+    it('applies a custom hook to the raw query text', () => {
+      const seen: string[] = [];
+      const masked = utils.maskQueryText(query, {
+        maskStatement: true,
+        maskStatementHook: text => {
+          seen.push(text);
+          return 'REDACTED';
+        },
+      });
+
+      assert.strictEqual(masked, 'REDACTED');
+      assert.deepStrictEqual(seen, [query]);
+    });
+
+    it('does not call the hook when masking is disabled', () => {
+      let called = false;
+      utils.maskQueryText(query, {
+        maskStatement: false,
+        maskStatementHook: text => {
+          called = true;
+          return text;
+        },
+      });
+
+      assert.strictEqual(called, false);
+    });
+
+    it('omits the text and warns when the hook throws', () => {
+      const warnings = captureDiagWarnings();
+      const masked = utils.maskQueryText(query, {
+        maskStatement: true,
+        maskStatementHook: () => {
+          throw new Error('hook failure');
+        },
+      });
+
+      assert.strictEqual(masked, undefined);
+      assert.strictEqual(warnings.length, 1);
+      assert.ok(warnings[0].includes('maskStatementHook'));
+    });
+
+    for (const [description, value] of [
+      ['a non-string', 42],
+      ['nothing', undefined],
+      ['null', null],
+    ] as const) {
+      it(`omits the text and warns when the hook returns ${description}`, () => {
+        const warnings = captureDiagWarnings();
+        const masked = utils.maskQueryText(query, {
+          maskStatement: true,
+          maskStatementHook: (() => value) as unknown as (q: string) => string,
+        });
+
+        assert.strictEqual(masked, undefined);
+        assert.strictEqual(warnings.length, 1);
+        assert.ok(warnings[0].includes('non-string'));
+      });
+    }
+
+    it('omits the text when masking leaves it empty', () => {
+      assert.strictEqual(
+        utils.maskQueryText(query, {
+          maskStatement: true,
+          maskStatementHook: () => '',
+        }),
+        undefined
+      );
+    });
+  });
+
   describe('.handleConfigQuery()', () => {
     const queryConfig = {
       text: 'SELECT $1::text',
@@ -200,6 +336,131 @@ describe('utils.ts', () => {
 
       const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
       assert.deepStrictEqual(pgValues, ['0']);
+    });
+
+    it('records the query text verbatim by default', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        instrumentationConfig,
+        queryConfig
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT $1::text'
+      );
+    });
+
+    it('records masked query text when maskStatement is enabled', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        { ...instrumentationConfig, maskStatement: true },
+        { text: "SELECT 'secret'::text" }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT ?::text'
+      );
+    });
+
+    it('omits only the query text when the masking hook fails', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        {
+          ...instrumentationConfig,
+          maskStatement: true,
+          maskStatementHook: () => {
+            throw new Error('hook failure');
+          },
+        },
+        { ...queryConfig, name: 'a-plan' }
+      );
+      querySpan.end();
+
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_DB_QUERY_TEXT],
+        undefined
+      );
+      // The rest of the span is unaffected: a failing hook withholds one
+      // attribute rather than degrading the span.
+      assert.strictEqual(
+        readableSpan.attributes[AttributeNames.PG_PLAN],
+        'a-plan'
+      );
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_SERVER_PORT],
+        CONFIG.port
+      );
+    });
+
+    it('still records raw values when enhancedDatabaseReporting is combined with masking', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        {
+          ...instrumentationConfig,
+          maskStatement: true,
+          enhancedDatabaseReporting: true,
+        },
+        queryConfig
+      );
+      querySpan.end();
+
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT $1::text'
+      );
+      assert.deepStrictEqual(
+        readableSpan.attributes[AttributeNames.PG_VALUES],
+        ['0']
+      );
+    });
+
+    it('does not run the masking hook for a non-recording span', () => {
+      let called = false;
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        nonRecordingTracer,
+        {
+          ...instrumentationConfig,
+          maskStatement: true,
+          maskStatementHook: (text: string) => {
+            called = true;
+            return text;
+          },
+        },
+        queryConfig
+      );
+      querySpan.end();
+
+      assert.strictEqual(called, false);
+    });
+
+    it('does not convert values for a non-recording span', () => {
+      const value = {
+        toPostgres: () => {
+          throw new Error('should not be called');
+        },
+      };
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        nonRecordingTracer,
+        {
+          ...instrumentationConfig,
+          enhancedDatabaseReporting: true,
+        },
+        { ...queryConfig, values: [value] }
+      );
+
+      assert.doesNotThrow(() => querySpan.end());
     });
   });
 
