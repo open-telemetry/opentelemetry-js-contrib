@@ -539,60 +539,60 @@ describe('instrumentation-kafkajs', () => {
         });
       });
 
-    describe('synchronous failed send', () => {
-      beforeEach(async () => {
-        instrumentation.disable();
-        patchProducerSend(() => {
-          throw new Error('Sync send error');
+      describe('synchronous failed send', () => {
+        beforeEach(async () => {
+          instrumentation.disable();
+          patchProducerSend(() => {
+            throw new Error('Sync send error');
+          });
+          instrumentation.enable();
+          producer = kafka.producer();
         });
-        instrumentation.enable();
-        producer = kafka.producer();
+
+        it('handles synchronous throw in producer.send and records exception', async () => {
+          let caughtError;
+          try {
+            await producer.send({
+              topic: 'topic-name-1',
+              messages: [{ value: 'test' }],
+            });
+          } catch (e) {
+            caughtError = e;
+          }
+
+          assert.ok(caughtError);
+          const spans = getTestSpans();
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0];
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, 'Sync send error');
+          assert.ok(span.events.some(e => e.name === 'exception'));
+        });
+
+        it('handles synchronous throw in producer.sendBatch and records exception', async () => {
+          let caughtError;
+          try {
+            await producer.sendBatch({
+              topicMessages: [
+                {
+                  topic: 'topic-name-1',
+                  messages: [{ value: 'test' }],
+                },
+              ],
+            });
+          } catch (e) {
+            caughtError = e;
+          }
+
+          assert.ok(caughtError);
+          const spans = getTestSpans();
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0];
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, 'Sync send error');
+          assert.ok(span.events.some(e => e.name === 'exception'));
+        });
       });
-
-      it('handles synchronous throw in producer.send and records exception', async () => {
-        let caughtError;
-        try {
-          await producer.send({
-            topic: 'topic-name-1',
-            messages: [{ value: 'test' }],
-          });
-        } catch (e) {
-          caughtError = e;
-        }
-
-        assert.ok(caughtError);
-        const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
-        const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(span.status.message, 'Sync send error');
-        assert.ok(span.events.some(e => e.name === 'exception'));
-      });
-
-      it('handles synchronous throw in producer.sendBatch and records exception', async () => {
-        let caughtError;
-        try {
-          await producer.sendBatch({
-            topicMessages: [
-              {
-                topic: 'topic-name-1',
-                messages: [{ value: 'test' }],
-              },
-            ],
-          });
-        } catch (e) {
-          caughtError = e;
-        }
-
-        assert.ok(caughtError);
-        const spans = getTestSpans();
-        assert.strictEqual(spans.length, 1);
-        const span = spans[0];
-        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-        assert.strictEqual(span.status.message, 'Sync send error');
-        assert.ok(span.events.some(e => e.name === 'exception'));
-      });
-    });
     });
 
     describe('producer hook successful', () => {
@@ -1460,7 +1460,9 @@ describe('instrumentation-kafkajs', () => {
         it('records exception event when eachMessage rejects asynchronously', async () => {
           const asyncError = new Error('Async consumer error');
           consumer.run({
-            eachMessage: async (_payload: EachMessagePayload): Promise<void> => {
+            eachMessage: async (
+              _payload: EachMessagePayload
+            ): Promise<void> => {
               throw asyncError;
             },
           });
