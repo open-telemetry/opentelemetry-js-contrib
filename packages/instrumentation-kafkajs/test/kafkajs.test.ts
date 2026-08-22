@@ -93,8 +93,12 @@ describe('instrumentation-kafkajs', () => {
       rejectSend?: boolean;
     }
   ) => {
-    const origProducerFactory = kafkajs.Kafka.prototype.producer;
-    kafkajs.Kafka.prototype.producer = function (...args): Producer {
+    const kafkaProto = kafkajs.Kafka.prototype as any;
+    if (!kafkaProto._origProducer) {
+      kafkaProto._origProducer = kafkaProto.producer;
+    }
+    const origProducerFactory = kafkaProto._origProducer;
+    kafkaProto.producer = function (...args: any[]): Producer {
       const producer = origProducerFactory.apply(this, args);
 
       producer.send = function (record: ProducerRecord) {
@@ -534,6 +538,61 @@ describe('instrumentation-kafkajs', () => {
           },
         });
       });
+
+    describe('synchronous failed send', () => {
+      beforeEach(async () => {
+        instrumentation.disable();
+        patchProducerSend(() => {
+          throw new Error('Sync send error');
+        });
+        instrumentation.enable();
+        producer = kafka.producer();
+      });
+
+      it('handles synchronous throw in producer.send and records exception', async () => {
+        let caughtError;
+        try {
+          await producer.send({
+            topic: 'topic-name-1',
+            messages: [{ value: 'test' }],
+          });
+        } catch (e) {
+          caughtError = e;
+        }
+
+        assert.ok(caughtError);
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 1);
+        const span = spans[0];
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(span.status.message, 'Sync send error');
+        assert.ok(span.events.some(e => e.name === 'exception'));
+      });
+
+      it('handles synchronous throw in producer.sendBatch and records exception', async () => {
+        let caughtError;
+        try {
+          await producer.sendBatch({
+            topicMessages: [
+              {
+                topic: 'topic-name-1',
+                messages: [{ value: 'test' }],
+              },
+            ],
+          });
+        } catch (e) {
+          caughtError = e;
+        }
+
+        assert.ok(caughtError);
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 1);
+        const span = spans[0];
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(span.status.message, 'Sync send error');
+        assert.ok(span.events.some(e => e.name === 'exception'));
+      });
+    });
     });
 
     describe('producer hook successful', () => {
@@ -1361,14 +1420,105 @@ describe('instrumentation-kafkajs', () => {
           ],
         });
       });
+
+      describe('synchronous error handling & exception recording', () => {
+        beforeEach(() => {
+          storeRunConfig();
+          instrumentation.disable();
+          instrumentation.enable();
+          consumer = kafka.consumer({
+            groupId: 'testing-group-id',
+          });
+        });
+
+        it('handles synchronous throw in eachMessage callback and records exception event', async () => {
+          const syncError = new Error('Sync consumer error');
+          consumer.run({
+            eachMessage: (_payload: EachMessagePayload): Promise<void> => {
+              throw syncError;
+            },
+          });
+
+          const payload: EachMessagePayload = createEachMessagePayload();
+          let caughtError;
+          try {
+            await runConfig?.eachMessage!(payload);
+          } catch (e) {
+            caughtError = e;
+          }
+
+          assert.strictEqual(caughtError, syncError);
+
+          const spans = getTestSpans();
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0];
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, 'Sync consumer error');
+          assert.ok(span.events.some(e => e.name === 'exception'));
+        });
+
+        it('records exception event when eachMessage rejects asynchronously', async () => {
+          const asyncError = new Error('Async consumer error');
+          consumer.run({
+            eachMessage: async (_payload: EachMessagePayload): Promise<void> => {
+              throw asyncError;
+            },
+          });
+
+          const payload: EachMessagePayload = createEachMessagePayload();
+          let caughtError;
+          try {
+            await runConfig?.eachMessage!(payload);
+          } catch (e) {
+            caughtError = e;
+          }
+
+          assert.strictEqual(caughtError, asyncError);
+
+          const spans = getTestSpans();
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0];
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, 'Async consumer error');
+          assert.ok(span.events.some(e => e.name === 'exception'));
+        });
+      });
     });
 
     describe('successful eachBatch', () => {
       beforeEach(async () => {
+        storeRunConfig();
         instrumentation.disable();
         instrumentation.enable();
         consumer = kafka.consumer({
           groupId: 'testing-group-id',
+        });
+      });
+
+      it('handles synchronous throw in eachBatch callback and records exception events', async () => {
+        const syncError = new Error('Sync batch error');
+        consumer.run({
+          eachBatch: (_payload: EachBatchPayload): Promise<void> => {
+            throw syncError;
+          },
+        });
+
+        const payload: EachBatchPayload = createEachBatchPayload();
+        let caughtError;
+        try {
+          await runConfig?.eachBatch!(payload);
+        } catch (e) {
+          caughtError = e;
+        }
+
+        assert.strictEqual(caughtError, syncError);
+
+        const spans = getTestSpans();
+        assert.strictEqual(spans.length, 3);
+        spans.forEach(span => {
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, 'Sync batch error');
+          assert.ok(span.events.some(e => e.name === 'exception'));
         });
       });
 

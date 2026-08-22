@@ -387,12 +387,17 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           }),
         ];
 
-        const eachMessagePromise = context.with(
-          trace.setSpan(propagatedContext, span),
-          () => {
-            return original!.apply(this, args);
-          }
-        );
+        let eachMessagePromise: Promise<void>;
+        try {
+          eachMessagePromise = context.with(
+            trace.setSpan(propagatedContext, span),
+            () => {
+              return original!.apply(this, args);
+            }
+          );
+        } catch (err: any) {
+          eachMessagePromise = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           [span],
           pendingMetrics,
@@ -485,10 +490,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                 )
               );
             });
-            const batchMessagePromise: Promise<void> = original!.apply(
-              this,
-              args
-            );
+            let batchMessagePromise: Promise<void>;
+            try {
+              batchMessagePromise = original!.apply(this, args);
+            } catch (err: any) {
+              batchMessagePromise = Promise.reject(err);
+            }
             spans.unshift(receivingSpan);
             return instrumentation._endSpansOnPromise(
               spans,
@@ -510,7 +517,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       ): ReturnType<Producer['transaction']> {
         const transactionSpan = instrumentation.tracer.startSpan('transaction');
 
-        const transactionPromise = original.apply(this, args);
+        let transactionPromise: Promise<kafkaJs.Transaction>;
+        try {
+          transactionPromise = original.apply(this, args);
+        } catch (err: any) {
+          transactionPromise = Promise.reject(err);
+        }
 
         transactionPromise
           .then((transaction: kafkaJs.Transaction) => {
@@ -637,10 +649,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             );
           });
         });
-        const origSendResult: Promise<RecordMetadata[]> = original.apply(
-          this,
-          args
-        );
+        let origSendResult: Promise<RecordMetadata[]>;
+        try {
+          origSendResult = original.apply(this, args);
+        } catch (err: any) {
+          origSendResult = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           spans,
           pendingMetrics,
@@ -676,10 +690,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               : {}),
           })
         );
-        const origSendResult: Promise<RecordMetadata[]> = original.apply(
-          this,
-          args
-        );
+        let origSendResult: Promise<RecordMetadata[]>;
+        try {
+          origSendResult = original.apply(this, args);
+        } catch (err: any) {
+          origSendResult = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           spans,
           pendingMetrics,
@@ -697,6 +713,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     return Promise.resolve(sendPromise)
       .then(result => {
         pendingMetrics.forEach(m => m());
+        spans.forEach(span => span.end());
         return result;
       })
       .catch(reason => {
@@ -714,17 +731,18 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         pendingMetrics.forEach(m => m(errorType));
 
         spans.forEach(span => {
+          if (reason !== undefined && reason !== null) {
+            span.recordException(reason);
+          }
           span.setAttribute(ATTR_ERROR_TYPE, errorType);
           span.setStatus({
             code: SpanStatusCode.ERROR,
             message: errorMessage,
           });
+          span.end();
         });
 
         throw reason;
-      })
-      .finally(() => {
-        spans.forEach(span => span.end());
       });
   }
 
