@@ -7,12 +7,17 @@
  * Functions declared in this file are only meant to be used within the genai-util package.
  */
 import { diag } from '@opentelemetry/api';
-import type { Attributes, DiagLogger, HrTime } from '@opentelemetry/api';
+import type {
+  Attributes,
+  DiagLogger,
+  HrTime,
+  TimeInput,
+} from '@opentelemetry/api';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { hrTimeToMilliseconds } from '@opentelemetry/core';
+import { hrTime, timeInputToHrTime } from '@opentelemetry/core';
 import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
 
 const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
@@ -135,27 +140,17 @@ export function hrTimeToSeconds(hrTime: HrTime): number {
 
 /**
  * Calculate duration in seconds between startTime and endTime.
- * Accepts either HrTime tuple ([seconds, nanoseconds]) or millisecond epoch timestamp.
+ * Accepts any OpenTelemetry TimeInput (HrTime tuple, millisecond epoch timestamp, or Date).
  */
 export function calculateDurationSeconds(
-  startTime: HrTime | number,
-  endTime?: HrTime | number
+  startTime: TimeInput,
+  endTime?: TimeInput
 ): number {
-  if (Array.isArray(startTime)) {
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
-    const startSec = hrTimeToSeconds(startTime);
-    const endSec = hrTimeToSeconds(endHr);
-    return Math.max(0, endSec - startSec);
-  }
-
-  const endMs =
-    typeof endTime === 'number'
-      ? endTime
-      : Array.isArray(endTime)
-        ? hrTimeToMilliseconds(endTime)
-        : Date.now();
-
-  return Math.max(0, (endMs - startTime) / 1000);
+  const startHr = timeInputToHrTime(startTime);
+  const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
+  const startSec = hrTimeToSeconds(startHr);
+  const endSec = hrTimeToSeconds(endHr);
+  return Math.max(0, endSec - startSec);
 }
 
 /**

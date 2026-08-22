@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Attributes, HrTime, Span } from '@opentelemetry/api';
+import type { Attributes, HrTime, Span, TimeInput } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -89,7 +90,7 @@ export class InferenceInvocation extends BaseInvocation {
     span: Span,
     handler: TelemetryHandler,
     options: InferenceInvocationOptions,
-    startTime: HrTime = process.hrtime()
+    startTime: TimeInput = hrTime()
   ) {
     super(span, handler, startTime);
     this._providerName = options.providerName;
@@ -301,7 +302,7 @@ export class InferenceInvocation extends BaseInvocation {
    */
   public recordStreamChunk(_chunk?: unknown): this {
     if (!this._firstChunkTime) {
-      this._firstChunkTime = process.hrtime();
+      this._firstChunkTime = hrTime();
       this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
       const ttftSec = calculateDurationSeconds(
         this._startTime,

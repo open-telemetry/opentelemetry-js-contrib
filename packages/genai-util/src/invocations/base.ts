@@ -8,7 +8,9 @@ import {
   type Attributes,
   type HrTime,
   type Span,
+  type TimeInput,
 } from '@opentelemetry/api';
+import { hrTime, timeInputToHrTime } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { TelemetryHandler } from '../handler';
 import { calculateDurationSeconds, getErrorType } from '../utils';
@@ -30,11 +32,11 @@ export abstract class BaseInvocation {
   constructor(
     span: Span,
     handler?: TelemetryHandler,
-    startTime: HrTime = process.hrtime()
+    startTime: TimeInput = hrTime()
   ) {
     this._span = span;
     this._handler = handler;
-    this._startTime = startTime;
+    this._startTime = timeInputToHrTime(startTime);
   }
 
   /**
@@ -65,13 +67,13 @@ export abstract class BaseInvocation {
   /**
    * Complete the invocation successfully.
    */
-  public stop(endTime?: HrTime | number): void {
+  public stop(endTime?: TimeInput): void {
     if (this._isEnded) {
       return;
     }
     this._isEnded = true;
 
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     const durationSec = calculateDurationSeconds(this._startTime, endHr);
 
     this._recordMetrics(durationSec);
@@ -86,16 +88,13 @@ export abstract class BaseInvocation {
   /**
    * Complete the invocation with an error.
    */
-  public fail(
-    error: Error | string | unknown,
-    endTime?: HrTime | number
-  ): void {
+  public fail(error: Error | string | unknown, endTime?: TimeInput): void {
     if (this._isEnded) {
       return;
     }
     this._isEnded = true;
 
-    const endHr = Array.isArray(endTime) ? endTime : process.hrtime();
+    const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     const durationSec = calculateDurationSeconds(this._startTime, endHr);
 
     this._recordMetrics(durationSec, error);

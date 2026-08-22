@@ -101,6 +101,10 @@ describe('GenAI Utils', () => {
       const startMs = 1000;
       const endMs = 2500;
       assert.strictEqual(calculateDurationSeconds(startMs, endMs), 1.5);
+
+      const startDate = new Date(1000);
+      const endDate = new Date(3500);
+      assert.strictEqual(calculateDurationSeconds(startDate, endDate), 2.5);
     });
   });
 

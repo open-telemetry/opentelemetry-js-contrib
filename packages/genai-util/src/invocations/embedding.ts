@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Attributes, HrTime, Span } from '@opentelemetry/api';
+import type { Attributes, Span, TimeInput } from '@opentelemetry/api';
+import { hrTime } from '@opentelemetry/core';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -39,7 +40,7 @@ export class EmbeddingInvocation extends BaseInvocation {
     span: Span,
     handler: TelemetryHandler,
     options: EmbeddingInvocationOptions,
-    startTime: HrTime = process.hrtime()
+    startTime: TimeInput = hrTime()
   ) {
     super(span, handler, startTime);
     this._providerName = options.providerName;

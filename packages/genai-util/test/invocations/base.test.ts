@@ -5,6 +5,10 @@
 
 import * as assert from 'assert';
 import { SpanStatusCode, type HrTime } from '@opentelemetry/api';
+import {
+  hrTimeToMicroseconds,
+  hrTimeToMilliseconds,
+} from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { BaseInvocation } from '../../src/invocations/base';
 import {
@@ -155,5 +159,54 @@ describe('BaseInvocation', () => {
       spans[0].attributes[ATTR_ERROR_TYPE],
       'String error message'
     );
+  });
+
+  it('should accept Date and number TimeInput for startTime and endTime', () => {
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+    const span = tracer.startSpan('date-time-span');
+    const startDate = new Date(1700000000000);
+    const endDate = new Date(1700000005000);
+    const inv = new CustomInvocation(span, undefined, startDate);
+
+    inv.stop(endDate);
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].durationSec, 5);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.OK);
+  });
+
+  it('should export span with endTime after startTime and non-zero positive duration', async () => {
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+    const span = tracer.startSpan('timing-span');
+    const inv = new CustomInvocation(span);
+
+    // Wait a brief moment to ensure a measurable elapsed duration
+    await new Promise(resolve => setTimeout(resolve, 10));
+    inv.stop();
+
+    const [finishedSpan] = ctx.memoryExporter.getFinishedSpans();
+    assert.ok(finishedSpan);
+
+    const startMs = hrTimeToMilliseconds(finishedSpan.startTime);
+    const endMs = hrTimeToMilliseconds(finishedSpan.endTime);
+    const durationMs = hrTimeToMilliseconds(finishedSpan.duration);
+
+    // End time must be at or after start time and anchored in modern Unix epoch (not year 1970)
+    assert.ok(
+      startMs > 1_000_000_000_000,
+      `Expected startMs (${startMs}) to be modern epoch timestamp`
+    );
+    assert.ok(
+      endMs >= startMs,
+      `Expected endMs (${endMs}) to be >= startMs (${startMs})`
+    );
+    assert.ok(
+      hrTimeToMicroseconds(finishedSpan.startTime) <=
+        hrTimeToMicroseconds(finishedSpan.endTime)
+    );
+    assert.ok(durationMs > 0, `Expected durationMs (${durationMs}) to be > 0`);
   });
 });
