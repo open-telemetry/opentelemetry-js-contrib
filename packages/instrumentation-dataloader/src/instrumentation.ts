@@ -129,7 +129,12 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
           promise = batchLoadFn.apply(this, args) as Promise<unknown[]>;
         } catch (err: any) {
           instrumentation._handleError(span, err);
-          throw err;
+          // Some dataloader versions (e.g. <2.1) call `_batchLoadFn`
+          // without a try/catch, so a synchronous throw here would
+          // become an uncaught exception instead of a batch rejection.
+          // Returning a rejected promise keeps behavior consistent
+          // across dataloader versions.
+          return Promise.reject(err);
         }
 
         return promise
