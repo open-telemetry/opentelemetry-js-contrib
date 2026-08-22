@@ -593,6 +593,38 @@ describe('instrumentation-kafkajs', () => {
           assert.ok(span.events.some(e => e.name === 'exception'));
         });
       });
+
+      describe('rejection with null reason', () => {
+        beforeEach(async () => {
+          instrumentation.disable();
+          patchProducerSend((): Promise<RecordMetadata[]> => {
+            return Promise.reject(null);
+          });
+          instrumentation.enable();
+          producer = kafka.producer();
+        });
+
+        it('ends the span and does not leak when send rejects with null', async () => {
+          let caughtError;
+          try {
+            await producer.send({
+              topic: 'topic-name-1',
+              messages: [{ value: 'test' }],
+            });
+          } catch (e) {
+            caughtError = e;
+          }
+
+          assert.strictEqual(caughtError, null);
+          const spans = getTestSpans();
+          assert.strictEqual(spans.length, 1);
+          const span = spans[0] as ReadableSpan;
+          assert.ok(span.ended);
+          assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+          assert.strictEqual(span.status.message, undefined);
+          assert.ok(!span.events.some(e => e.name === 'exception'));
+        });
+      });
     });
 
     describe('producer hook successful', () => {

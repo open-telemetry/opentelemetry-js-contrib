@@ -713,7 +713,6 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     return Promise.resolve(sendPromise)
       .then(result => {
         pendingMetrics.forEach(m => m());
-        spans.forEach(span => span.end());
         return result;
       })
       .catch(reason => {
@@ -722,6 +721,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         if (typeof reason === 'string' || reason === undefined) {
           errorMessage = reason;
         } else if (
+          reason !== null &&
           typeof reason === 'object' &&
           Object.prototype.hasOwnProperty.call(reason, 'message')
         ) {
@@ -739,10 +739,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             code: SpanStatusCode.ERROR,
             message: errorMessage,
           });
-          span.end();
         });
 
         throw reason;
+      })
+      .finally(() => {
+        spans.forEach(span => span.end());
       });
   }
 
