@@ -13,6 +13,7 @@
   "packages/baggage-log-record-processor": "0.22.0",
   "packages/host-metrics": "0.39.0",
   "packages/id-generator-aws-xray": "2.1.0",
+  "packages/genai-util": "0.1.0",
   "packages/redis-common": "0.38.3",
   "packages/sampler-aws-xray": "0.3.0",
   "packages/sql-common": "0.42.0",
