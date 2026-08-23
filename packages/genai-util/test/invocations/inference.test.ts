@@ -30,7 +30,6 @@ import {
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
 } from '../../src/semconv';
 import type { CompletionResult } from '../../src/types';
 import {
@@ -141,7 +140,7 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.OK);
   });
 
-  it('should capture diagnostic input events, record error metrics, and trigger completion hook when inference fails', async () => {
+  it('should capture diagnostic input attributes, record error metrics, and trigger completion hook when inference fails', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const meter = ctx.meterProvider.getMeter('test-meter');
     let hookResult: CompletionResult | undefined;
@@ -149,7 +148,7 @@ describe('InferenceInvocation', () => {
     const handler = new TelemetryHandler({
       tracer,
       meter,
-      contentCaptureMode: 'event_only',
+      contentCaptureMode: 'span_only',
       completionHooks: [
         {
           onCompletion: res => {
@@ -183,15 +182,11 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.status.message, 'Rate limit exceeded');
     assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
 
-    // In event_only mode, ensure the prompt details were captured on failure
-    assert.strictEqual(span.events.length, 2); // 1 exception event + 1 content event
-    const contentEvent = span.events.find(
-      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
-    );
-    assert.ok(contentEvent);
-    assert.ok(contentEvent.attributes?.[ATTR_GEN_AI_INPUT_MESSAGES]);
+    // In span_only mode, prompt details are on span attributes and only exception event is present
+    assert.strictEqual(span.events.length, 1); // 1 exception event
+    assert.ok(span.attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
     assert.strictEqual(
-      contentEvent.attributes?.[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+      span.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
       'Be precise and concise.'
     );
 
@@ -269,6 +264,7 @@ describe('InferenceInvocation', () => {
 
     const invSpan = handlerSpan.startInference({
       providerName: 'openai',
+      systemInstructions: 'You are a helpful assistant',
       inputMessages: [
         {
           role: 'user',
@@ -290,96 +286,18 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(spansSpan.length, 1);
     assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
     assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
-    assert.strictEqual(spansSpan[0].events.length, 0);
-
-    ctx.reset();
-
-    const handlerEvent = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'event_only',
-    });
-
-    const invEvent = handlerEvent.startInference({
-      providerName: 'openai',
-      systemInstructions: 'You are a helpful assistant',
-      inputMessages: [
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'What is the weather?' }],
-        },
-      ],
-    });
-
-    invEvent.addOutputMessages([
-      {
-        role: 'assistant',
-        parts: [{ type: 'text', content: 'It is sunny.' }],
-        finish_reason: 'stop',
-      },
-    ]);
-    invEvent.stop();
-
-    const spansEvent = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spansEvent.length, 1);
     assert.strictEqual(
-      spansEvent[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES],
-      undefined
-    );
-    assert.strictEqual(
-      spansEvent[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
-      undefined
-    );
-    assert.strictEqual(
-      spansEvent[0].attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
-      undefined
-    );
-    assert.strictEqual(spansEvent[0].events.length, 1);
-    assert.strictEqual(
-      spansEvent[0].events[0].name,
-      EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
-    );
-    assert.ok(spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_INPUT_MESSAGES]);
-    assert.ok(
-      spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_OUTPUT_MESSAGES]
-    );
-    assert.strictEqual(
-      spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+      spansSpan[0].attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
       'You are a helpful assistant'
     );
-
-    ctx.reset();
-
-    const handlerAll = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'span_and_event',
-    });
-
-    const invAll = handlerAll.startInference({
-      providerName: 'openai',
-      inputMessages: [
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Hello' }],
-        },
-      ],
-    });
-    invAll.stop();
-
-    const spansAll = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spansAll.length, 1);
-    assert.ok(spansAll[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
-    assert.strictEqual(spansAll[0].events.length, 1);
-    assert.strictEqual(
-      spansAll[0].events[0].name,
-      EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
-    );
+    assert.strictEqual(spansSpan[0].events.length, 0);
   });
 
   it('should handle comprehensive request options and system instructions', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
       tracer,
-      contentCaptureMode: 'span_and_event',
+      contentCaptureMode: 'span_only',
     });
 
     const inv = handler.startInference({

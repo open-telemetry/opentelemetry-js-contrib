@@ -11,7 +11,7 @@ import {
 } from '@opentelemetry/sdk-trace-base';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { TelemetryHandler } from '../src/handler';
-import { isEventContentCaptureEnabled } from '../src/environment-variables';
+import { isSpanContentCaptureEnabled } from '../src/environment-variables';
 import type { CompletionResult } from '../src/types';
 
 class TestMetricReader extends MetricReader {
@@ -84,19 +84,19 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(spans.length, 1);
   });
 
-  it('should emit span events for Agent, Retrieval, Tool, and FetchResponse in event_only mode', () => {
+  it('should capture message content on span attributes in span_only mode for Agent, Retrieval, Tool, and FetchResponse and emit no span events', () => {
     const tracer = tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
       tracer,
-      contentCaptureMode: 'event_only',
+      contentCaptureMode: 'span_only',
     });
 
     assert.strictEqual(
-      isEventContentCaptureEnabled(handler.getContentCaptureMode()),
+      isSpanContentCaptureEnabled(handler.getContentCaptureMode()),
       true
     );
 
-    // Agent invocation in event_only mode
+    // Agent invocation in span_only mode
     const agentInv = handler.startAgent({
       agentName: 'TestAgent',
       inputMessages: [
@@ -115,7 +115,7 @@ describe('TelemetryHandler', () => {
     ]);
     agentInv.stop();
 
-    // Retrieval invocation in event_only mode
+    // Retrieval invocation in span_only mode
     const retrievalInv = handler.startRetrieval({
       dataSourceId: 'kb-1',
       queryText: 'Find info',
@@ -123,7 +123,7 @@ describe('TelemetryHandler', () => {
     });
     retrievalInv.stop();
 
-    // Tool invocation in event_only mode
+    // Tool invocation in span_only mode
     const toolInv = handler.startTool({
       toolName: 'calculator',
       toolArguments: { expr: '2+2' },
@@ -131,7 +131,7 @@ describe('TelemetryHandler', () => {
     toolInv.setResult({ answer: 4 });
     toolInv.stop();
 
-    // FetchResponse invocation in event_only mode
+    // FetchResponse invocation in span_only mode
     const fetchInv = handler.startFetchResponse({
       providerName: 'openai',
       responseId: 'resp-123',
@@ -150,105 +150,55 @@ describe('TelemetryHandler', () => {
 
     const [agentSpan, retrievalSpan, toolSpan, fetchSpan] = spans;
 
-    // Agent span: attributes stripped, event emitted
+    // Agent span: attributes set, no span events
+    assert.ok(agentSpan.attributes['gen_ai.input.messages']);
+    assert.ok(agentSpan.attributes['gen_ai.output.messages']);
     assert.strictEqual(
-      agentSpan.attributes['gen_ai.input.messages'],
-      undefined
+      agentSpan.attributes['gen_ai.system_instructions'],
+      'System prompt'
     );
-    assert.strictEqual(
-      agentSpan.attributes['gen_ai.output.messages'],
-      undefined
-    );
-    assert.strictEqual(agentSpan.events.length, 1);
-    assert.strictEqual(
-      agentSpan.events[0].name,
-      'gen_ai.client.inference.operation.details'
-    );
-    assert.ok(agentSpan.events[0].attributes?.['gen_ai.input.messages']);
-    assert.ok(agentSpan.events[0].attributes?.['gen_ai.output.messages']);
+    assert.strictEqual(agentSpan.events.length, 0);
 
-    // Retrieval span: attributes stripped, event emitted
+    // Retrieval span: attributes set, no span events
     assert.strictEqual(
       retrievalSpan.attributes['gen_ai.retrieval.query.text'],
-      undefined
+      'Find info'
     );
     assert.strictEqual(
       retrievalSpan.attributes['gen_ai.retrieval.documents'],
-      undefined
+      '[{"text":"Doc chunk 1"}]'
     );
-    assert.strictEqual(retrievalSpan.events.length, 1);
-    assert.strictEqual(
-      retrievalSpan.events[0].name,
-      'gen_ai.client.inference.operation.details'
-    );
-    assert.strictEqual(
-      retrievalSpan.events[0].attributes?.['gen_ai.retrieval.query.text'],
-      'Find info'
-    );
+    assert.strictEqual(retrievalSpan.events.length, 0);
 
-    // Tool span: attributes stripped, event emitted
+    // Tool span: attributes set, no span events
     assert.strictEqual(
       toolSpan.attributes['gen_ai.tool.call.arguments'],
-      undefined
-    );
-    assert.strictEqual(
-      toolSpan.attributes['gen_ai.tool.call.result'],
-      undefined
-    );
-    assert.strictEqual(toolSpan.events.length, 1);
-    assert.strictEqual(
-      toolSpan.events[0].name,
-      'gen_ai.client.inference.operation.details'
-    );
-    assert.strictEqual(
-      toolSpan.events[0].attributes?.['gen_ai.tool.call.arguments'],
       '{"expr":"2+2"}'
     );
     assert.strictEqual(
-      toolSpan.events[0].attributes?.['gen_ai.tool.call.result'],
+      toolSpan.attributes['gen_ai.tool.call.result'],
       '{"answer":4}'
     );
+    assert.strictEqual(toolSpan.events.length, 0);
 
-    // FetchResponse span: attributes stripped, event emitted
+    // FetchResponse span: attributes set, no span events
+    assert.ok(fetchSpan.attributes['gen_ai.output.messages']);
     assert.strictEqual(
-      fetchSpan.attributes['gen_ai.output.messages'],
-      undefined
+      fetchSpan.attributes['gen_ai.system_instructions'],
+      'Fetch instructions'
     );
-    assert.strictEqual(fetchSpan.events.length, 1);
-    assert.strictEqual(
-      fetchSpan.events[0].name,
-      'gen_ai.client.inference.operation.details'
-    );
-    assert.ok(fetchSpan.events[0].attributes?.['gen_ai.output.messages']);
+    assert.strictEqual(fetchSpan.events.length, 0);
   });
 
-  it('should reflect event emission enablement based on content capture mode', () => {
+  it('should reflect content capture mode enablement based on configuration and environment variable', () => {
     const tracer = tracerProvider.getTracer('test-tracer');
-    const handlerEvent = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'event_only',
-    });
-    assert.strictEqual(
-      isEventContentCaptureEnabled(handlerEvent.getContentCaptureMode()),
-      true
-    );
-
-    const handlerSpanAndEvent = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'span_and_event',
-    });
-    assert.strictEqual(
-      isEventContentCaptureEnabled(handlerSpanAndEvent.getContentCaptureMode()),
-      true
-    );
-
     const handlerSpanOnly = new TelemetryHandler({
       tracer,
       contentCaptureMode: 'span_only',
     });
     assert.strictEqual(
-      isEventContentCaptureEnabled(handlerSpanOnly.getContentCaptureMode()),
-      false
+      isSpanContentCaptureEnabled(handlerSpanOnly.getContentCaptureMode()),
+      true
     );
 
     const handlerNone = new TelemetryHandler({
@@ -256,15 +206,15 @@ describe('TelemetryHandler', () => {
       contentCaptureMode: 'none',
     });
     assert.strictEqual(
-      isEventContentCaptureEnabled(handlerNone.getContentCaptureMode()),
+      isSpanContentCaptureEnabled(handlerNone.getContentCaptureMode()),
       false
     );
 
     process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT =
-      'event_only';
+      'span_only';
     const handlerEnv = new TelemetryHandler({ tracer });
     assert.strictEqual(
-      isEventContentCaptureEnabled(handlerEnv.getContentCaptureMode()),
+      isSpanContentCaptureEnabled(handlerEnv.getContentCaptureMode()),
       true
     );
     delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;

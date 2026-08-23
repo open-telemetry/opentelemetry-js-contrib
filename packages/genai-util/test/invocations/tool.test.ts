@@ -15,7 +15,6 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -121,7 +120,7 @@ describe('ToolInvocation', () => {
     assert.strictEqual(span.status.code, SpanStatusCode.OK);
   });
 
-  it('should respect content capture mode (none vs span_only vs event_only vs span_and_event)', () => {
+  it('should respect content capture mode (none vs span_only)', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
 
     // 1. Mode: none
@@ -173,81 +172,13 @@ describe('ToolInvocation', () => {
       '{"y":2}'
     );
     assert.strictEqual(spansSpan[0].events.length, 0);
-
-    ctx.reset();
-
-    // 3. Mode: event_only
-    const handlerEvent = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'event_only',
-    });
-    const invEvent = handlerEvent.startTool({
-      toolName: 'calc',
-      toolArguments: { x: 1 },
-    });
-    invEvent.setResult({ y: 2 });
-    invEvent.stop();
-
-    const spansEvent = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spansEvent.length, 1);
-    assert.strictEqual(
-      spansEvent[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      undefined
-    );
-    assert.strictEqual(
-      spansEvent[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      undefined
-    );
-    assert.strictEqual(spansEvent[0].events.length, 1);
-    assert.strictEqual(
-      spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"x":1}'
-    );
-    assert.strictEqual(
-      spansEvent[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      '{"y":2}'
-    );
-
-    ctx.reset();
-
-    // 4. Mode: span_and_event
-    const handlerBoth = new TelemetryHandler({
-      tracer,
-      contentCaptureMode: 'span_and_event',
-    });
-    const invBoth = handlerBoth.startTool({
-      toolName: 'calc',
-      toolArguments: { x: 1 },
-    });
-    invBoth.setResult({ y: 2 });
-    invBoth.stop();
-
-    const spansBoth = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spansBoth.length, 1);
-    assert.strictEqual(
-      spansBoth[0].attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"x":1}'
-    );
-    assert.strictEqual(
-      spansBoth[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      '{"y":2}'
-    );
-    assert.strictEqual(spansBoth[0].events.length, 1);
-    assert.strictEqual(
-      spansBoth[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"x":1}'
-    );
-    assert.strictEqual(
-      spansBoth[0].events[0].attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      '{"y":2}'
-    );
   });
 
-  it('should preserve tool call arguments in span events and attributes when tool execution fails', () => {
+  it('should preserve tool call arguments in span attributes when tool execution fails', () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
       tracer,
-      contentCaptureMode: 'span_and_event',
+      contentCaptureMode: 'span_only',
     });
 
     const toolInv = handler.startTool({
@@ -277,18 +208,8 @@ describe('ToolInvocation', () => {
       undefined
     );
 
-    // Event should contain tool arguments but no result
-    const detailsEvent = span.events.find(
-      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
-    );
-    assert.ok(detailsEvent);
-    assert.strictEqual(
-      detailsEvent.attributes?.[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"expr":"1/0"}'
-    );
-    assert.strictEqual(
-      detailsEvent.attributes?.[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      undefined
-    );
+    // Only exception event should be recorded
+    assert.strictEqual(span.events.length, 1);
+    assert.strictEqual(span.events[0].name, 'exception');
   });
 });

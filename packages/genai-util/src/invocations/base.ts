@@ -130,7 +130,10 @@ export abstract class BaseInvocation {
   protected _recordMetrics(_durationSec: number, _error?: unknown): void {}
 
   /**
-   * Hook for subclasses to emit content span events on stop/fail.
+   * Hook for subclasses to emit log-based GenAI events (e.g. `gen_ai.client.inference.operation.details`).
+   *
+   * NOTE: Currently a no-op placeholder. Will be implemented with the OpenTelemetry Logs & Events API
+   * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvents(_endTime?: HrTime): void {}
 

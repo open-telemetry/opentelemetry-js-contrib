@@ -22,7 +22,6 @@ import {
   ATTR_GEN_AI_RESPONSE_STATUS,
   ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE,
 } from '../semconv';
 import type {
@@ -36,10 +35,7 @@ import {
   formatSystemInstructions,
   getErrorType,
 } from '../utils';
-import {
-  isEventContentCaptureEnabled,
-  isSpanContentCaptureEnabled,
-} from '../environment-variables';
+import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -193,33 +189,14 @@ export class FetchResponseInvocation extends BaseInvocation {
     this._handler.recordOperationDuration(durationSec, metricAttrs);
   }
 
-  protected override _emitContentEvents(endTime?: HrTime): void {
-    const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (!isEventContentCaptureEnabled(mode)) {
-      return;
-    }
-
-    const eventAttrs: Attributes = {};
-    if (this._outputMessages && this._outputMessages.length > 0) {
-      const formatted = formatOutputMessages(this._outputMessages);
-      if (formatted) {
-        eventAttrs[ATTR_GEN_AI_OUTPUT_MESSAGES] = formatted;
-      }
-    }
-    if (this._systemInstructions) {
-      const formatted = formatSystemInstructions(this._systemInstructions);
-      if (formatted) {
-        eventAttrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = formatted;
-      }
-    }
-
-    if (Object.keys(eventAttrs).length > 0) {
-      this._span.addEvent(
-        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-        eventAttrs,
-        endTime
-      );
-    }
+  /**
+   * Emit log-based event `gen_ai.client.inference.operation.details`.
+   *
+   * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
+   * once the Logs & Events API is stable in OpenTelemetry JavaScript.
+   */
+  protected override _emitContentEvents(_endTime?: HrTime): void {
+    // No-op until Logs/Events API is stable in JS.
   }
 
   protected override _runCompletionHook(

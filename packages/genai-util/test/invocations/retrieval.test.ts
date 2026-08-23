@@ -20,7 +20,6 @@ import {
   ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
   ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from '../../src/semconv';
 import {
@@ -105,13 +104,13 @@ describe('RetrievalInvocation', () => {
     assert.strictEqual(spans[0].name, 'retrieval');
   });
 
-  it('should record retrieval duration metrics with error type and capture query text event on failure', async () => {
+  it('should record retrieval duration metrics with error type and capture query text on failure', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const meter = ctx.meterProvider.getMeter('test-meter');
     const handler = new TelemetryHandler({
       tracer,
       meter,
-      contentCaptureMode: 'event_only',
+      contentCaptureMode: 'span_only',
     });
 
     const inv = handler.startRetrieval({
@@ -129,15 +128,12 @@ describe('RetrievalInvocation', () => {
     assert.strictEqual(span.status.message, 'Connection timed out');
     assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
 
-    // Verify diagnostic query event was emitted despite failure
-    const queryEvent = span.events.find(
-      e => e.name === EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS
-    );
-    assert.ok(queryEvent);
+    // In span_only mode, query text is on span attributes and only exception event is recorded
     assert.strictEqual(
-      queryEvent.attributes?.[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT],
+      span.attributes[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT],
       'How to rotate API keys?'
     );
+    assert.strictEqual(span.events.length, 1); // 1 exception event
 
     // Verify metric duration was recorded with operation name and error type
     const { resourceMetrics } = await ctx.metricReader.collect();

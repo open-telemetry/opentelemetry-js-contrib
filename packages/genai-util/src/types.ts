@@ -14,12 +14,15 @@ import type { Attributes, Span, Context } from '@opentelemetry/api';
 
 /**
  * Mode of capturing message content (prompts, completions, tool calls).
+ *
+ * NOTE: OpenTelemetry Semantic Conventions define GenAI events (such as
+ * `gen_ai.client.inference.operation.details`) as Log-based Events (LogRecords
+ * with an event name). Because the Logs and Events API in OpenTelemetry
+ * JavaScript is not yet stable, event-based capture modes (`event_only`,
+ * `span_and_event`) are not yet supported in this library. Content capture is
+ * currently limited to `span_only` (recording on span attributes) and `none`.
  */
-export type ContentCaptureMode =
-  | 'none'
-  | 'span_only'
-  | 'event_only'
-  | 'span_and_event';
+export type ContentCaptureMode = 'none' | 'span_only';
 
 /**
  * Reason why the model finished generating output.

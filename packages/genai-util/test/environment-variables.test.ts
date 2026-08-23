@@ -34,11 +34,9 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('1'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('span_only'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('SPAN_ONLY'), 'span_only');
-      assert.strictEqual(parseContentCaptureMode('event_only'), 'event_only');
-      assert.strictEqual(
-        parseContentCaptureMode('span_and_event'),
-        'span_and_event'
-      );
+      assert.strictEqual(parseContentCaptureMode('span'), 'span_only');
+      assert.strictEqual(parseContentCaptureMode('event_only'), 'none');
+      assert.strictEqual(parseContentCaptureMode('span_and_event'), 'none');
       assert.strictEqual(parseContentCaptureMode('false'), 'none');
       assert.strictEqual(parseContentCaptureMode('no_content'), 'none');
       assert.strictEqual(parseContentCaptureMode('none'), 'none');
@@ -51,15 +49,15 @@ describe('Environment Variables and Content Capture', () => {
     it('should respect config when environment variable is not set', () => {
       delete process.env[ENV_GENAI_CAPTURE_MESSAGE_CONTENT];
       assert.strictEqual(getContentCaptureMode(true), 'span_only');
-      assert.strictEqual(getContentCaptureMode('event_only'), 'event_only');
+      assert.strictEqual(getContentCaptureMode('span_only'), 'span_only');
       assert.strictEqual(getContentCaptureMode(false), 'none');
       assert.strictEqual(getContentCaptureMode(undefined), 'none');
     });
 
     it('should prioritize environment variable over config', () => {
-      process.env[ENV_GENAI_CAPTURE_MESSAGE_CONTENT] = 'span_and_event';
-      assert.strictEqual(getContentCaptureMode(false), 'span_and_event');
-      assert.strictEqual(getContentCaptureMode('none'), 'span_and_event');
+      process.env[ENV_GENAI_CAPTURE_MESSAGE_CONTENT] = 'span_only';
+      assert.strictEqual(getContentCaptureMode(false), 'span_only');
+      assert.strictEqual(getContentCaptureMode('none'), 'span_only');
     });
   });
 
@@ -67,15 +65,11 @@ describe('Environment Variables and Content Capture', () => {
     it('isSpanContentCaptureEnabled', () => {
       assert.strictEqual(isSpanContentCaptureEnabled('none'), false);
       assert.strictEqual(isSpanContentCaptureEnabled('span_only'), true);
-      assert.strictEqual(isSpanContentCaptureEnabled('event_only'), false);
-      assert.strictEqual(isSpanContentCaptureEnabled('span_and_event'), true);
     });
 
-    it('isEventContentCaptureEnabled', () => {
+    it('isEventContentCaptureEnabled placeholder', () => {
       assert.strictEqual(isEventContentCaptureEnabled('none'), false);
       assert.strictEqual(isEventContentCaptureEnabled('span_only'), false);
-      assert.strictEqual(isEventContentCaptureEnabled('event_only'), true);
-      assert.strictEqual(isEventContentCaptureEnabled('span_and_event'), true);
     });
   });
 });

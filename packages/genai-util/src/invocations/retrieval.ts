@@ -18,15 +18,11 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
   ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from '../semconv';
 import type { RetrievalInvocationOptions } from '../types';
 import { getErrorType, serializeContent } from '../utils';
-import {
-  isEventContentCaptureEnabled,
-  isSpanContentCaptureEnabled,
-} from '../environment-variables';
+import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -104,6 +100,10 @@ export class RetrievalInvocation extends BaseInvocation {
     return this;
   }
 
+  public getQueryText(): string | undefined {
+    return this._queryText;
+  }
+
   public setDocuments(documents: unknown[]): this {
     this._documents = documents;
     if (
@@ -116,6 +116,10 @@ export class RetrievalInvocation extends BaseInvocation {
       }
     }
     return this;
+  }
+
+  public getDocuments(): unknown[] | undefined {
+    return this._documents;
   }
 
   public setTopK(topK: number): this {
@@ -153,29 +157,13 @@ export class RetrievalInvocation extends BaseInvocation {
     this._handler.recordOperationDuration(durationSec, metricAttrs);
   }
 
-  protected override _emitContentEvents(endTime?: HrTime): void {
-    const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (!isEventContentCaptureEnabled(mode)) {
-      return;
-    }
-
-    const eventAttrs: Attributes = {};
-    if (this._queryText) {
-      eventAttrs[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT] = this._queryText;
-    }
-    if (this._documents) {
-      const formatted = serializeContent(this._documents);
-      if (formatted) {
-        eventAttrs[ATTR_GEN_AI_RETRIEVAL_DOCUMENTS] = formatted;
-      }
-    }
-
-    if (Object.keys(eventAttrs).length > 0) {
-      this._span.addEvent(
-        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-        eventAttrs,
-        endTime
-      );
-    }
+  /**
+   * Emit log-based event `gen_ai.client.inference.operation.details`.
+   *
+   * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
+   * once the Logs & Events API is stable in OpenTelemetry JavaScript.
+   */
+  protected override _emitContentEvents(_endTime?: HrTime): void {
+    // No-op until Logs/Events API is stable in JS.
   }
 }

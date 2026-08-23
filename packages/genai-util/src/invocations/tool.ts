@@ -12,15 +12,11 @@ import {
   ATTR_GEN_AI_TOOL_DESCRIPTION,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_TYPE,
-  EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from '../semconv';
 import type { ToolInvocationOptions } from '../types';
 import { serializeContent } from '../utils';
-import {
-  isEventContentCaptureEnabled,
-  isSpanContentCaptureEnabled,
-} from '../environment-variables';
+import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -82,32 +78,21 @@ export class ToolInvocation extends BaseInvocation {
     return this;
   }
 
-  protected override _emitContentEvents(endTime?: HrTime): void {
-    const mode = this._handler?.getContentCaptureMode() ?? 'none';
-    if (!isEventContentCaptureEnabled(mode)) {
-      return;
-    }
+  public getToolArguments(): unknown | undefined {
+    return this._toolArguments;
+  }
 
-    const eventAttrs: Attributes = {};
-    if (this._toolArguments !== undefined) {
-      const formatted = serializeContent(this._toolArguments);
-      if (formatted) {
-        eventAttrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = formatted;
-      }
-    }
-    if (this._result !== undefined) {
-      const formatted = serializeContent(this._result);
-      if (formatted) {
-        eventAttrs[ATTR_GEN_AI_TOOL_CALL_RESULT] = formatted;
-      }
-    }
+  public getResult(): unknown | undefined {
+    return this._result;
+  }
 
-    if (Object.keys(eventAttrs).length > 0) {
-      this._span.addEvent(
-        EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-        eventAttrs,
-        endTime
-      );
-    }
+  /**
+   * Emit log-based event `gen_ai.client.inference.operation.details`.
+   *
+   * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
+   * once the Logs & Events API is stable in OpenTelemetry JavaScript.
+   */
+  protected override _emitContentEvents(_endTime?: HrTime): void {
+    // No-op until Logs/Events API is stable in JS.
   }
 }

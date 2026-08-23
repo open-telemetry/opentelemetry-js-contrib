@@ -40,19 +40,11 @@ export function parseContentCaptureMode(
     case 'span_only':
     case 'span':
       return 'span_only';
-    case 'event_only':
-    case 'event':
-      return 'event_only';
-    case 'span_and_event':
-    case 'all':
-    case 'both':
-      return 'span_and_event';
     case 'false':
     case '0':
     case 'none':
     case 'no_content':
     case '':
-      return 'none';
     default:
       return 'none';
   }
@@ -80,16 +72,18 @@ export function getContentCaptureMode(
  * @experimental This function is experimental and subject to change.
  */
 export function isSpanContentCaptureEnabled(mode: ContentCaptureMode): boolean {
-  return mode === 'span_only' || mode === 'span_and_event';
+  return mode === 'span_only';
 }
 
 /**
- * Returns true if content should be emitted via span events / logs.
+ * Returns true if content should be emitted via log events.
+ *
+ * NOTE: Currently returns false until the OpenTelemetry JS Logs & Events SDK stabilizes.
  *
  * @experimental This function is experimental and subject to change.
  */
 export function isEventContentCaptureEnabled(
-  mode: ContentCaptureMode
+  _mode: ContentCaptureMode
 ): boolean {
-  return mode === 'event_only' || mode === 'span_and_event';
+  return false;
 }
