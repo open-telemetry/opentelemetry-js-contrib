@@ -163,16 +163,38 @@ export function getSpanName(operationName: string, model?: string): string {
 }
 
 /**
- * Extract a standard error.type string from an error or exception.
+ * Extract a standard `error.type` attribute value from an error or exception
+ * following OpenTelemetry GenAI semantic conventions.
+ *
+ * Resolution order:
+ * 1. Error `code` if present and non-empty (e.g., `'ECONNREFUSED'`, `404`, `'429'`)
+ * 2. Explicit `error.name` if set and not the default `'Error'` (e.g., `'RateLimitError'`)
+ * 3. Class / constructor name for subclasses (e.g., `class CustomAPIError extends Error`)
+ * 4. Non-empty string if `error` is a string
+ * 5. Fallback `'Error'`
+ *
+ * @param error - The caught error, exception, or value.
+ * @returns The standardized error type string.
  */
+
 export function getErrorType(error: unknown): string {
   if (error instanceof Error) {
-    return (
-      (error as { code?: string }).code ||
-      error.name ||
-      error.constructor?.name ||
-      'Error'
-    );
+    const code = (error as { code?: string | number }).code;
+    if (code !== undefined && code !== null && String(code).trim().length > 0) {
+      return String(code);
+    }
+    if (error.name && error.name !== 'Error') {
+      return error.name;
+    }
+    const constructorName = error.constructor?.name;
+    if (
+      constructorName &&
+      constructorName !== 'Error' &&
+      constructorName !== 'Object'
+    ) {
+      return constructorName;
+    }
+    return error.name || 'Error';
   }
   if (typeof error === 'string' && error.trim().length > 0) {
     return error;
