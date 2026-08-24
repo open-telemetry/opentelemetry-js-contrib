@@ -4,12 +4,17 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
-import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+import {
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
+  TelemetryHandler,
+  wrapAsyncStream,
+} from '@opentelemetry/genai-util';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -18,11 +23,6 @@ type AnthropicModule = typeof Anthropic & {
   Anthropic?: typeof Anthropic;
   default?: typeof Anthropic;
 };
-
-interface SpanState {
-  span: Span;
-  ended: boolean;
-}
 
 function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
   return module.Anthropic ?? module.default ?? module;
@@ -33,13 +33,21 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
     value !== null &&
     typeof value === 'object' &&
     Symbol.asyncIterator in value &&
-    typeof value[Symbol.asyncIterator] === 'function'
+    typeof (value as any)[Symbol.asyncIterator] === 'function'
   );
 }
 
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
+  private _handler: TelemetryHandler;
+
   constructor(config: AnthropicInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._handler = new TelemetryHandler({
+      tracer: this.tracer,
+      meter: this.meter,
+      diag: this._diag,
+      config,
+    });
   }
 
   protected init() {
@@ -79,91 +87,44 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         }
 
         const params = args[0] as Anthropic.Messages.MessageCreateParams;
-        const span = instrumentation.tracer.startSpan(`chat ${params.model}`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            'gen_ai.operation.name': 'chat',
-            'gen_ai.provider.name': 'anthropic',
-            'gen_ai.request.model': params.model,
-          },
+        const invocation = instrumentation._handler.startInference({
+          providerName: GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
+          operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+          requestModel: params?.model,
         });
-        const state: SpanState = { span, ended: false };
+
+        const span = invocation.getSpan();
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
         try {
           result = context.with(ctx, () => original.apply(this, args));
         } catch (error) {
-          instrumentation._endSpanWithError(state, error);
+          invocation.fail(error);
           throw error;
         }
 
         result.then(
           value => {
             if (isAsyncIterable(value)) {
-              instrumentation._wrapStream(value, state);
+              const originalIterator = value[Symbol.asyncIterator].bind(value);
+              const wrapped = wrapAsyncStream(
+                { [Symbol.asyncIterator]: originalIterator },
+                invocation
+              );
+              instrumentation._wrap(value, Symbol.asyncIterator, () => {
+                return () => wrapped[Symbol.asyncIterator]();
+              });
             } else {
-              instrumentation._endSpan(state);
+              invocation.stop();
             }
           },
-          error => instrumentation._endSpanWithError(state, error)
+          error => invocation.fail(error)
         );
 
         // Preserve the Anthropic SDK's customized APIPromise instance.
         return result;
       };
     };
-  }
-
-  private _wrapStream(stream: AsyncIterable<unknown>, state: SpanState): void {
-    const originalIterator = stream[Symbol.asyncIterator].bind(stream);
-    this._wrap(stream, Symbol.asyncIterator, () => {
-      return () => this._streamIterator(originalIterator(), state);
-    });
-  }
-
-  private async *_streamIterator(
-    iterator: AsyncIterator<unknown>,
-    state: SpanState
-  ): AsyncGenerator<unknown> {
-    let exhausted = false;
-    try {
-      while (true) {
-        const next = await iterator.next();
-        if (next.done) {
-          exhausted = true;
-          break;
-        }
-        yield next.value;
-      }
-      this._endSpan(state);
-    } catch (error) {
-      this._endSpanWithError(state, error);
-      throw error;
-    } finally {
-      if (!exhausted && !state.ended) {
-        try {
-          await iterator.return?.();
-        } catch (error) {
-          this._diag.debug('error closing Anthropic stream iterator:', error);
-        }
-        this._endSpan(state);
-      }
-    }
-  }
-
-  private _endSpan(state: SpanState): void {
-    if (state.ended) return;
-    state.ended = true;
-    state.span.end();
-  }
-
-  private _endSpanWithError(state: SpanState, error: unknown): void {
-    if (state.ended) return;
-    const err = error instanceof Error ? error : new Error(String(error));
-    state.span.recordException(err);
-    state.span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    state.span.setAttribute('error.type', err.constructor.name);
-    this._endSpan(state);
   }
 }

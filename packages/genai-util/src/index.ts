@@ -22,3 +22,10 @@
  * export * from './semconv';
  * ```
  */
+export { TelemetryHandler } from './handler';
+export { wrapAsyncStream } from './stream';
+export {
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
+} from './semconv';
+export type { GenAIInstrumentationConfig } from './types';

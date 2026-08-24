@@ -4,5 +4,7 @@
  */
 
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { GenAIInstrumentationConfig } from '@opentelemetry/genai-util';
 
-export type AnthropicInstrumentationConfig = InstrumentationConfig;
+export type AnthropicInstrumentationConfig = InstrumentationConfig &
+  GenAIInstrumentationConfig;

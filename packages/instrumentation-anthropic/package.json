@@ -52,6 +52,7 @@
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "dependencies": {
+    "@opentelemetry/genai-util": "^0.1.0",
     "@opentelemetry/instrumentation": "^0.221.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-anthropic#readme"
