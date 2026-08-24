@@ -66,6 +66,12 @@ logger.info('foobar');
 
 Winston Logger will automatically send log records to the OpenTelemetry Logs SDK if not explicitly disabled in config and @opentelemetry/winston-transport npm package is installed in the project. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
 
+When a Winston log call is made in an active span, the instrumentation preserves
+that context for log sending even if Winston processes the transport
+asynchronously. The OpenTelemetry LogRecord uses its native trace context fields;
+the `trace_id`, `span_id`, and `trace_flags` fields added for log correlation are
+not duplicated as LogRecord attributes.
+
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
 Log sending can be disabled with the `disableLogSending: true` option. Log sending is only available for Winston version 3 and later.
