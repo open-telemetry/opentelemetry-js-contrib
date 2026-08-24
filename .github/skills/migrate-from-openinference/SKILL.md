@@ -250,6 +250,8 @@ The output must be empty.
 OpenInference is a second coverage reference, not permission to rewrite an
 existing package.
 
+All [Non-negotiable rules](#non-negotiable-rules) still apply in this mode.
+
 ### Inventory the existing package first
 
 Record:
