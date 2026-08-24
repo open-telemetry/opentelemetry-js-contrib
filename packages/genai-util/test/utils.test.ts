@@ -120,27 +120,102 @@ describe('GenAI Utils', () => {
   });
 
   describe('getErrorType', () => {
-    it('should extract error type from Error, custom error, code, string, or unknown', () => {
+    it('should return error name for standard built-in errors', () => {
       assert.strictEqual(getErrorType(new Error('test')), 'Error');
       assert.strictEqual(getErrorType(new TypeError('test')), 'TypeError');
+      assert.strictEqual(getErrorType(new RangeError('test')), 'RangeError');
+    });
 
-      class CustomAPIError extends Error {
+    it('should return constructor name for subclassed errors without name override', () => {
+      class SubclassedErrorWithoutNameOverride extends Error {}
+      assert.strictEqual(
+        getErrorType(
+          new SubclassedErrorWithoutNameOverride('subclassed error')
+        ),
+        'SubclassedErrorWithoutNameOverride'
+      );
+    });
+
+    it('should return custom name when explicitly set on class or instance', () => {
+      class CustomNamedError extends Error {
         constructor() {
           super('custom error');
           this.name = 'CustomAPIError';
         }
       }
-      assert.strictEqual(getErrorType(new CustomAPIError()), 'CustomAPIError');
+      assert.strictEqual(
+        getErrorType(new CustomNamedError()),
+        'CustomAPIError'
+      );
 
-      const codedError = new Error('with code');
-      (codedError as any).code = 'ECONNREFUSED';
-      assert.strictEqual(getErrorType(codedError), 'ECONNREFUSED');
+      const errWithCustomName = new Error('custom name on instance');
+      errWithCustomName.name = 'RateLimitError';
+      assert.strictEqual(getErrorType(errWithCustomName), 'RateLimitError');
+    });
 
+    it('should prioritize explicit name over constructor name for minification support', () => {
+      const MinifiedErrorClass = class extends Error {
+        constructor() {
+          super('minified error');
+          this.name = 'AnthropicAPIError';
+        }
+      };
+      Object.defineProperty(MinifiedErrorClass, 'name', { value: 'e' });
+
+      assert.strictEqual(
+        getErrorType(new MinifiedErrorClass()),
+        'AnthropicAPIError'
+      );
+    });
+
+    it('should prioritize error code over error name or constructor name', () => {
+      class CustomAPIError extends Error {
+        code = 'RATE_LIMIT_EXCEEDED';
+        override name = 'RateLimitError';
+      }
+      assert.strictEqual(
+        getErrorType(new CustomAPIError()),
+        'RATE_LIMIT_EXCEEDED'
+      );
+    });
+
+    it('should handle numeric error codes including 0', () => {
+      const http404Error = Object.assign(new Error('not found'), { code: 404 });
+      assert.strictEqual(getErrorType(http404Error), '404');
+
+      const code0Error = Object.assign(new Error('exit code 0'), { code: 0 });
+      assert.strictEqual(getErrorType(code0Error), '0');
+    });
+
+    it('should ignore empty or whitespace-only code and fall back to error name', () => {
+      const emptyCodeError = Object.assign(new TypeError('type issue'), {
+        code: '   ',
+      });
+      assert.strictEqual(getErrorType(emptyCodeError), 'TypeError');
+    });
+
+    it('should handle unusual prototypes and constructor objects', () => {
+      const objectInheritedError = Object.create(Error.prototype);
+      assert.strictEqual(getErrorType(objectInheritedError), 'Error');
+
+      const noConstructorError = new Error('no constructor');
+      (noConstructorError as any).constructor = undefined;
+      assert.strictEqual(getErrorType(noConstructorError), 'Error');
+    });
+
+    it('should extract error type from string error inputs', () => {
       assert.strictEqual(getErrorType('RateLimitError'), 'RateLimitError');
+      assert.strictEqual(getErrorType('   '), 'Error');
       assert.strictEqual(getErrorType(''), 'Error');
+    });
+
+    it('should return default "Error" for nullish, boolean, number, or plain object inputs', () => {
       assert.strictEqual(getErrorType(null), 'Error');
       assert.strictEqual(getErrorType(undefined), 'Error');
       assert.strictEqual(getErrorType(1234), 'Error');
+      assert.strictEqual(getErrorType(true), 'Error');
+      assert.strictEqual(getErrorType({}), 'Error');
+      assert.strictEqual(getErrorType({ message: 'plain obj' }), 'Error');
     });
   });
 });
