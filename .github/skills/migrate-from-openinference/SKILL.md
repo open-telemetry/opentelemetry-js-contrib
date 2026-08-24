@@ -157,6 +157,12 @@ rg -l 'gen_ai\.input\.messages|gen_ai\.output\.messages' packages
 If a shared package exists, use only its public API. Do not import private
 modules or duplicate its models inside an instrumentation.
 
+Shared utilities may be exported incrementally as instrumentations need them.
+If a required utility is not public, review the contributor guidance in the
+shared package's `src/index.ts`. When that guidance permits it, add only the
+specific export required by the instrumentation as part of the same pull
+request.
+
 If it does not exist:
 
 - do not silently create a package-local pseudo-shared framework;
