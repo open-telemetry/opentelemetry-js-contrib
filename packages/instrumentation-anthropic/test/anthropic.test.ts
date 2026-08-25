@@ -125,6 +125,41 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
   });
 
+  it('ends the streaming span when using tee', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      const [left, right] = stream.tee();
+      const leftEvents = [];
+      for await (const event of left) {
+        leftEvents.push(event);
+      }
+      const rightEvents = [];
+      for await (const event of right) {
+        rightEvents.push(event);
+      }
+
+      expect(leftEvents.length).toBeGreaterThan(0);
+      expect(rightEvents).toEqual(leftEvents);
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].name).toBe(`chat ${model}`);
+    expect(spans[0].kind).toBe(SpanKind.CLIENT);
+  });
+
   it('creates a span for messages.stream', async () => {
     const { nockDone } = await nockBack('anthropic-messages-stream.json', {
       afterRecord: sanitizeRecordings,

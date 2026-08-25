@@ -24,16 +24,22 @@ interface SpanState {
   ended: boolean;
 }
 
+interface AnthropicStream extends AsyncIterable<unknown> {
+  iterator(): AsyncIterator<unknown>;
+}
+
 function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
   return module.Anthropic ?? module.default ?? module;
 }
 
-function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+function isAnthropicStream(value: unknown): value is AnthropicStream {
   return (
     value !== null &&
     typeof value === 'object' &&
     Symbol.asyncIterator in value &&
-    typeof value[Symbol.asyncIterator] === 'function'
+    typeof value[Symbol.asyncIterator] === 'function' &&
+    'iterator' in value &&
+    typeof value.iterator === 'function'
   );
 }
 
@@ -100,7 +106,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
 
         result.then(
           value => {
-            if (isAsyncIterable(value)) {
+            if (isAnthropicStream(value)) {
               instrumentation._wrapStream(value, state);
             } else {
               instrumentation._endSpan(state);
@@ -115,9 +121,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     };
   }
 
-  private _wrapStream(stream: AsyncIterable<unknown>, state: SpanState): void {
-    const originalIterator = stream[Symbol.asyncIterator].bind(stream);
-    this._wrap(stream, Symbol.asyncIterator, () => {
+  private _wrapStream(stream: AnthropicStream, state: SpanState): void {
+    // `Stream.tee()` calls `iterator()` directly, bypassing
+    // `Symbol.asyncIterator`, so wrap the internal iterator method.
+    this._wrap(stream, 'iterator', originalIterator => {
       return () => this._streamIterator(originalIterator(), state);
     });
   }
