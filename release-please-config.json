@@ -63,6 +63,7 @@
     "packages/instrumentation-nestjs-core": {},
     "packages/instrumentation-net": {},
     "packages/instrumentation-openai": {},
+    "packages/instrumentation-openai-agents": {},
     "packages/instrumentation-oracledb": {},
     "packages/instrumentation-pg": {},
     "packages/instrumentation-pino": {},

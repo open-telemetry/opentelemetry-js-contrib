@@ -173,6 +173,7 @@ pkg:instrumentation-openai:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-openai/**
+          - packages/instrumentation-openai-agents/**
           - packages/contrib-test-utils/**
 pkg:instrumentation-oracledb:
   - changed-files:

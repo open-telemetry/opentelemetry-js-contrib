@@ -36,6 +36,7 @@ import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
 import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
 import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
 import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
+import { OpenAIAgentsInstrumentation } from '@opentelemetry/instrumentation-openai-agents';
 import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
@@ -115,6 +116,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
   '@opentelemetry/instrumentation-net': NetInstrumentation,
   '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
+  '@opentelemetry/instrumentation-openai-agents': OpenAIAgentsInstrumentation,
   '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
   '@opentelemetry/instrumentation-pg': PgInstrumentation,
   '@opentelemetry/instrumentation-pino': PinoInstrumentation,
