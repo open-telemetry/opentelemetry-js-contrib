@@ -53,12 +53,12 @@
     "@opentelemetry/contrib-test-utils": "^0.68.0",
     "@opentelemetry/sdk-metrics": "^2.9.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
+    "@types/mysql": "2.15.27",
     "mysql": "2.18.1"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.221.0",
-    "@opentelemetry/semantic-conventions": "^1.33.0",
-    "@types/mysql": "2.15.27"
+    "@opentelemetry/semantic-conventions": "^1.33.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-mysql#readme"
 }
