@@ -100,7 +100,7 @@ requestHook: function (
 By default, commands that accept only a key are serialized without it, so every
 call looks the same:
 
-```
+```text
 hgetall [1 other arguments]
 ttl [1 other arguments]
 ```

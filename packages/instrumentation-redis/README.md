@@ -79,7 +79,7 @@ const redisInstrumentation = new RedisInstrumentation({
 By default, commands that accept only a key are serialized without it, so every
 call looks the same:
 
-```
+```text
 HGETALL [1 other arguments]
 TTL [1 other arguments]
 ```
