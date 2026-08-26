@@ -57,12 +57,12 @@
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/contrib-test-utils": "^0.68.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
+    "@types/tedious": "^4.0.14",
     "tedious": "17.0.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.221.0",
-    "@opentelemetry/semantic-conventions": "^1.33.0",
-    "@types/tedious": "^4.0.14"
+    "@opentelemetry/semantic-conventions": "^1.33.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-tedious#readme"
 }
