@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`ioredis`](https://github.com/luin/ioredis) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-ioredis
 
 ### Supported Versions
 
-- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`
+- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <7`
 
 ## Usage
 

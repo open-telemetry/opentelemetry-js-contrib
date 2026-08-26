@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`mysql`](https://www.npmjs.com/package/mysql) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -63,7 +63,7 @@ Attributes collected:
 
 Metrics collected:
 
-- [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
+- [`db.client.connection.count`](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/#metric-dbclientconnectioncount) - The number of connections currently in a given state.
 
 ## Useful links
 

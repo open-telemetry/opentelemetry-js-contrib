@@ -11,7 +11,6 @@ import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
-  METRIC_V8JS_MEMORY_HEAP_LIMIT,
   METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
@@ -20,14 +19,6 @@ import {
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
   updateMetricInstruments(meter: Meter): void {
-    const heapLimit = meter.createObservableUpDownCounter(
-      METRIC_V8JS_MEMORY_HEAP_LIMIT,
-      {
-        description:
-          'Maximum heap size allowed by the V8 engine, as set by --max-old-space-size or V8 defaults.',
-        unit: 'By',
-      }
-    );
     const heapSpaceSize = meter.createObservableUpDownCounter(
       METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
       {
@@ -61,9 +52,6 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
       observableResult => {
         if (!this._config.enabled) return;
 
-        const heapStats = v8.getHeapStatistics();
-        observableResult.observe(heapLimit, heapStats.heap_size_limit);
-
         const data = this.scrape();
         if (data === undefined) return;
         for (const space of data) {
@@ -94,13 +82,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           );
         }
       },
-      [
-        heapLimit,
-        heapSpaceSize,
-        heapSpaceUsed,
-        heapSpaceAvailable,
-        heapSpacePhysical,
-      ]
+      [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 

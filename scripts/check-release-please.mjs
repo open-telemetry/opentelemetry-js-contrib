@@ -31,12 +31,17 @@ const getPackages = () => {
   const TOP = process.cwd();
   const pj = readJson(path.join(TOP, 'package.json'));
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`))
     .flat()
     .map(p => {
       const pkgInfo = readJson(p);
       pkgInfo.location = path.dirname(p);
-      pkgInfo.relativeLocation = path.relative(PROJECT_ROOT, pkgInfo.location);
+      // release-please's manifest/config files always use forward slashes
+      // for their package location keys, regardless of platform.
+      pkgInfo.relativeLocation = path
+        .relative(PROJECT_ROOT, pkgInfo.location)
+        .split(path.sep)
+        .join('/');
       return pkgInfo;
     });
 };
@@ -95,7 +100,7 @@ configPackages.forEach(relativeLocation => {
 });
 
 if (errors.length) {
-  console.error('Errors occured:\n');
+  console.error('Errors occurred:\n');
   console.error(errors.join('\n\n'));
   process.exit(1);
 } else {

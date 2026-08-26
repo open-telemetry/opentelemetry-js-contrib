@@ -63,7 +63,8 @@
   ],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 3am on Monday"]
+    "schedule": ["before 3am on Monday"],
+    "minimumReleaseAge": "0"
   },
   "ignoreDeps": ["@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
@@ -72,7 +73,7 @@
   "labels": ["dependencies"],
   "semanticCommitType": "feat",
   "constraints": {
-    "npm": ">=11.6.3"
+    "npm": ">=11.18.0"
   },
   "minimumReleaseAge": "1 week"
 }

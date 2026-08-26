@@ -1,6 +1,30 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.73.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.72.0...instrumentation-pg-v0.73.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585)) ([5b7dd0e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5b7dd0e102e940d653e04b08b5a1b721a8271037))
+
+
+### Bug Fixes
+
+* Only treat "name" as relevant if it actually is a value ([#3589](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3589)) ([04d6f6a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/04d6f6af917d2858cc732cffbd1308caadab5a33))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.67.0 to ^0.68.0
+
 ## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.71.0...instrumentation-pg-v0.72.0) (2026-07-03)
 
 

@@ -303,6 +303,35 @@ describe('UserInteractionInstrumentation', () => {
       sandbox.clock.tick(10);
     });
 
+    it('should invoke the listener when the XPath cannot be computed', () => {
+      // getElementXPath reads `localName` on every sibling it walks, which
+      // throws for a node from a cross-origin frame, e.g., an iframe injected
+      // by a browser extension
+      const crossOriginNode = document.createElement('iframe');
+      Object.defineProperty(crossOriginNode, 'localName', {
+        get() {
+          throw new Error('Permission denied to access property "localName"');
+        },
+      });
+      const element = createButton();
+      const parent = document.createElement('div');
+      parent.appendChild(crossOriginNode);
+      parent.appendChild(element);
+      document.body.appendChild(parent);
+
+      let called = false;
+      try {
+        fakeClickInteraction(() => {
+          called = true;
+        }, element);
+      } finally {
+        document.body.removeChild(parent);
+      }
+
+      assert.strictEqual(called, true, 'should invoke the listener');
+      assert.equal(exportSpy.args.length, 0, 'should NOT export any span');
+    });
+
     it('should handle task with navigation change', done => {
       fakeClickInteraction(() => {
         history.pushState(
@@ -685,6 +714,52 @@ describe('UserInteractionInstrumentation', () => {
       document.addEventListener('click', listener, null);
       // @ts-expect-error see above
       document.removeEventListener('click', listener, null);
+    });
+
+    it('should preserve bare global addEventListener calls', () => {
+      // web-vitals calls the global event-listener function without a receiver.
+      // The native browser implementation accepts that form, so instrumentation
+      // must not use the undefined receiver as a WeakMap key first.
+      const { addEventListener, removeEventListener } = window;
+      let calls = 0;
+      const listener = () => {
+        calls++;
+      };
+
+      addEventListener('open-telemetry-bare-listener', listener);
+      window.dispatchEvent(new Event('open-telemetry-bare-listener'));
+      removeEventListener('open-telemetry-bare-listener', listener);
+
+      assert.strictEqual(calls, 1);
+    });
+
+    it('should preserve valid weak-map symbols and delegate invalid receivers', () => {
+      // Symbols cannot be EventTarget receivers in a browser, so use the real
+      // wrapper with a narrow original-function double to assert its boundary.
+      type OriginalAddEventListener = (
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        useCapture?: boolean | AddEventListenerOptions
+      ) => void;
+      const original = sandbox.stub();
+      const patched = (
+        userInteractionInstrumentation as unknown as {
+          _patchAddEventListener: () => (
+            original: OriginalAddEventListener
+          ) => unknown;
+        }
+      )._patchAddEventListener()(original) as {
+        call(thisArg: unknown, type: string, listener: () => void): unknown;
+      };
+      const listener = () => {};
+
+      assert.doesNotThrow(() => {
+        patched.call(Symbol('unregistered'), 'click', listener);
+      });
+      assert.doesNotThrow(() => {
+        patched.call(Symbol.for('registered'), 'click', listener);
+      });
+      assert.strictEqual(original.callCount, 2);
     });
 
     it('should handle disable', () => {

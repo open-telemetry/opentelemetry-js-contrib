@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`pg`](https://github.com/brianc/node-postgres)module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -77,6 +77,12 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 | `server.address`      | Remote hostname or similar.                                                                |
 | `server.port`         | Remote port number.                                                                        |
 | `error.type`          | Describes a class of error the operation ended with.                                       |
+
+> [!NOTE]
+> `db.collection.name` is not collected. The `pg` driver does not expose the table
+> name separately, and the OpenTelemetry specification advises against parsing
+> `db.query.text` when the database supports queries touching multiple
+> collections in non-batch operations, which is the case for PostgreSQL.
 
 Metrics Exported:
 

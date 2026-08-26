@@ -3,13 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { setupTracing } from './tracer';
+
+setupTracing('example-mysql-server');
+
 import * as api from '@opentelemetry/api';
 import * as mysql from 'mysql';
 import * as http from 'http';
 import { MysqlError, PoolConnection } from 'mysql';
-import { setupTracing } from './tracer';
-
-setupTracing('example-mysql-server');
 
 const pool = mysql.createPool({
   host: 'localhost',

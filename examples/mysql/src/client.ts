@@ -3,11 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as api from '@opentelemetry/api';
-import * as http from 'http';
 import { setupTracing } from './tracer';
 
 const tracer = setupTracing('example-mysql-client');
+
+import * as api from '@opentelemetry/api';
+import * as http from 'http';
 
 /** A function which makes requests and handles response. */
 function makeRequest() {

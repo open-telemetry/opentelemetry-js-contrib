@@ -1,6 +1,31 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.74.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.73.0...instrumentation-mongodb-v0.74.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-mysql, instrumentation-mongodb:** replace deprecated db.client.connections.usage with db.client.connection.count in mongodb and mysql ([#3608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3608))
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585)) ([5b7dd0e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5b7dd0e102e940d653e04b08b5a1b721a8271037))
+
+
+### Bug Fixes
+
+* **instrumentation-mysql, instrumentation-mongodb:** replace deprecated db.client.connections.usage with db.client.connection.count in mongodb and mysql ([#3608](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3608)) ([9fe5bd9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9fe5bd98565c28169abfce7f39f3681ebaebcc44))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.67.0 to ^0.68.0
+
 ## [0.73.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mongodb-v0.72.0...instrumentation-mongodb-v0.73.0) (2026-07-03)
 
 

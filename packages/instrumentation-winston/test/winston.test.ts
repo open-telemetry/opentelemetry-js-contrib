@@ -143,12 +143,12 @@ describe('WinstonInstrumentation', () => {
     const logRecords = memoryLogExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     const { traceId, spanId, traceFlags } = span.spanContext();
-    assert.strictEqual(logRecords[0]['attributes']['trace_id'], traceId);
-    assert.strictEqual(logRecords[0]['attributes']['span_id'], spanId);
-    assert.strictEqual(
-      logRecords[0]['attributes']['trace_flags'],
-      `0${traceFlags.toString(16)}`
-    );
+    assert.strictEqual(logRecords[0].spanContext?.traceId, traceId);
+    assert.strictEqual(logRecords[0].spanContext?.spanId, spanId);
+    assert.strictEqual(logRecords[0].spanContext?.traceFlags, traceFlags);
+    assert.strictEqual(logRecords[0].attributes['trace_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['span_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['trace_flags'], undefined);
     assert.strictEqual(kMessage, logRecords[0].body, kMessage);
     return logRecords;
   }
@@ -225,6 +225,54 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
+    it('preserves span context across queued log records', async () => {
+      if (!isWinston2) {
+        const winston = require('winston');
+        class BlockingTransport extends Writable {
+          constructor() {
+            super({ objectMode: true, highWaterMark: 1 });
+          }
+
+          override _write(
+            _chunk: unknown,
+            _encoding: BufferEncoding,
+            callback: (error?: Error | null) => void
+          ) {
+            setImmediate(callback);
+          }
+
+          log(_info: unknown, callback: () => void) {
+            callback();
+          }
+        }
+
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        logger = winston.createLogger({
+          transports: [new BlockingTransport()],
+        });
+
+        logger.info('outside span');
+
+        const span = tracer.startSpan('abc');
+        context.with(trace.setSpan(context.active(), span), () => {
+          logger.info(kMessage);
+        });
+        span.end();
+
+        await new Promise<void>(resolve => setImmediate(resolve));
+
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].spanContext, undefined);
+        const { traceId, spanId, traceFlags } = span.spanContext();
+        assert.strictEqual(logRecords[1].spanContext?.traceId, traceId);
+        assert.strictEqual(logRecords[1].spanContext?.spanId, spanId);
+        assert.strictEqual(logRecords[1].spanContext?.traceFlags, traceFlags);
+      }
+    });
+
     it('emit LogRecord with extra attibutes', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
@@ -247,6 +295,26 @@ describe('WinstonInstrumentation', () => {
           logRecords[0].attributes['extraAttribute2'],
           'attributeValue2'
         );
+      }
+    });
+
+    it('serializes Error metadata attributes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger();
+        const failure = new TypeError('boom');
+
+        logger.log('info', kMessage, { failure });
+
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.deepStrictEqual(logRecords[0].attributes['failure'], {
+          name: 'TypeError',
+          message: 'boom',
+          stack: failure.stack,
+        });
       }
     });
 

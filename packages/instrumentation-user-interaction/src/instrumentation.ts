@@ -29,6 +29,25 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
 const DEFAULT_EVENT_NAMES: EventName[] = ['click'];
+const SUPPORTS_UNREGISTERED_SYMBOL_WEAK_MAP_KEYS = (() => {
+  try {
+    const key = Symbol();
+    new WeakMap().set(key as unknown as object, true);
+    return true;
+  } catch {
+    return false;
+  }
+})();
+
+function isWeakMapKey(value: unknown): boolean {
+  return (
+    (typeof value === 'object' && value !== null) ||
+    typeof value === 'function' ||
+    (typeof value === 'symbol' &&
+      Symbol.keyFor(value) === undefined &&
+      SUPPORTS_UNREGISTERED_SYMBOL_WEAK_MAP_KEYS)
+  );
+}
 
 function defaultShouldPreventSpanCreation() {
   return false;
@@ -128,8 +147,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     if (!this._allowEventName(eventName)) {
       return undefined;
     }
-    const xpath = getElementXPath(element, true);
     try {
+      const xpath = getElementXPath(element, true);
       const span = this.tracer.startSpan(
         eventName,
         {
@@ -277,7 +296,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         useCapture?: boolean | AddEventListenerOptions
       ) {
         // Forward calls with listener = null
-        if (!listener) {
+        if (!listener || !isWeakMapKey(this)) {
           return original.call(this, type, listener, useCapture);
         }
 

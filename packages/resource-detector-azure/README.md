@@ -106,7 +106,27 @@ env:
         key: clusterResourceId
 ```
 
-Alternatively, you can mount the ConfigMap as a file at `/etc/kubernetes/aks-cluster-metadata`.
+Alternatively, you can mount the ConfigMap at `/etc/kubernetes/aks-cluster-metadata`. Kubernetes
+projects each key into its own file, so the detector reads the resource ID from
+`/etc/kubernetes/aks-cluster-metadata/clusterResourceId`:
+
+```yaml
+volumes:
+  - name: aks-cluster-metadata
+    configMap:
+      name: aks-cluster-metadata
+volumeMounts:
+  - name: aks-cluster-metadata
+    mountPath: /etc/kubernetes/aks-cluster-metadata
+```
+
+Mounting the single key with `subPath`, so that `/etc/kubernetes/aks-cluster-metadata` is itself a
+file holding the resource ID, is also supported.
+
+Note that the `aks-cluster-metadata` ConfigMap lives in the `kube-public` namespace, and Kubernetes
+resolves `configMapKeyRef` and ConfigMap volumes within the pod's own namespace. To consume it from
+another namespace, copy the ConfigMap into that namespace, or have tooling such as an init
+container read it and write the value to one of the supported locations above.
 
 ```typescript
 import { detectResources } from '@opentelemetry/resources';
