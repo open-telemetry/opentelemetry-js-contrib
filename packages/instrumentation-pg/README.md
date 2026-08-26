@@ -88,7 +88,7 @@ Metrics Exported:
 
 - [`db.client.operation.duration`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientoperationduration)
 - [`db.client.connection.count`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientconnectioncount)
-- [`db.client.connection.max`](https://opentelemetry.io/docs/specs/semconv/db/database-metrics/#metric-dbclientconnectionmax)
+- [`db.client.connection.max`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientconnectionmax)
 - [`db.client.connection.pending_requests`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/database/database-metrics.md#metric-dbclientconnectionpending_requests)
 
 ## Useful links
