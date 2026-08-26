@@ -148,8 +148,6 @@ components:
     - seemk
   packages/instrumentation-redis:
     - blumamir
-  packages/instrumentation-restify: []
-    # Unmaintained
   packages/instrumentation-router: []
     # Unmaintained
   packages/instrumentation-undici:
