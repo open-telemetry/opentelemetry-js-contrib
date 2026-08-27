@@ -56,8 +56,10 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import {
   METRIC_DB_CLIENT_CONNECTION_COUNT,
+  METRIC_DB_CLIENT_CONNECTION_MAX,
   METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS,
   DB_SYSTEM_NAME_VALUE_POSTGRESQL,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
 } from './semconv';
 
 function extractModuleExports(module: any) {
@@ -73,7 +75,12 @@ const INTERNAL_SET_QUERY = Symbol(
 export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConfig> {
   declare private _operationDuration: Histogram;
   declare private _connectionsCount: UpDownCounter;
+  declare private _connectionMax: UpDownCounter;
   declare private _connectionPendingRequests: UpDownCounter;
+  private _poolMaxValues = new Map<
+    PgPoolExtended,
+    { value: number; attributes: Attributes }
+  >();
   // Pool events connect, acquire, release and remove can be called
   // multiple times without changing the values of total, idle and waiting
   // connections. The _connectionsCounter is used to keep track of latest
@@ -90,6 +97,14 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   override _updateMetricInstruments() {
+    // Clear the values from the previous MeterProvider before replacing the
+    // instrument. Active pools are replayed to the new provider below.
+    if (this._connectionMax && this._poolMaxValues) {
+      for (const { value, attributes } of this._poolMaxValues.values()) {
+        this._connectionMax.add(-value, attributes);
+      }
+    }
+
     this._operationDuration = this.meter.createHistogram(
       METRIC_DB_CLIENT_OPERATION_DURATION,
       {
@@ -125,6 +140,19 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         unit: '{connection}',
       }
     );
+    this._connectionMax = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_MAX,
+      {
+        description: 'The maximum number of open connections allowed.',
+        unit: '{connection}',
+      }
+    );
+
+    if (this._poolMaxValues) {
+      for (const { value, attributes } of this._poolMaxValues.values()) {
+        this._connectionMax.add(value, attributes);
+      }
+    }
   }
 
   protected init() {
@@ -171,17 +199,24 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
         }
+        if (isWrapped(moduleExports.prototype.end)) {
+          this._unwrap(moduleExports.prototype, 'end');
+        }
         this._wrap(
           moduleExports.prototype,
           'connect',
           this._getPoolConnectPatch() as any
         );
+        this._wrap(moduleExports.prototype, 'end', this._getPoolEndPatch());
         return moduleExports;
       },
       (module: any) => {
         const moduleExports = extractModuleExports(module);
         if (isWrapped(moduleExports.prototype.connect)) {
           this._unwrap(moduleExports.prototype, 'connect');
+        }
+        if (isWrapped(moduleExports.prototype.end)) {
+          this._unwrap(moduleExports.prototype, 'end');
         }
       }
     );
@@ -551,6 +586,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   }
 
   private _setPoolConnectEventListeners(pgPool: PgPoolExtended) {
+    this._recordPoolMax(pgPool);
     if (pgPool[EVENT_LISTENERS_SET]) return;
     const poolName = utils.getPoolName(pgPool.options);
 
@@ -594,6 +630,25 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
       );
     });
     pgPool[EVENT_LISTENERS_SET] = true;
+  }
+
+  private _recordPoolMax(pgPool: PgPoolExtended) {
+    if (this._poolMaxValues.has(pgPool)) return;
+
+    const attributes: Attributes = {
+      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: utils.getPoolName(pgPool.options),
+    };
+    const value = pgPool.options.max;
+    this._poolMaxValues.set(pgPool, { value, attributes });
+    this._connectionMax.add(value, attributes);
+  }
+
+  private _removePoolMax(pgPool: PgPoolExtended) {
+    const state = this._poolMaxValues.get(pgPool);
+    if (!state) return;
+
+    this._connectionMax.add(-state.value, state.attributes);
+    this._poolMaxValues.delete(pgPool);
   }
 
   private _getPoolConnectPatch() {
@@ -641,6 +696,25 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         );
 
         return handleConnectResult(span, connectResult);
+      };
+    };
+  }
+
+  private _getPoolEndPatch() {
+    const plugin = this;
+    return (originalEnd: typeof pgPoolTypes.prototype.end) => {
+      return function end(this: PgPoolExtended, callback?: () => void) {
+        try {
+          return callback
+            ? originalEnd.call(this, callback)
+            : (originalEnd as (this: PgPoolExtended) => Promise<void>).call(
+                this
+              );
+        } finally {
+          if (this.ending) {
+            plugin._removePoolMax(this);
+          }
+        }
       };
     };
   }
