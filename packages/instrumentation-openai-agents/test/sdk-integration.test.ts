@@ -11,6 +11,9 @@
  */
 
 import * as assert from 'assert';
+// @openai/agents 0.14 loads this optional MCP module from its Node.js shim.
+// Keep this explicit import and dev dependency so Node.js 18 CI can resolve it.
+import '@modelcontextprotocol/sdk/shared/protocol.js';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
