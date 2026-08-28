@@ -201,7 +201,7 @@ export class FetchResponseInvocation extends BaseInvocation {
 
   protected override _runCompletionHook(
     durationSec: number,
-    error?: unknown
+    error?: Error
   ): void {
     if (!this._handler) {
       return;

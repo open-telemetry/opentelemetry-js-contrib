@@ -33,7 +33,7 @@ describe('BaseInvocation', () => {
     public emitContentEventsCalls: Array<{ endTime?: HrTime }> = [];
     public runCompletionHookCalls: Array<{
       durationSec: number;
-      error?: unknown;
+      error?: Error;
     }> = [];
 
     protected override _recordMetrics(
@@ -49,7 +49,7 @@ describe('BaseInvocation', () => {
 
     protected override _runCompletionHook(
       durationSec: number,
-      error?: unknown
+      error?: Error
     ): void {
       this.runCompletionHookCalls.push({ durationSec, error });
     }
@@ -147,9 +147,10 @@ describe('BaseInvocation', () => {
 
     assert.strictEqual(inv.runCompletionHookCalls.length, 1);
     assert.strictEqual(
-      inv.runCompletionHookCalls[0].error,
+      inv.runCompletionHookCalls[0].error?.message,
       'String error message'
     );
+    assert.ok(inv.runCompletionHookCalls[0].error instanceof Error);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);

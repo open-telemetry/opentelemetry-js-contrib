@@ -467,7 +467,7 @@ export interface CompletionResult {
   /** System instructions if captured. */
   systemInstructions?: SystemInstruction;
   /** Error if the invocation failed. */
-  error?: Error | unknown;
+  error?: Error;
   /** Custom attributes. */
   attributes?: Attributes;
 }

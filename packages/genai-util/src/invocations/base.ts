@@ -114,6 +114,8 @@ export abstract class BaseInvocation {
     const errorType = getErrorType(error);
     this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
+    const errorObj = error instanceof Error ? error : new Error(errorMessage);
+
     if (error instanceof Error) {
       this._span.recordException(error);
     }
@@ -126,7 +128,7 @@ export abstract class BaseInvocation {
     });
     this._span.end(endHr);
 
-    this._runCompletionHook(durationSec, error);
+    this._runCompletionHook(durationSec, errorObj);
   }
 
   /**
@@ -145,5 +147,5 @@ export abstract class BaseInvocation {
   /**
    * Hook for subclasses to execute registered completion hooks on stop/fail.
    */
-  protected _runCompletionHook(_durationSec: number, _error?: unknown): void {}
+  protected _runCompletionHook(_durationSec: number, _error?: Error): void {}
 }
