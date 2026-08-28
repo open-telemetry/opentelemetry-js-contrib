@@ -10,10 +10,15 @@ import {
   type Span,
   type TimeInput,
 } from '@opentelemetry/api';
-import { hrTime, timeInputToHrTime } from '@opentelemetry/core';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToSeconds,
+  timeInputToHrTime,
+} from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { TelemetryHandler } from '../handler';
-import { calculateDurationSeconds, getErrorType } from '../utils';
+import { getErrorType } from '../utils';
 
 /**
  * Base class for GenAI telemetry invocations.
@@ -74,7 +79,7 @@ export abstract class BaseInvocation {
     this._isEnded = true;
 
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+    const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
 
     this._recordMetrics(durationSec);
     this._emitContentEvents(endHr);
@@ -95,7 +100,7 @@ export abstract class BaseInvocation {
     this._isEnded = true;
 
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
-    const durationSec = calculateDurationSeconds(this._startTime, endHr);
+    const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
 
     this._recordMetrics(durationSec, error);
 

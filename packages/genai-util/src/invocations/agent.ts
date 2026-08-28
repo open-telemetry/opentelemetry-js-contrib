@@ -4,7 +4,7 @@
  */
 
 import type { Attributes, HrTime, Span, TimeInput } from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
+import { hrTime, hrTimeDuration, hrTimeToSeconds } from '@opentelemetry/core';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -54,7 +54,6 @@ import type {
   TokenUsage,
 } from '../types';
 import {
-  calculateDurationSeconds,
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
@@ -364,9 +363,8 @@ export class AgentInvocation extends BaseInvocation {
     if (!this._firstChunkTime) {
       this._firstChunkTime = hrTime();
       this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
-      const ttftSec = calculateDurationSeconds(
-        this._startTime,
-        this._firstChunkTime
+      const ttftSec = hrTimeToSeconds(
+        hrTimeDuration(this._startTime, this._firstChunkTime)
       );
       this._span.setAttribute(
         ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,

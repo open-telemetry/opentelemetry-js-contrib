@@ -14,8 +14,6 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
-  calculateDurationSeconds,
-  hrTimeToSeconds,
   getSpanName,
   getErrorType,
 } from '../src/utils';
@@ -86,25 +84,6 @@ describe('GenAI Utils', () => {
         JSON.stringify({ parts: [{ type: 'text', content: 'test' }] })
       );
       assert.strictEqual(formatSystemInstructions(undefined), undefined);
-    });
-  });
-
-  describe('timing helpers', () => {
-    it('hrTimeToSeconds and calculateDurationSeconds', () => {
-      const hr: [number, number] = [10, 500000000];
-      assert.strictEqual(hrTimeToSeconds(hr), 10.5);
-
-      const startHr: [number, number] = [10, 0];
-      const endHr: [number, number] = [12, 500000000];
-      assert.strictEqual(calculateDurationSeconds(startHr, endHr), 2.5);
-
-      const startMs = 1000;
-      const endMs = 2500;
-      assert.strictEqual(calculateDurationSeconds(startMs, endMs), 1.5);
-
-      const startDate = new Date(1000);
-      const endDate = new Date(3500);
-      assert.strictEqual(calculateDurationSeconds(startDate, endDate), 2.5);
     });
   });
 

@@ -7,17 +7,11 @@
  * Functions declared in this file are only meant to be used within the genai-util package.
  */
 import { diag } from '@opentelemetry/api';
-import type {
-  Attributes,
-  DiagLogger,
-  HrTime,
-  TimeInput,
-} from '@opentelemetry/api';
+import type { Attributes, DiagLogger } from '@opentelemetry/api';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { hrTime, timeInputToHrTime } from '@opentelemetry/core';
 import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
 import type { InputMessages } from './types';
 
@@ -148,35 +142,6 @@ export function formatSystemInstructions(
   } catch {
     return undefined;
   }
-}
-
-/**
- * Convert an OpenTelemetry HrTime tuple ([seconds, nanoseconds]) to floating seconds.
- *
- * @param hrTime - OpenTelemetry high-resolution time tuple `[seconds, nanoseconds]`.
- * @returns Time duration in fractional seconds.
- */
-export function hrTimeToSeconds(hrTime: HrTime): number {
-  return hrTime[0] + hrTime[1] / 1e9;
-}
-
-/**
- * Calculate duration in seconds between startTime and endTime.
- * Accepts any OpenTelemetry TimeInput (HrTime tuple, millisecond epoch timestamp, or Date).
- *
- * @param startTime - Start timestamp as `HrTime`, millisecond timestamp, or `Date`.
- * @param endTime - Optional end timestamp as `HrTime`, millisecond timestamp, or `Date` (defaults to current time).
- * @returns Non-negative duration in fractional seconds.
- */
-export function calculateDurationSeconds(
-  startTime: TimeInput,
-  endTime?: TimeInput
-): number {
-  const startHr = timeInputToHrTime(startTime);
-  const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
-  const startSec = hrTimeToSeconds(startHr);
-  const endSec = hrTimeToSeconds(endHr);
-  return Math.max(0, endSec - startSec);
 }
 
 /**
