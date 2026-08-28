@@ -81,71 +81,45 @@ export class AgentInvocation extends BaseInvocation {
   constructor(
     span: Span,
     handler?: TelemetryHandler,
-    options?: AgentInvocationOptions | RemoteAgentInvocationOptions,
+    options: AgentInvocationOptions | RemoteAgentInvocationOptions = {},
     startTime: TimeInput = hrTime()
   ) {
     super(span, handler, startTime);
-    this._providerName = (
-      options as RemoteAgentInvocationOptions
-    )?.providerName;
-    this._requestModel = options?.requestModel;
+    this._providerName = (options as RemoteAgentInvocationOptions).providerName;
+    this._requestModel = options.requestModel;
     this._serverAddress = (
       options as RemoteAgentInvocationOptions
-    )?.serverAddress;
-    this._serverPort = (options as RemoteAgentInvocationOptions)?.serverPort;
-    this._agentName = options?.agentName;
-    this._agentId = options?.agentId;
-    this._agentDescription = options?.agentDescription;
-    this._agentVersion = options?.agentVersion;
-    this._conversationId = options?.conversationId;
-    this._dataSourceId = options?.dataSourceId;
-    this._outputType = options?.outputType;
+    ).serverAddress;
+    this._serverPort = (options as RemoteAgentInvocationOptions).serverPort;
+    this._agentName = options.agentName;
+    this._agentId = options.agentId;
+    this._agentDescription = options.agentDescription;
+    this._agentVersion = options.agentVersion;
+    this._conversationId = options.conversationId;
+    this._dataSourceId = options.dataSourceId;
+    this._outputType = options.outputType;
 
     const attrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
-      ...options?.attributes,
+      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
+      [ATTR_GEN_AI_REQUEST_MODEL]: this._requestModel,
+      [ATTR_GEN_AI_AGENT_ID]: this._agentId,
+      [ATTR_GEN_AI_AGENT_NAME]: this._agentName,
+      [ATTR_GEN_AI_AGENT_DESCRIPTION]: this._agentDescription,
+      [ATTR_GEN_AI_AGENT_VERSION]: this._agentVersion,
+      [ATTR_GEN_AI_CONVERSATION_ID]: this._conversationId,
+      [ATTR_GEN_AI_DATA_SOURCE_ID]: this._dataSourceId,
+      [ATTR_GEN_AI_OUTPUT_TYPE]: this._outputType,
+      [ATTR_SERVER_ADDRESS]: this._serverAddress,
+      [ATTR_SERVER_PORT]: this._serverPort,
+      ...getRequestOptionsAttributes(options.requestOptions),
+      ...options.attributes,
     };
 
-    if (this._providerName) {
-      attrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
-    }
-    if (this._requestModel) {
-      attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-    }
-    if (this._agentId) {
-      attrs[ATTR_GEN_AI_AGENT_ID] = this._agentId;
-    }
-    if (this._agentName) {
-      attrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
-    }
-    if (this._agentDescription) {
-      attrs[ATTR_GEN_AI_AGENT_DESCRIPTION] = this._agentDescription;
-    }
-    if (this._agentVersion) {
-      attrs[ATTR_GEN_AI_AGENT_VERSION] = this._agentVersion;
-    }
-    if (this._conversationId) {
-      attrs[ATTR_GEN_AI_CONVERSATION_ID] = this._conversationId;
-    }
-    if (this._dataSourceId) {
-      attrs[ATTR_GEN_AI_DATA_SOURCE_ID] = this._dataSourceId;
-    }
-    if (this._outputType) {
-      attrs[ATTR_GEN_AI_OUTPUT_TYPE] = this._outputType;
-    }
-    if (this._serverAddress) {
-      attrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-    }
-    if (this._serverPort !== undefined) {
-      attrs[ATTR_SERVER_PORT] = this._serverPort;
-    }
-
-    Object.assign(attrs, getRequestOptionsAttributes(options?.requestOptions));
-
-    if (options?.systemInstructions) {
+    if (options.systemInstructions) {
       this.setSystemInstructions(options.systemInstructions);
     }
-    if (options?.inputMessages && options.inputMessages.length > 0) {
+    if (options.inputMessages && options.inputMessages.length > 0) {
       this.addInputMessages(options.inputMessages);
     }
 
