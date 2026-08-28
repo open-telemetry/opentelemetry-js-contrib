@@ -19,6 +19,7 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import { hrTime, timeInputToHrTime } from '@opentelemetry/core';
 import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
+import type { InputMessages } from './types';
 
 const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
   'https:': 443,
@@ -91,7 +92,9 @@ export function serializeContent(content: unknown): string {
  * @param messages - Input messages payload to format.
  * @returns JSON string representation of input messages, or `undefined` if empty/invalid.
  */
-export function formatInputMessages(messages: unknown): string | undefined {
+export function formatInputMessages(
+  messages?: InputMessages | string
+): string | undefined {
   if (!messages) {
     return undefined;
   }
