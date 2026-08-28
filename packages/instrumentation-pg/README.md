@@ -61,8 +61,8 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 | `requireParentSpan` | `boolean` | If true, requires a parent span to create new spans (default false) |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
 | `ignoreConnectSpans` | `boolean` | If true, `pg.connect` and `pg-pool.connect` spans will not be created. Query spans and pool metrics are still recorded (default false) |
-| `maskStatement` | `boolean` | If true, the `db.query.text` attribute is masked by `maskStatementHook` before being recorded (default false). The query sent to the server is never modified |
-| `maskStatementHook` | `PgInstrumentationQueryMaskingHook` (function) | Function used to mask `db.query.text` when `maskStatement` is true. Defaults to `sanitizeSql` from [`@opentelemetry/sql-common`](../sql-common). If it throws or returns a non-string, `db.query.text` is omitted |
+| `skipQueryTextSanitization` | `boolean` | If true, the `db.query.text` attribute is recorded as-is instead of being masked by `maskStatementHook` (default false, i.e. masked by default). The query sent to the server is never modified |
+| `maskStatementHook` | `PgInstrumentationQueryMaskingHook` (function) | Function used to mask `db.query.text` unless `skipQueryTextSanitization` is true. Defaults to `sanitizeSql` from [`@opentelemetry/sql-common`](../sql-common). If it throws or returns a non-string, `db.query.text` is omitted |
 | `enableTraceContextPropagation` | `boolean` | If true, injects the current span's W3C traceparent into the PostgreSQL session via `SET application_name` before each query (default false). _NOTE: this adds a round-trip per query_ |
 
 ## Semantic Conventions
@@ -97,8 +97,9 @@ which is why the specification advises against
 parameterized query text.
 
 Applications that build SQL by string concatenation put literals into the query
-text, and therefore onto the span. Set `maskStatement: true` for those. When
-enabled:
+text, and therefore onto the span. `db.query.text` is masked by default to
+strip those out; set `skipQueryTextSanitization: true` to record it verbatim
+instead. By default:
 
 - string, numeric, bit-string and dollar-quoted literals become `?`
 - `--` and (nestable) `/* */` comments are removed
@@ -125,8 +126,8 @@ Limits worth knowing:
   identifiers should supply its own `maskStatementHook`.
 - `db.postgresql.values` (see `enhancedDatabaseReporting`) and
   `db.postgresql.plan` (the prepared-statement name) are not masked. Enabling
-  `enhancedDatabaseReporting` together with `maskStatement` records masked query
-  text alongside raw parameter values.
+  `enhancedDatabaseReporting` records masked query text alongside raw parameter
+  values, unless `skipQueryTextSanitization` is also set.
 - If `maskStatementHook` throws or returns a non-string, `db.query.text` is
   omitted rather than falling back to the raw text, and a warning is logged
   through the API diagnostic logger.

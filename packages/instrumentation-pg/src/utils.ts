@@ -196,7 +196,7 @@ export function maskQueryText(
   text: string,
   instrumentationConfig: PgInstrumentationConfig
 ): string | undefined {
-  if (!instrumentationConfig.maskStatement) {
+  if (instrumentationConfig.skipQueryTextSanitization) {
     return text;
   }
 

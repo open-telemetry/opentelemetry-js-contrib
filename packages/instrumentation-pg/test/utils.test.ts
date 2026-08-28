@@ -201,20 +201,23 @@ describe('utils.ts', () => {
       diag.disable();
     });
 
-    it('returns the query unchanged when masking is not configured', () => {
-      assert.strictEqual(utils.maskQueryText(query, {}), query);
+    it('applies the default hook when masking is not configured', () => {
+      assert.strictEqual(
+        utils.maskQueryText(query, {}),
+        'SELECT * FROM t WHERE a = ? AND b = ?'
+      );
     });
 
-    it('returns the query unchanged when masking is disabled', () => {
+    it('returns the query unchanged when skipQueryTextSanitization is true', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, { maskStatement: false }),
+        utils.maskQueryText(query, { skipQueryTextSanitization: true }),
         query
       );
     });
 
-    it('applies the default hook when masking is enabled', () => {
+    it('applies the default hook when skipQueryTextSanitization is explicitly false', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, { maskStatement: true }),
+        utils.maskQueryText(query, { skipQueryTextSanitization: false }),
         'SELECT * FROM t WHERE a = ? AND b = ?'
       );
     });
@@ -222,7 +225,7 @@ describe('utils.ts', () => {
     it('preserves parameter placeholders', () => {
       assert.strictEqual(
         utils.maskQueryText('SELECT * FROM t WHERE a = $1', {
-          maskStatement: true,
+          skipQueryTextSanitization: false,
         }),
         'SELECT * FROM t WHERE a = $1'
       );
@@ -231,7 +234,7 @@ describe('utils.ts', () => {
     it('applies a custom hook to the raw query text', () => {
       const seen: string[] = [];
       const masked = utils.maskQueryText(query, {
-        maskStatement: true,
+        skipQueryTextSanitization: false,
         maskStatementHook: text => {
           seen.push(text);
           return 'REDACTED';
@@ -245,7 +248,7 @@ describe('utils.ts', () => {
     it('does not call the hook when masking is disabled', () => {
       let called = false;
       utils.maskQueryText(query, {
-        maskStatement: false,
+        skipQueryTextSanitization: true,
         maskStatementHook: text => {
           called = true;
           return text;
@@ -258,7 +261,7 @@ describe('utils.ts', () => {
     it('omits the text and warns when the hook throws', () => {
       const warnings = captureDiagWarnings();
       const masked = utils.maskQueryText(query, {
-        maskStatement: true,
+        skipQueryTextSanitization: false,
         maskStatementHook: () => {
           throw new Error('hook failure');
         },
@@ -277,7 +280,7 @@ describe('utils.ts', () => {
       it(`omits the text and warns when the hook returns ${description}`, () => {
         const warnings = captureDiagWarnings();
         const masked = utils.maskQueryText(query, {
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: (() => value) as unknown as (q: string) => string,
         });
 
@@ -290,7 +293,7 @@ describe('utils.ts', () => {
     it('omits the text when masking leaves it empty', () => {
       assert.strictEqual(
         utils.maskQueryText(query, {
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: () => '',
         }),
         undefined
@@ -353,11 +356,11 @@ describe('utils.ts', () => {
       );
     });
 
-    it('records masked query text when maskStatement is enabled', () => {
+    it('records masked query text when sanitization is not skipped', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
         tracer,
-        { ...instrumentationConfig, maskStatement: true },
+        { ...instrumentationConfig, skipQueryTextSanitization: false },
         { text: "SELECT 'secret'::text" }
       );
       querySpan.end();
@@ -374,7 +377,7 @@ describe('utils.ts', () => {
         tracer,
         {
           ...instrumentationConfig,
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: () => {
             throw new Error('hook failure');
           },
@@ -406,7 +409,7 @@ describe('utils.ts', () => {
         tracer,
         {
           ...instrumentationConfig,
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           enhancedDatabaseReporting: true,
         },
         queryConfig
@@ -431,7 +434,7 @@ describe('utils.ts', () => {
         nonRecordingTracer,
         {
           ...instrumentationConfig,
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: (text: string) => {
             called = true;
             return text;

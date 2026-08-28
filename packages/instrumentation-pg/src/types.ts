@@ -45,23 +45,25 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
   enhancedDatabaseReporting?: boolean;
 
   /**
-   * If true, the query text is masked by {@link maskStatementHook} before it is
-   * recorded as the `db.query.text` attribute.
+   * If true, the query text is recorded as-is instead of being masked by
+   * {@link maskStatementHook} before it is recorded as the `db.query.text`
+   * attribute.
    *
    * This is independent of {@link enhancedDatabaseReporting}, which controls a
-   * separate attribute holding the raw parameter values. Enabling both records
-   * masked query text alongside unmasked values.
+   * separate attribute holding the raw parameter values. Leaving this false
+   * while enabling {@link enhancedDatabaseReporting} records masked query text
+   * alongside unmasked values.
    *
    * @default false
    * @see maskStatementHook
    */
-  maskStatement?: boolean;
+  skipQueryTextSanitization?: boolean;
 
   /**
    * Hook that masks the query text before it is recorded as the
-   * `db.query.text` attribute. Only consulted when {@link maskStatement} is
-   * true, and never applied to the query sent to the server or to the text
-   * passed to {@link requestHook}.
+   * `db.query.text` attribute. Only consulted when
+   * {@link skipQueryTextSanitization} is false, and never applied to the
+   * query sent to the server or to the text passed to {@link requestHook}.
    *
    * The default replaces literals with `?` while preserving parameter
    * placeholders and identifiers. It is `sanitizeSql` from

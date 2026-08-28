@@ -621,11 +621,11 @@ describe('pg', () => {
       });
     });
 
-    describe('Check configuration maskStatement:true', () => {
+    describe('Check configuration skipQueryTextSanitization:false', () => {
       const events: TimedEvent[] = [];
 
       beforeEach(() => {
-        create({ maskStatement: true });
+        create({ skipQueryTextSanitization: false });
       });
 
       afterEach(() => {
@@ -712,7 +712,7 @@ describe('pg', () => {
 
       it('applies a custom hook without changing the query sent to the server', async () => {
         create({
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: () => 'REDACTED',
         });
 
@@ -735,7 +735,7 @@ describe('pg', () => {
 
       it('omits the query text when the hook throws, without failing the query', async () => {
         create({
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           maskStatementHook: () => {
             throw new Error('hook failure');
           },
@@ -758,7 +758,7 @@ describe('pg', () => {
 
       it('does not record the sqlcommenter comment it appends to the wire query', async () => {
         create({
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           addSqlCommenterCommentToQueries: true,
         });
 
@@ -783,7 +783,7 @@ describe('pg', () => {
 
       it('still records raw values when enhancedDatabaseReporting is also enabled', done => {
         create({
-          maskStatement: true,
+          skipQueryTextSanitization: false,
           enhancedDatabaseReporting: true,
         });
 
@@ -805,8 +805,30 @@ describe('pg', () => {
       });
     });
 
-    describe('Check configuration maskStatement default', () => {
-      it('records a literal verbatim when masking is not enabled', done => {
+    describe('Check configuration skipQueryTextSanitization default', () => {
+      afterEach(() => {
+        create({});
+      });
+
+      it('masks a literal by default', done => {
+        const query = "SELECT 'hunter2' as msg";
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'SELECT ? as msg',
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, (err, res) => {
+            assert.strictEqual(err, null);
+            assert.ok(res);
+            runCallbackTest(span, attributes, []);
+            done();
+          });
+        });
+      });
+
+      it('records a literal verbatim when skipQueryTextSanitization is true', done => {
+        create({ skipQueryTextSanitization: true });
         const query = "SELECT 'hunter2' as msg";
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
