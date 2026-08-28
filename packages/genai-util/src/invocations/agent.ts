@@ -50,7 +50,7 @@ import type {
   InputMessages,
   OutputMessages,
   RemoteAgentInvocationOptions,
-  SystemInstruction,
+  SystemInstructions,
   TokenUsage,
 } from '../types';
 import {
@@ -84,7 +84,7 @@ export class AgentInvocation extends BaseInvocation {
   private _finishReasons?: string[];
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
-  private _systemInstructions?: SystemInstruction;
+  private _systemInstructions?: SystemInstructions;
   private _firstChunkTime?: HrTime;
 
   constructor(
@@ -336,7 +336,7 @@ export class AgentInvocation extends BaseInvocation {
     return this;
   }
 
-  public setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstructions): this {
     this._systemInstructions = instructions;
     const mode = this._handler?.getContentCaptureMode() ?? 'none';
     if (isSpanContentCaptureEnabled(mode)) {

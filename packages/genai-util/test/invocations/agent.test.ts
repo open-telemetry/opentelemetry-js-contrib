@@ -91,7 +91,9 @@ describe('Agent Invocations (Local & Remote)', () => {
           parts: [{ type: 'text', content: 'What is 2 + 2?' }],
         },
       ],
-      systemInstructions: 'You are a patient math tutor.',
+      systemInstructions: [
+        { type: 'text', content: 'You are a patient math tutor.' },
+      ],
     });
 
     agentInv.setFinishReasons(['stop']);

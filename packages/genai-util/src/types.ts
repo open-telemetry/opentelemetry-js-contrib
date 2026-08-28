@@ -174,6 +174,13 @@ export type MessagePart =
   | GenericPart;
 
 /**
+ * System instruction part for use in SystemInstructions
+ */
+export type SystemInstructionPart =
+  | TextPart
+  | GenericPart;
+
+/**
  * Chat message representing an input or output in a conversation.
  */
 export interface ChatMessage {
@@ -208,13 +215,9 @@ export interface OutputMessage {
 export type OutputMessages = OutputMessage[];
 
 /**
- * System instructions provided to guide the model.
+ * List of system instruction parts provided to guide the model.
  */
-export type SystemInstruction =
-  | string
-  | {
-      parts: MessagePart[];
-    };
+export type SystemInstructions = SystemInstructionPart[];
 
 /**
  * Token usage counts for a request per OpenTelemetry SemConv.
@@ -279,7 +282,7 @@ export interface InferenceInvocationOptions {
   /** Input messages sent to the model. */
   inputMessages?: InputMessages;
   /** System instructions. */
-  systemInstructions?: SystemInstruction;
+  systemInstructions?: SystemInstructions;
   /** Conversation / session / thread ID. */
   conversationId?: string;
   /** Parent context for the span. */
@@ -357,7 +360,7 @@ export interface AgentInvocationOptions {
   /** Input messages sent to the agent. */
   inputMessages?: InputMessages;
   /** System instructions. */
-  systemInstructions?: SystemInstruction;
+  systemInstructions?: SystemInstructions;
   /** Parent context. */
   parentContext?: Context;
   /** Custom initial span attributes. */
@@ -465,7 +468,7 @@ export interface CompletionResult {
   /** Output messages if captured. */
   outputMessages?: OutputMessages;
   /** System instructions if captured. */
-  systemInstructions?: SystemInstruction;
+  systemInstructions?: SystemInstructions;
   /** Error if the invocation failed. */
   error?: Error;
   /** Custom attributes. */

@@ -13,7 +13,7 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
-import type { InputMessages } from './types';
+import type { InputMessages, SystemInstructions } from './types';
 
 const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
   'https:': 443,
@@ -129,7 +129,7 @@ export function formatOutputMessages(messages: unknown): string | undefined {
  * @returns JSON or plain string representation of system instructions, or `undefined` if empty/invalid.
  */
 export function formatSystemInstructions(
-  instructions: unknown
+  instructions?: SystemInstructions | string
 ): string | undefined {
   if (!instructions) {
     return undefined;

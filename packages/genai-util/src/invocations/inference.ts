@@ -47,7 +47,7 @@ import type {
   InferenceInvocationOptions,
   InputMessages,
   OutputMessages,
-  SystemInstruction,
+  SystemInstructions,
   TokenUsage,
 } from '../types';
 import {
@@ -78,7 +78,7 @@ export class InferenceInvocation extends BaseInvocation {
   private _usage?: TokenUsage;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
-  private _systemInstructions?: SystemInstruction;
+  private _systemInstructions?: SystemInstructions;
   private _firstChunkTime?: HrTime;
 
   constructor(
@@ -273,7 +273,7 @@ export class InferenceInvocation extends BaseInvocation {
   /**
    * Set system instructions.
    */
-  public setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstructions): this {
     this._systemInstructions = instructions;
     if (isSpanContentCaptureEnabled(this._contentCaptureMode)) {
       const formatted = formatSystemInstructions(instructions);

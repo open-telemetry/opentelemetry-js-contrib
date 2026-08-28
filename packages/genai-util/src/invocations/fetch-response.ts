@@ -28,7 +28,7 @@ import type {
   CompletionResult,
   FetchResponseInvocationOptions,
   OutputMessages,
-  SystemInstruction,
+  SystemInstructions,
 } from '../types';
 import {
   formatOutputMessages,
@@ -54,7 +54,7 @@ export class FetchResponseInvocation extends BaseInvocation {
   private _finishReasons?: string[];
   private _streamCursor?: string;
   private _outputMessages: OutputMessages = [];
-  private _systemInstructions?: SystemInstruction;
+  private _systemInstructions?: SystemInstructions;
 
   constructor(
     span: Span,
@@ -148,7 +148,7 @@ export class FetchResponseInvocation extends BaseInvocation {
     return this;
   }
 
-  public setSystemInstructions(instructions: SystemInstruction): this {
+  public setSystemInstructions(instructions: SystemInstructions): this {
     this._systemInstructions = instructions;
     if (
       this._handler &&

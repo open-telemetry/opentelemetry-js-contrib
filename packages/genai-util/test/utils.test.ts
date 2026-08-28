@@ -73,15 +73,14 @@ describe('GenAI Utils', () => {
     });
 
     it('formatSystemInstructions', () => {
+      const instructions = [{ type: 'text' as const, content: 'test' }];
+      assert.strictEqual(
+        formatSystemInstructions(instructions),
+        JSON.stringify(instructions)
+      );
       assert.strictEqual(
         formatSystemInstructions('You are a helpful assistant.'),
         'You are a helpful assistant.'
-      );
-      assert.strictEqual(
-        formatSystemInstructions({
-          parts: [{ type: 'text', content: 'test' }],
-        }),
-        JSON.stringify({ parts: [{ type: 'text', content: 'test' }] })
       );
       assert.strictEqual(formatSystemInstructions(undefined), undefined);
     });

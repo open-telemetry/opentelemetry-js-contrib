@@ -74,7 +74,9 @@ describe('FetchResponseInvocation', () => {
     inv.setFinishReasons(['stop']);
     inv.setStreamCursor('cursor_xyz');
     inv.setTimeToFirstChunk(0.42);
-    inv.setSystemInstructions('You are a helpful assistant.');
+    inv.setSystemInstructions([
+      { type: 'text', content: 'You are a helpful assistant.' },
+    ]);
     inv.addOutputMessages([
       {
         role: 'assistant',

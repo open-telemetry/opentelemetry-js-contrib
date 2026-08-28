@@ -162,7 +162,9 @@ describe('InferenceInvocation', () => {
       providerName: 'anthropic',
       operationName: 'chat',
       requestModel: 'claude-3-5-sonnet',
-      systemInstructions: 'Be precise and concise.',
+      systemInstructions: [
+        { type: 'text', content: 'Be precise and concise.' },
+      ],
       inputMessages: [
         {
           role: 'user',
@@ -187,7 +189,7 @@ describe('InferenceInvocation', () => {
     assert.ok(span.attributes[ATTR_GEN_AI_INPUT_MESSAGES]);
     assert.strictEqual(
       span.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
-      'Be precise and concise.'
+      JSON.stringify([{ type: 'text', content: 'Be precise and concise.' }])
     );
 
     // Verify completion hook received the error and prompt context
@@ -196,10 +198,9 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(hookResult.error, testError);
     assert.strictEqual(hookResult.providerName, 'anthropic');
     assert.strictEqual(hookResult.requestModel, 'claude-3-5-sonnet');
-    assert.strictEqual(
-      hookResult.systemInstructions,
-      'Be precise and concise.'
-    );
+    assert.deepStrictEqual(hookResult.systemInstructions, [
+      { type: 'text', content: 'Be precise and concise.' },
+    ]);
     assert.strictEqual(typeof hookResult.durationSeconds, 'number');
 
     // Verify metrics recorded error.type
@@ -264,7 +265,9 @@ describe('InferenceInvocation', () => {
 
     const invSpan = handlerSpan.startInference({
       providerName: 'openai',
-      systemInstructions: 'You are a helpful assistant',
+      systemInstructions: [
+        { type: 'text', content: 'You are a helpful assistant' },
+      ],
       inputMessages: [
         {
           role: 'user',
@@ -288,7 +291,7 @@ describe('InferenceInvocation', () => {
     assert.ok(spansSpan[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]);
     assert.strictEqual(
       spansSpan[0].attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
-      'You are a helpful assistant'
+      JSON.stringify([{ type: 'text', content: 'You are a helpful assistant' }])
     );
     assert.strictEqual(spansSpan[0].events.length, 0);
   });
@@ -307,7 +310,7 @@ describe('InferenceInvocation', () => {
       conversationId: 'conv-123',
       serverAddress: 'api.anthropic.com',
       serverPort: 443,
-      systemInstructions: 'Be concise.',
+      systemInstructions: [{ type: 'text', content: 'Be concise.' }],
       requestOptions: {
         temperature: 0.5,
         topP: 0.9,

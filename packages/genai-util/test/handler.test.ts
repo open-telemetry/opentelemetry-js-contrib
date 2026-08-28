@@ -105,7 +105,7 @@ describe('TelemetryHandler', () => {
           parts: [{ type: 'text', content: 'Agent prompt' }],
         },
       ],
-      systemInstructions: 'System prompt',
+      systemInstructions: [{ type: 'text', content: 'System prompt' }],
     });
     agentInv.addOutputMessages([
       {
@@ -142,7 +142,9 @@ describe('TelemetryHandler', () => {
         parts: [{ type: 'text', content: 'Deferred response' }],
       },
     ]);
-    fetchInv.setSystemInstructions('Fetch instructions');
+    fetchInv.setSystemInstructions([
+      { type: 'text', content: 'Fetch instructions' },
+    ]);
     fetchInv.stop();
 
     const spans = memoryExporter.getFinishedSpans();
@@ -155,7 +157,7 @@ describe('TelemetryHandler', () => {
     assert.ok(agentSpan.attributes['gen_ai.output.messages']);
     assert.strictEqual(
       agentSpan.attributes['gen_ai.system_instructions'],
-      'System prompt'
+      JSON.stringify([{ type: 'text', content: 'System prompt' }])
     );
     assert.strictEqual(agentSpan.events.length, 0);
 
@@ -185,7 +187,7 @@ describe('TelemetryHandler', () => {
     assert.ok(fetchSpan.attributes['gen_ai.output.messages']);
     assert.strictEqual(
       fetchSpan.attributes['gen_ai.system_instructions'],
-      'Fetch instructions'
+      JSON.stringify([{ type: 'text', content: 'Fetch instructions' }])
     );
     assert.strictEqual(fetchSpan.events.length, 0);
   });
