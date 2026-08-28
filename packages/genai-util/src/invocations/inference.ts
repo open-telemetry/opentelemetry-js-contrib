@@ -16,19 +16,8 @@ import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_PROVIDER_NAME,
-  ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
-  ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
-  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_MODEL,
-  ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
-  ATTR_GEN_AI_REQUEST_REASONING_LEVEL,
-  ATTR_GEN_AI_REQUEST_SEED,
-  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
   ATTR_GEN_AI_REQUEST_STREAM,
-  ATTR_GEN_AI_REQUEST_TEMPERATURE,
-  ATTR_GEN_AI_REQUEST_TOP_K,
-  ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
@@ -55,6 +44,7 @@ import {
   formatOutputMessages,
   formatSystemInstructions,
   getErrorType,
+  getRequestOptionsAttributes,
 } from '../utils';
 import { isSpanContentCaptureEnabled } from '../environment-variables';
 import type { TelemetryHandler } from '../handler';
@@ -121,45 +111,7 @@ export class InferenceInvocation extends BaseInvocation {
       attrs[ATTR_SERVER_PORT] = options.serverPort;
     }
 
-    const reqOpts = options.requestOptions;
-    if (reqOpts) {
-      if (reqOpts.temperature !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_TEMPERATURE] = reqOpts.temperature;
-      }
-      if (reqOpts.topP !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_TOP_P] = reqOpts.topP;
-      }
-      if (reqOpts.topK !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_TOP_K] = reqOpts.topK;
-      }
-      if (reqOpts.maxTokens !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = reqOpts.maxTokens;
-      }
-      if (reqOpts.stopSequences && reqOpts.stopSequences.length > 0) {
-        attrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = reqOpts.stopSequences;
-      }
-      if (reqOpts.frequencyPenalty !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] = reqOpts.frequencyPenalty;
-      }
-      if (reqOpts.presencePenalty !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] = reqOpts.presencePenalty;
-      }
-      if (reqOpts.choiceCount !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_CHOICE_COUNT] = reqOpts.choiceCount;
-      }
-      if (reqOpts.seed !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_SEED] = reqOpts.seed;
-      }
-      if (reqOpts.encodingFormats && reqOpts.encodingFormats.length > 0) {
-        attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] = reqOpts.encodingFormats;
-      }
-      if (reqOpts.stream !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_STREAM] = reqOpts.stream;
-      }
-      if (reqOpts.reasoningLevel !== undefined) {
-        attrs[ATTR_GEN_AI_REQUEST_REASONING_LEVEL] = reqOpts.reasoningLevel;
-      }
-    }
+    Object.assign(attrs, getRequestOptionsAttributes(options.requestOptions));
 
     if (options.systemInstructions) {
       this.setSystemInstructions(options.systemInstructions);

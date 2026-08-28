@@ -9,6 +9,20 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
+  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+  ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+  ATTR_GEN_AI_REQUEST_REASONING_LEVEL,
+  ATTR_GEN_AI_REQUEST_SEED,
+  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
+  ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_REQUEST_TOP_K,
+  ATTR_GEN_AI_REQUEST_TOP_P,
+} from '../src/semconv';
+import {
   getAttrsFromBaseURL,
   serializeContent,
   formatInputMessages,
@@ -16,6 +30,7 @@ import {
   formatSystemInstructions,
   getSpanName,
   getErrorType,
+  getRequestOptionsAttributes,
 } from '../src/utils';
 
 describe('GenAI Utils', () => {
@@ -194,6 +209,53 @@ describe('GenAI Utils', () => {
       assert.strictEqual(getErrorType(true), 'Error');
       assert.strictEqual(getErrorType({}), 'Error');
       assert.strictEqual(getErrorType({ message: 'plain obj' }), 'Error');
+    });
+  });
+
+  describe('getRequestOptionsAttributes', () => {
+    it('should return empty object if requestOptions is undefined or empty', () => {
+      assert.deepStrictEqual(getRequestOptionsAttributes(undefined), {});
+      assert.deepStrictEqual(getRequestOptionsAttributes({}), {});
+    });
+
+    it('should extract all request options into semantic convention attributes', () => {
+      const result = getRequestOptionsAttributes({
+        temperature: 0.7,
+        topP: 0.9,
+        topK: 40,
+        maxTokens: 1024,
+        stopSequences: ['STOP', 'END'],
+        frequencyPenalty: 0.5,
+        presencePenalty: 0.6,
+        choiceCount: 3,
+        seed: 42,
+        encodingFormats: ['text', 'json'],
+        stream: true,
+        reasoningLevel: 'high',
+      });
+
+      assert.deepStrictEqual(result, {
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.7,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 0.9,
+        [ATTR_GEN_AI_REQUEST_TOP_K]: 40,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 1024,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['STOP', 'END'],
+        [ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY]: 0.5,
+        [ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY]: 0.6,
+        [ATTR_GEN_AI_REQUEST_CHOICE_COUNT]: 3,
+        [ATTR_GEN_AI_REQUEST_SEED]: 42,
+        [ATTR_GEN_AI_REQUEST_ENCODING_FORMATS]: ['text', 'json'],
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_REQUEST_REASONING_LEVEL]: 'high',
+      });
+    });
+
+    it('should ignore empty stopSequences and encodingFormats arrays', () => {
+      const result = getRequestOptionsAttributes({
+        stopSequences: [],
+        encodingFormats: [],
+      });
+      assert.deepStrictEqual(result, {});
     });
   });
 });

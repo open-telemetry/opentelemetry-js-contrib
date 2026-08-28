@@ -12,8 +12,26 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { GEN_AI_OPERATION_NAME_VALUE_CHAT } from './semconv';
-import type { InputMessages, SystemInstructions } from './types';
+import {
+  ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
+  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+  ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+  ATTR_GEN_AI_REQUEST_REASONING_LEVEL,
+  ATTR_GEN_AI_REQUEST_SEED,
+  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
+  ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_REQUEST_TOP_K,
+  ATTR_GEN_AI_REQUEST_TOP_P,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+} from './semconv';
+import type {
+  GenAIRequestOptions,
+  InputMessages,
+  SystemInstructions,
+} from './types';
 
 const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
   'https:': 443,
@@ -194,4 +212,64 @@ export function getErrorType(error: unknown): string {
     return error;
   }
   return 'Error';
+}
+
+/**
+ * Extract OpenTelemetry span attributes from GenAI request options.
+ *
+ * @param requestOptions - Optional GenAI request options to extract attributes from.
+ * @returns Attributes object populated with GenAI request semantic conventions.
+ */
+export function getRequestOptionsAttributes(
+  requestOptions?: GenAIRequestOptions
+): Attributes {
+  const attrs: Attributes = {};
+  if (!requestOptions) {
+    return attrs;
+  }
+
+  if (requestOptions.temperature !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestOptions.temperature;
+  }
+  if (requestOptions.topP !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_TOP_P] = requestOptions.topP;
+  }
+  if (requestOptions.topK !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_TOP_K] = requestOptions.topK;
+  }
+  if (requestOptions.maxTokens !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestOptions.maxTokens;
+  }
+  if (requestOptions.stopSequences && requestOptions.stopSequences.length > 0) {
+    attrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestOptions.stopSequences;
+  }
+  if (requestOptions.frequencyPenalty !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] =
+      requestOptions.frequencyPenalty;
+  }
+  if (requestOptions.presencePenalty !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] =
+      requestOptions.presencePenalty;
+  }
+  if (requestOptions.choiceCount !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_CHOICE_COUNT] = requestOptions.choiceCount;
+  }
+  if (requestOptions.seed !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_SEED] = requestOptions.seed;
+  }
+  if (
+    requestOptions.encodingFormats &&
+    requestOptions.encodingFormats.length > 0
+  ) {
+    attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] =
+      requestOptions.encodingFormats;
+  }
+  if (requestOptions.stream !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_STREAM] = requestOptions.stream;
+  }
+  if (requestOptions.reasoningLevel !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_REASONING_LEVEL] = requestOptions.reasoningLevel;
+  }
+
+  return attrs;
 }
