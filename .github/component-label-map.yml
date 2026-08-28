@@ -41,6 +41,7 @@ pkg:instrumentation-aws-lambda:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-aws-lambda/**
+          - packages/propagator-aws-xray/**
 pkg:instrumentation-aws-sdk:
   - changed-files:
       - any-glob-to-any-file:
@@ -68,6 +69,10 @@ pkg:instrumentation-connect:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-connect/**
+pkg:instrumentation-console:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-console/**
 pkg:instrumentation-cucumber:
   - changed-files:
       - any-glob-to-any-file:
@@ -130,6 +135,11 @@ pkg:instrumentation-koa:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-koa/**
+          - packages/contrib-test-utils/**
+pkg:instrumentation-langchain:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-langchain/**
           - packages/contrib-test-utils/**
 pkg:instrumentation-long-task:
   - changed-files:
@@ -333,12 +343,9 @@ pkg-status:unmaintained:
           - packages/instrumentation-koa/**
           - packages/instrumentation-memcached/**
           - packages/instrumentation-mysql/**
-          - packages/instrumentation-nestjs-core/**
           - packages/instrumentation-restify/**
           - packages/instrumentation-router/**
-          - packages/instrumentation-tedious/**
           - packages/propagator-aws-xray-lambda/**
           - packages/propagator-ot-trace/**
           - packages/redis-common/**
           - packages/resource-detector-github/**
-          - packages/sql-common/**

@@ -18,21 +18,21 @@ npm install --save @opentelemetry/instrumentation-claude-agent-sdk
 
 ## Supported versions
 
-- `@anthropic-ai/claude-agent-sdk` versions `>=0.2.0 <1`
+- `@anthropic-ai/claude-agent-sdk` versions `>=0.2.50 <1`
 
 ## Supported API
 
 - `query()`
 
-The donated package also wrapped experimental V2 session exports. Those
-exports were removed from current Claude Agent SDK releases and are not
-included in this migration.
+The donated package also wrapped experimental V2 session exports. Anthropic
+removed those exports in `@anthropic-ai/claude-agent-sdk` 0.3.142, so they are
+not included.
 
 ## Telemetry
 
-Each `query()` invocation creates an internal `invoke_agent` span that stays
-open until the returned `Query` completes, fails, is closed, or iteration ends
-early. The instrumentation records:
+Each `query()` invocation creates an internal `invoke_agent` span without
+replacing the returned `Query`. The span stays open until the query completes,
+fails, is closed, or iteration ends early. The instrumentation records:
 
 - `gen_ai.operation.name`
 - `gen_ai.agent.name` and, for configured custom agents,
@@ -40,17 +40,19 @@ early. The instrumentation records:
 - `gen_ai.request.model`
 - `gen_ai.conversation.id`
 - `gen_ai.response.finish_reasons`
-- input, output, and cache token usage
+- input, output, cache-read, and cache-write token usage
 - `error.type` for SDK result and iterator errors
 
 The instrumentation injects `PreToolUse`, `PostToolUse`, and
 `PostToolUseFailure` hooks while preserving user hooks. Tool executions create
 internal `execute_tool` child spans with the tool name, type, and call ID.
+Completed invocations also record `gen_ai.invoke_agent.duration`,
+`gen_ai.invoke_agent.tool_calls`, and `gen_ai.execute_tool.duration` metrics.
 
 Message content and tool arguments/results are disabled by default because
 they can contain sensitive data.
 
-## Automatic instrumentation
+## Automatic ESM instrumentation
 
 Initialize the instrumentation before loading the Claude Agent SDK:
 
@@ -67,7 +69,17 @@ const sdk = new NodeSDK({
 sdk.start();
 ```
 
-## Manual ESM instrumentation
+The Claude Agent SDK is ESM-only. Start Node.js with the OpenTelemetry ESM
+loader hook so automatic instrumentation can intercept its exports:
+
+```shell
+node --import @opentelemetry/instrumentation/hook.mjs app.mjs
+```
+
+On Node.js versions that do not support `--import`, use
+`--experimental-loader=@opentelemetry/instrumentation/hook.mjs`.
+
+## Manual instrumentation
 
 ESM module namespaces are immutable. `manuallyInstrument()` returns an
 instrumented module object that must be used for subsequent calls:
@@ -107,6 +119,28 @@ When enabled, the instrumentation records string and streaming prompts,
 assistant responses, reasoning, tool calls and results, structured output,
 multimodal references, provider-hosted tool activity, visible system
 instructions, and tool arguments/results using the GenAI content schemas.
+
+## Errors
+
+SDK result errors use the SDK result subtype for `error.type`. JavaScript
+exceptions use the exception name. Tool failures use `tool_execution_error`,
+interrupted tools use `cancelled`, and tool spans left open when an invocation
+ends use `abandoned`.
+
+## Claude Code native telemetry
+
+The SDK starts a Claude Code child process. Claude Code can separately export
+native OpenTelemetry traces, metrics, and logs when its telemetry environment
+variables are enabled. Those beta traces use Claude Code-specific schemas and
+a separate exporter pipeline; the SDK itself does not emit GenAI telemetry
+through the application's `TracerProvider`.
+
+This instrumentation instead records the public `query()` lifecycle through
+the application's providers and emits OpenTelemetry GenAI conventions. It
+calls the SDK while the `invoke_agent` span is active, preserving the SDK's
+W3C trace-context propagation to the child process. Enabling both pipelines
+will produce both the GenAI wrapper spans and Claude Code's native child
+spans.
 
 ## Conformance
 

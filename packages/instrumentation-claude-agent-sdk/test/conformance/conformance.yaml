@@ -17,7 +17,9 @@ scenarios:
             gen_ai.request.model: claude-sonnet-4-5
             gen_ai.usage.input_tokens: 7
             gen_ai.usage.output_tokens: 4
-    metrics: []
+    metrics:
+      - gen_ai.invoke_agent.duration
+      - gen_ai.invoke_agent.tool_calls
     events: []
 
   invoke_agent_content:
@@ -36,7 +38,9 @@ scenarios:
               present: true
             gen_ai.system_instructions:
               present: true
-    metrics: []
+    metrics:
+      - gen_ai.invoke_agent.duration
+      - gen_ai.invoke_agent.tool_calls
     events: []
 
   execute_tool:
@@ -56,5 +60,8 @@ scenarios:
             gen_ai.tool.name: Read
             gen_ai.tool.type: extension
             gen_ai.tool.call.id: tool-conformance
-    metrics: []
+    metrics:
+      - gen_ai.execute_tool.duration
+      - gen_ai.invoke_agent.duration
+      - gen_ai.invoke_agent.tool_calls
     events: []

@@ -4,9 +4,9 @@
  */
 
 /*
- * This file contains a copy of unstable semantic convention definitions used
- * by this package, reviewed against:
- * https://github.com/open-telemetry/semantic-conventions-genai/tree/8d3e4a0f3c34a46f6edb9c71e8666e02e6bf3958
+ * This file contains the unstable semantic convention definitions used by
+ * this package, reviewed against open-telemetry/semantic-conventions-genai at
+ * 67dff024110be5bd9f318006e733f4078e0f4c97.
  *
  * @see https://github.com/open-telemetry/opentelemetry-js/tree/main/semantic-conventions#unstable-semconv
  */
@@ -30,10 +30,10 @@ export const ATTR_GEN_AI_TOOL_CALL_ID = 'gen_ai.tool.call.id' as const;
 export const ATTR_GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result' as const;
 export const ATTR_GEN_AI_TOOL_NAME = 'gen_ai.tool.name' as const;
 export const ATTR_GEN_AI_TOOL_TYPE = 'gen_ai.tool.type' as const;
-export const ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS =
-  'gen_ai.usage.cache_creation.input_tokens' as const;
 export const ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS =
   'gen_ai.usage.cache_read.input_tokens' as const;
+export const ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS =
+  'gen_ai.usage.cache_write.input_tokens' as const;
 export const ATTR_GEN_AI_USAGE_INPUT_TOKENS =
   'gen_ai.usage.input_tokens' as const;
 export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
@@ -42,3 +42,11 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
 export const GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL = 'execute_tool' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT = 'invoke_agent' as const;
 export const GEN_AI_OUTPUT_TYPE_VALUE_JSON = 'json' as const;
+export const GEN_AI_TOOL_TYPE_VALUE_EXTENSION = 'extension' as const;
+
+export const METRIC_GEN_AI_EXECUTE_TOOL_DURATION =
+  'gen_ai.execute_tool.duration' as const;
+export const METRIC_GEN_AI_INVOKE_AGENT_DURATION =
+  'gen_ai.invoke_agent.duration' as const;
+export const METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS =
+  'gen_ai.invoke_agent.tool_calls' as const;

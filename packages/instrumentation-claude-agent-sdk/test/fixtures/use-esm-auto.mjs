@@ -5,10 +5,7 @@
 
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
-import {
-  ClaudeAgentSDKInstrumentation,
-  isPatched,
-} from '../../build/src/index.js';
+import { ClaudeAgentSDKInstrumentation } from '../../build/src/index.js';
 
 const sdk = createTestNodeSdk({
   serviceName: 'claude-agent-sdk-esm-auto-test',
@@ -18,10 +15,7 @@ sdk.start();
 
 const claudeAgentSDK = await import('@anthropic-ai/claude-agent-sdk');
 
-if (!isPatched()) {
-  throw new Error('Claude Agent SDK instrumentation patch hook did not run');
-}
-if (claudeAgentSDK.query.name !== 'wrappedQuery') {
+if (claudeAgentSDK.query.name !== 'patchedQuery') {
   throw new Error('Claude Agent SDK live query binding was not patched');
 }
 

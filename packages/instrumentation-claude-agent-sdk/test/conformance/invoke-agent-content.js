@@ -5,14 +5,8 @@
 
 'use strict';
 
-const {
-  OTLPTraceExporter,
-} = require('@opentelemetry/exporter-trace-otlp-grpc');
-const {
-  SimpleSpanProcessor,
-  TracerProvider,
-} = require('@opentelemetry/sdk-trace');
 const { ClaudeAgentSDKInstrumentation } = require('../../build/src');
+const { configureTelemetry } = require('./telemetry');
 
 function createQuery(messages) {
   const query = (async function* () {
@@ -25,14 +19,10 @@ function createQuery(messages) {
 }
 
 async function main() {
-  const exporter = new OTLPTraceExporter();
-  const provider = new TracerProvider({
-    spanProcessors: [new SimpleSpanProcessor({ exporter })],
-  });
   const instrumentation = new ClaudeAgentSDKInstrumentation({
     captureMessageContent: true,
   });
-  instrumentation.setTracerProvider(provider);
+  const shutdown = configureTelemetry(instrumentation);
   const sdk = instrumentation.manuallyInstrument({
     query() {
       return createQuery([
@@ -107,9 +97,7 @@ async function main() {
     void message;
   }
 
-  await provider.forceFlush();
-  instrumentation.disable();
-  await provider.shutdown();
+  await shutdown();
 }
 
 main().catch(error => {

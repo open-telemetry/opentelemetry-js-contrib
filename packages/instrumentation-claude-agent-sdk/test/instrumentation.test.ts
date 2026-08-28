@@ -3,18 +3,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  TracerProvider,
-} from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
+
 import { SpanKind, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
   runTestFixture,
   TestCollector,
 } from '@opentelemetry/contrib-test-utils';
+import {
+  AggregationTemporality,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+  type MetricData,
+} from '@opentelemetry/sdk-metrics';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+
+import { ClaudeAgentSDKInstrumentation } from '../src';
+import type {
+  Options,
+  HookCallback,
+  PostToolUseFailureHookInput,
+  PostToolUseHookInput,
+  PreToolUseHookInput,
+  Query,
+  QueryFunction,
+  SDKUserMessage,
+} from '../src/internal-types';
 import {
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_NAME,
@@ -30,20 +51,16 @@ import {
   ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_TYPE,
-  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
 } from '../src/semconv';
-import * as assert from 'assert';
-
-import {
-  ClaudeAgentSDKInstrumentation,
-  _resetPatchState,
-} from '../src/instrumentation';
-import type { QueryFunction } from '../src/query-wrapper';
 
 const SYSTEM_MESSAGE = {
   type: 'system',
@@ -81,13 +98,11 @@ function createMockQuery({
   messages = [],
   nextError,
   onClose,
-  onInterrupt,
 }: {
   messages?: unknown[];
   nextError?: Error;
   onClose?: () => void;
-  onInterrupt?: () => void;
-} = {}): ReturnType<QueryFunction> {
+} = {}): Query {
   const generator = (async function* () {
     for (const message of messages) {
       yield message;
@@ -96,68 +111,135 @@ function createMockQuery({
       throw nextError;
     }
   })();
-
-  Object.defineProperties(generator, {
-    close: {
-      configurable: true,
-      value: () => onClose?.(),
-    },
-    interrupt: {
-      configurable: true,
-      value: async () => onInterrupt?.(),
-    },
+  Object.defineProperty(generator, 'close', {
+    configurable: true,
+    value: () => onClose?.(),
   });
-
-  return generator as unknown as ReturnType<QueryFunction>;
+  return generator as unknown as Query;
 }
 
-async function consumeQuery(query: ReturnType<QueryFunction>): Promise<void> {
+function createPromptConsumingQuery(
+  prompt: string | AsyncIterable<SDKUserMessage>,
+  messages: unknown[]
+): Query {
+  const generator = (async function* () {
+    if (typeof prompt !== 'string') {
+      for await (const message of prompt) {
+        void message;
+      }
+    }
+    for (const message of messages) {
+      yield message;
+    }
+  })();
+  Object.defineProperty(generator, 'close', {
+    configurable: true,
+    value: () => {},
+  });
+  return generator as unknown as Query;
+}
+
+async function consume(query: Query): Promise<void> {
   for await (const message of query) {
     void message;
   }
 }
 
+function hookInput<T extends object>(
+  input: T
+): T & {
+  session_id: string;
+  transcript_path: string;
+  cwd: string;
+} {
+  return {
+    session_id: 'session-123',
+    transcript_path: 'transcript.jsonl',
+    cwd: process.cwd(),
+    ...input,
+  };
+}
+
 describe('ClaudeAgentSDKInstrumentation', () => {
-  let exporter: InMemorySpanExporter;
-  let provider: TracerProvider;
+  let spanExporter: InMemorySpanExporter;
+  let tracerProvider: TracerProvider;
+  let metricExporter: InMemoryMetricExporter;
+  let meterProvider: MeterProvider;
   let instrumentation: ClaudeAgentSDKInstrumentation;
 
   beforeEach(() => {
-    exporter = new InMemorySpanExporter();
-    provider = new TracerProvider({
-      spanProcessors: [new SimpleSpanProcessor({ exporter })],
+    spanExporter = new InMemorySpanExporter();
+    tracerProvider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter: spanExporter })],
+    });
+    metricExporter = new InMemoryMetricExporter(
+      AggregationTemporality.CUMULATIVE
+    );
+    meterProvider = new MeterProvider({
+      readers: [
+        new PeriodicExportingMetricReader({
+          exporter: metricExporter,
+          exportIntervalMillis: 60000,
+        }),
+      ],
     });
     instrumentation = new ClaudeAgentSDKInstrumentation();
-    instrumentation.setTracerProvider(provider);
+    instrumentation.setTracerProvider(tracerProvider);
+    instrumentation.setMeterProvider(meterProvider);
   });
 
   afterEach(async () => {
     instrumentation.disable();
-    _resetPatchState();
-    exporter.reset();
-    await provider.shutdown();
+    spanExporter.reset();
+    metricExporter.reset();
+    await tracerProvider.shutdown();
+    await meterProvider.shutdown();
+    delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
   });
 
-  it('records an invoke_agent span with official GenAI attributes', async () => {
-    const original: QueryFunction = () =>
-      createMockQuery({
-        messages: [SYSTEM_MESSAGE, resultMessage()],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
+  function instrument(query: QueryFunction) {
+    return instrumentation.manuallyInstrument({ query });
+  }
 
-    await consumeQuery(
-      module.query!({
-        prompt: 'Inspect the repository.',
-        options: {
-          model: 'claude-sonnet-4-5',
-          systemPrompt: 'Be concise.',
-        },
-      })
-    );
+  function getMetric(name: string): MetricData | undefined {
+    return metricExporter
+      .getMetrics()
+      .flatMap(resource => resource.scopeMetrics)
+      .flatMap(scope => scope.metrics)
+      .find(metric => metric.descriptor.name === name);
+  }
 
-    const spans = exporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    const span = spans[0];
+  function getHistogramSum(name: string): number | undefined {
+    const value = getMetric(name)?.dataPoints[0].value;
+    return typeof value === 'number' ? value : value?.sum;
+  }
+
+  it('records agent attributes and current usage semantics', async () => {
+    const modelUsage = {
+      'claude-sonnet-4-5': {
+        inputTokens: 20,
+        outputTokens: 10,
+        cacheReadInputTokens: 6,
+        cacheCreationInputTokens: 5,
+        webSearchRequests: 0,
+        costUSD: 0.01,
+        contextWindow: 200000,
+        maxOutputTokens: 8192,
+      },
+    };
+    const originalQuery = createMockQuery({
+      messages: [SYSTEM_MESSAGE, resultMessage({ modelUsage })],
+    });
+    const sdk = instrument(() => originalQuery);
+    const returnedQuery = sdk.query!({
+      prompt: 'Inspect the repository.',
+      options: { model: 'claude-sonnet-4-5' },
+    });
+
+    assert.strictEqual(returnedQuery, originalQuery);
+    await consume(returnedQuery);
+
+    const span = spanExporter.getFinishedSpans()[0];
     assert.strictEqual(span.name, 'invoke_agent Claude Code');
     assert.strictEqual(span.kind, SpanKind.INTERNAL);
     assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
@@ -167,1028 +249,562 @@ describe('ClaudeAgentSDKInstrumentation', () => {
       [ATTR_GEN_AI_REQUEST_MODEL]: 'claude-sonnet-4-5',
       [ATTR_GEN_AI_CONVERSATION_ID]: 'session-123',
       [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['end_turn'],
-      [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 12,
-      [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 8,
-      [ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS]: 3,
-      [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 4,
+      [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 20,
+      [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
+      [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 6,
+      [ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS]: 5,
     });
+
+    await meterProvider.forceFlush();
+    assert.ok(getMetric(METRIC_GEN_AI_INVOKE_AGENT_DURATION));
+    const toolCalls = getMetric(METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS);
+    assert.strictEqual(
+      toolCalls && getHistogramSum(toolCalls.descriptor.name),
+      0
+    );
   });
 
-  it('captures message content only when configured', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = () =>
-      createMockQuery({
-        messages: [SYSTEM_MESSAGE, resultMessage()],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
+  it('uses the active span as parent and runs the SDK in agent context', async () => {
+    let observedActiveSpanId: string | undefined;
+    const sdk = instrument(() => {
+      observedActiveSpanId = trace.getActiveSpan()?.spanContext().spanId;
+      return createMockQuery({ messages: [resultMessage()] });
+    });
+    const tracer = tracerProvider.getTracer('parent-test');
+    let parentSpanId = '';
 
-    await consumeQuery(
-      module.query!({
-        prompt: 'Inspect the repository.',
+    await tracer.startActiveSpan('parent', async parent => {
+      parentSpanId = parent.spanContext().spanId;
+      await consume(sdk.query!({ prompt: 'Hello' }));
+      parent.end();
+    });
+
+    const agent = spanExporter
+      .getFinishedSpans()
+      .find(span => span.name.startsWith('invoke_agent'));
+    assert.strictEqual(agent?.parentSpanContext?.spanId, parentSpanId);
+    assert.strictEqual(observedActiveSpanId, agent?.spanContext().spanId);
+  });
+
+  it('does not trace when disabled or tracing is suppressed', async () => {
+    const sdk = instrument(() =>
+      createMockQuery({ messages: [resultMessage()] })
+    );
+    instrumentation.disable();
+    await consume(sdk.query!({ prompt: 'disabled' }));
+
+    const repatched = instrument(() =>
+      createMockQuery({ messages: [resultMessage()] })
+    );
+    await context.with(suppressTracing(context.active()), () =>
+      consume(repatched.query!({ prompt: 'suppressed' }))
+    );
+    assert.strictEqual(spanExporter.getFinishedSpans().length, 0);
+  });
+
+  it('captures content only when explicitly enabled', async () => {
+    const assistant = {
+      type: 'assistant',
+      parent_tool_use_id: null,
+      uuid: 'assistant-1',
+      session_id: 'session-123',
+      message: {
+        id: 'message-1',
+        role: 'assistant',
+        content: [
+          { type: 'thinking', thinking: 'Inspect carefully.' },
+          { type: 'text', text: 'Done.', citations: [] },
+          {
+            type: 'tool_use',
+            id: 'tool-1',
+            name: 'Read',
+            input: { file_path: 'package.json' },
+          },
+        ],
+        stop_reason: 'end_turn',
+      },
+    };
+    const withoutContent = instrument(() =>
+      createMockQuery({ messages: [assistant, resultMessage()] })
+    );
+    await consume(
+      withoutContent.query!({
+        prompt: 'Secret prompt',
+        options: { systemPrompt: 'Secret system prompt' },
+      })
+    );
+    const first = spanExporter.getFinishedSpans()[0];
+    assert.strictEqual(first.attributes[ATTR_GEN_AI_INPUT_MESSAGES], undefined);
+    assert.strictEqual(
+      first.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
+      undefined
+    );
+
+    instrumentation.setConfig({ captureMessageContent: true });
+    const withContent = instrument(() =>
+      createMockQuery({ messages: [assistant, resultMessage()] })
+    );
+    await consume(
+      withContent.query!({
+        prompt: 'Secret prompt',
         options: {
-          systemPrompt: 'Be concise.',
+          agent: 'reviewer',
+          agents: {
+            reviewer: {
+              description: 'Reviews changes',
+              prompt: 'Review.',
+            },
+          },
+          systemPrompt: ['First instruction', 'Second instruction'],
         },
       })
     );
-
-    const attributes = exporter.getFinishedSpans()[0].attributes;
+    const second = spanExporter.getFinishedSpans()[1];
+    assert.strictEqual(
+      second.attributes[ATTR_GEN_AI_AGENT_DESCRIPTION],
+      'Reviews changes'
+    );
     assert.deepStrictEqual(
-      JSON.parse(attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string),
+      JSON.parse(second.attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string),
       [
         {
           role: 'user',
-          parts: [{ type: 'text', content: 'Inspect the repository.' }],
+          parts: [{ type: 'text', content: 'Secret prompt' }],
         },
       ]
     );
+    const output = JSON.parse(
+      second.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string
+    );
+    assert.deepStrictEqual(output[0].parts[0], {
+      type: 'reasoning',
+      content: 'Inspect carefully.',
+    });
     assert.deepStrictEqual(
-      JSON.parse(attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string),
+      JSON.parse(second.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] as string),
       [
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: 'Done' }],
-          finish_reason: 'end_turn',
-        },
+        { type: 'text', content: 'First instruction' },
+        { type: 'text', content: 'Second instruction' },
       ]
-    );
-    assert.deepStrictEqual(
-      JSON.parse(attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] as string),
-      [{ type: 'text', content: 'Be concise.' }]
     );
   });
 
-  it('maps SDK message parts to the GenAI message schemas', async () => {
+  it('maps multimodal, hosted-tool, refusal, and structured output parts', async () => {
     instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = () =>
+    const assistant = {
+      type: 'assistant',
+      parent_tool_use_id: null,
+      uuid: 'assistant-parts',
+      session_id: 'session-123',
+      message: {
+        id: 'message-parts',
+        role: 'assistant',
+        content: [
+          { type: 'redacted_thinking', data: 'encrypted-reasoning' },
+          {
+            type: 'server_tool_use',
+            id: 'server-tool-1',
+            name: 'web_search',
+            input: { query: 'OpenTelemetry' },
+          },
+          {
+            type: 'web_search_tool_result',
+            tool_use_id: 'server-tool-1',
+            content: [{ title: 'OpenTelemetry' }],
+          },
+          { type: 'future_provider_part', provider_field: 'preserved' },
+        ],
+        stop_reason: 'refusal',
+        stop_details: { type: 'refusal', reason: 'policy' },
+      },
+    };
+    const user = {
+      type: 'user',
+      parent_tool_use_id: null,
+      uuid: 'user-parts',
+      session_id: 'session-123',
+      message: {
+        role: 'user',
+        content: [
+          {
+            type: 'image',
+            source: {
+              type: 'url',
+              media_type: 'image/png',
+              url: 'https://example.test/image.png',
+            },
+          },
+          {
+            type: 'document',
+            source: {
+              type: 'file',
+              media_type: 'application/pdf',
+              file_id: 'file-1',
+            },
+          },
+          {
+            type: 'tool_result',
+            tool_use_id: 'tool-1',
+            content: 'tool output',
+          },
+        ],
+      },
+    };
+    const sdk = instrument(() =>
       createMockQuery({
         messages: [
-          {
-            type: 'user',
-            message: {
-              role: 'user',
-              content: [
-                {
-                  type: 'image',
-                  source: {
-                    type: 'url',
-                    url: 'https://example.test/image.png',
-                  },
-                },
-                {
-                  type: 'tool_result',
-                  tool_use_id: 'tool-1',
-                  content: 'package contents',
-                },
-              ],
-            },
-            parent_tool_use_id: null,
-          },
-          {
-            type: 'assistant',
-            message: {
-              id: 'message-1',
-              type: 'message',
-              role: 'assistant',
-              model: 'claude-sonnet-4-5',
-              content: [
-                {
-                  type: 'thinking',
-                  thinking: 'I should inspect the package.',
-                  signature: 'signature',
-                },
-                {
-                  type: 'tool_use',
-                  id: 'tool-1',
-                  name: 'Read',
-                  input: { file_path: 'package.json' },
-                },
-                {
-                  type: 'server_tool_use',
-                  id: 'server-tool-1',
-                  name: 'web_search',
-                  input: { query: 'OpenTelemetry' },
-                },
-                {
-                  type: 'web_search_tool_result',
-                  tool_use_id: 'server-tool-1',
-                  content: [{ type: 'web_search_result', title: 'Result' }],
-                },
-                {
-                  type: 'text',
-                  text: 'The package is instrumented.',
-                  citations: [],
-                },
-              ],
-              stop_reason: 'tool_use',
-              stop_sequence: null,
-              usage: {
-                input_tokens: 12,
-                output_tokens: 8,
-              },
-            },
-            parent_tool_use_id: null,
-            uuid: 'assistant-1',
-            session_id: 'session-123',
-          },
+          user,
+          assistant,
           resultMessage({
             structured_output: { valid: true },
+            stop_reason: 'refusal',
           }),
         ],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    await consumeQuery(
-      module.query!({
-        prompt: 'Inspect the repository.',
       })
     );
+    await consume(sdk.query!({ prompt: 'Inspect attachments' }));
 
-    const attributes = exporter.getFinishedSpans()[0].attributes;
-    assert.deepStrictEqual(
-      JSON.parse(attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string),
-      [
-        {
-          role: 'user',
-          parts: [{ type: 'text', content: 'Inspect the repository.' }],
-        },
-        {
-          role: 'user',
-          parts: [
-            {
-              type: 'uri',
-              modality: 'image',
-              uri: 'https://example.test/image.png',
-            },
-            {
-              type: 'tool_call_response',
-              id: 'tool-1',
-              response: 'package contents',
-            },
-          ],
-        },
-      ]
+    const span = spanExporter.getFinishedSpans()[0];
+    const input = JSON.parse(
+      span.attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string
     );
-    assert.deepStrictEqual(
-      JSON.parse(attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string),
-      [
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'reasoning',
-              content: 'I should inspect the package.',
-            },
-            {
-              type: 'tool_call',
-              id: 'tool-1',
-              name: 'Read',
-              arguments: { file_path: 'package.json' },
-            },
-            {
-              type: 'server_tool_call',
-              id: 'server-tool-1',
-              name: 'web_search',
-              server_tool_call: {
-                type: 'web_search',
-                input: { query: 'OpenTelemetry' },
-              },
-            },
-            {
-              type: 'server_tool_call_response',
-              id: 'server-tool-1',
-              server_tool_call_response: {
-                type: 'web_search_tool_result',
-                tool_use_id: 'server-tool-1',
-                content: [{ type: 'web_search_result', title: 'Result' }],
-              },
-            },
-            {
-              type: 'text',
-              content: 'The package is instrumented.',
-              citations: [],
-            },
-            {
-              type: 'structured_output',
-              content: { valid: true },
-            },
-          ],
-          finish_reason: 'end_turn',
-        },
-      ]
+    const output = JSON.parse(
+      span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string
     );
+    assert.deepStrictEqual(input[1].parts[0], {
+      type: 'uri',
+      modality: 'image',
+      mime_type: 'image/png',
+      uri: 'https://example.test/image.png',
+    });
+    assert.strictEqual(input[1].parts[2].type, 'tool_call_response');
+    assert.strictEqual(output[0].parts[0].type, 'reasoning');
+    assert.strictEqual(output[0].parts[1].type, 'server_tool_call');
+    assert.strictEqual(output[0].parts[2].type, 'server_tool_call_response');
+    assert.deepStrictEqual(output[0].parts[3], {
+      type: 'future_provider_part',
+      provider_field: 'preserved',
+    });
+    assert.strictEqual(output[0].parts[4].type, 'refusal');
+    assert.strictEqual(output[0].parts[5].type, 'structured_output');
   });
 
-  it('captures streaming input messages as they are consumed', async () => {
+  it('captures streaming prompts and replaces partial output with final output', async () => {
     instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = params => {
-      const query = (async function* () {
-        if (typeof params.prompt !== 'string') {
-          for await (const message of params.prompt) {
-            void message;
-          }
-        }
-        yield resultMessage();
-      })();
-      return query as unknown as ReturnType<QueryFunction>;
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const prompt = {
-      async *[Symbol.asyncIterator]() {
-        yield {
-          type: 'user' as const,
+    const prompt = (async function* (): AsyncGenerator<SDKUserMessage> {
+      yield {
+        type: 'user',
+        parent_tool_use_id: null,
+        uuid: '00000000-0000-4000-8000-000000000001',
+        session_id: 'session-123',
+        message: { role: 'user', content: 'Streaming prompt' },
+      };
+    })();
+    const messages = [
+      {
+        type: 'stream_event',
+        parent_tool_use_id: null,
+        uuid: 'partial-1',
+        session_id: 'session-123',
+        event: {
+          type: 'message_start',
           message: {
-            role: 'user' as const,
-            content: [
-              { type: 'text' as const, text: 'First message' },
-              {
-                type: 'tool_result' as const,
-                tool_use_id: 'tool-1',
-                content: 'Tool result',
-              },
-            ],
-          },
-          parent_tool_use_id: null,
-        };
-      },
-    } as unknown as Parameters<QueryFunction>[0]['prompt'];
-
-    await consumeQuery(module.query!({ prompt }));
-
-    assert.deepStrictEqual(
-      JSON.parse(
-        exporter.getFinishedSpans()[0].attributes[
-          ATTR_GEN_AI_INPUT_MESSAGES
-        ] as string
-      ),
-      [
-        {
-          role: 'user',
-          parts: [
-            { type: 'text', content: 'First message' },
-            {
-              type: 'tool_call_response',
-              id: 'tool-1',
-              response: 'Tool result',
-            },
-          ],
-        },
-      ]
-    );
-  });
-
-  it('accumulates partial assistant events into one output message', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = () =>
-      createMockQuery({
-        messages: [
-          {
-            type: 'stream_event',
-            event: {
-              type: 'message_start',
-              message: {
-                id: 'stream-message',
-                content: [],
-                stop_reason: null,
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_start',
-              index: 0,
-              content_block: {
-                type: 'text',
-                text: '',
-                citations: null,
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 0,
-              delta: { type: 'text_delta', text: 'Streamed response' },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 0,
-              delta: {
-                type: 'citations_delta',
-                citation: {
-                  type: 'web_search_result_location',
-                  cited_text: 'Streamed response',
-                  encrypted_index: 'index',
-                  title: 'Source',
-                  url: 'https://example.test/source',
-                },
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_start',
-              index: 1,
-              content_block: {
-                type: 'thinking',
-                thinking: '',
-                signature: '',
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 1,
-              delta: {
-                type: 'thinking_delta',
-                thinking: 'Check the result.',
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 1,
-              delta: {
-                type: 'signature_delta',
-                signature: 'signature',
-              },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: {
-              type: 'message_delta',
-              delta: { stop_reason: 'end_turn' },
-            },
-          },
-          {
-            type: 'stream_event',
-            event: { type: 'message_stop' },
-          },
-          resultMessage({ result: '' }),
-        ],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    await consumeQuery(module.query!({ prompt: 'Stream a response.' }));
-
-    assert.deepStrictEqual(
-      JSON.parse(
-        exporter.getFinishedSpans()[0].attributes[
-          ATTR_GEN_AI_OUTPUT_MESSAGES
-        ] as string
-      ),
-      [
-        {
-          role: 'assistant',
-          parts: [
-            {
-              type: 'text',
-              content: 'Streamed response',
-              citations: [
-                {
-                  type: 'web_search_result_location',
-                  cited_text: 'Streamed response',
-                  encrypted_index: 'index',
-                  title: 'Source',
-                  url: 'https://example.test/source',
-                },
-              ],
-            },
-            {
-              type: 'reasoning',
-              content: 'Check the result.',
-            },
-          ],
-          finish_reason: 'end_turn',
-        },
-      ]
-    );
-  });
-
-  it('uses an error finish reason for captured SDK result errors', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = () =>
-      createMockQuery({
-        messages: [
-          resultMessage({
-            subtype: 'error_during_execution',
-            is_error: true,
+            id: 'message-1',
+            content: [],
             stop_reason: null,
-            errors: ['Execution failed'],
-            result: undefined,
-          }),
-        ],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    await consumeQuery(module.query!({ prompt: 'Run the task.' }));
-
-    assert.deepStrictEqual(
-      JSON.parse(
-        exporter.getFinishedSpans()[0].attributes[
-          ATTR_GEN_AI_OUTPUT_MESSAGES
-        ] as string
-      ),
-      [
-        {
-          role: 'assistant',
-          parts: [{ type: 'error', content: ['Execution failed'] }],
-          finish_reason: 'error',
-        },
-      ]
-    );
-  });
-
-  it('keeps streaming-input result content separated by turn', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
-    const original: QueryFunction = () =>
-      createMockQuery({
-        messages: [
-          {
-            type: 'assistant',
-            message: {
-              id: 'turn-1',
-              type: 'message',
-              role: 'assistant',
-              model: 'claude-sonnet-4-5',
-              content: [{ type: 'text', text: 'First turn', citations: null }],
-              stop_reason: 'end_turn',
-              stop_sequence: null,
-              usage: { input_tokens: 1, output_tokens: 1 },
-            },
-            parent_tool_use_id: null,
-            uuid: 'turn-1',
-            session_id: 'session-123',
           },
-          resultMessage({ result: 'First turn' }),
-          resultMessage({
-            subtype: 'error_during_execution',
-            is_error: true,
-            stop_reason: null,
-            errors: ['Second turn failed'],
-            result: undefined,
-          }),
-        ],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const prompt = {
-      async *[Symbol.asyncIterator]() {
-        yield {
-          type: 'user' as const,
-          message: { role: 'user' as const, content: 'Start' },
-          parent_tool_use_id: null,
-        };
-      },
-    } as unknown as Parameters<QueryFunction>[0]['prompt'];
-
-    await consumeQuery(module.query!({ prompt }));
-
-    assert.deepStrictEqual(
-      JSON.parse(
-        exporter.getFinishedSpans()[0].attributes[
-          ATTR_GEN_AI_OUTPUT_MESSAGES
-        ] as string
-      ),
-      [
-        {
-          role: 'assistant',
-          parts: [{ type: 'text', content: 'First turn', citations: null }],
-          finish_reason: 'end_turn',
-        },
-        {
-          role: 'assistant',
-          parts: [{ type: 'error', content: ['Second turn failed'] }],
-          finish_reason: 'error',
-        },
-      ]
-    );
-  });
-
-  it('records the selected agent name when supported by the SDK', async () => {
-    const original: QueryFunction = () =>
-      createMockQuery({ messages: [resultMessage()] });
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const options = {
-      agent: 'reviewer',
-      agents: {
-        reviewer: {
-          description: 'Reviews code changes.',
-          prompt: 'Review code.',
-          model: 'opus',
         },
       },
-    } as unknown as NonNullable<Parameters<QueryFunction>[0]['options']>;
-
-    await consumeQuery(
-      module.query!({
-        prompt: 'Review this change.',
-        options,
-      })
+      {
+        type: 'stream_event',
+        parent_tool_use_id: null,
+        uuid: 'partial-2',
+        session_id: 'session-123',
+        event: {
+          type: 'content_block_start',
+          index: 0,
+          content_block: { type: 'text', text: '' },
+        },
+      },
+      {
+        type: 'stream_event',
+        parent_tool_use_id: null,
+        uuid: 'partial-3',
+        session_id: 'session-123',
+        event: {
+          type: 'content_block_delta',
+          index: 0,
+          delta: { type: 'text_delta', text: 'Partial' },
+        },
+      },
+      {
+        type: 'stream_event',
+        parent_tool_use_id: null,
+        uuid: 'partial-4',
+        session_id: 'session-123',
+        event: { type: 'message_stop' },
+      },
+      {
+        type: 'assistant',
+        parent_tool_use_id: null,
+        uuid: 'assistant-1',
+        session_id: 'session-123',
+        message: {
+          id: 'message-1',
+          role: 'assistant',
+          content: [{ type: 'text', text: 'Final' }],
+          stop_reason: 'end_turn',
+        },
+      },
+      resultMessage(),
+    ];
+    const sdk = instrument(parameters =>
+      createPromptConsumingQuery(parameters.prompt, messages)
     );
+    await consume(sdk.query!({ prompt }));
 
-    const span = exporter.getFinishedSpans()[0];
-    assert.strictEqual(span.name, 'invoke_agent reviewer');
-    assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_NAME], 'reviewer');
-    assert.strictEqual(
-      span.attributes[ATTR_GEN_AI_AGENT_DESCRIPTION],
-      'Reviews code changes.'
+    const span = spanExporter.getFinishedSpans()[0];
+    const input = JSON.parse(
+      span.attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string
     );
+    const output = JSON.parse(
+      span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string
+    );
+    assert.strictEqual(input[0].parts[0].content, 'Streaming prompt');
+    assert.strictEqual(output.length, 1);
+    assert.strictEqual(output[0].parts[0].content, 'Final');
   });
 
-  it('records result errors without changing the returned messages', async () => {
+  it('records SDK result errors without changing yielded messages', async () => {
     const errorResult = resultMessage({
       subtype: 'error_max_turns',
       is_error: true,
       errors: ['Maximum turns reached'],
       result: undefined,
     });
-    const original: QueryFunction = () =>
-      createMockQuery({ messages: [errorResult] });
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const collected: unknown[] = [];
-
-    for await (const message of module.query!({ prompt: 'Keep going.' })) {
-      collected.push(message);
+    const sdk = instrument(() => createMockQuery({ messages: [errorResult] }));
+    const received: unknown[] = [];
+    for await (const message of sdk.query!({ prompt: 'Loop' })) {
+      received.push(message);
     }
 
-    assert.deepStrictEqual(collected, [errorResult]);
-    const span = exporter.getFinishedSpans()[0];
+    assert.strictEqual(received[0], errorResult);
+    const span = spanExporter.getFinishedSpans()[0];
     assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(span.status.message, 'Maximum turns reached');
     assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'error_max_turns');
   });
 
-  it('records and rethrows iterator errors', async () => {
-    const error = new Error('Connection lost');
-    const original: QueryFunction = () => createMockQuery({ nextError: error });
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    await assert.rejects(
-      () => consumeQuery(module.query!({ prompt: 'Hello' })),
-      thrown => thrown === error
-    );
-
-    const span = exporter.getFinishedSpans()[0];
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
-  });
-
-  it('records and rethrows synchronous query errors', () => {
-    const error = new Error('Failed to create query');
-    const original: QueryFunction = () => {
-      throw error;
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-
+  it('records and rethrows synchronous and iterator errors', async () => {
+    const synchronousError = new TypeError('cannot start');
+    const synchronous = instrument(() => {
+      throw synchronousError;
+    });
     assert.throws(
-      () => module.query!({ prompt: 'Hello' }),
-      thrown => thrown === error
+      () => synchronous.query!({ prompt: 'Hello' }),
+      error => error === synchronousError
     );
 
-    const span = exporter.getFinishedSpans()[0];
-    assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    const iteratorError = new RangeError('stream failed');
+    const asynchronous = instrument(() =>
+      createMockQuery({ nextError: iteratorError })
+    );
+    await assert.rejects(
+      consume(asynchronous.query!({ prompt: 'Hello' })),
+      error => error === iteratorError
+    );
+
+    const spans = spanExporter.getFinishedSpans();
+    assert.deepStrictEqual(
+      spans.map(span => span.attributes[ATTR_ERROR_TYPE]),
+      ['TypeError', 'RangeError']
+    );
+    assert.ok(spans.every(span => span.status.code === SpanStatusCode.ERROR));
   });
 
-  it('ends the span when iteration stops early', async () => {
-    const original: QueryFunction = () =>
+  it('ends on early return and close while preserving Query methods', async () => {
+    let closed = false;
+    const sdk = instrument(() =>
       createMockQuery({
-        messages: [SYSTEM_MESSAGE, { type: 'assistant' }, resultMessage()],
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    for await (const message of module.query!({ prompt: 'Hello' })) {
-      void message;
-      break;
-    }
-
-    assert.strictEqual(exporter.getFinishedSpans().length, 1);
-  });
-
-  it('preserves Query methods and finalizes on close', () => {
-    let closeCalled = false;
-    let interruptCalled = false;
-    const original: QueryFunction = () =>
-      createMockQuery({
+        messages: [{ type: 'status' }, resultMessage()],
         onClose: () => {
-          closeCalled = true;
+          closed = true;
         },
-        onInterrupt: () => {
-          interruptCalled = true;
-        },
-      });
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = module.query!({ prompt: 'Hello' });
+      })
+    );
+    const early = sdk.query!({ prompt: 'Early' });
+    await early.next();
+    await early.return();
+    assert.strictEqual(spanExporter.getFinishedSpans().length, 1);
 
-    void query.interrupt();
-    const close = Reflect.get(query, 'close') as unknown;
-    assert.strictEqual(typeof close, 'function');
-    Reflect.apply(close as (...args: unknown[]) => unknown, query, []);
-
-    assert.strictEqual(interruptCalled, true);
-    assert.strictEqual(closeCalled, true);
-    assert.strictEqual(exporter.getFinishedSpans().length, 1);
+    const closeable = sdk.query!({ prompt: 'Close' });
+    closeable.close();
+    assert.strictEqual(closed, true);
+    assert.strictEqual(spanExporter.getFinishedSpans().length, 2);
   });
 
-  it('creates execute_tool child spans from injected hooks', async () => {
+  it('creates tool spans, metrics, and preserves user hooks', async () => {
     instrumentation.setConfig({ captureMessageContent: true });
-    let receivedOptions: Parameters<QueryFunction>[0]['options'];
-    const original: QueryFunction = params => {
-      receivedOptions = params.options;
+    let observedOptions: Options | undefined;
+    let userHookCalled = false;
+    const userHook: HookCallback = async () => {
+      userHookCalled = true;
+      return {};
+    };
+    const sdk = instrument(parameters => {
+      observedOptions = parameters.options;
       return createMockQuery({ messages: [resultMessage()] });
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = module.query!({ prompt: 'Read package.json' });
-
-    const preToolUse = receivedOptions?.hooks?.PreToolUse?.at(-1)?.hooks[0];
-    const postToolUse = receivedOptions?.hooks?.PostToolUse?.at(-1)?.hooks[0];
-    assert.ok(preToolUse);
-    assert.ok(postToolUse);
-    const signal = new AbortController().signal;
-    await preToolUse(
-      {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Read',
-        tool_input: { file_path: 'package.json' },
-        tool_use_id: 'tool-1',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-1',
-      { signal }
-    );
-    await postToolUse(
-      {
-        hook_event_name: 'PostToolUse',
-        tool_name: 'Read',
-        tool_input: { file_path: 'package.json' },
-        tool_response: { content: '{}' },
-        tool_use_id: 'tool-1',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-1',
-      { signal }
-    );
-
-    await consumeQuery(query);
-
-    const spans = exporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
-    const agentSpan = spans.find(
-      span =>
-        span.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
-        GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
-    );
-    const toolSpan = spans.find(
-      span =>
-        span.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
-        GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
-    );
-    assert.ok(agentSpan);
-    assert.ok(toolSpan);
-    assert.strictEqual(toolSpan.name, 'execute_tool Read');
-    assert.strictEqual(toolSpan.kind, SpanKind.INTERNAL);
-    assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_TOOL_NAME], 'Read');
-    assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_TOOL_TYPE], 'extension');
-    assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ID], 'tool-1');
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"file_path":"package.json"}'
-    );
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      '{"content":"{}"}'
-    );
-    assert.strictEqual(
-      toolSpan.parentSpanContext?.spanId,
-      agentSpan.spanContext().spanId
-    );
-  });
-
-  it('records failed tool executions', async () => {
-    let receivedOptions: Parameters<QueryFunction>[0]['options'];
-    const original: QueryFunction = params => {
-      receivedOptions = params.options;
-      return createMockQuery({ messages: [resultMessage()] });
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = module.query!({ prompt: 'Run a command' });
-    const preToolUse = receivedOptions?.hooks?.PreToolUse?.at(-1)?.hooks[0];
-    const postToolUseFailure =
-      receivedOptions?.hooks?.PostToolUseFailure?.at(-1)?.hooks[0];
-    assert.ok(preToolUse);
-    assert.ok(postToolUseFailure);
-    const signal = new AbortController().signal;
-
-    await preToolUse(
-      {
-        hook_event_name: 'PreToolUse',
-        tool_name: 'Bash',
-        tool_input: { command: 'exit 1' },
-        tool_use_id: 'tool-failure',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-failure',
-      { signal }
-    );
-    await postToolUseFailure(
-      {
-        hook_event_name: 'PostToolUseFailure',
-        tool_name: 'Bash',
-        tool_input: { command: 'exit 1' },
-        tool_use_id: 'tool-failure',
-        error: 'Command failed',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-failure',
-      { signal }
-    );
-    await consumeQuery(query);
-
-    const toolSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'execute_tool Bash');
-    assert.ok(toolSpan);
-    assert.strictEqual(toolSpan.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_ERROR_TYPE],
-      'tool_execution_error'
-    );
-  });
-
-  it('preserves user hooks', () => {
-    const userHook = async () => ({});
-    let receivedOptions: Parameters<QueryFunction>[0]['options'];
-    const original: QueryFunction = params => {
-      receivedOptions = params.options;
-      return createMockQuery();
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-
-    module.query!({
-      prompt: 'Hello',
+    });
+    const query = sdk.query!({
+      prompt: 'Read package.json',
       options: {
         hooks: {
           PreToolUse: [{ hooks: [userHook] }],
         },
       },
     });
-
-    const hooks = receivedOptions?.hooks?.PreToolUse;
-    assert.strictEqual(hooks?.length, 2);
-    assert.strictEqual(hooks?.[0].hooks[0], userHook);
-  });
-
-  it('respects tracing suppression', async () => {
-    let receivedOptions: Parameters<QueryFunction>[0]['options'];
-    const original: QueryFunction = params => {
-      receivedOptions = params.options;
-      return createMockQuery({ messages: [resultMessage()] });
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const suppressedContext = suppressTracing(context.active());
-    const query = context.with(suppressedContext, () =>
-      module.query!({ prompt: 'Hello', options: {} })
+    const hooks = observedOptions!.hooks!;
+    assert.strictEqual(hooks.PreToolUse?.[0].hooks[0], userHook);
+    await hooks.PreToolUse?.[0].hooks[0](
+      hookInput({
+        hook_event_name: 'PreToolUse',
+        tool_name: 'Read',
+        tool_input: {},
+        tool_use_id: 'user-hook',
+      }) as PreToolUseHookInput,
+      'user-hook',
+      { signal: new AbortController().signal }
     );
-
-    await consumeQuery(query);
-
-    assert.deepStrictEqual(receivedOptions, {});
-    assert.strictEqual(exporter.getFinishedSpans().length, 0);
-  });
-
-  it('uses the active span as the agent parent', async () => {
-    const tracer = provider.getTracer('test');
-    const parent = tracer.startSpan('parent');
-    const parentContext = trace.setSpan(context.active(), parent);
-    const original: QueryFunction = () =>
-      createMockQuery({ messages: [resultMessage()] });
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = context.with(parentContext, () =>
-      module.query!({ prompt: 'Hello' })
-    );
-
-    await consumeQuery(query);
-    parent.end();
-
-    const agentSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'invoke_agent Claude Code');
-    assert.strictEqual(
-      agentSpan?.parentSpanContext?.spanId,
-      parent.spanContext().spanId
-    );
-  });
-
-  it('returns a patched copy for immutable ESM namespaces', async () => {
-    const original: QueryFunction = () =>
-      createMockQuery({ messages: [resultMessage()] });
-    const frozenModule = Object.freeze({ query: original });
-    const module = instrumentation.manuallyInstrument(frozenModule);
-
-    assert.notStrictEqual(module, frozenModule);
-    assert.strictEqual(frozenModule.query, original);
-    assert.notStrictEqual(module.query, original);
-
-    await consumeQuery(module.query!({ prompt: 'Hello' }));
-    assert.strictEqual(exporter.getFinishedSpans().length, 1);
-  });
-
-  it('patches settable ESM loader namespaces in place', () => {
-    const original: QueryFunction = () => createMockQuery();
-    const moduleNamespace = { query: original };
-    Object.defineProperty(moduleNamespace, Symbol.toStringTag, {
-      value: 'Module',
-    });
-    const module = instrumentation.manuallyInstrument(moduleNamespace);
-
-    assert.strictEqual(module, moduleNamespace);
-    assert.notStrictEqual(moduleNamespace.query, original);
-    assert.notStrictEqual(module.query, original);
-  });
-
-  it('unpatches a settable ESM loader namespace', () => {
-    const original: QueryFunction = () => createMockQuery();
-    const moduleNamespace = { query: original };
-    Object.defineProperty(moduleNamespace, Symbol.toStringTag, {
-      value: 'Module',
-    });
-    const module = instrumentation.manuallyInstrument(moduleNamespace);
-    const unpatch = Reflect.get(instrumentation, '_unpatch') as unknown;
-    assert.strictEqual(typeof unpatch, 'function');
-
-    Reflect.apply(unpatch as (...args: unknown[]) => unknown, instrumentation, [
-      module,
-    ]);
-
-    assert.strictEqual(moduleNamespace.query, original);
-    assert.strictEqual(module.query, original);
-  });
-
-  it('does not fabricate close when the SDK Query omits it', async () => {
-    const original: QueryFunction = () => {
-      const query = createMockQuery({ messages: [resultMessage()] });
-      Reflect.deleteProperty(query, 'close');
-      return query;
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = module.query!({ prompt: 'Hello' });
-
-    assert.strictEqual(Reflect.get(query, 'close'), undefined);
-    await consumeQuery(query);
-  });
-
-  it('keeps the span active when throw is handled by the Query', async () => {
-    const original: QueryFunction = () => {
-      const query = (async function* () {
-        try {
-          yield SYSTEM_MESSAGE;
-        } catch {
-          yield resultMessage();
-        }
-      })();
-      return query as unknown as ReturnType<QueryFunction>;
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const query = module.query!({ prompt: 'Hello' });
-
-    await query.next();
-    const recovered = await query.throw(new Error('recoverable'));
-
-    assert.strictEqual(recovered.done, false);
-    assert.strictEqual(exporter.getFinishedSpans().length, 1);
-    assert.strictEqual(
-      exporter.getFinishedSpans()[0].status.code,
-      SpanStatusCode.UNSET
-    );
-  });
-
-  it('keeps streaming-input queries open across result messages', async () => {
-    let receivedOptions: Parameters<QueryFunction>[0]['options'];
-    const original: QueryFunction = params => {
-      receivedOptions = params.options;
-      return createMockQuery({
-        messages: [
-          resultMessage({
-            usage: {
-              input_tokens: 7,
-              output_tokens: 4,
-              cache_creation_input_tokens: 0,
-              cache_read_input_tokens: 0,
-            },
-          }),
-          resultMessage({
-            usage: {
-              input_tokens: 15,
-              output_tokens: 9,
-              cache_creation_input_tokens: 1,
-              cache_read_input_tokens: 2,
-            },
-          }),
-        ],
-      });
-    };
-    const module = instrumentation.manuallyInstrument({ query: original });
-    const prompt = {
-      async *[Symbol.asyncIterator]() {
-        yield {
-          type: 'user' as const,
-          message: { role: 'user' as const, content: 'Hello' },
-          parent_tool_use_id: null,
-          session_id: 'session-123',
-        };
-      },
-    } as unknown as Parameters<QueryFunction>[0]['prompt'];
-    const query = module.query!({ prompt });
-
-    await query.next();
-    assert.strictEqual(exporter.getFinishedSpans().length, 0);
-
-    const preToolUse = receivedOptions?.hooks?.PreToolUse?.at(-1)?.hooks[0];
-    const postToolUse = receivedOptions?.hooks?.PostToolUse?.at(-1)?.hooks[0];
-    assert.ok(preToolUse);
-    assert.ok(postToolUse);
-    const signal = new AbortController().signal;
-    await preToolUse(
-      {
+    const pre = hooks.PreToolUse!.at(-1)!.hooks[0];
+    const post = hooks.PostToolUse!.at(-1)!.hooks[0];
+    await pre(
+      hookInput({
         hook_event_name: 'PreToolUse',
         tool_name: 'Read',
         tool_input: { file_path: 'package.json' },
-        tool_use_id: 'tool-after-result',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-after-result',
-      { signal }
+        tool_use_id: 'tool-1',
+      }) as PreToolUseHookInput,
+      'tool-1',
+      { signal: new AbortController().signal }
     );
-    await postToolUse(
-      {
+    await post(
+      hookInput({
         hook_event_name: 'PostToolUse',
         tool_name: 'Read',
         tool_input: { file_path: 'package.json' },
         tool_response: { content: '{}' },
-        tool_use_id: 'tool-after-result',
-        session_id: 'session-123',
-        transcript_path: 'transcript.jsonl',
-        cwd: process.cwd(),
-      },
-      'tool-after-result',
-      { signal }
+        tool_use_id: 'tool-1',
+      }) as PostToolUseHookInput,
+      'tool-1',
+      { signal: new AbortController().signal }
+    );
+    await consume(query);
+
+    assert.strictEqual(userHookCalled, true);
+    const tool = spanExporter
+      .getFinishedSpans()
+      .find(span => span.name === 'execute_tool Read')!;
+    assert.deepStrictEqual(tool.attributes, {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+      [ATTR_GEN_AI_TOOL_NAME]: 'Read',
+      [ATTR_GEN_AI_TOOL_TYPE]: 'extension',
+      [ATTR_GEN_AI_TOOL_CALL_ID]: 'tool-1',
+      [ATTR_GEN_AI_AGENT_NAME]: 'Claude Code',
+      [ATTR_GEN_AI_TOOL_CALL_ARGUMENTS]: '{"file_path":"package.json"}',
+      [ATTR_GEN_AI_TOOL_CALL_RESULT]: '{"content":"{}"}',
+    });
+    assert.strictEqual(
+      tool.parentSpanContext?.spanId,
+      spanExporter
+        .getFinishedSpans()
+        .find(span => span.name.startsWith('invoke_agent'))
+        ?.spanContext().spanId
     );
 
-    await query.next();
-    await query.next();
-
-    const spans = exporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
-    const agentSpan = spans.find(
-      span => span.name === 'invoke_agent Claude Code'
-    );
-    const toolSpan = spans.find(span => span.name === 'execute_tool Read');
-    assert.ok(agentSpan);
-    assert.ok(toolSpan);
+    await meterProvider.forceFlush();
+    assert.ok(getMetric(METRIC_GEN_AI_EXECUTE_TOOL_DURATION));
     assert.strictEqual(
-      agentSpan.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
-      15
-    );
-    assert.strictEqual(
-      toolSpan.parentSpanContext?.spanId,
-      agentSpan.spanContext().spanId
+      getHistogramSum(METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS),
+      1
     );
   });
 
-  it('does not trace through a retained wrapper after disable', async () => {
-    const original: QueryFunction = () =>
-      createMockQuery({ messages: [resultMessage()] });
-    const module = instrumentation.manuallyInstrument({ query: original });
+  it('records failed and abandoned tool executions', async () => {
+    let observedOptions: Options | undefined;
+    const sdk = instrument(parameters => {
+      observedOptions = parameters.options;
+      return createMockQuery({ messages: [resultMessage()] });
+    });
+    const query = sdk.query!({ prompt: 'Use tools' });
+    const hooks = observedOptions!.hooks!;
+    const pre = hooks.PreToolUse!.at(-1)!.hooks[0];
+    const fail = hooks.PostToolUseFailure!.at(-1)!.hooks[0];
+    for (const id of ['failed', 'abandoned']) {
+      await pre(
+        hookInput({
+          hook_event_name: 'PreToolUse',
+          tool_name: 'Bash',
+          tool_input: { command: 'false' },
+          tool_use_id: id,
+        }) as PreToolUseHookInput,
+        id,
+        { signal: new AbortController().signal }
+      );
+    }
+    await fail(
+      hookInput({
+        hook_event_name: 'PostToolUseFailure',
+        tool_name: 'Bash',
+        tool_input: { command: 'false' },
+        tool_use_id: 'failed',
+        error: 'command failed',
+      }) as PostToolUseFailureHookInput,
+      'failed',
+      { signal: new AbortController().signal }
+    );
+    await consume(query);
+
+    const tools = spanExporter
+      .getFinishedSpans()
+      .filter(span => span.name === 'execute_tool Bash');
+    assert.deepStrictEqual(
+      tools.map(span => span.attributes[ATTR_ERROR_TYPE]).sort(),
+      ['abandoned', 'tool_execution_error']
+    );
+    assert.ok(tools.every(span => span.status.code === SpanStatusCode.ERROR));
+  });
+
+  it('honors the content-capture environment variable', async () => {
     instrumentation.disable();
-
-    await consumeQuery(module.query!({ prompt: 'Hello' }));
-
-    assert.strictEqual(exporter.getFinishedSpans().length, 0);
+    process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = 'true';
+    instrumentation = new ClaudeAgentSDKInstrumentation();
+    instrumentation.setTracerProvider(tracerProvider);
+    instrumentation.setMeterProvider(meterProvider);
+    const sdk = instrument(() =>
+      createMockQuery({ messages: [resultMessage()] })
+    );
+    await consume(sdk.query!({ prompt: 'Captured from environment' }));
+    assert.ok(
+      spanExporter.getFinishedSpans()[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]
+    );
   });
-});
 
-describe('ClaudeAgentSDKInstrumentation ESM auto-instrumentation', () => {
-  it('patches the real SDK through import-in-the-middle', async function () {
+  it('patches immutable namespaces by copy and restores mutable modules', () => {
+    const original: QueryFunction = () => createMockQuery();
+    const immutable = Object.freeze({ query: original });
+    const patched = instrumentation.manuallyInstrument(immutable);
+    assert.notStrictEqual(patched, immutable);
+    assert.notStrictEqual(patched.query, original);
+    assert.strictEqual(immutable.query, original);
+
+    const mutable = { query: original };
+    instrumentation.manuallyInstrument(mutable);
+    assert.notStrictEqual(mutable.query, original);
+    instrumentation.disable();
+    assert.strictEqual(mutable.query, original);
+    assert.strictEqual(patched.query, original);
+  });
+
+  it('auto-instruments the real ESM package through import-in-the-middle', async function () {
     this.timeout(20000);
     await runTestFixture({
       cwd: __dirname,
