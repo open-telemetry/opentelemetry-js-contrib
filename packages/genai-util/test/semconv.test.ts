@@ -13,7 +13,7 @@ import {
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_TOOL_TYPE,
@@ -58,8 +58,8 @@ describe('GenAI Semantic Conventions', () => {
       'gen_ai.usage.cache_read.input_tokens'
     );
     assert.strictEqual(
-      ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
-      'gen_ai.usage.cache_creation.input_tokens'
+      ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
+      'gen_ai.usage.cache_write.input_tokens'
     );
     assert.strictEqual(ATTR_GEN_AI_INPUT_MESSAGES, 'gen_ai.input.messages');
     assert.strictEqual(ATTR_GEN_AI_OUTPUT_MESSAGES, 'gen_ai.output.messages');

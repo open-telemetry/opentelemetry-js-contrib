@@ -195,8 +195,8 @@ export const ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS =
  *
  * @example 128
  */
-export const ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS =
-  'gen_ai.usage.cache_creation.input_tokens' as const;
+export const ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS =
+  'gen_ai.usage.cache_write.input_tokens' as const;
 
 /**
  * The type of token being counted in metric instruments.

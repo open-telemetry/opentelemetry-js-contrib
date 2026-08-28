@@ -37,7 +37,7 @@ import {
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
-  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
@@ -73,7 +73,7 @@ export class AgentInvocation extends BaseInvocation {
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
-  private readonly _agentName?: string;
+  private _agentName?: string;
   private _agentId?: string;
   private _agentDescription?: string;
   private _agentVersion?: string;
@@ -204,6 +204,7 @@ export class AgentInvocation extends BaseInvocation {
   }
 
   public setAgentName(agentName: string): this {
+    this._agentName = agentName;
     this._span.setAttribute(ATTR_GEN_AI_AGENT_NAME, agentName);
     return this;
   }
@@ -301,7 +302,7 @@ export class AgentInvocation extends BaseInvocation {
     }
     if (usage.cacheCreationTokens !== undefined) {
       this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+        ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
         usage.cacheCreationTokens
       );
     }

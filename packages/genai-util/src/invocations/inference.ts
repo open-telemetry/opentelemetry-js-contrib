@@ -34,7 +34,7 @@ import {
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
-  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
@@ -231,7 +231,7 @@ export class InferenceInvocation extends BaseInvocation {
     }
     if (usage.cacheCreationTokens !== undefined) {
       this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+        ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
         usage.cacheCreationTokens
       );
     }
