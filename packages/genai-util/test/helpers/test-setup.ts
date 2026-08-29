@@ -4,10 +4,10 @@
  */
 
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 
 export class TestMetricReader extends MetricReader {
@@ -17,7 +17,7 @@ export class TestMetricReader extends MetricReader {
 
 export interface TestTelemetryContext {
   memoryExporter: InMemorySpanExporter;
-  tracerProvider: BasicTracerProvider;
+  tracerProvider: TracerProvider;
   metricReader: TestMetricReader;
   meterProvider: MeterProvider;
   shutdown: () => Promise<void>;
@@ -26,8 +26,8 @@ export interface TestTelemetryContext {
 
 export function createTestTelemetryContext(): TestTelemetryContext {
   const memoryExporter = new InMemorySpanExporter();
-  const tracerProvider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const tracerProvider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
 
   const metricReader = new TestMetricReader();
