@@ -1,6 +1,18 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.66.0...instrumentation-bunyan-v0.67.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **deps:** move unused [@types](https://github.com/types) packages out of runtime dependencies ([#3702](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3702)) ([49ebdaf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49ebdaf9cac16d74ed748ae15a5bc573a82e4a0e))
+
 ## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-bunyan-v0.65.0...instrumentation-bunyan-v0.66.0) (2026-07-23)
 
 
