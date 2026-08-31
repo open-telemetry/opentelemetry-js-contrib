@@ -89,6 +89,14 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 
 ### Sanitizing `db.query.text`
 
+> [!IMPORTANT]
+> Versions 0.74.0 and later sanitize `db.query.text` for non-parameterized
+> queries by default. Earlier versions recorded it verbatim. Queries built by
+> string concatenation therefore record `?` in place of their literals, which
+> changes the value of an attribute existing dashboards and saved queries may
+> match on. Set `skipQueryTextSanitization: true` to restore the previous
+> behaviour.
+
 The `pg` driver never interpolates parameter values into the query text, so a
 parameterized query records placeholders rather than values — which is why
 the specification advises against
