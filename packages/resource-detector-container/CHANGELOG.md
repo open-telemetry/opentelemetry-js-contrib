@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.8.13](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.8.12...resource-detector-container-v0.8.13) (2026-08-31)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.40.0 to ^0.41.0
+
 ## [0.8.12](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-container-v0.8.11...resource-detector-container-v0.8.12) (2026-07-23)
 
 

@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.40.0...instrumentation-tedious-v0.41.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+* **instrumentation-tedious:** add missing stable SemConv attributes ([#3627](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3627)) ([645a624](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/645a62417def7187fe031e526cd9ee6e74e0df5c))
+
+
+### Bug Fixes
+
+* **deps:** move unused [@types](https://github.com/types) packages out of runtime dependencies ([#3702](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3702)) ([49ebdaf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49ebdaf9cac16d74ed748ae15a5bc573a82e4a0e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.39.0...instrumentation-tedious-v0.40.0) (2026-07-23)
 
 

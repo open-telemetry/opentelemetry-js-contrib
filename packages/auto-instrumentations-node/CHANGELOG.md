@@ -1,6 +1,63 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.80.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.79.0...auto-instrumentations-node-v0.80.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-amqplib bumped from ^0.68.0 to ^0.69.0
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.73.0 to ^0.74.0
+    * @opentelemetry/instrumentation-aws-sdk bumped from ^0.76.0 to ^0.77.0
+    * @opentelemetry/instrumentation-bunyan bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-cassandra-driver bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-connect bumped from ^0.64.0 to ^0.65.0
+    * @opentelemetry/instrumentation-cucumber bumped from ^0.37.0 to ^0.38.0
+    * @opentelemetry/instrumentation-dataloader bumped from ^0.38.0 to ^0.39.0
+    * @opentelemetry/instrumentation-dns bumped from ^0.64.0 to ^0.65.0
+    * @opentelemetry/instrumentation-express bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-fs bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/instrumentation-generic-pool bumped from ^0.64.0 to ^0.65.0
+    * @opentelemetry/instrumentation-graphql bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-hapi bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-host-metrics bumped from ^0.4.0 to ^0.5.0
+    * @opentelemetry/instrumentation-ioredis bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-kafkajs bumped from ^0.30.0 to ^0.31.0
+    * @opentelemetry/instrumentation-knex bumped from ^0.65.0 to ^0.66.0
+    * @opentelemetry/instrumentation-koa bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-lru-memoizer bumped from ^0.65.0 to ^0.66.0
+    * @opentelemetry/instrumentation-memcached bumped from ^0.64.0 to ^0.65.0
+    * @opentelemetry/instrumentation-mongodb bumped from ^0.74.0 to ^0.75.0
+    * @opentelemetry/instrumentation-mongoose bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-mysql bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-mysql2 bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-net bumped from ^0.65.0 to ^0.66.0
+    * @opentelemetry/instrumentation-openai bumped from ^0.19.0 to ^0.20.0
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.46.0 to ^0.47.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.73.0 to ^0.74.0
+    * @opentelemetry/instrumentation-pino bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-redis bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-restify bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-router bumped from ^0.65.0 to ^0.66.0
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.34.0 to ^0.35.0
+    * @opentelemetry/instrumentation-socket.io bumped from ^0.68.0 to ^0.69.0
+    * @opentelemetry/instrumentation-tedious bumped from ^0.40.0 to ^0.41.0
+    * @opentelemetry/instrumentation-undici bumped from ^0.31.0 to ^0.32.0
+    * @opentelemetry/instrumentation-winston bumped from ^0.65.0 to ^0.66.0
+    * @opentelemetry/resource-detector-alibaba-cloud bumped from ^0.36.0 to ^0.37.0
+    * @opentelemetry/resource-detector-aws bumped from ^2.21.0 to ^2.22.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.29.0 to ^0.30.0
+    * @opentelemetry/resource-detector-container bumped from ^0.8.12 to ^0.8.13
+    * @opentelemetry/resource-detector-gcp bumped from ^0.56.0 to ^0.57.0
+
 ## [0.79.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.78.0...auto-instrumentations-node-v0.79.0) (2026-07-23)
 
 
