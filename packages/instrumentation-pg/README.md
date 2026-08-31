@@ -116,6 +116,19 @@ So `SELECT * FROM users WHERE email = 'a@b.c' -- lookup` is recorded as
 `SELECT * FROM users WHERE email = ?`, while
 `SELECT * FROM users WHERE id = $1` is recorded unchanged.
 
+The default is `sanitizeSql` from
+[`@opentelemetry/sql-common`](../sql-common) called with no options beyond the
+dialect, so a hook that wants a different truncation limit can call it directly:
+
+```js
+const { sanitizeSql } = require('@opentelemetry/sql-common');
+
+new PgInstrumentation({
+  queryTextSanitizationHook: query =>
+    sanitizeSql(query, { dialect: 'postgresql', maxLength: 4096 }),
+});
+```
+
 Limits worth knowing:
 
 - Only `db.query.text` is sanitized. The query sent to PostgreSQL is untouched,

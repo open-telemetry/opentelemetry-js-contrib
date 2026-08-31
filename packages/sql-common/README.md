@@ -11,7 +11,8 @@ This is an internal utils package used for the different SQL instrumentations:
 - `addSqlCommenterComment(span, query)` — appends a
   [sqlcommenter](https://google.github.io/sqlcommenter/spec/) comment to a query.
 - `sanitizeSql(sql, { dialect, maxLength })` — replaces the literals in a SQL
-  statement with `?`, for use as `db.query.text`.
+  statement with `?`, for use as `db.query.text`. Its options are typed as
+  `SanitizeSqlOptions` and `SqlDialect`, both exported alongside it.
 
 ### `sanitizeSql`
 
