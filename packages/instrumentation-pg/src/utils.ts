@@ -253,10 +253,12 @@ export function handleConfigQuery(
     // A parameterized query's text is recorded as-is: the specification
     // advises against sanitizing it, since any sensitive data is passed as
     // parameter values rather than interpolated into the text.
-    const isParameterized = Array.isArray(queryConfig.values);
+    const values = Array.isArray(queryConfig.values)
+      ? queryConfig.values
+      : undefined;
 
     if (queryConfig.text) {
-      const queryText = isParameterized
+      const queryText = values
         ? queryConfig.text
         : maskQueryText(queryConfig.text, instrumentationConfig);
       if (queryText !== undefined) {
@@ -264,12 +266,9 @@ export function handleConfigQuery(
       }
     }
 
-    if (
-      instrumentationConfig.enhancedDatabaseReporting &&
-      Array.isArray(queryConfig.values)
-    ) {
+    if (instrumentationConfig.enhancedDatabaseReporting && values) {
       try {
-        const convertedValues = queryConfig.values.map(value => {
+        const convertedValues = values.map(value => {
           if (value == null) {
             return 'null';
           } else if (value instanceof Buffer) {
@@ -286,7 +285,7 @@ export function handleConfigQuery(
         });
         span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
       } catch (e) {
-        diag.error('failed to stringify ', queryConfig.values, e);
+        diag.error('failed to stringify ', values, e);
       }
     }
 

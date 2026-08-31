@@ -485,7 +485,9 @@ describe('utils.ts', () => {
             return text;
           },
         },
-        queryConfig
+        // Non-parameterized: a parameterized queryConfig would also skip the
+        // hook, which would leave this assertion true for the wrong reason.
+        { text: queryConfig.text }
       );
       querySpan.end();
 

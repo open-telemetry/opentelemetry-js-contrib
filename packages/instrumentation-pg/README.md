@@ -125,9 +125,10 @@ Limits worth knowing:
   identifier rather than a string literal. An application that quotes _dynamic_
   identifiers should supply its own `maskStatementHook`.
 - `db.postgresql.values` (see `enhancedDatabaseReporting`) and
-  `db.postgresql.plan` (the prepared-statement name) are not masked. Enabling
-  `enhancedDatabaseReporting` records masked query text alongside raw parameter
-  values, unless `skipQueryTextSanitization` is also set.
+  `db.postgresql.plan` (the prepared-statement name) are not masked.
+  `db.postgresql.values` is only ever populated for a parameterized query, and
+  a parameterized query's `db.query.text` is always recorded as-is (see
+  above), so the two are never a mix of masked text and raw values.
 - If `maskStatementHook` throws or returns a non-string, `db.query.text` is
   omitted rather than falling back to the raw text, and a warning is logged
   through the API diagnostic logger.
