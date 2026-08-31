@@ -45,3 +45,6 @@ jobs:
           gh pr create --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
         env:
           GITHUB_TOKEN: ${{ steps.otelbot-token.outputs.token }}
+          # The script runs `npm install`/`npm update` for freshly released packages
+          # that may be younger than the `min-release-age` set in `.npmrc`.
+          NPM_CONFIG_MIN_RELEASE_AGE: 0
