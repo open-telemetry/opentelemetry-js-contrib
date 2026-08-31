@@ -1,0 +1,59 @@
+{
+  "name": "@opentelemetry/instrumentation-anthropic",
+  "version": "0.1.0",
+  "description": "OpenTelemetry instrumentation for the `@anthropic-ai/sdk` Anthropic client library",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/instrumentation-anthropic"
+  },
+  "scripts": {
+    "clean": "rimraf build/*",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-anthropic",
+    "compile": "tsc -p .",
+    "lint:readme": "node ../../scripts/lint-readme.js",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsc -w"
+  },
+  "keywords": [
+    "anthropic",
+    "claude",
+    "instrumentation",
+    "opentelemetry",
+    "llm",
+    "genai"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": "^18.19.0 || >=20.6.0"
+  },
+  "files": [
+    "build/src/**/*.js",
+    "build/src/**/*.js.map",
+    "build/src/**/*.d.ts"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.3.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@opentelemetry/api": "^1.3.0",
+    "@opentelemetry/contrib-test-utils": "^0.68.0",
+    "@opentelemetry/sdk-trace": "^2.9.0"
+  },
+  "dependencies": {
+    "@opentelemetry/genai-util": "^0.1.0",
+    "@opentelemetry/instrumentation": "^0.221.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-anthropic#readme"
+}

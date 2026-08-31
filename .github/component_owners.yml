@@ -42,6 +42,8 @@ components:
     - legendecas
   packages/id-generator-aws-xray:
     - jj22ee
+  packages/genai-util:
+    - psx95
   packages/redis-common: []
     # Unmaintained
   packages/contrib-test-utils:
@@ -53,6 +55,8 @@ components:
     - hectorhdzg
   packages/instrumentation-amqplib:
     - blumamir
+  packages/instrumentation-anthropic:
+    - eternalcuriouslearner
   packages/instrumentation-cucumber:
     - Ugzuzg
   packages/instrumentation-dataloader:
