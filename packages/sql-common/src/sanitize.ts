@@ -206,6 +206,10 @@ function endOfDelimited(
  * prefix is only a prefix when the quote follows it immediately and nothing is
  * attached in front, so the `e` ending an identifier is never mistaken for an
  * escape-string marker.
+ *
+ * Only `E` gives a backslash meaning to the lexer. A `U&` string's Unicode
+ * escapes are decoded after it has been lexed, so its backslashes are ordinary
+ * characters when finding where it ends.
  */
 function endOfStringLiteral(
   sql: string,
@@ -228,7 +232,7 @@ function endOfStringLiteral(
     return undefined;
   }
   if (prefix === 'U' && sql[i + 2] === "'") {
-    return endOfDelimited(sql, i + 3, "'", true) ?? n;
+    return endOfDelimited(sql, i + 3, "'", false) ?? n;
   }
   return undefined;
 }

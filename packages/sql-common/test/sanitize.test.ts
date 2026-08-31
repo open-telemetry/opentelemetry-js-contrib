@@ -103,6 +103,16 @@ describe('sanitizeSql', () => {
         ],
         ['replaces a unicode escape string', "SELECT U&'\\0441'", 'SELECT ?'],
         [
+          'ends a unicode escape string at a quote behind a backslash',
+          "SELECT U&'a\\', 'hunter2'",
+          'SELECT ?, ?',
+        ],
+        [
+          'honours a doubled quote inside a unicode escape string',
+          "SELECT U&'it''s', 'hunter2'",
+          'SELECT ?, ?',
+        ],
+        [
           'does not treat a word ending in a prefix letter as a prefix',
           'SELECT Encoding, Extract FROM t',
           'SELECT Encoding, Extract FROM t',
