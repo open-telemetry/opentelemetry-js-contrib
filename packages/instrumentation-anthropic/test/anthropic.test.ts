@@ -14,6 +14,15 @@ import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
 import * as path from 'node:path';
+import {
+  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
+  ATTR_GEN_AI_RESPONSE_ID,
+  ATTR_GEN_AI_RESPONSE_MODEL,
+  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+} from '../src/semconv';
 
 const model = 'claude-haiku-4-5-20251001';
 const input = 'Reply with exactly two words: Hello telemetry';
@@ -53,6 +62,31 @@ function createRecordingClient(): Anthropic {
   return new Anthropic({ apiKey, maxRetries: 0 });
 }
 
+function expectedInputTokens(usage: Anthropic.Messages.Usage): number {
+  return (
+    usage.input_tokens +
+    (usage.cache_creation_input_tokens ?? 0) +
+    (usage.cache_read_input_tokens ?? 0)
+  );
+}
+
+function expectResponseAttributes(
+  span: ReturnType<typeof getTestSpans>[number],
+  response: Anthropic.Messages.Message
+): void {
+  expect(span.attributes).toMatchObject({
+    [ATTR_GEN_AI_RESPONSE_ID]: response.id,
+    [ATTR_GEN_AI_RESPONSE_MODEL]: response.model,
+    [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+    [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: expectedInputTokens(response.usage),
+    [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: response.usage.output_tokens,
+    [ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS]:
+      response.usage.cache_creation_input_tokens,
+    [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]:
+      response.usage.cache_read_input_tokens,
+  });
+}
+
 const mockClient = new Anthropic({ apiKey: 'testing', maxRetries: 0 });
 
 describe('Anthropic instrumentation', function () {
@@ -70,11 +104,12 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('creates a span for messages.create', async () => {
+    let response: Anthropic.Messages.Message;
     const { nockDone } = await nockBack('anthropic-messages-create.json', {
       afterRecord: sanitizeRecordings,
     });
     try {
-      const response = await createRecordingClient().messages.create({
+      response = await createRecordingClient().messages.create({
         model,
         max_tokens: 16,
         messages: [{ role: 'user', content: input }],
@@ -89,14 +124,17 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
-    expect(spans[0].attributes).toEqual({
+    expect(spans[0].attributes).toMatchObject({
       'gen_ai.operation.name': 'chat',
       'gen_ai.provider.name': 'anthropic',
       'gen_ai.request.model': model,
     });
+    expectResponseAttributes(spans[0], response);
   });
 
   it('creates a span for messages.create with streaming', async () => {
+    let startMessage: Anthropic.Messages.Message | undefined;
+    let delta: Anthropic.Messages.RawMessageDeltaEvent | undefined;
     const { nockDone } = await nockBack(
       'anthropic-messages-create-streaming.json',
       { afterRecord: sanitizeRecordings }
@@ -113,6 +151,8 @@ describe('Anthropic instrumentation', function () {
       let eventCount = 0;
       for await (const event of stream) {
         if (event) eventCount++;
+        if (event.type === 'message_start') startMessage = event.message;
+        if (event.type === 'message_delta') delta = event;
       }
       expect(eventCount).toBeGreaterThan(0);
     } finally {
@@ -123,6 +163,17 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
+    expect(startMessage).toBeDefined();
+    expect(delta).toBeDefined();
+    expect(spans[0].attributes).toMatchObject({
+      [ATTR_GEN_AI_RESPONSE_ID]: startMessage?.id,
+      [ATTR_GEN_AI_RESPONSE_MODEL]: startMessage?.model,
+      [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+      [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: startMessage
+        ? expectedInputTokens(startMessage.usage)
+        : undefined,
+      [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: delta?.usage.output_tokens,
+    });
   });
 
   it('ends the streaming span when using tee', async () => {
@@ -161,6 +212,7 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('creates a span for messages.stream', async () => {
+    let response: Anthropic.Messages.Message;
     const { nockDone } = await nockBack('anthropic-messages-stream.json', {
       afterRecord: sanitizeRecordings,
     });
@@ -172,7 +224,7 @@ describe('Anthropic instrumentation', function () {
       });
 
       expect(getTestSpans()).toHaveLength(0);
-      const response = await stream.finalMessage();
+      response = await stream.finalMessage();
       expect(response.id).toMatch(/^msg_/);
     } finally {
       nockDone();
@@ -182,6 +234,7 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
+    expectResponseAttributes(spans[0], response);
   });
 
   it('records messages.create errors', async () => {

@@ -10,6 +10,15 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+import {
+  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
+  ATTR_GEN_AI_RESPONSE_ID,
+  ATTR_GEN_AI_RESPONSE_MODEL,
+  ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+} from './semconv';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -22,10 +31,19 @@ type AnthropicModule = typeof Anthropic & {
 interface SpanState {
   span: Span;
   ended: boolean;
+  usage: UsageState;
 }
 
-interface AnthropicStream extends AsyncIterable<unknown> {
-  iterator(): AsyncIterator<unknown>;
+interface UsageState {
+  input_tokens?: number | null;
+  output_tokens?: number | null;
+  cache_creation_input_tokens?: number | null;
+  cache_read_input_tokens?: number | null;
+}
+
+interface AnthropicStream
+  extends AsyncIterable<Anthropic.Messages.RawMessageStreamEvent> {
+  iterator(): AsyncIterator<Anthropic.Messages.RawMessageStreamEvent>;
 }
 
 function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
@@ -41,6 +59,34 @@ function isAnthropicStream(value: unknown): value is AnthropicStream {
     'iterator' in value &&
     typeof value.iterator === 'function'
   );
+}
+
+function isAnthropicMessage(
+  value: unknown
+): value is Anthropic.Messages.Message {
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    'type' in value &&
+    value.type === 'message' &&
+    'id' in value &&
+    'model' in value &&
+    'usage' in value
+  );
+}
+
+function normalizeFinishReason(reason: Anthropic.Messages.StopReason): string {
+  switch (reason) {
+    case 'end_turn':
+    case 'stop_sequence':
+      return 'stop';
+    case 'max_tokens':
+      return 'length';
+    case 'tool_use':
+      return 'tool_calls';
+    default:
+      return reason;
+  }
 }
 
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
@@ -93,7 +139,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             'gen_ai.request.model': params.model,
           },
         });
-        const state: SpanState = { span, ended: false };
+        const state: SpanState = { span, ended: false, usage: {} };
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -109,6 +155,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             if (isAnthropicStream(value)) {
               instrumentation._wrapStream(value, state);
             } else {
+              if (isAnthropicMessage(value)) {
+                instrumentation._tryRecordMessage(state, value);
+              }
               instrumentation._endSpan(state);
             }
           },
@@ -130,9 +179,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   }
 
   private async *_streamIterator(
-    iterator: AsyncIterator<unknown>,
+    iterator: AsyncIterator<Anthropic.Messages.RawMessageStreamEvent>,
     state: SpanState
-  ): AsyncGenerator<unknown> {
+  ): AsyncGenerator<Anthropic.Messages.RawMessageStreamEvent> {
     let exhausted = false;
     try {
       while (true) {
@@ -141,6 +190,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           exhausted = true;
           break;
         }
+        this._tryRecordStreamEvent(state, next.value);
         yield next.value;
       }
       this._endSpan(state);
@@ -157,6 +207,87 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         this._endSpan(state);
       }
     }
+  }
+
+  private _tryRecordMessage(
+    state: SpanState,
+    message: Anthropic.Messages.Message
+  ): void {
+    try {
+      this._recordMessage(state, message);
+    } catch (error) {
+      this._diag.debug('error recording Anthropic response telemetry:', error);
+    }
+  }
+
+  private _tryRecordStreamEvent(
+    state: SpanState,
+    event: Anthropic.Messages.RawMessageStreamEvent
+  ): void {
+    try {
+      this._recordStreamEvent(state, event);
+    } catch (error) {
+      this._diag.debug(
+        'error recording Anthropic stream response telemetry:',
+        error
+      );
+    }
+  }
+
+  private _recordMessage(
+    state: SpanState,
+    message: Anthropic.Messages.Message
+  ): void {
+    state.span.setAttributes({
+      [ATTR_GEN_AI_RESPONSE_ID]: message.id,
+      [ATTR_GEN_AI_RESPONSE_MODEL]: message.model,
+    });
+    if (message.stop_reason) {
+      state.span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+        normalizeFinishReason(message.stop_reason),
+      ]);
+    }
+    state.usage = message.usage;
+    this._recordUsage(state);
+  }
+
+  private _recordStreamEvent(
+    state: SpanState,
+    event: Anthropic.Messages.RawMessageStreamEvent
+  ): void {
+    if (event.type === 'message_start') {
+      this._recordMessage(state, event.message);
+      return;
+    }
+    if (event.type === 'message_delta') {
+      state.usage = { ...state.usage, ...event.usage };
+      if (event.delta.stop_reason) {
+        state.span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
+          normalizeFinishReason(event.delta.stop_reason),
+        ]);
+      }
+      this._recordUsage(state);
+    }
+  }
+
+  private _recordUsage(state: SpanState): void {
+    const usage = state.usage;
+    const inputTokens =
+      usage.input_tokens == null &&
+      usage.cache_creation_input_tokens == null &&
+      usage.cache_read_input_tokens == null
+        ? undefined
+        : (usage.input_tokens ?? 0) +
+          (usage.cache_creation_input_tokens ?? 0) +
+          (usage.cache_read_input_tokens ?? 0);
+    state.span.setAttributes({
+      [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: inputTokens,
+      [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage.output_tokens ?? undefined,
+      [ATTR_GEN_AI_USAGE_CACHE_CREATION_INPUT_TOKENS]:
+        usage.cache_creation_input_tokens ?? undefined,
+      [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]:
+        usage.cache_read_input_tokens ?? undefined,
+    });
   }
 
   private _endSpan(state: SpanState): void {

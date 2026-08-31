@@ -26,10 +26,10 @@ npm install --save @opentelemetry/instrumentation-anthropic
 - `anthropic.messages.stream()`
 
 The current scaffold creates a client span for each call, records the GenAI
-provider, operation, and requested model, and marks failed calls as errors.
-Streaming spans end when the stream completes, fails, or is closed early.
-Response attributes, tools, metrics, logs, and content capture are intentionally
-out of scope.
+provider, operation, requested model, response identifiers, finish reasons, and
+token usage, and marks failed calls as errors. Streaming spans end when the
+stream completes, fails, or is closed early. Tools, metrics, logs, and content
+capture are intentionally out of scope.
 
 ## Usage
 
