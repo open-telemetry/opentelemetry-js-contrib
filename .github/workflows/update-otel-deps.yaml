@@ -42,7 +42,12 @@ jobs:
           node ./scripts/update-otel-deps.js
           git commit -am "feat(deps): update deps matching '@opentelemetry/*'"
           git push --set-upstream origin otelbot/update-otel-deps --force
-          gh pr create --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
+          # The force-push above already updated an open PR, if there is one.
+          if [[ -n "$(gh pr list --head otelbot/update-otel-deps --state open --json number --jq '.[].number')" ]]; then
+            echo "PR for otelbot/update-otel-deps already exists, skipping 'gh pr create'"
+          else
+            gh pr create --title "feat(deps): update deps matching '@opentelemetry/*'" --body 'Updates all `@opentelemetry/*` dependencies to latest'
+          fi
         env:
           GITHUB_TOKEN: ${{ steps.otelbot-token.outputs.token }}
           # The script runs `npm install`/`npm update` for freshly released packages
