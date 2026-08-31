@@ -224,37 +224,37 @@ describe('utils.ts', () => {
     });
   });
 
-  describe('.maskQueryText()', () => {
+  describe('.sanitizeQueryText()', () => {
     const query = "SELECT * FROM t WHERE a = 'secret' AND b = 42";
 
     afterEach(() => {
       diag.disable();
     });
 
-    it('applies the default hook when masking is not configured', () => {
+    it('applies the default hook when sanitization is not configured', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, {}),
+        utils.sanitizeQueryText(query, {}),
         'SELECT * FROM t WHERE a = ? AND b = ?'
       );
     });
 
     it('returns the query unchanged when skipQueryTextSanitization is true', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, { skipQueryTextSanitization: true }),
+        utils.sanitizeQueryText(query, { skipQueryTextSanitization: true }),
         query
       );
     });
 
     it('applies the default hook when skipQueryTextSanitization is explicitly false', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, { skipQueryTextSanitization: false }),
+        utils.sanitizeQueryText(query, { skipQueryTextSanitization: false }),
         'SELECT * FROM t WHERE a = ? AND b = ?'
       );
     });
 
     it('preserves parameter placeholders', () => {
       assert.strictEqual(
-        utils.maskQueryText('SELECT * FROM t WHERE a = $1', {
+        utils.sanitizeQueryText('SELECT * FROM t WHERE a = $1', {
           skipQueryTextSanitization: false,
         }),
         'SELECT * FROM t WHERE a = $1'
@@ -263,23 +263,23 @@ describe('utils.ts', () => {
 
     it('applies a custom hook to the raw query text', () => {
       const seen: string[] = [];
-      const masked = utils.maskQueryText(query, {
+      const sanitized = utils.sanitizeQueryText(query, {
         skipQueryTextSanitization: false,
-        maskStatementHook: text => {
+        queryTextSanitizationHook: text => {
           seen.push(text);
           return 'REDACTED';
         },
       });
 
-      assert.strictEqual(masked, 'REDACTED');
+      assert.strictEqual(sanitized, 'REDACTED');
       assert.deepStrictEqual(seen, [query]);
     });
 
-    it('does not call the hook when masking is disabled', () => {
+    it('does not call the hook when sanitization is skipped', () => {
       let called = false;
-      utils.maskQueryText(query, {
+      utils.sanitizeQueryText(query, {
         skipQueryTextSanitization: true,
-        maskStatementHook: text => {
+        queryTextSanitizationHook: text => {
           called = true;
           return text;
         },
@@ -290,16 +290,16 @@ describe('utils.ts', () => {
 
     it('omits the text and warns when the hook throws', () => {
       const warnings = captureDiagWarnings();
-      const masked = utils.maskQueryText(query, {
+      const sanitized = utils.sanitizeQueryText(query, {
         skipQueryTextSanitization: false,
-        maskStatementHook: () => {
+        queryTextSanitizationHook: () => {
           throw new Error('hook failure');
         },
       });
 
-      assert.strictEqual(masked, undefined);
+      assert.strictEqual(sanitized, undefined);
       assert.strictEqual(warnings.length, 1);
-      assert.ok(warnings[0].includes('maskStatementHook'));
+      assert.ok(warnings[0].includes('queryTextSanitizationHook'));
     });
 
     for (const [description, value] of [
@@ -309,22 +309,24 @@ describe('utils.ts', () => {
     ] as const) {
       it(`omits the text and warns when the hook returns ${description}`, () => {
         const warnings = captureDiagWarnings();
-        const masked = utils.maskQueryText(query, {
+        const sanitized = utils.sanitizeQueryText(query, {
           skipQueryTextSanitization: false,
-          maskStatementHook: (() => value) as unknown as (q: string) => string,
+          queryTextSanitizationHook: (() => value) as unknown as (
+            q: string
+          ) => string,
         });
 
-        assert.strictEqual(masked, undefined);
+        assert.strictEqual(sanitized, undefined);
         assert.strictEqual(warnings.length, 1);
         assert.ok(warnings[0].includes('non-string'));
       });
     }
 
-    it('omits the text when masking leaves it empty', () => {
+    it('omits the text when sanitization leaves it empty', () => {
       assert.strictEqual(
-        utils.maskQueryText(query, {
+        utils.sanitizeQueryText(query, {
           skipQueryTextSanitization: false,
-          maskStatementHook: () => '',
+          queryTextSanitizationHook: () => '',
         }),
         undefined
       );
@@ -401,7 +403,7 @@ describe('utils.ts', () => {
       );
     });
 
-    it('records masked query text when sanitization is not skipped', () => {
+    it('records sanitized query text when sanitization is not skipped', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
         tracer,
@@ -416,14 +418,14 @@ describe('utils.ts', () => {
       );
     });
 
-    it('omits only the query text when the masking hook fails', () => {
+    it('omits only the query text when the sanitization hook fails', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
         tracer,
         {
           ...instrumentationConfig,
           skipQueryTextSanitization: false,
-          maskStatementHook: () => {
+          queryTextSanitizationHook: () => {
             throw new Error('hook failure');
           },
         },
@@ -448,7 +450,7 @@ describe('utils.ts', () => {
       );
     });
 
-    it('still records raw values when enhancedDatabaseReporting is combined with masking', () => {
+    it('still records raw values when enhancedDatabaseReporting is combined with sanitization', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
         tracer,
@@ -472,7 +474,7 @@ describe('utils.ts', () => {
       );
     });
 
-    it('does not run the masking hook for a non-recording span', () => {
+    it('does not run the sanitization hook for a non-recording span', () => {
       let called = false;
       const querySpan = utils.handleConfigQuery.call(
         client,
@@ -480,7 +482,7 @@ describe('utils.ts', () => {
         {
           ...instrumentationConfig,
           skipQueryTextSanitization: false,
-          maskStatementHook: (text: string) => {
+          queryTextSanitizationHook: (text: string) => {
             called = true;
             return text;
           },

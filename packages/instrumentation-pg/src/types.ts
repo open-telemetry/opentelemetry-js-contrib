@@ -33,7 +33,7 @@ export interface PgInstrumentationExecutionRequestHook {
   (span: api.Span, queryInfo: PgRequestHookInformation): void;
 }
 
-export interface PgInstrumentationQueryMaskingHook {
+export interface PgInstrumentationQueryTextSanitizationHook {
   (query: string): string;
 }
 
@@ -45,9 +45,9 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
   enhancedDatabaseReporting?: boolean;
 
   /**
-   * If true, the query text is recorded as-is instead of being masked by
-   * {@link maskStatementHook} before it is recorded as the `db.query.text`
-   * attribute.
+   * If true, the query text is recorded as-is instead of being sanitized by
+   * {@link queryTextSanitizationHook} before it is recorded as the
+   * `db.query.text` attribute.
    *
    * Only affects non-parameterized queries (a call with no `values`). A
    * parameterized query's text is always recorded as-is: the specification
@@ -57,16 +57,16 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    *
    * This is independent of {@link enhancedDatabaseReporting}, which controls a
    * separate attribute holding the raw parameter values. Leaving this false
-   * while enabling {@link enhancedDatabaseReporting} records masked query text
-   * alongside unmasked values.
+   * while enabling {@link enhancedDatabaseReporting} records sanitized query
+   * text alongside unsanitized values.
    *
    * @default false
-   * @see maskStatementHook
+   * @see queryTextSanitizationHook
    */
   skipQueryTextSanitization?: boolean;
 
   /**
-   * Hook that masks the query text before it is recorded as the
+   * Hook that sanitizes the query text before it is recorded as the
    * `db.query.text` attribute. Only consulted for a non-parameterized query
    * when {@link skipQueryTextSanitization} is false, and never applied to the
    * query sent to the server or to the text passed to {@link requestHook}.
@@ -80,7 +80,7 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    *
    * @default (query) => sanitizeSql(query, { dialect: 'postgresql' })
    */
-  maskStatementHook?: PgInstrumentationQueryMaskingHook;
+  queryTextSanitizationHook?: PgInstrumentationQueryTextSanitizationHook;
 
   /**
    * Hook that allows adding custom span attributes or updating the

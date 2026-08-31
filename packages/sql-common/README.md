@@ -19,11 +19,11 @@ A single-pass, dependency-free lexer. It replaces string, numeric, bit-string
 and dollar-quoted literals with `?`, drops `--` and (nestable) `/* */` comments,
 collapses runs of whitespace, and preserves identifiers — including `"quoted"`
 ones — and `$n` parameter placeholders. Output is truncated at `maxLength`
-(default 32768) at a token boundary, so a masked value is never cut in half.
+(default 32768) at a token boundary, so a replaced value is never cut in half.
 
 PostgreSQL spells some operators with a question mark as well — `?`, `?|` and
 `?&` on jsonb among them — so a `?` in the output does not on its own mean a
-value was masked there. The semantic conventions fix the placeholder character,
+value was replaced there. The semantic conventions fix the placeholder character,
 and an operator is recoverable from the statement around it in a way a value is
 not.
 
@@ -33,6 +33,6 @@ data or structure: in PostgreSQL `"..."` is an identifier, while in MySQL's
 default `sql_mode` it is a string literal.
 
 `IN (...)` lists are deliberately not collapsed to `IN (?)`. Once the literals
-are masked the list carries no data, collapsing hides pathologically large
+are replaced the list carries no data, collapsing hides pathologically large
 lists, and the only consumers that would benefit are ones that do not exist
 yet.

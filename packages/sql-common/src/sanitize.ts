@@ -6,7 +6,7 @@
 /**
  * A SQL dialect the sanitizer knows how to lex. Required, with no default:
  * dialects disagree about which characters are data and which are structure, so
- * guessing either masks structure or leaks data.
+ * guessing either hides structure or leaks data.
  */
 export type SqlDialect = 'postgresql';
 
@@ -173,7 +173,7 @@ function endOfNumber(
  * delimiter escapes it rather than ending the run, which is how PostgreSQL
  * spells a literal quote inside both strings and identifiers.
  *
- * Callers decide what an unterminated run means: string contents are masked
+ * Callers decide what an unterminated run means: string contents are replaced
  * either way, while text behind an unbalanced identifier quote is of unknown
  * provenance and so cannot be kept as a name.
  */
@@ -291,9 +291,9 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
   };
 
   // Every token is emitted whole or not at all, which is what makes truncation
-  // safe: half a masked literal never reaches the output. `endsValue` records
+  // safe: half a replaced literal never reaches the output. `endsValue` records
   // whether a value could follow this token, since the emitted text no longer
-  // says -- a `?` may be either a masked literal or a jsonb operator.
+  // says -- a `?` may be either a replaced literal or a jsonb operator.
   const appendToken = (text: string, endsValue = true) => {
     append(text);
     valueEnded = endsValue;
@@ -372,7 +372,7 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
 
     // Double quotes delimit an identifier in PostgreSQL, so what they hold is a
     // table or column name and is kept. An unbalanced quote is the exception:
-    // the remainder of the statement cannot be read as a name, so it is masked
+    // the remainder of the statement cannot be read as a name, so it is replaced
     // like any other construct that runs off the end of the input.
     if (ch === '"') {
       const end = endOfDelimited(sql, i + 1, '"', false);
@@ -400,7 +400,7 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
  * statement can be recorded as `db.query.text` without carrying data with it.
  *
  * Parameter placeholders and identifiers -- including quoted ones -- are left
- * alone. Neither holds a value, and masking them would cost the statement the
+ * alone. Neither holds a value, and replacing them would cost the statement the
  * structure that makes it worth recording at all. Comments are removed, runs of
  * whitespace collapse to a single space, and the result is truncated at
  * `maxLength`.
@@ -416,7 +416,7 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
 export function sanitizeSql(sql: string, options: SanitizeSqlOptions): string {
   // Compared directly rather than looked up in a table: a lookup on an object
   // would also reach inherited members, letting a name like `constructor`
-  // resolve to a function that returns the statement unmasked.
+  // resolve to a function that returns the statement unsanitized.
   if (options.dialect !== 'postgresql') {
     throw new TypeError(`unsupported SQL dialect: ${options.dialect}`);
   }

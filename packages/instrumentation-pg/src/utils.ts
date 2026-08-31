@@ -176,7 +176,7 @@ export function shouldSkipInstrumentation(
   );
 }
 
-function defaultMaskStatementHook(query: string): string {
+function defaultQueryTextSanitizationHook(query: string): string {
   return sanitizeSql(query, { dialect: 'postgresql' });
 }
 
@@ -184,11 +184,11 @@ function defaultMaskStatementHook(query: string): string {
  * Resolves the value for the `db.query.text` attribute, returning undefined
  * when the attribute should be left off the span.
  *
- * A masking hook that fails is treated as a refusal to record the text rather
- * than as a reason to fall back to it: falling back would turn a bug in the
- * hook into the data leak that masking was enabled to prevent.
+ * A sanitization hook that fails is treated as a refusal to record the text
+ * rather than as a reason to fall back to it: falling back would turn a bug in
+ * the hook into the data leak that sanitization was enabled to prevent.
  */
-export function maskQueryText(
+export function sanitizeQueryText(
   text: string,
   instrumentationConfig: PgInstrumentationConfig
 ): string | undefined {
@@ -197,33 +197,34 @@ export function maskQueryText(
   }
 
   const hook =
-    instrumentationConfig.maskStatementHook ?? defaultMaskStatementHook;
+    instrumentationConfig.queryTextSanitizationHook ??
+    defaultQueryTextSanitizationHook;
 
   // A plain try/catch rather than safeExecuteInTheMiddle: the hook returns a
   // value, and that helper reports a throw as undefined -- indistinguishable
   // from a hook missing a return statement, which is the likelier mistake and
   // the one worth its own diagnostic.
-  let masked: unknown;
+  let sanitized: unknown;
   try {
-    masked = hook(text);
+    sanitized = hook(text);
   } catch (err) {
     diag.warn(
-      'Error running maskStatementHook, omitting the db.query.text attribute',
+      'Error running queryTextSanitizationHook, omitting the db.query.text attribute',
       err
     );
     return undefined;
   }
 
-  if (typeof masked !== 'string') {
+  if (typeof sanitized !== 'string') {
     diag.warn(
-      'maskStatementHook returned a non-string value, omitting the db.query.text attribute'
+      'queryTextSanitizationHook returned a non-string value, omitting the db.query.text attribute'
     );
     return undefined;
   }
 
   // Empty text says less than no attribute does: a consumer cannot tell it
   // apart from a statement that carried no text to begin with.
-  return masked === '' ? undefined : masked;
+  return sanitized === '' ? undefined : sanitized;
 }
 
 // Create a span from our normalized queryConfig object,
@@ -260,7 +261,7 @@ export function handleConfigQuery(
     if (queryConfig.text) {
       const queryText = values
         ? queryConfig.text
-        : maskQueryText(queryConfig.text, instrumentationConfig);
+        : sanitizeQueryText(queryConfig.text, instrumentationConfig);
       if (queryText !== undefined) {
         span.setAttribute(ATTR_DB_QUERY_TEXT, queryText);
       }

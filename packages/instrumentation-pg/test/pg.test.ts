@@ -649,7 +649,7 @@ describe('pg', () => {
         });
       });
 
-      it('does not mask a literal that accompanies parameter placeholders', done => {
+      it('does not sanitize a literal that accompanies parameter placeholders', done => {
         const query = "SELECT $1::text as msg, 'literal' as note";
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
@@ -667,7 +667,7 @@ describe('pg', () => {
         });
       });
 
-      it('masks a literal in a static query', done => {
+      it('sanitizes a literal in a static query', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
           [ATTR_DB_QUERY_TEXT]: 'SELECT ? as msg',
@@ -707,9 +707,9 @@ describe('pg', () => {
         });
       });
 
-      it('masks the text of a prepared statement but keeps its name', done => {
+      it('sanitizes the text of a prepared statement but keeps its name', done => {
         const queryConfig = {
-          name: 'mask_test',
+          name: 'sanitize_test',
           text: "SELECT * FROM pg_tables WHERE schemaname = 'public'",
         };
         const attributes = {
@@ -731,7 +731,7 @@ describe('pg', () => {
       it('applies a custom hook without changing the query sent to the server', async () => {
         create({
           skipQueryTextSanitization: false,
-          maskStatementHook: () => 'REDACTED',
+          queryTextSanitizationHook: () => 'REDACTED',
         });
 
         const query = "SELECT 'hunter2' as msg";
@@ -743,7 +743,7 @@ describe('pg', () => {
           const [pgSpan] = memoryExporter.getFinishedSpans();
           assert.strictEqual(pgSpan.attributes[ATTR_DB_QUERY_TEXT], 'REDACTED');
 
-          // Masking is a telemetry concern only; the statement on the wire is
+          // Sanitization is a telemetry concern only; the statement on the wire is
           // whatever the application passed.
           const executedQueries = getExecutedQueries();
           assert.strictEqual(executedQueries.length, 1);
@@ -754,7 +754,7 @@ describe('pg', () => {
       it('omits the query text when the hook throws, without failing the query', async () => {
         create({
           skipQueryTextSanitization: false,
-          maskStatementHook: () => {
+          queryTextSanitizationHook: () => {
             throw new Error('hook failure');
           },
         });
@@ -828,7 +828,7 @@ describe('pg', () => {
         create({});
       });
 
-      it('masks a literal by default', done => {
+      it('sanitizes a literal by default', done => {
         const query = "SELECT 'hunter2' as msg";
         const attributes = {
           ...DEFAULT_ATTRIBUTES,

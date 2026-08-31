@@ -9,7 +9,7 @@ export type {
   PgInstrumentationConfig,
   PgInstrumentationExecutionRequestHook,
   PgInstrumentationExecutionResponseHook,
-  PgInstrumentationQueryMaskingHook,
+  PgInstrumentationQueryTextSanitizationHook,
   PgRequestHookInformation,
   PgResponseHookInformation,
 } from './types';
