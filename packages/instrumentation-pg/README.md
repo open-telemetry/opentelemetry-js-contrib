@@ -93,9 +93,13 @@ The `pg` driver never interpolates parameter values into the query text, so a
 parameterized query records placeholders rather than values — which is why
 the specification advises against
 [sanitizing](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#sanitization-of-dbquerytext)
-parameterized query text. A parameterized call (one made with a `values`
-array) always has its `db.query.text` recorded exactly as passed to
-`client.query()`, regardless of `skipQueryTextSanitization`.
+parameterized query text. A parameterized call — one made with a non-empty
+`values` array — always has its `db.query.text` recorded exactly as passed to
+`client.query()`, regardless of `skipQueryTextSanitization`. An empty `values`
+array does not count: nothing is travelling beside the text, so the text is
+sanitized as it would be for any other non-parameterized query. This matters
+for the common wrapper `query(text, params = [])`, which would otherwise send
+every concatenated query down the unsanitized path.
 
 Applications that build SQL by string concatenation put literals into the query
 text, and therefore onto the span. For a non-parameterized query, `db.query.text`

@@ -403,6 +403,21 @@ describe('utils.ts', () => {
       );
     });
 
+    it('sanitizes the text of a query given an empty values array', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        instrumentationConfig,
+        { text: "SELECT * FROM t WHERE label = 'literal'", values: [] }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT * FROM t WHERE label = ?'
+      );
+    });
+
     it('records sanitized query text when sanitization is not skipped', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,

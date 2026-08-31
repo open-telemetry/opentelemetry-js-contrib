@@ -49,8 +49,9 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * {@link queryTextSanitizationHook} before it is recorded as the
    * `db.query.text` attribute.
    *
-   * Only affects non-parameterized queries (a call with no `values`). A
-   * parameterized query's text is always recorded as-is: the specification
+   * Only affects non-parameterized queries -- a call with no `values`, or
+   * with an empty `values` array. A parameterized query's text is always
+   * recorded as-is: the specification
    * advises against sanitizing it, since parameter values -- where any
    * sensitive data would be -- are passed separately rather than
    * interpolated into the text.

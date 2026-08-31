@@ -667,6 +667,32 @@ describe('pg', () => {
         });
       });
 
+      it('sanitizes a query passed an empty values array', done => {
+        // The shape a wrapper such as `query(text, params = [])` produces for
+        // every call it forwards, including the concatenated ones.
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'SELECT ? as msg',
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query("SELECT 'hunter2' as msg", [], (err, res) => {
+            assert.strictEqual(err, null);
+            assert.strictEqual(res.rows[0].msg, 'hunter2');
+
+            const [pgSpan] = memoryExporter.getFinishedSpans();
+            assert.ok(
+              !(pgSpan.attributes[ATTR_DB_QUERY_TEXT] as string).includes(
+                'hunter2'
+              ),
+              'query text should not contain the literal'
+            );
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
       it('sanitizes a literal in a static query', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,

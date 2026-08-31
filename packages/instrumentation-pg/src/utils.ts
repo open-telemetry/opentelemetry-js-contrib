@@ -251,15 +251,20 @@ export function handleConfigQuery(
 
   // Set attributes
   if (span.isRecording()) {
-    // A parameterized query's text is recorded as-is: the specification
-    // advises against sanitizing it, since any sensitive data is passed as
-    // parameter values rather than interpolated into the text.
     const values = Array.isArray(queryConfig.values)
       ? queryConfig.values
       : undefined;
 
+    // A parameterized query's text is recorded as-is: the specification
+    // advises against sanitizing it, since any sensitive data is passed as
+    // parameter values rather than interpolated into the text. Supplying at
+    // least one value is what carries that assurance, so an empty array is
+    // not a parameterized call -- there is nothing travelling beside the
+    // text for the text to have been kept free of.
+    const isParameterized = values !== undefined && values.length > 0;
+
     if (queryConfig.text) {
-      const queryText = values
+      const queryText = isParameterized
         ? queryConfig.text
         : sanitizeQueryText(queryConfig.text, instrumentationConfig);
       if (queryText !== undefined) {
