@@ -11,7 +11,6 @@
 export type SqlDialect = 'postgresql';
 
 export interface SanitizeSqlOptions {
-  /** Lexical rules to apply to the statement. */
   dialect: SqlDialect;
   /**
    * Maximum length of the returned statement. Scanning stops at the last whole
@@ -25,13 +24,15 @@ export interface SanitizeSqlOptions {
   maxLength?: number;
 }
 
-/** The string that replaces a literal value, as the semantic conventions ask. */
+/**
+ * The string that replaces a literal value. `?` is the character the semantic
+ * conventions use throughout their sanitization examples.
+ */
 const PLACEHOLDER = '?';
 
 /**
- * A statement carrying thousands of inlined rows costs more to move through a
- * pipeline than it is worth as telemetry, so the result is cut off. The
- * semantic conventions allow truncating a sanitized value for this reason.
+ * A bound on the result, so that a statement with thousands of inlined rows
+ * cannot put an unbounded string on a span. Callers may override it.
  */
 const DEFAULT_MAX_LENGTH = 32 * 1024;
 
@@ -40,9 +41,9 @@ const DEFAULT_MAX_LENGTH = 32 * 1024;
  * shaped like an unquoted identifier without the dollar signs. The same
  * delimiter closes the string.
  *
- * Sticky rather than anchored so it can be matched at an offset without copying
- * the remainder of the statement, which would cost O(n^2). A tag may hold any
- * character PostgreSQL accepts in an identifier, including every non-ASCII one;
+ * Sticky so it can be matched at an offset without re-slicing the statement. A
+ * tag may hold any character PostgreSQL accepts in an identifier, including
+ * every non-ASCII one;
  * recognizing a narrower set would emit the body of a string tagged with
  * anything else as ordinary tokens.
  */
@@ -56,7 +57,7 @@ function isDigit(ch: string | undefined): boolean {
   return ch !== undefined && ch >= '0' && ch <= '9';
 }
 
-/** Underscores are permitted inside a numeral as group separators. */
+/** PostgreSQL 16 and later permit underscores between a numeral's digits. */
 function isDigitOrSeparator(ch: string | undefined): boolean {
   return isDigit(ch) || ch === '_';
 }
@@ -172,10 +173,6 @@ function endOfNumber(
  * at `contentsAt`, or undefined if the delimiter is never closed. Doubling the
  * delimiter escapes it rather than ending the run, which is how PostgreSQL
  * spells a literal quote inside both strings and identifiers.
- *
- * Callers decide what an unterminated run means: string contents are replaced
- * either way, while text behind an unbalanced identifier quote is of unknown
- * provenance and so cannot be kept as a name.
  */
 function endOfDelimited(
   sql: string,
@@ -218,8 +215,6 @@ function endOfStringLiteral(
   const n = sql.length;
   if (sql[i] === "'") return endOfDelimited(sql, i + 1, "'", false) ?? n;
 
-  // The character after the prefix discriminates before the prefix itself does,
-  // and it is the cheaper test of the two on a path every token start reaches.
   const next = sql[i + 1];
   if (next !== "'" && next !== '&') return undefined;
   if (prevIsIdentifierChar) return undefined;
@@ -277,8 +272,6 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
     }
     out += text;
     prev = text.charAt(text.length - 1);
-    // Cached because two predicates in the loop below ask for it once per
-    // token, while it can only change where the output does.
     prevIsIdent = isIdentifierChar(prev);
   };
 
@@ -311,8 +304,7 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
     // Comments are dropped rather than kept. A comment can hold a literal of
     // its own, and nothing distinguishes a benign one from a sensitive one.
     // A line comment ends at either newline character, as the server's lexer
-    // has it. Recognizing only one of the two would fold everything up to the
-    // next occurrence of that one into the comment and discard it.
+    // has it.
     if (ch === '-' && sql[i + 1] === '-') {
       let j = i + 2;
       while (j < n && sql[j] !== '\n' && sql[j] !== '\r') j++;
@@ -414,9 +406,6 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
  * @throws TypeError if `options.dialect` is not a supported dialect
  */
 export function sanitizeSql(sql: string, options: SanitizeSqlOptions): string {
-  // Compared directly rather than looked up in a table: a lookup on an object
-  // would also reach inherited members, letting a name like `constructor`
-  // resolve to a function that returns the statement unsanitized.
   if (options.dialect !== 'postgresql') {
     throw new TypeError(`unsupported SQL dialect: ${options.dialect}`);
   }

@@ -24,9 +24,9 @@ ones — and `$n` parameter placeholders. Output is truncated at `maxLength`
 
 PostgreSQL spells some operators with a question mark as well — `?`, `?|` and
 `?&` on jsonb among them — so a `?` in the output does not on its own mean a
-value was replaced there. The semantic conventions fix the placeholder character,
-and an operator is recoverable from the statement around it in a way a value is
-not.
+value was replaced there. `?` is the character the semantic conventions use
+throughout their sanitization examples, and an operator is recoverable from the
+statement around it in a way a value is not.
 
 `dialect` is required and only `'postgresql'` is implemented. There is no
 default because the rules differ in ways that decide whether characters are
