@@ -25,11 +25,17 @@ import {
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
+import {
+  InMemoryLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 
 const traceMemoryExporter = new InMemorySpanExporter();
 const metricMemoryExporter = new InMemoryMetricExporter(
   AggregationTemporality.CUMULATIVE
 );
+const logMemoryExporter = new InMemoryLogRecordExporter();
 
 describe('force flush', () => {
   let instrumentation: AwsLambdaInstrumentation;
@@ -62,6 +68,16 @@ describe('force flush', () => {
     instrumentation.setMeterProvider(provider);
   };
 
+  const initializeHandlerLogging = (
+    handler: string,
+    provider: LoggerProvider
+  ) => {
+    process.env._HANDLER = handler;
+
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setLoggerProvider(provider);
+  };
+
   const lambdaRequire = (module: string) =>
     require(path.resolve(__dirname, '..', module));
 
@@ -76,6 +92,7 @@ describe('force flush', () => {
 
     traceMemoryExporter.reset();
     metricMemoryExporter.reset();
+    logMemoryExporter.reset();
   });
 
   it('should force flush TracerProvider', async () => {
@@ -140,6 +157,26 @@ describe('force flush', () => {
     assert.strictEqual(forceFlushed, true);
   });
 
+  it('should force flush LoggerProvider', async () => {
+    const provider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
+    });
+    let forceFlushed = false;
+    const forceFlush = () =>
+      new Promise<void>(resolve => {
+        forceFlushed = true;
+        resolve();
+      });
+    provider.forceFlush = forceFlush;
+    initializeHandlerLogging('lambda-test/sync.handler', provider);
+
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+
+    assert.strictEqual(forceFlushed, true);
+  });
+
   it('should complete handler after force flush providers', async () => {
     const nodeTracerProvider = new TracerProvider({
       spanProcessors: [
@@ -169,15 +206,30 @@ describe('force flush', () => {
       });
     meterProvider.forceFlush = meterForceFlush;
 
+    const loggerProvider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
+    });
+    let loggerForceFlushed = false;
+    const loggerForceFlush = () =>
+      new Promise<void>(resolve => {
+        loggerForceFlushed = true;
+        resolve();
+      });
+    loggerProvider.forceFlush = loggerForceFlush;
+
     process.env._HANDLER = 'lambda-test/sync.handler';
 
     instrumentation = new AwsLambdaInstrumentation();
     instrumentation.setTracerProvider(tracerProvider);
     instrumentation.setMeterProvider(meterProvider);
+    instrumentation.setLoggerProvider(loggerProvider);
 
     await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(tracerForceFlushed, true);
     assert.strictEqual(meterForceFlushed, true);
+    assert.strictEqual(loggerForceFlushed, true);
   });
 });
