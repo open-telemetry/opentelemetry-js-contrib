@@ -125,7 +125,7 @@ function endOfDigits(sql: string, start: number): number {
     if (sql[j] === '+' || sql[j] === '-') j++;
     if (isDigit(sql[j])) {
       i = j;
-      while (i < n && isDigit(sql[i])) i++;
+      while (i < n && isDigitOrSeparator(sql[i])) i++;
     }
   }
 

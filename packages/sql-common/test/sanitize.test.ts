@@ -272,6 +272,11 @@ describe('sanitizeSql', () => {
           'SELECT * FROM t WHERE r = ?',
         ],
         ['masks an exponent', 'SELECT 1.5e-3, 1E10', 'SELECT ?, ?'],
+        [
+          'masks digit group separators in an exponent',
+          'SELECT 1e123_456',
+          'SELECT ?',
+        ],
         ['masks hexadecimal', 'SELECT 0x1F, 0XFF', 'SELECT ?, ?'],
         ['masks octal and binary', 'SELECT 0o17, 0b1010', 'SELECT ?, ?'],
         ['masks digit group separators', 'SELECT 1_000_000', 'SELECT ?'],
