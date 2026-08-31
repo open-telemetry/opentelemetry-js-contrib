@@ -30,6 +30,7 @@ import {
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
+import { logs } from '@opentelemetry/api-logs';
 
 const traceMemoryExporter = new InMemorySpanExporter();
 const metricMemoryExporter = new InMemoryMetricExporter(
@@ -175,6 +176,37 @@ describe('force flush', () => {
     await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
+  });
+
+  it('should force flush a LoggerProvider obtained via the API (delegating proxy)', async () => {
+    // Obtaining the provider from the API before a global is registered yields a
+    // delegating ProxyLoggerProvider. setGlobalLoggerProvider then wires the
+    // delegate, mirroring how instrumentations capture the provider at load time.
+    logs.disable();
+    const provider = logs.getLoggerProvider();
+
+    const loggerProvider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
+    });
+    let forceFlushed = false;
+    const forceFlush = () =>
+      new Promise<void>(resolve => {
+        forceFlushed = true;
+        resolve();
+      });
+    loggerProvider.forceFlush = forceFlush;
+    logs.setGlobalLoggerProvider(loggerProvider);
+
+    process.env._HANDLER = 'lambda-test/sync.handler';
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setLoggerProvider(provider);
+
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+
+    assert.strictEqual(forceFlushed, true);
+    logs.disable();
   });
 
   it('should complete handler after force flush providers', async () => {

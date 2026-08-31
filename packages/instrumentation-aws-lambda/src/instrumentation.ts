@@ -740,7 +740,18 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     if (!loggerProvider) return undefined;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentProvider: any = loggerProvider;
+    let currentProvider: any = loggerProvider;
+
+    // A LoggerProvider obtained via @opentelemetry/api-logs is a delegating
+    // proxy (ProxyLoggerProvider), like ProxyTracerProvider, so unwrap it to
+    // reach the SDK provider that actually has forceFlush. The logs proxy
+    // exposes the delegate as _getDelegate(); fall back to getDelegate() for
+    // any provider that uses the non-underscore name.
+    if (typeof currentProvider._getDelegate === 'function') {
+      currentProvider = currentProvider._getDelegate();
+    } else if (typeof currentProvider.getDelegate === 'function') {
+      currentProvider = currentProvider.getDelegate();
+    }
 
     if (typeof currentProvider.forceFlush === 'function') {
       return currentProvider.forceFlush.bind(currentProvider);
