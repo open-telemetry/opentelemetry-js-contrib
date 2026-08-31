@@ -49,17 +49,10 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * {@link queryTextSanitizationHook} before it is recorded as the
    * `db.query.text` attribute.
    *
-   * Only affects non-parameterized queries -- a call with no `values`, or
-   * with an empty `values` array. A parameterized query's text is always
-   * recorded as-is: the specification
-   * advises against sanitizing it, since parameter values -- where any
-   * sensitive data would be -- are passed separately rather than
-   * interpolated into the text.
-   *
-   * This is independent of {@link enhancedDatabaseReporting}, which controls a
-   * separate attribute holding the raw parameter values. Leaving this false
-   * while enabling {@link enhancedDatabaseReporting} records sanitized query
-   * text alongside unsanitized values.
+   * Only affects non-parameterized queries -- a call with no `values`, or with
+   * an empty `values` array. A parameterized query's text is always recorded
+   * as-is, whatever this is set to. See the package README for why, and for
+   * how this interacts with {@link enhancedDatabaseReporting}.
    *
    * @default false
    * @see queryTextSanitizationHook
