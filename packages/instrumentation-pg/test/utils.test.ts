@@ -162,6 +162,36 @@ describe('utils.ts', () => {
     });
   });
 
+  describe('.parseNormalizedOperationName()', () => {
+    it('splits on a tab as well as a space', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("SELECT\t'x' FROM t"),
+        'SELECT'
+      );
+    });
+
+    it('splits on a newline', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("SELECT\n'secret'"),
+        'SELECT'
+      );
+    });
+
+    it('splits on a carriage return', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("UPDATE\r\nt SET c='x'"),
+        'UPDATE'
+      );
+    });
+
+    it('returns the whole trimmed input when it has no whitespace', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName('  SELECT  '),
+        'SELECT'
+      );
+    });
+  });
+
   describe('.shouldSkipInstrumentation()', () => {
     it('returns false when requireParentSpan=false', async () => {
       assert.strictEqual(

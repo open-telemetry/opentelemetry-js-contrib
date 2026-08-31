@@ -117,11 +117,10 @@ Limits worth knowing:
 - Only `db.query.text` is masked. The query sent to PostgreSQL is untouched, and
   `requestHook` still receives the original text.
 - `db.operation.name` and the span name are derived from the raw query text, not
-  the masked text. Both take everything up to the first space character, so a
-  statement separating its leading keyword with a tab or newline instead carries
-  more of the raw text than intended -- and because `db.operation.name` is also a
-  dimension of the `db.client.operation.duration` metric, that text reaches
-  metrics as well.
+  the masked text -- and because `db.operation.name` is also a dimension of the
+  `db.client.operation.duration` metric, that text reaches metrics as well.
+  Only the leading keyword is used, though, so this is limited to the SQL
+  command name (`SELECT`, `INSERT`, etc.), never a literal.
 - Double-quoted identifiers are preserved, because in PostgreSQL `"` delimits an
   identifier rather than a string literal. An application that quotes _dynamic_
   identifiers should supply its own `maskStatementHook`.
