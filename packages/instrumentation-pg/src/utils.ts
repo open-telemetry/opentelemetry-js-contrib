@@ -200,10 +200,6 @@ export function sanitizeQueryText(
     instrumentationConfig.queryTextSanitizationHook ??
     defaultQueryTextSanitizationHook;
 
-  // A plain try/catch rather than safeExecuteInTheMiddle: the hook returns a
-  // value, and that helper reports a throw as undefined -- indistinguishable
-  // from a hook missing a return statement, which is the likelier mistake and
-  // the one worth its own diagnostic.
   let sanitized: unknown;
   try {
     sanitized = hook(text);
