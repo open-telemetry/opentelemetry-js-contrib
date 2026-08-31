@@ -44,7 +44,7 @@ describe('sanitizeSql', () => {
     describe('string literals', () => {
       run([
         [
-          'masks a quoted string',
+          'replaces a quoted string',
           "SELECT * FROM users WHERE name = 'John'",
           'SELECT * FROM users WHERE name = ?',
         ],
@@ -53,25 +53,29 @@ describe('sanitizeSql', () => {
           "SELECT * FROM t WHERE s = 'it''s'",
           'SELECT * FROM t WHERE s = ?',
         ],
-        ['masks an empty string', "SELECT ''", 'SELECT ?'],
+        ['replaces an empty string', "SELECT ''", 'SELECT ?'],
         [
-          'masks a string containing a comment marker',
+          'replaces a string containing a comment marker',
           "SELECT '-- not a comment'",
           'SELECT ?',
         ],
         [
-          'masks a string containing a statement separator',
+          'replaces a string containing a statement separator',
           "SELECT 'a; DROP TABLE t'",
           'SELECT ?',
         ],
         [
-          'masks a string containing a placeholder',
+          'replaces a string containing a placeholder',
           "SELECT 'literally $1'",
           'SELECT ?',
         ],
-        ['masks each of two adjacent strings', "SELECT 'a'\n'b'", 'SELECT ? ?'],
         [
-          'masks an unterminated string through end of input',
+          'replaces each of two adjacent strings',
+          "SELECT 'a'\n'b'",
+          'SELECT ? ?',
+        ],
+        [
+          'replaces an unterminated string through end of input',
           "SELECT 'unterminated",
           'SELECT ?',
         ],
@@ -85,19 +89,19 @@ describe('sanitizeSql', () => {
           "SELECT E'a\\'b', 'x'",
           'SELECT ?, ?',
         ],
-        ['masks a bit string', "SELECT B'10101'", 'SELECT ?'],
-        ['masks a hexadecimal string', "SELECT X'deadbeef'", 'SELECT ?'],
+        ['replaces a bit string', "SELECT B'10101'", 'SELECT ?'],
+        ['replaces a hexadecimal string', "SELECT X'deadbeef'", 'SELECT ?'],
         [
-          'masks an unterminated bit string through end of input',
+          'replaces an unterminated bit string through end of input',
           "SELECT B'10101",
           'SELECT ?',
         ],
         [
-          'masks an unterminated hexadecimal string through end of input',
+          'replaces an unterminated hexadecimal string through end of input',
           "SELECT X'deadbeef",
           'SELECT ?',
         ],
-        ['masks a unicode escape string', "SELECT U&'\\0441'", 'SELECT ?'],
+        ['replaces a unicode escape string', "SELECT U&'\\0441'", 'SELECT ?'],
         [
           'does not treat a word ending in a prefix letter as a prefix',
           'SELECT Encoding, Extract FROM t',
@@ -114,12 +118,12 @@ describe('sanitizeSql', () => {
     describe('dollar-quoted literals', () => {
       run([
         [
-          'masks an untagged dollar-quoted string',
+          'replaces an untagged dollar-quoted string',
           "SELECT $$body with 'quotes' and ; $$",
           'SELECT ?',
         ],
         [
-          'masks a tagged dollar-quoted string',
+          'replaces a tagged dollar-quoted string',
           'SELECT $tag$ x $tag$',
           'SELECT ?',
         ],
@@ -128,19 +132,19 @@ describe('sanitizeSql', () => {
           'SELECT $a$ $b$ $a$',
           'SELECT ?',
         ],
-        ['masks an empty dollar-quoted string', 'SELECT $$$$', 'SELECT ?'],
+        ['replaces an empty dollar-quoted string', 'SELECT $$$$', 'SELECT ?'],
         [
-          'masks an unterminated dollar-quoted string through end of input',
+          'replaces an unterminated dollar-quoted string through end of input',
           'SELECT $$never closed',
           'SELECT ?',
         ],
         [
-          'masks a dollar-quoted string with a non-ASCII tag',
+          'replaces a dollar-quoted string with a non-ASCII tag',
           'SELECT $caf\u00e9$my secret note$caf\u00e9$ FROM t',
           'SELECT ? FROM t',
         ],
         [
-          'masks a dollar-quoted string opening straight after a placeholder',
+          'replaces a dollar-quoted string opening straight after a placeholder',
           'SELECT * FROM t WHERE a = $1 AND b = $$secret$$',
           'SELECT * FROM t WHERE a = $1 AND b = ?',
         ],
@@ -166,7 +170,7 @@ describe('sanitizeSql', () => {
           'SELECT x::text FROM t WHERE y = $1::uuid',
         ],
         [
-          'masks literals alongside a placeholder',
+          'replaces literals alongside a placeholder',
           "SELECT * FROM t WHERE a = $1 AND b = 'secret'",
           'SELECT * FROM t WHERE a = $1 AND b = ?',
         ],
@@ -212,7 +216,7 @@ describe('sanitizeSql', () => {
           'SELECT caf\u00e9 FROM \u0442\u0430\u0431\u043b\u0438\u0446\u0430',
         ],
         [
-          'masks an unterminated identifier through end of input',
+          'replaces an unterminated identifier through end of input',
           'SELECT * FROM "never closed',
           'SELECT * FROM ?',
         ],
@@ -258,24 +262,24 @@ describe('sanitizeSql', () => {
 
     describe('numeric literals', () => {
       run([
-        ['masks an integer', 'SELECT 42', 'SELECT ?'],
-        ['masks a zero at end of input', 'SELECT 0', 'SELECT ?'],
-        ['masks a decimal', 'SELECT 3.14', 'SELECT ?'],
-        ['masks a leading-dot decimal', 'SELECT .5', 'SELECT ?'],
+        ['replaces an integer', 'SELECT 42', 'SELECT ?'],
+        ['replaces a zero at end of input', 'SELECT 0', 'SELECT ?'],
+        ['replaces a decimal', 'SELECT 3.14', 'SELECT ?'],
+        ['replaces a leading-dot decimal', 'SELECT .5', 'SELECT ?'],
         [
-          'masks a signed leading-dot decimal',
+          'replaces a signed leading-dot decimal',
           'SELECT * FROM t WHERE r = -.5',
           'SELECT * FROM t WHERE r = ?',
         ],
-        ['masks an exponent', 'SELECT 1.5e-3, 1E10', 'SELECT ?, ?'],
+        ['replaces an exponent', 'SELECT 1.5e-3, 1E10', 'SELECT ?, ?'],
         [
-          'masks digit group separators in an exponent',
+          'replaces digit group separators in an exponent',
           'SELECT 1e123_456',
           'SELECT ?',
         ],
-        ['masks hexadecimal', 'SELECT 0x1F, 0XFF', 'SELECT ?, ?'],
-        ['masks octal and binary', 'SELECT 0o17, 0b1010', 'SELECT ?, ?'],
-        ['masks digit group separators', 'SELECT 1_000_000', 'SELECT ?'],
+        ['replaces hexadecimal', 'SELECT 0x1F, 0XFF', 'SELECT ?, ?'],
+        ['replaces octal and binary', 'SELECT 0o17, 0b1010', 'SELECT ?, ?'],
+        ['replaces digit group separators', 'SELECT 1_000_000', 'SELECT ?'],
         [
           'absorbs a sign where a value is expected',
           'SELECT * FROM t WHERE id = -12 AND n = +7',
