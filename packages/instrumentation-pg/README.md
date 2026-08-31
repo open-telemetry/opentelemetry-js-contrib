@@ -89,17 +89,18 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 
 ### Masking `db.query.text`
 
-By default `db.query.text` records the query text exactly as it was passed to
-`client.query()`. The `pg` driver never interpolates parameter values into the
-query text, so a parameterized query records placeholders rather than values —
-which is why the specification advises against
+The `pg` driver never interpolates parameter values into the query text, so a
+parameterized query records placeholders rather than values — which is why
+the specification advises against
 [sanitizing](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#sanitization-of-dbquerytext)
-parameterized query text.
+parameterized query text. A parameterized call (one made with a `values`
+array) always has its `db.query.text` recorded exactly as passed to
+`client.query()`, regardless of `skipQueryTextSanitization`.
 
 Applications that build SQL by string concatenation put literals into the query
-text, and therefore onto the span. `db.query.text` is masked by default to
-strip those out; set `skipQueryTextSanitization: true` to record it verbatim
-instead. By default:
+text, and therefore onto the span. For a non-parameterized query, `db.query.text`
+is masked by default to strip those out; set `skipQueryTextSanitization: true`
+to record it verbatim instead. By default:
 
 - string, numeric, bit-string and dollar-quoted literals become `?`
 - `--` and (nestable) `/* */` comments are removed

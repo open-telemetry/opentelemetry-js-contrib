@@ -49,6 +49,12 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * {@link maskStatementHook} before it is recorded as the `db.query.text`
    * attribute.
    *
+   * Only affects non-parameterized queries (a call with no `values`). A
+   * parameterized query's text is always recorded as-is: the specification
+   * advises against sanitizing it, since parameter values -- where any
+   * sensitive data would be -- are passed separately rather than
+   * interpolated into the text.
+   *
    * This is independent of {@link enhancedDatabaseReporting}, which controls a
    * separate attribute holding the raw parameter values. Leaving this false
    * while enabling {@link enhancedDatabaseReporting} records masked query text
@@ -61,8 +67,8 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
 
   /**
    * Hook that masks the query text before it is recorded as the
-   * `db.query.text` attribute. Only consulted when
-   * {@link skipQueryTextSanitization} is false, and never applied to the
+   * `db.query.text` attribute. Only consulted for a non-parameterized query
+   * when {@link skipQueryTextSanitization} is false, and never applied to the
    * query sent to the server or to the text passed to {@link requestHook}.
    *
    * The default replaces literals with `?` while preserving parameter

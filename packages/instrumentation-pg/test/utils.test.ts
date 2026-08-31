@@ -356,6 +356,21 @@ describe('utils.ts', () => {
       );
     });
 
+    it('never sanitizes the text of a parameterized query, even when sanitization is not skipped', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        { ...instrumentationConfig, skipQueryTextSanitization: false },
+        { text: "SELECT $1::text WHERE label = 'literal'", values: ['0'] }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        "SELECT $1::text WHERE label = 'literal'"
+      );
+    });
+
     it('records masked query text when sanitization is not skipped', () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
@@ -382,7 +397,7 @@ describe('utils.ts', () => {
             throw new Error('hook failure');
           },
         },
-        { ...queryConfig, name: 'a-plan' }
+        { text: queryConfig.text, name: 'a-plan' }
       );
       querySpan.end();
 

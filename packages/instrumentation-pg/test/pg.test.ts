@@ -649,6 +649,24 @@ describe('pg', () => {
         });
       });
 
+      it('does not mask a literal that accompanies parameter placeholders', done => {
+        const query = "SELECT $1::text as msg, 'literal' as note";
+        const attributes = {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: query,
+        };
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.query(query, ['hello'], (err, res) => {
+            assert.strictEqual(err, null);
+            assert.strictEqual(res.rows[0].msg, 'hello');
+            assert.strictEqual(res.rows[0].note, 'literal');
+            runCallbackTest(span, attributes, events);
+            done();
+          });
+        });
+      });
+
       it('masks a literal in a static query', done => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,

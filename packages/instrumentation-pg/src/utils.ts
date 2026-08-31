@@ -254,8 +254,15 @@ export function handleConfigQuery(
 
   // Set attributes
   if (span.isRecording()) {
+    // A parameterized query's text is recorded as-is: the specification
+    // advises against sanitizing it, since any sensitive data is passed as
+    // parameter values rather than interpolated into the text.
+    const isParameterized = Array.isArray(queryConfig.values);
+
     if (queryConfig.text) {
-      const queryText = maskQueryText(queryConfig.text, instrumentationConfig);
+      const queryText = isParameterized
+        ? queryConfig.text
+        : maskQueryText(queryConfig.text, instrumentationConfig);
       if (queryText !== undefined) {
         span.setAttribute(ATTR_DB_QUERY_TEXT, queryText);
       }
