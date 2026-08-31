@@ -245,7 +245,8 @@ export function handleConfigQuery(
     return span;
   }
 
-  // Set attributes
+  // Gated on isRecording so that an unsampled span does not pay for
+  // sanitizing the query text or stringifying the parameter values.
   if (span.isRecording()) {
     const values = Array.isArray(queryConfig.values)
       ? queryConfig.values

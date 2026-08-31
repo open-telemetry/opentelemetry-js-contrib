@@ -373,7 +373,7 @@ describe('utils.ts', () => {
       assert.deepStrictEqual(pgValues, ['0']);
     });
 
-    it('records the query text verbatim by default', () => {
+    it("records a parameterized query's text verbatim", () => {
       const querySpan = utils.handleConfigQuery.call(
         client,
         tracer,

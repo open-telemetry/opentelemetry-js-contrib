@@ -110,7 +110,7 @@ to record it verbatim instead. By default:
 - `--` and (nestable) `/* */` comments are removed
 - runs of whitespace collapse to a single space
 - `$n` parameter placeholders and identifiers, including `"quoted"` ones, are preserved
-- the result is truncated at 32 KiB
+- the result is truncated at 32768 characters
 
 So `SELECT * FROM users WHERE email = 'a@b.c' -- lookup` is recorded as
 `SELECT * FROM users WHERE email = ?`, while
