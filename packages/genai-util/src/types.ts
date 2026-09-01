@@ -26,12 +26,15 @@ export type ContentCaptureMode = 'none' | 'span_only';
 
 /**
  * Reason why the model finished generating output.
+ *
+ * Corresponds to `gen_ai.response.finish_reasons`.
  */
 export type FinishReason =
   | 'stop'
   | 'length'
   | 'content_filter'
   | 'tool_call'
+  | 'compaction'
   | 'error'
   | string;
 
@@ -39,6 +42,43 @@ export type FinishReason =
  * Role of the message sender in a chat conversation.
  */
 export type Role = 'system' | 'user' | 'assistant' | 'tool' | string;
+
+/**
+ * Modality of multimodal content (e.g. image, video, audio, document).
+ */
+export type Modality = 'image' | 'video' | 'audio' | 'document' | string;
+
+/**
+ * Content type requested by the client.
+ *
+ * Corresponds to `gen_ai.output.type`.
+ */
+export type OutputType = 'text' | 'json' | 'image' | 'speech' | string;
+
+/**
+ * Classification of tool utilized by an agent.
+ *
+ * Corresponds to `gen_ai.tool.type`.
+ */
+export type ToolType = 'function' | 'extension' | 'datastore' | string;
+
+/**
+ * Lifecycle status of a generated response, as reported by the provider.
+ *
+ * Corresponds to `gen_ai.response.status`.
+ */
+export type ResponseStatus =
+  | 'queued'
+  | 'in_progress'
+  | 'completed'
+  | 'incomplete'
+  | 'failed'
+  | 'cancelled'
+  | string;
+
+// ============================================================================
+// Message Parts (per gen-ai-input-messages.json / gen-ai-output-messages.json)
+// ============================================================================
 
 /**
  * Generic message part for extensible content.
@@ -54,7 +94,7 @@ export interface GenericPart {
  */
 export interface TextPart {
   type: 'text';
-  /** Text content. */
+  /** Text content sent to or received from the model. */
   content: string;
   [key: string]: unknown;
 }
@@ -64,12 +104,12 @@ export interface TextPart {
  */
 export interface BlobPart {
   type: 'blob';
-  /** Modality of the content (e.g. image, audio, video). */
-  modality?: string;
-  /** MIME type of the content (e.g. image/jpeg, audio/wav). */
-  mime_type?: string;
-  /** Base64-encoded or URI content. */
-  content?: string;
+  /** Modality of the content (e.g. image, audio, video, document). */
+  modality: Modality;
+  /** Raw bytes of the attached data, encoded as a base64 string. */
+  content: string;
+  /** The IANA MIME type of the attached data. */
+  mime_type?: string | null;
   [key: string]: unknown;
 }
 
@@ -104,7 +144,7 @@ export interface ToolCallResponsePart {
  */
 export interface ReasoningPart {
   type: 'reasoning';
-  /** Reasoning / thought content. */
+  /** Reasoning / thought content received from the model. */
   content: string;
   [key: string]: unknown;
 }
@@ -114,8 +154,10 @@ export interface ReasoningPart {
  */
 export interface CompactionPart {
   type: 'compaction';
-  /** Compaction content or summary. */
-  content?: string;
+  /** Provider-assigned identifier for the compaction item or block. */
+  id?: string | null;
+  /** The unencrypted compacted conversation summary, when available. */
+  content?: string | null;
   [key: string]: unknown;
 }
 
@@ -124,8 +166,12 @@ export interface CompactionPart {
  */
 export interface FilePart {
   type: 'file';
-  /** Unique file identifier. */
+  /** Unique identifier referencing a file that was pre-uploaded to the provider. */
   file_id: string;
+  /** Modality of the content (e.g. image, audio, video, document). */
+  modality: Modality;
+  /** The IANA MIME type of the attached data. */
+  mime_type?: string | null;
   [key: string]: unknown;
 }
 
@@ -134,10 +180,30 @@ export interface FilePart {
  */
 export interface UriPart {
   type: 'uri';
-  /** Target URI. */
+  /** A URI referencing attached data. */
   uri: string;
-  /** Optional MIME type. */
-  mime_type?: string;
+  /** Modality of the content (e.g. image, audio, video, document). */
+  modality: Modality;
+  /** The IANA MIME type of the attached data. */
+  mime_type?: string | null;
+  [key: string]: unknown;
+}
+
+/**
+ * Generic server-side tool call details.
+ */
+export interface GenericServerToolCall {
+  /** Type identifier for the server tool call. */
+  type: string;
+  [key: string]: unknown;
+}
+
+/**
+ * Generic server-side tool call response details.
+ */
+export interface GenericServerToolCallResponse {
+  /** Type identifier for the server tool call response. */
+  type: string;
   [key: string]: unknown;
 }
 
@@ -146,12 +212,12 @@ export interface UriPart {
  */
 export interface ServerToolCallPart {
   type: 'server_tool_call';
-  /** Unique tool call identifier. */
-  id?: string | null;
-  /** Name of the server-side tool. */
+  /** Name of the server tool. */
   name: string;
-  /** Arguments passed to the tool. */
-  arguments?: unknown | null;
+  /** Polymorphic server tool call details with type discriminator. */
+  server_tool_call: GenericServerToolCall;
+  /** Unique identifier for the server tool call. */
+  id?: string | null;
   [key: string]: unknown;
 }
 
@@ -160,10 +226,10 @@ export interface ServerToolCallPart {
  */
 export interface ServerToolCallResponsePart {
   type: 'server_tool_call_response';
-  /** Matching tool call identifier. */
+  /** Polymorphic server tool call response with type discriminator. */
+  server_tool_call_response: GenericServerToolCallResponse;
+  /** Unique server tool call identifier matching the original call. */
   id?: string | null;
-  /** Server tool call response. */
-  response: unknown;
   [key: string]: unknown;
 }
 
@@ -184,9 +250,13 @@ export type MessagePart =
   | GenericPart;
 
 /**
- * System instruction part for use in SystemInstructions
+ * System instruction part for use in SystemInstructions.
  */
 export type SystemInstructionPart = TextPart | GenericPart;
+
+// ============================================================================
+// Messages and Conversations
+// ============================================================================
 
 /**
  * Chat message representing an input or output in a conversation.
@@ -196,6 +266,8 @@ export interface ChatMessage {
   role: Role;
   /** List of message parts comprising the content. */
   parts: MessagePart[];
+  /** The name of the participant. */
+  name?: string | null;
   [key: string]: unknown;
 }
 
@@ -212,8 +284,8 @@ export interface OutputMessage {
   role: Role;
   /** List of message parts comprising the completion. */
   parts: MessagePart[];
-  /** Reason why generation finished. */
-  finish_reason?: FinishReason;
+  /** The name of the participant. */
+  name?: string | null;
   [key: string]: unknown;
 }
 
@@ -231,15 +303,17 @@ export type SystemInstructions = SystemInstructionPart[];
  * Token usage counts for a request per OpenTelemetry SemConv.
  */
 export interface TokenUsage {
-  /** Number of tokens in the prompt / input. */
+  /** Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`). */
   inputTokens?: number;
-  /** Number of tokens in the completion / output. */
+  /** Number of tokens in the completion / output (`gen_ai.usage.output_tokens`). */
   outputTokens?: number;
-  /** Number of tokens used for model reasoning / thinking. */
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.usage.reasoning.output_tokens`). */
   reasoningTokens?: number;
-  /** Number of cached tokens read from prompt cache. */
+  /** Number of cached tokens read from prompt cache (`gen_ai.usage.cache_read.input_tokens`). */
   cacheReadTokens?: number;
-  /** Number of tokens written to create prompt cache. */
+  /** Number of tokens written to prompt cache (`gen_ai.usage.cache_write.input_tokens`). */
+  cacheWriteTokens?: number;
+  /** Number of tokens written to prompt cache (alias for `cacheWriteTokens`). */
   cacheCreationTokens?: number;
   /** Total tokens (convenience sum, not recorded as span attribute per semconv). */
   totalTokens?: number;
@@ -249,31 +323,35 @@ export interface TokenUsage {
  * Standard parameters for a GenAI request.
  */
 export interface GenAIRequestOptions {
-  /** Sampling temperature. */
+  /** Sampling temperature (`gen_ai.request.temperature`). */
   temperature?: number;
-  /** Top-p nucleus sampling parameter. */
+  /** Top-p nucleus sampling parameter (`gen_ai.request.top_p`). */
   topP?: number;
-  /** Top-k sampling parameter. */
+  /** Top-k sampling parameter (`gen_ai.request.top_k`). */
   topK?: number;
-  /** Maximum number of tokens to generate. */
+  /** Maximum number of tokens to generate (`gen_ai.request.max_tokens`). */
   maxTokens?: number;
-  /** Stop sequences. */
+  /** Stop sequences (`gen_ai.request.stop_sequences`). */
   stopSequences?: string[];
-  /** Frequency penalty parameter. */
+  /** Frequency penalty parameter (`gen_ai.request.frequency_penalty`). */
   frequencyPenalty?: number;
-  /** Presence penalty parameter. */
+  /** Presence penalty parameter (`gen_ai.request.presence_penalty`). */
   presencePenalty?: number;
-  /** Number of choices/completions requested. */
+  /** Number of choices/completions requested (`gen_ai.request.choice.count`). */
   choiceCount?: number;
-  /** Random seed for deterministic generation. */
+  /** Random seed for deterministic generation (`gen_ai.request.seed`). */
   seed?: number;
-  /** Target encoding formats. */
+  /** Target encoding formats (`gen_ai.request.encoding_formats`). */
   encodingFormats?: string[];
-  /** Whether the request was streamed. */
+  /** Whether the request was streamed (`gen_ai.request.stream`). */
   stream?: boolean;
-  /** The requested reasoning effort/level (e.g. 'low', 'medium', 'high'). */
+  /** The requested reasoning effort/level (`gen_ai.request.reasoning.level`). */
   reasoningLevel?: string;
 }
+
+// ============================================================================
+// Invocation Options
+// ============================================================================
 
 /**
  * Options for starting an inference invocation.
@@ -283,15 +361,15 @@ export interface InferenceInvocationOptions {
   providerName: string;
   /** Operation name (e.g. 'chat', 'text_completion', 'generate_content'). Defaults to 'chat'. */
   operationName?: string;
-  /** Model name requested. */
+  /** Model name requested (`gen_ai.request.model`). */
   requestModel?: string;
   /** Request parameters/settings. */
   requestOptions?: GenAIRequestOptions;
-  /** Input messages sent to the model. */
+  /** Input messages sent to the model (`gen_ai.input.messages`). */
   inputMessages?: InputMessages;
-  /** System instructions. */
+  /** System instructions (`gen_ai.system_instructions`). */
   systemInstructions?: SystemInstructions;
-  /** Conversation / session / thread ID. */
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
   conversationId?: string;
   /** Parent context for the span. */
   parentContext?: Context;
@@ -307,9 +385,9 @@ export interface InferenceInvocationOptions {
  * Options for starting an embedding invocation.
  */
 export interface EmbeddingInvocationOptions {
-  /** Name of the provider. */
+  /** Name of the provider (`gen_ai.provider.name`). */
   providerName: string;
-  /** Model name requested. */
+  /** Model name requested (`gen_ai.request.model`). */
   requestModel?: string;
   /** Input texts to embed. */
   inputTexts?: string[];
@@ -327,15 +405,15 @@ export interface EmbeddingInvocationOptions {
  * Options for starting a tool execution invocation.
  */
 export interface ToolInvocationOptions {
-  /** Name of the tool being executed. */
+  /** Name of the tool being executed (`gen_ai.tool.name`). */
   toolName: string;
-  /** Description of the tool. */
+  /** Description of the tool (`gen_ai.tool.description`). */
   toolDescription?: string;
-  /** Unique ID of the tool call. */
+  /** Unique ID of the tool call (`gen_ai.tool.call.id`). */
   toolCallId?: string;
-  /** Type classification of the tool ('function', 'extension', 'datastore'). */
-  toolType?: string;
-  /** Arguments provided to the tool. */
+  /** Type classification of the tool (`gen_ai.tool.type`). */
+  toolType?: ToolType;
+  /** Arguments provided to the tool (`gen_ai.tool.call.arguments`). */
   toolArguments?: unknown;
   /** Parent context. */
   parentContext?: Context;
@@ -347,27 +425,29 @@ export interface ToolInvocationOptions {
  * Options for starting an agent invocation (e.g. local in-process agent).
  */
 export interface AgentInvocationOptions {
-  /** Unique ID of the agent. */
+  /** Unique ID of the agent (`gen_ai.agent.id`). */
   agentId?: string;
-  /** Name of the agent. */
+  /** Name of the agent (`gen_ai.agent.name`). */
   agentName?: string;
-  /** Description of the agent. */
+  /** Description of the agent (`gen_ai.agent.description`). */
   agentDescription?: string;
-  /** Version of the agent. */
+  /** Version of the agent (`gen_ai.agent.version`). */
   agentVersion?: string;
-  /** Name of the model requested by or configured for the agent. */
+  /** Name of the model requested by or configured for the agent (`gen_ai.request.model`). */
   requestModel?: string;
-  /** Conversation / session / thread ID. */
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
   conversationId?: string;
-  /** Data source identifier used by RAG/agent applications. */
+  /** Indicates whether the conversation context was compacted (`gen_ai.conversation.compacted`). */
+  conversationCompacted?: boolean;
+  /** Data source identifier used by RAG/agent applications (`gen_ai.data_source.id`). */
   dataSourceId?: string;
-  /** Represents the content type requested by the client (e.g. 'text', 'json'). */
-  outputType?: string;
+  /** Represents the content type requested by the client (`gen_ai.output.type`). */
+  outputType?: OutputType;
   /** Request parameters/settings. */
   requestOptions?: GenAIRequestOptions;
-  /** Input messages sent to the agent. */
+  /** Input messages sent to the agent (`gen_ai.input.messages`). */
   inputMessages?: InputMessages;
-  /** System instructions. */
+  /** System instructions (`gen_ai.system_instructions`). */
   systemInstructions?: SystemInstructions;
   /** Parent context. */
   parentContext?: Context;
@@ -379,7 +459,7 @@ export interface AgentInvocationOptions {
  * Options for starting a remote agent invocation (CLIENT span kind).
  */
 export interface RemoteAgentInvocationOptions extends AgentInvocationOptions {
-  /** Name of the remote GenAI provider (e.g. 'openai', 'aws.bedrock'). */
+  /** Name of the remote GenAI provider (`gen_ai.provider.name`). */
   providerName: string;
   /** Server address (e.g. hostname). */
   serverAddress?: string;
@@ -391,8 +471,12 @@ export interface RemoteAgentInvocationOptions extends AgentInvocationOptions {
  * Options for starting a workflow invocation.
  */
 export interface WorkflowInvocationOptions {
-  /** Name of the workflow. */
+  /** Name of the workflow (`gen_ai.workflow.name`). */
   workflowName: string;
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
+  conversationId?: string;
+  /** Input messages sent to the workflow (`gen_ai.input.messages`). */
+  inputMessages?: InputMessages;
   /** Parent context. */
   parentContext?: Context;
   /** Custom initial span attributes. */
@@ -403,18 +487,18 @@ export interface WorkflowInvocationOptions {
  * Options for starting a retrieval invocation.
  */
 export interface RetrievalInvocationOptions {
-  /** Data source identifier (e.g. database/index name or ID). */
+  /** Data source identifier (`gen_ai.data_source.id`). */
   dataSourceId?: string;
-  /** Name of the provider. */
+  /** Name of the provider (`gen_ai.provider.name`). */
   providerName?: string;
-  /** Model name if an embedding/reranking model is used during retrieval. */
+  /** Model name if an embedding/reranking model is used during retrieval (`gen_ai.request.model`). */
   requestModel?: string;
-  /** Top-k number of documents requested. */
+  /** Top-k number of documents requested (`gen_ai.retrieval.top_k`). */
   topK?: number;
-  /** Query text submitted to retrieval. */
+  /** Query text submitted to retrieval (`gen_ai.retrieval.query.text`). */
   queryText?: string;
-  /** Retrieved documents if known up-front. */
-  documents?: unknown[];
+  /** Retrieved documents if known up-front (`gen_ai.retrieval.documents`). */
+  documents?: Record<string, unknown>[];
   /** Server address (e.g. hostname). */
   serverAddress?: string;
   /** Server port. */
@@ -429,13 +513,13 @@ export interface RetrievalInvocationOptions {
  * Options for starting a fetch response invocation.
  */
 export interface FetchResponseInvocationOptions {
-  /** Name of the provider. */
+  /** Name of the provider (`gen_ai.provider.name`). */
   providerName: string;
-  /** Identifier of the response being fetched. */
+  /** Identifier of the response being fetched (`gen_ai.response.id`). */
   responseId: string;
   /** Whether the fetched response is streamed. */
   requestStream?: boolean;
-  /** Stream cursor for resuming a stream from a previous position. */
+  /** Stream cursor for resuming a stream from a previous position (`gen_ai.request.stream_cursor`). */
   streamCursor?: string;
   /** Server address. */
   serverAddress?: string;
@@ -447,35 +531,39 @@ export interface FetchResponseInvocationOptions {
   attributes?: Attributes;
 }
 
+// ============================================================================
+// Hook and Result Types
+// ============================================================================
+
 /**
  * Summary result passed to CompletionHook upon invocation finish.
  */
 export interface CompletionResult {
   /** The OpenTelemetry span for this invocation. */
   span: Span;
-  /** Provider name. */
+  /** Provider name (`gen_ai.provider.name`). */
   providerName?: string;
-  /** Operation name. */
+  /** Operation name (`gen_ai.operation.name`). */
   operationName?: string;
-  /** Requested model name. */
+  /** Requested model name (`gen_ai.request.model`). */
   requestModel?: string;
-  /** Response model name. */
+  /** Response model name (`gen_ai.response.model`). */
   responseModel?: string;
-  /** Response ID. */
+  /** Response ID (`gen_ai.response.id`). */
   responseId?: string;
-  /** Lifecycle response status. */
-  responseStatus?: string;
-  /** Finish reasons. */
+  /** Lifecycle response status (`gen_ai.response.status`). */
+  responseStatus?: ResponseStatus;
+  /** Finish reasons (`gen_ai.response.finish_reasons`). */
   finishReasons?: string[];
   /** Token usage. */
   usage?: TokenUsage;
   /** Duration of the operation in seconds. */
   durationSeconds?: number;
-  /** Input messages if captured. */
+  /** Input messages if captured (`gen_ai.input.messages`). */
   inputMessages?: InputMessages;
-  /** Output messages if captured. */
+  /** Output messages if captured (`gen_ai.output.messages`). */
   outputMessages?: OutputMessages;
-  /** System instructions if captured. */
+  /** System instructions if captured (`gen_ai.system_instructions`). */
   systemInstructions?: SystemInstructions;
   /** Error if the invocation failed. */
   error?: Error;

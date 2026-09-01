@@ -31,7 +31,6 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-  EVENT_GEN_AI_EVALUATION_RESULT,
   EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,
 } from '../src/semconv';
 
@@ -104,10 +103,6 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(
       EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
       'gen_ai.client.inference.operation.details'
-    );
-    assert.strictEqual(
-      EVENT_GEN_AI_EVALUATION_RESULT,
-      'gen_ai.evaluation.result'
     );
     assert.strictEqual(
       EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,

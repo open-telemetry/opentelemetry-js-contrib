@@ -91,10 +91,26 @@ export function serializeContent(content: unknown): string {
   if (content === null || content === undefined) {
     return '';
   }
-  try {
-    return JSON.stringify(content);
-  } catch {
+
+  // Handle types we know JSON.stringify drops (returns undefined for)
+  if (typeof content === 'function' || typeof content === 'symbol') {
     return String(content);
+  }
+
+  try {
+    const jsonResult = JSON.stringify(content);
+    if (jsonResult !== undefined) {
+      return jsonResult;
+    }
+  } catch {
+    // Ignored, fall through to fallback below (e.g., circular references, BigInt)
+  }
+
+  // Fallback for circular references, BigInts, or custom undefined toJSON()
+  try {
+    return String(content);
+  } catch {
+    return '[Unserializable Content]';
   }
 }
 

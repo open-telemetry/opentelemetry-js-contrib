@@ -316,11 +316,6 @@ export const ATTR_GEN_AI_TOOL_CALL_ARGUMENTS =
 export const ATTR_GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result' as const;
 
 /**
- * The list of tool definitions provided to the model/agent.
- */
-export const ATTR_GEN_AI_TOOL_DEFINITIONS = 'gen_ai.tool.definitions' as const;
-
-/**
  * Whether the request was streamed.
  */
 export const ATTR_GEN_AI_REQUEST_STREAM = 'gen_ai.request.stream' as const;
@@ -340,12 +335,6 @@ export const ATTR_GEN_AI_REQUEST_STREAM_CURSOR =
  */
 export const ATTR_GEN_AI_REQUEST_REASONING_LEVEL =
   'gen_ai.request.reasoning.level' as const;
-
-/**
- * The identifier of a previous response to continue from.
- */
-export const ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID =
-  'gen_ai.request.previous_response.id' as const;
 
 /**
  * Lifecycle status of the GenAI response.
@@ -371,14 +360,6 @@ export const ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK =
  * @example customer_support_pipeline
  */
 export const ATTR_GEN_AI_WORKFLOW_NAME = 'gen_ai.workflow.name' as const;
-
-/**
- * The number of dimensions in generated embeddings.
- *
- * @example 1536
- */
-export const ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT =
-  'gen_ai.embeddings.dimension.count' as const;
 
 /**
  * Documents returned by retrieval.
@@ -409,7 +390,6 @@ export const GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS = 'embeddings' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_GENERATE_CONTENT =
   'generate_content' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL = 'execute_tool' as const;
-export const GEN_AI_OPERATION_NAME_VALUE_CREATE_AGENT = 'create_agent' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT = 'invoke_agent' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL = 'retrieval' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE =
@@ -449,6 +429,7 @@ export const GEN_AI_FINISH_REASON_VALUE_LENGTH = 'length' as const;
 export const GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER =
   'content_filter' as const;
 export const GEN_AI_FINISH_REASON_VALUE_TOOL_CALL = 'tool_call' as const;
+export const GEN_AI_FINISH_REASON_VALUE_COMPACTION = 'compaction' as const;
 export const GEN_AI_FINISH_REASON_VALUE_ERROR = 'error' as const;
 
 // Response Status
@@ -482,12 +463,6 @@ export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
   'gen_ai.client.operation.time_to_first_chunk' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =
   'gen_ai.client.operation.time_per_output_chunk' as const;
-export const METRIC_GEN_AI_SERVER_REQUEST_DURATION =
-  'gen_ai.server.request.duration' as const;
-export const METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN =
-  'gen_ai.server.time_to_first_token' as const;
-export const METRIC_GEN_AI_SERVER_TIME_PER_OUTPUT_TOKEN =
-  'gen_ai.server.time_per_output_token' as const;
 export const METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION =
   'gen_ai.invoke_workflow.duration' as const;
 export const METRIC_GEN_AI_INVOKE_AGENT_DURATION =
@@ -505,7 +480,5 @@ export const METRIC_GEN_AI_EXECUTE_TOOL_DURATION =
 
 export const EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS =
   'gen_ai.client.inference.operation.details' as const;
-export const EVENT_GEN_AI_EVALUATION_RESULT =
-  'gen_ai.evaluation.result' as const;
 export const EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION =
   'gen_ai.client.operation.exception' as const;
