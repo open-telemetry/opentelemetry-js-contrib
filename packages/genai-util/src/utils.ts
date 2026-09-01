@@ -184,7 +184,7 @@ export function getSpanName(operationName: string, model?: string): string {
  * 2. Explicit `error.name` if set and not the default `'Error'` (e.g., `'RateLimitError'`)
  * 3. Class / constructor name for subclasses (e.g., `class CustomAPIError extends Error`)
  * 4. Non-empty string if `error` is a string
- * 5. Fallback `'Error'`
+ * 5. Fallback `'_OTHER'`
  *
  * @param error - The caught error, exception, or value.
  * @returns The standardized error type string.

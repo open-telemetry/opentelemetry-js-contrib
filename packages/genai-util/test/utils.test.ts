@@ -198,17 +198,17 @@ describe('GenAI Utils', () => {
 
     it('should extract error type from string error inputs', () => {
       assert.strictEqual(getErrorType('RateLimitError'), 'RateLimitError');
-      assert.strictEqual(getErrorType('   '), 'Error');
-      assert.strictEqual(getErrorType(''), 'Error');
+      assert.strictEqual(getErrorType('   '), '_OTHER');
+      assert.strictEqual(getErrorType(''), '_OTHER');
     });
 
-    it('should return default "Error" for nullish, boolean, number, or plain object inputs', () => {
-      assert.strictEqual(getErrorType(null), 'Error');
-      assert.strictEqual(getErrorType(undefined), 'Error');
-      assert.strictEqual(getErrorType(1234), 'Error');
-      assert.strictEqual(getErrorType(true), 'Error');
-      assert.strictEqual(getErrorType({}), 'Error');
-      assert.strictEqual(getErrorType({ message: 'plain obj' }), 'Error');
+    it('should return default "_OTHER" for nullish, boolean, number, or plain object inputs', () => {
+      assert.strictEqual(getErrorType(null), '_OTHER');
+      assert.strictEqual(getErrorType(undefined), '_OTHER');
+      assert.strictEqual(getErrorType(1234), '_OTHER');
+      assert.strictEqual(getErrorType(true), '_OTHER');
+      assert.strictEqual(getErrorType({}), '_OTHER');
+      assert.strictEqual(getErrorType({ message: 'plain obj' }), '_OTHER');
     });
   });
 
