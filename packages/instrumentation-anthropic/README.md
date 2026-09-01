@@ -6,7 +6,7 @@
 This module provides basic automatic instrumentation for the
 [`@anthropic-ai/sdk`](https://www.npmjs.com/package/@anthropic-ai/sdk)
 Anthropic client library. It is adapted from the Apache-2.0 licensed
-[OpenInference Anthropic instrumentation](https://github.com/eternalcuriouslearner/donation-openinference/tree/main/js/packages/openinference-instrumentation-anthropic)
+[OpenInference Anthropic instrumentation](https://github.com/open-telemetry/donation-openinference/tree/main/js/packages/openinference-instrumentation-anthropic)
 and emits OpenTelemetry GenAI semantic conventions.
 
 ## Installation
@@ -24,6 +24,8 @@ npm install --save @opentelemetry/instrumentation-anthropic
 - `anthropic.messages.create()`
 - `anthropic.messages.create({ stream: true })`
 - `anthropic.messages.stream()`
+- `anthropic.messages.parse()` on SDK versions that provide structured-output
+  parsing (instrumented through its internal `messages.create()` call)
 
 The current scaffold creates a client span for each call, records the GenAI
 provider, operation, requested model, response identifiers, finish reasons, and

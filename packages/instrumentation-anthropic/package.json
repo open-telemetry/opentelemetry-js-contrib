@@ -53,6 +53,7 @@
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "dependencies": {
+    "@opentelemetry/core": "^2.0.0",
     "@opentelemetry/instrumentation": "^0.222.0",
     "@opentelemetry/semantic-conventions": "^1.36.0"
   },

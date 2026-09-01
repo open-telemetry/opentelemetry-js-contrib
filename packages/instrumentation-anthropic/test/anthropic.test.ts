@@ -13,7 +13,8 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 import Anthropic from '@anthropic-ai/sdk';
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
@@ -73,6 +74,26 @@ function expectedInputTokens(usage: Anthropic.Messages.Usage): number {
     (usage.cache_creation_input_tokens ?? 0) +
     (usage.cache_read_input_tokens ?? 0)
   );
+}
+
+function mockMessage(id: string): void {
+  nock('https://api.anthropic.com')
+    .post('/v1/messages')
+    .reply(200, {
+      id,
+      type: 'message',
+      role: 'assistant',
+      model,
+      content: [{ type: 'text', text: 'Hello telemetry' }],
+      stop_reason: 'end_turn',
+      stop_sequence: null,
+      usage: {
+        input_tokens: 12,
+        output_tokens: 4,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+      },
+    });
 }
 
 function expectResponseAttributes(
@@ -184,6 +205,93 @@ describe('Anthropic instrumentation', function () {
         }),
       ])
     );
+  });
+
+  it('preserves APIPromise.asResponse without consuming the body', async () => {
+    mockMessage('msg_raw_response');
+
+    const apiPromise = mockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+    });
+    const response = await apiPromise.asResponse();
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ id: 'msg_raw_response' });
+    expect(getTestSpans()).toHaveLength(1);
+  });
+
+  it('preserves APIPromise.withResponse telemetry', async () => {
+    mockMessage('msg_with_response');
+
+    const { data, response } = await mockClient.messages
+      .create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+      })
+      .withResponse();
+
+    expect(response.status).toBe(200);
+    expect(data.id).toBe('msg_with_response');
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].attributes[ATTR_GEN_AI_RESPONSE_ID]).toBe(data.id);
+  });
+
+  it('instruments messages.parse when the SDK provides it', async function () {
+    const messages = mockClient.messages as typeof mockClient.messages & {
+      parse?: (
+        params: Anthropic.Messages.MessageCreateParamsNonStreaming
+      ) => Promise<Anthropic.Messages.Message>;
+    };
+    if (!messages.parse) this.skip();
+    mockMessage('msg_parsed');
+
+    const response = await messages.parse({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+    });
+
+    expect(response.id).toBe('msg_parsed');
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].attributes[ATTR_GEN_AI_RESPONSE_ID]).toBe(
+      response.id
+    );
+  });
+
+  it('does not create spans when tracing is suppressed', async () => {
+    mockMessage('msg_suppressed');
+
+    await context.with(suppressTracing(context.active()), () =>
+      mockClient.messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+      })
+    );
+
+    expect(getTestSpans()).toHaveLength(0);
+  });
+
+  it('uses the active span as parent', async () => {
+    mockMessage('msg_child');
+    const tracer = trace.getTracer('anthropic-parent-test');
+    let parentSpanId: string | undefined;
+
+    await tracer.startActiveSpan('parent', async parent => {
+      parentSpanId = parent.spanContext().spanId;
+      await mockClient.messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+      });
+      parent.end();
+    });
+
+    const child = getTestSpans().find(span => span.name === `chat ${model}`);
+    expect(child?.parentSpanContext?.spanId).toBe(parentSpanId);
   });
 
   it('captures messages, system instructions, tool calls, and thinking when enabled', async () => {
@@ -438,6 +546,58 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
+  });
+
+  it('ends the streaming span when iteration closes early', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      for await (const event of stream) {
+        expect(event.type).toBe('message_start');
+        break;
+      }
+    } finally {
+      nockDone();
+    }
+
+    expect(getTestSpans()).toHaveLength(1);
+  });
+
+  it('records errors raised while consuming a stream', async () => {
+    nock('https://api.anthropic.com')
+      .post('/v1/messages')
+      .reply(
+        200,
+        'event: error\ndata: {"type":"error","error":{"type":"api_error","message":"stream failed"}}\n\n',
+        { 'content-type': 'text/event-stream' }
+      );
+
+    const stream = await mockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+      stream: true,
+    });
+    await expect(
+      (async () => {
+        for await (const event of stream) {
+          void event;
+        }
+      })()
+    ).rejects.toThrow('stream failed');
+
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(getTestSpans()[0].attributes['error.type']).toBe('APIError');
   });
 
   it('creates a span for messages.stream', async () => {

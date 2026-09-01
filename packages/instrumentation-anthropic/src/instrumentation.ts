@@ -16,6 +16,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import { isTracingSuppressed } from '@opentelemetry/core';
 import {
   StreamContentAccumulator,
   normalizeFinishReason,
@@ -66,6 +67,8 @@ interface SpanState {
   metricAttributes: Attributes;
   responseModel?: string;
   startTime: number;
+  resultObserved: boolean;
+  withResponseInProgress: boolean;
 }
 
 interface UsageState {
@@ -78,6 +81,12 @@ interface UsageState {
 interface AnthropicStream
   extends AsyncIterable<Anthropic.Messages.RawMessageStreamEvent> {
   iterator(): AsyncIterator<Anthropic.Messages.RawMessageStreamEvent>;
+}
+
+interface AnthropicAPIPromise extends Promise<unknown> {
+  parse?: () => Promise<unknown>;
+  asResponse?: () => Promise<Response>;
+  withResponse?: () => Promise<unknown>;
 }
 
 function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
@@ -227,7 +236,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         this: any,
         ...args: unknown[]
       ) {
-        if (!instrumentation.isEnabled()) {
+        if (
+          !instrumentation.isEnabled() ||
+          isTracingSuppressed(context.active())
+        ) {
           return original.apply(this, args);
         }
 
@@ -252,13 +264,15 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             ...getServerAttributes(this),
           },
           startTime: performance.now(),
+          resultObserved: false,
+          withResponseInProgress: false,
         };
         if (captureMessageContent) {
           instrumentation._recordRequestContent(state, params);
         }
         const ctx = trace.setSpan(context.active(), span);
 
-        let result: Promise<unknown>;
+        let result: AnthropicAPIPromise;
         try {
           result = context.with(ctx, () => original.apply(this, args));
         } catch (error) {
@@ -266,24 +280,97 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           throw error;
         }
 
-        result.then(
-          value => {
-            if (isAnthropicStream(value)) {
-              instrumentation._wrapStream(value, state);
-            } else {
-              if (isAnthropicMessage(value)) {
-                instrumentation._tryRecordMessage(state, value);
-              }
-              instrumentation._endSpan(state);
-            }
-          },
-          error => instrumentation._endSpanWithError(state, error)
-        );
+        instrumentation._observeAPIPromise(result, state);
 
         // Preserve the Anthropic SDK's customized APIPromise instance.
         return result;
       };
     };
+  }
+
+  private _observeAPIPromise(
+    result: AnthropicAPIPromise,
+    state: SpanState
+  ): void {
+    let observedLazily = false;
+    const parse = result.parse;
+    if (parse) {
+      observedLazily = true;
+      this._wrap(result, 'parse', () => {
+        return () => {
+          const parsed = parse.call(result);
+          this._observeResult(parsed, state);
+          return parsed;
+        };
+      });
+    }
+    const asResponse = result.asResponse;
+    if (asResponse) {
+      observedLazily = true;
+      this._wrap(result, 'asResponse', () => {
+        return () => {
+          const response = asResponse.call(result);
+          if (!state.withResponseInProgress) {
+            this._observeResult(response, state);
+          }
+          return response;
+        };
+      });
+    }
+    const withResponse = result.withResponse;
+    if (withResponse) {
+      observedLazily = true;
+      this._wrap(result, 'withResponse', () => {
+        return () => {
+          state.withResponseInProgress = true;
+          let response: Promise<unknown>;
+          try {
+            response = withResponse.call(result);
+          } finally {
+            state.withResponseInProgress = false;
+          }
+          this._observeResult(response, state, true);
+          return response;
+        };
+      });
+    }
+    if (!observedLazily) {
+      this._observeResult(result, state);
+    }
+  }
+
+  private _observeResult(
+    result: Promise<unknown>,
+    state: SpanState,
+    unwrapData = false
+  ): void {
+    result.then(
+      value => {
+        if (state.resultObserved) return;
+        state.resultObserved = true;
+        if (
+          unwrapData &&
+          value !== null &&
+          typeof value === 'object' &&
+          'data' in value
+        ) {
+          value = value.data;
+        }
+        if (isAnthropicStream(value)) {
+          this._wrapStream(value, state);
+        } else {
+          if (isAnthropicMessage(value)) {
+            this._tryRecordMessage(state, value);
+          }
+          this._endSpan(state);
+        }
+      },
+      error => {
+        if (state.resultObserved) return;
+        state.resultObserved = true;
+        this._endSpanWithError(state, error);
+      }
+    );
   }
 
   private _wrapStream(stream: AnthropicStream, state: SpanState): void {
