@@ -53,6 +53,97 @@ const DOLLAR_QUOTE_DELIMITER =
 const NON_DECIMAL_PREFIX = /[xXoObB]/;
 const NON_DECIMAL_DIGIT = /[0-9a-fA-F_]/;
 
+/**
+ * Keywords PostgreSQL's grammar never permits as a bare column or table
+ * reference, even unquoted -- the "reserved" and "reserved (can be function
+ * or type name)" categories of its keyword list. A value can never end on one
+ * of these, unlike an ordinary identifier, which is what tells `SELECT -5`
+ * (a sign) apart from `amount-5` (an operator on the column `amount`): both
+ * are an identifier immediately followed by `-`, and only the keyword lookup
+ * tells them apart.
+ *
+ * A non-reserved keyword (`LIMIT`, `OFFSET`, `RETURNING`, ...) is left out on
+ * purpose: PostgreSQL still permits those as an ordinary identifier, so
+ * treating one as never ending a value risks misreading an actual column of
+ * that name. A sign directly after one of them is a known gap this leaves
+ * unfixed.
+ *
+ * @see https://www.postgresql.org/docs/current/sql-keywords-appendix.html
+ */
+const RESERVED_KEYWORDS = new Set([
+  'ALL',
+  'AND',
+  'ANY',
+  'ARRAY',
+  'AS',
+  'ASYMMETRIC',
+  'AUTHORIZATION',
+  'BOTH',
+  'CASE',
+  'CAST',
+  'CHECK',
+  'COLLATE',
+  'COLUMN',
+  'CONCURRENTLY',
+  'CONSTRAINT',
+  'CROSS',
+  'DEFAULT',
+  'DISTINCT',
+  'ELSE',
+  'END',
+  'FALSE',
+  'FETCH',
+  'FOR',
+  'FOREIGN',
+  'FREEZE',
+  'FROM',
+  'FULL',
+  'GROUP',
+  'HAVING',
+  'ILIKE',
+  'IN',
+  'INITIALLY',
+  'INNER',
+  'INTERSECT',
+  'INTO',
+  'IS',
+  'JOIN',
+  'LATERAL',
+  'LEFT',
+  'LIKE',
+  'NATURAL',
+  'NOT',
+  'NULL',
+  'ONLY',
+  'OR',
+  'ORDER',
+  'OUTER',
+  'OVERLAPS',
+  'PRIMARY',
+  'REFERENCES',
+  'RIGHT',
+  'SELECT',
+  'SIMILAR',
+  'SOME',
+  'SYMMETRIC',
+  'TABLE',
+  'TABLESAMPLE',
+  'THEN',
+  'TO',
+  'TRAILING',
+  'TRUE',
+  'UNION',
+  'UNIQUE',
+  'USER',
+  'USING',
+  'VARIADIC',
+  'VERBOSE',
+  'WHEN',
+  'WHERE',
+  'WINDOW',
+  'WITH',
+]);
+
 function isDigit(ch: string | undefined): boolean {
   return ch !== undefined && ch >= '0' && ch <= '9';
 }
@@ -338,7 +429,8 @@ function sanitizePostgresql(sql: string, maxLength: number): string {
     if (isIdentifierStart(ch)) {
       let j = i + 1;
       while (j < n && isIdentifierChar(sql[j])) j++;
-      appendToken(sql.slice(i, j));
+      const text = sql.slice(i, j);
+      appendToken(text, !RESERVED_KEYWORDS.has(text.toUpperCase()));
       i = j;
       continue;
     }

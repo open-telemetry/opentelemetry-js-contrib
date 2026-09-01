@@ -311,6 +311,21 @@ describe('sanitizeSql', () => {
           'SELECT * FROM t WHERE data ? -1',
           'SELECT * FROM t WHERE data ? ?',
         ],
+        [
+          'absorbs a sign directly after a reserved keyword',
+          'SELECT -5',
+          'SELECT ?',
+        ],
+        [
+          'absorbs a sign after a reserved keyword mid-expression',
+          'SELECT * FROM t WHERE a = 1 AND -5 = b',
+          'SELECT * FROM t WHERE a = ? AND ? = b',
+        ],
+        [
+          'keeps a sign after a non-reserved keyword, a known gap',
+          'SELECT * FROM t LIMIT -1',
+          'SELECT * FROM t LIMIT -?',
+        ],
       ]);
     });
 
