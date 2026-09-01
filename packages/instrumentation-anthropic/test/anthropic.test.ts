@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { instrumentation } from './load-instrumentation';
+import {
+  instrumentation,
+  meterProvider,
+  metricExporter,
+} from './load-instrumentation';
 import {
   getTestSpans,
   resetMemoryExporter,
@@ -94,8 +98,10 @@ describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
 
-  beforeEach(() => {
+  beforeEach(async () => {
     resetMemoryExporter();
+    await meterProvider.forceFlush();
+    metricExporter.reset();
     instrumentation.setConfig({ captureMessageContent: false });
     instrumentation.enable();
   });
@@ -135,6 +141,49 @@ describe('Anthropic instrumentation', function () {
     expectResponseAttributes(spans[0], response);
     expect(spans[0].attributes['gen_ai.input.messages']).toBeUndefined();
     expect(spans[0].attributes['gen_ai.output.messages']).toBeUndefined();
+
+    await meterProvider.forceFlush();
+    const metrics = metricExporter.getMetrics()[0].scopeMetrics[0].metrics;
+    const duration = metrics.find(
+      metric => metric.descriptor.name === 'gen_ai.client.operation.duration'
+    );
+    expect(duration?.dataPoints).toEqual([
+      expect.objectContaining({
+        value: expect.objectContaining({ sum: expect.any(Number) }),
+        attributes: {
+          'gen_ai.operation.name': 'chat',
+          'gen_ai.provider.name': 'anthropic',
+          'gen_ai.request.model': model,
+          'gen_ai.response.model': response.model,
+          'server.address': 'api.anthropic.com',
+        },
+      }),
+    ]);
+    const tokenUsage = metrics.find(
+      metric => metric.descriptor.name === 'gen_ai.client.token.usage'
+    );
+    expect(tokenUsage?.dataPoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          value: expect.objectContaining({
+            sum: expectedInputTokens(response.usage),
+          }),
+          attributes: expect.objectContaining({
+            'gen_ai.token.type': 'input',
+            'gen_ai.response.model': response.model,
+          }),
+        }),
+        expect.objectContaining({
+          value: expect.objectContaining({
+            sum: response.usage.output_tokens,
+          }),
+          attributes: expect.objectContaining({
+            'gen_ai.token.type': 'output',
+            'gen_ai.response.model': response.model,
+          }),
+        }),
+      ])
+    );
   });
 
   it('captures messages, system instructions, tool calls, and thinking when enabled', async () => {
@@ -460,5 +509,20 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
     expect(spans[0].attributes['error.type']).toBe('RateLimitError');
+
+    await meterProvider.forceFlush();
+    const metrics = metricExporter.getMetrics()[0].scopeMetrics[0].metrics;
+    const duration = metrics.find(
+      metric => metric.descriptor.name === 'gen_ai.client.operation.duration'
+    );
+    expect(duration?.dataPoints[0].attributes).toMatchObject({
+      'error.type': 'RateLimitError',
+      'gen_ai.provider.name': 'anthropic',
+    });
+    expect(
+      metrics.find(
+        metric => metric.descriptor.name === 'gen_ai.client.token.usage'
+      )
+    ).toBeUndefined();
   });
 });

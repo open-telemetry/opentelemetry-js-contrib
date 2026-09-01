@@ -28,7 +28,8 @@ npm install --save @opentelemetry/instrumentation-anthropic
 The current scaffold creates a client span for each call, records the GenAI
 provider, operation, requested model, response identifiers, finish reasons, and
 token usage, and marks failed calls as errors. Streaming spans end when the
-stream completes, fails, or is closed early. Metrics and logs are not currently
+stream completes, fails, or is closed early. The instrumentation also emits
+operation-duration and token-usage client metrics. Logs are not currently
 emitted.
 
 ## Usage

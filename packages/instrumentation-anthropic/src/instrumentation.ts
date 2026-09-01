@@ -4,8 +4,10 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
+// Avoids depending on @opentelemetry/core for high-resolution timing helpers.
+import { performance } from 'node:perf_hooks';
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { Attributes, Span } from '@opentelemetry/api';
+import type { Attributes, Histogram, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -40,6 +42,11 @@ import {
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
+  ATTR_GEN_AI_TOKEN_TYPE,
+  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from './semconv';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
@@ -56,6 +63,9 @@ interface SpanState {
   usage: UsageState;
   captureMessageContent: boolean;
   content?: StreamContentAccumulator;
+  metricAttributes: Attributes;
+  responseModel?: string;
+  startTime: number;
 }
 
 interface UsageState {
@@ -135,6 +145,9 @@ function getRequestAttributes(
 }
 
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
+  private _clientOperationDuration!: Histogram;
+  private _clientTokenUsage!: Histogram;
+
   constructor(config: AnthropicInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
     const capture =
@@ -175,6 +188,35 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     ];
   }
 
+  override _updateMetricInstruments(): void {
+    this._clientOperationDuration = this.meter.createHistogram(
+      METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+      {
+        description: 'GenAI operation duration',
+        unit: 's',
+        advice: {
+          explicitBucketBoundaries: [
+            0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24,
+            20.48, 40.96, 81.92,
+          ],
+        },
+      }
+    );
+    this._clientTokenUsage = this.meter.createHistogram(
+      METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+      {
+        description: 'Measures number of input and output tokens used',
+        unit: '{token}',
+        advice: {
+          explicitBucketBoundaries: [
+            1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576,
+            4194304, 16777216, 67108864,
+          ],
+        },
+      }
+    );
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _getPatchedMessagesCreate(): any {
     const instrumentation = this;
@@ -190,18 +232,26 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         }
 
         const params = args[0] as Anthropic.Messages.MessageCreateParams;
+        const requestAttributes = getRequestAttributes(params, this);
         const captureMessageContent = Boolean(
           instrumentation.getConfig().captureMessageContent
         );
         const span = instrumentation.tracer.startSpan(`chat ${params.model}`, {
           kind: SpanKind.CLIENT,
-          attributes: getRequestAttributes(params, this),
+          attributes: requestAttributes,
         });
         const state: SpanState = {
           span,
           ended: false,
           usage: {},
           captureMessageContent,
+          metricAttributes: {
+            [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'anthropic',
+            [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+            ...getServerAttributes(this),
+          },
+          startTime: performance.now(),
         };
         if (captureMessageContent) {
           instrumentation._recordRequestContent(state, params);
@@ -311,6 +361,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       [ATTR_GEN_AI_RESPONSE_ID]: message.id,
       [ATTR_GEN_AI_RESPONSE_MODEL]: message.model,
     });
+    state.responseModel = message.model;
     if (message.stop_reason) {
       state.span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         normalizeFinishReason(message.stop_reason),
@@ -387,7 +438,45 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     if (outputMessages) {
       state.span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
     }
+    try {
+      this._recordMetrics(state);
+    } catch (error) {
+      this._diag.debug('error recording Anthropic metrics:', error);
+    }
     state.span.end();
+  }
+
+  private _recordMetrics(state: SpanState): void {
+    const attributes: Attributes = {
+      ...state.metricAttributes,
+      [ATTR_GEN_AI_RESPONSE_MODEL]: state.responseModel,
+    };
+    this._clientOperationDuration.record(
+      (performance.now() - state.startTime) / 1000,
+      attributes
+    );
+
+    const usage = state.usage;
+    const inputTokens =
+      usage.input_tokens == null &&
+      usage.cache_creation_input_tokens == null &&
+      usage.cache_read_input_tokens == null
+        ? undefined
+        : (usage.input_tokens ?? 0) +
+          (usage.cache_creation_input_tokens ?? 0) +
+          (usage.cache_read_input_tokens ?? 0);
+    if (inputTokens !== undefined) {
+      this._clientTokenUsage.record(inputTokens, {
+        ...attributes,
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+      });
+    }
+    if (usage.output_tokens != null) {
+      this._clientTokenUsage.record(usage.output_tokens, {
+        ...attributes,
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+      });
+    }
   }
 
   private _endSpanWithError(state: SpanState, error: unknown): void {
@@ -396,6 +485,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     state.span.recordException(err);
     state.span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
     state.span.setAttribute('error.type', err.constructor.name);
+    state.metricAttributes['error.type'] = err.constructor.name;
     this._endSpan(state);
   }
 }

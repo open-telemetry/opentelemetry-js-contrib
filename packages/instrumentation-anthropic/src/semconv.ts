@@ -35,3 +35,15 @@ export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
 export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS =
   'gen_ai.system_instructions' as const;
+
+export const ATTR_GEN_AI_TOKEN_TYPE = 'gen_ai.token.type' as const;
+
+export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
+
+export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
+
+export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration' as const;
+
+export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
+  'gen_ai.client.token.usage' as const;
