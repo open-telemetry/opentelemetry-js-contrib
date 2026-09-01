@@ -893,13 +893,16 @@ describe('pg', () => {
     describe('when specifying a requestHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';
+      // db.query.text is sanitized by default, so the recorded attribute
+      // differs from the raw text the driver and the hook receive.
+      const sanitizedQuery = 'SELECT ?::text';
       const events: TimedEvent[] = [];
 
       // these are the attributes that we'd expect would end up on the final
       // span if there is no requestHook.
       const attributes = {
         ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_QUERY_TEXT]: query,
+        [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
       };
 
       // These are the attributes we expect on the span after the requestHook
@@ -987,12 +990,15 @@ describe('pg', () => {
     describe('when specifying a responseHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';
+      // db.query.text is sanitized by default, so the recorded attribute
+      // differs from the raw text the driver receives.
+      const sanitizedQuery = 'SELECT ?::text';
       const events: TimedEvent[] = [];
 
       describe('AND valid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_QUERY_TEXT]: query,
+          [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
           [dataAttributeName]: '{"rowCount":1}',
         };
         beforeEach(async () => {
@@ -1025,7 +1031,7 @@ describe('pg', () => {
         it('should attach response hook data to resulting spans for query returning a Promise', async () => {
           const attributes = {
             ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_QUERY_TEXT]: query,
+            [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
             [dataAttributeName]: '{"rowCount":1}',
           };
 
@@ -1050,7 +1056,7 @@ describe('pg', () => {
       describe('AND invalid responseHook', () => {
         const attributes = {
           ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_QUERY_TEXT]: query,
+          [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
         };
 
         beforeEach(async () => {
