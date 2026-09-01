@@ -211,7 +211,7 @@ export function getErrorType(error: unknown): string {
   if (typeof error === 'string' && error.trim().length > 0) {
     return error;
   }
-  return 'Error';
+  return '_OTHER';
 }
 
 /**
