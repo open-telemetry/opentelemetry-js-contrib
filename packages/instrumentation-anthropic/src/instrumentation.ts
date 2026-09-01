@@ -5,12 +5,24 @@
 
 import type Anthropic from '@anthropic-ai/sdk';
 import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
+import type { Attributes, Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_PROVIDER_NAME,
+  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
+  ATTR_GEN_AI_REQUEST_MODEL,
+  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
+  ATTR_GEN_AI_REQUEST_TEMPERATURE,
+  ATTR_GEN_AI_REQUEST_TOP_K,
+  ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_ID,
   ATTR_GEN_AI_RESPONSE_MODEL,
@@ -89,6 +101,41 @@ function normalizeFinishReason(reason: Anthropic.Messages.StopReason): string {
   }
 }
 
+function getServerAttributes(resource: unknown): Attributes {
+  if (resource === null || typeof resource !== 'object') return {};
+  const client = '_client' in resource ? resource._client : undefined;
+  if (client === null || typeof client !== 'object' || !('baseURL' in client)) {
+    return {};
+  }
+  try {
+    const url = new URL(String(client.baseURL));
+    const attributes: Attributes = { [ATTR_SERVER_ADDRESS]: url.hostname };
+    if (url.port && url.port !== '80' && url.port !== '443') {
+      attributes[ATTR_SERVER_PORT] = Number(url.port);
+    }
+    return attributes;
+  } catch {
+    return {};
+  }
+}
+
+function getRequestAttributes(
+  params: Anthropic.Messages.MessageCreateParams,
+  resource: unknown
+): Attributes {
+  return {
+    [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+    [ATTR_GEN_AI_PROVIDER_NAME]: 'anthropic',
+    [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+    [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: params.max_tokens,
+    [ATTR_GEN_AI_REQUEST_TEMPERATURE]: params.temperature ?? undefined,
+    [ATTR_GEN_AI_REQUEST_TOP_P]: params.top_p ?? undefined,
+    [ATTR_GEN_AI_REQUEST_TOP_K]: params.top_k ?? undefined,
+    [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: params.stop_sequences ?? undefined,
+    ...getServerAttributes(resource),
+  };
+}
+
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
   constructor(config: AnthropicInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -133,11 +180,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         const params = args[0] as Anthropic.Messages.MessageCreateParams;
         const span = instrumentation.tracer.startSpan(`chat ${params.model}`, {
           kind: SpanKind.CLIENT,
-          attributes: {
-            'gen_ai.operation.name': 'chat',
-            'gen_ai.provider.name': 'anthropic',
-            'gen_ai.request.model': params.model,
-          },
+          attributes: getRequestAttributes(params, this),
         });
         const state: SpanState = { span, ended: false, usage: {} };
         const ctx = trace.setSpan(context.active(), span);

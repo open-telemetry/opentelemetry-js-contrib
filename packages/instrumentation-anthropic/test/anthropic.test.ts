@@ -128,8 +128,56 @@ describe('Anthropic instrumentation', function () {
       'gen_ai.operation.name': 'chat',
       'gen_ai.provider.name': 'anthropic',
       'gen_ai.request.model': model,
+      'server.address': 'api.anthropic.com',
     });
     expectResponseAttributes(spans[0], response);
+  });
+
+  it('records request parameters and custom server attributes', async () => {
+    const baseURL = 'https://anthropic.example:8443';
+    nock(baseURL)
+      .post('/v1/messages')
+      .reply(200, {
+        id: 'msg_request_attributes',
+        type: 'message',
+        role: 'assistant',
+        model,
+        content: [{ type: 'text', text: 'Hello telemetry' }],
+        stop_reason: 'end_turn',
+        stop_sequence: null,
+        usage: {
+          input_tokens: 12,
+          output_tokens: 4,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 0,
+        },
+      });
+
+    const client = new Anthropic({
+      apiKey: 'testing',
+      baseURL,
+      maxRetries: 0,
+    });
+    await client.messages.create({
+      model,
+      max_tokens: 128,
+      messages: [{ role: 'user', content: 'Hi' }],
+      temperature: 0.2,
+      top_k: 20,
+      top_p: 0.8,
+      stop_sequences: ['DONE'],
+    });
+
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].attributes).toMatchObject({
+      'gen_ai.request.max_tokens': 128,
+      'gen_ai.request.temperature': 0.2,
+      'gen_ai.request.top_k': 20,
+      'gen_ai.request.top_p': 0.8,
+      'gen_ai.request.stop_sequences': ['DONE'],
+      'server.address': 'anthropic.example',
+      'server.port': 8443,
+    });
   });
 
   it('creates a span for messages.create with streaming', async () => {
