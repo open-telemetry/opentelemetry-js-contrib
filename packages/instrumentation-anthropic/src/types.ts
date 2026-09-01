@@ -5,4 +5,10 @@
 
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
-export type AnthropicInstrumentationConfig = InstrumentationConfig;
+export interface AnthropicInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Capture potentially sensitive message, system instruction, tool call, and
+   * thinking content. Disabled by default.
+   */
+  captureMessageContent?: boolean;
+}

@@ -11,6 +11,8 @@
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;
 export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
+export const ATTR_GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages' as const;
+export const ATTR_GEN_AI_OUTPUT_MESSAGES = 'gen_ai.output.messages' as const;
 export const ATTR_GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name' as const;
 export const ATTR_GEN_AI_REQUEST_MAX_TOKENS =
   'gen_ai.request.max_tokens' as const;
@@ -31,3 +33,5 @@ export const ATTR_GEN_AI_USAGE_INPUT_TOKENS =
   'gen_ai.usage.input_tokens' as const;
 export const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS =
   'gen_ai.usage.output_tokens' as const;
+export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS =
+  'gen_ai.system_instructions' as const;

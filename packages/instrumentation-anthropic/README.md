@@ -28,8 +28,8 @@ npm install --save @opentelemetry/instrumentation-anthropic
 The current scaffold creates a client span for each call, records the GenAI
 provider, operation, requested model, response identifiers, finish reasons, and
 token usage, and marks failed calls as errors. Streaming spans end when the
-stream completes, fails, or is closed early. Tools, metrics, logs, and content
-capture are intentionally out of scope.
+stream completes, fails, or is closed early. Metrics and logs are not currently
+emitted.
 
 ## Usage
 
@@ -46,6 +46,21 @@ sdk.start();
 ```
 
 The instrumentation must be initialized before `@anthropic-ai/sdk` is loaded.
+
+### Message content capture
+
+Message content capture is disabled by default because prompts, responses,
+system instructions, tool calls, and thinking blocks may contain sensitive
+information. Enable it explicitly with instrumentation configuration:
+
+```js
+new AnthropicInstrumentation({ captureMessageContent: true });
+```
+
+It can also be enabled with the
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true` environment variable.
+When enabled, captured content is recorded using the `gen_ai.input.messages`,
+`gen_ai.output.messages`, and `gen_ai.system_instructions` attributes.
 
 ## Recording integration tests
 

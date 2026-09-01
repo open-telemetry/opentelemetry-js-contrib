@@ -14,6 +14,7 @@ import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
 import * as path from 'node:path';
+import { AnthropicInstrumentation } from '../src';
 import {
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_ID,
@@ -95,6 +96,7 @@ describe('Anthropic instrumentation', function () {
 
   beforeEach(() => {
     resetMemoryExporter();
+    instrumentation.setConfig({ captureMessageContent: false });
     instrumentation.enable();
   });
 
@@ -131,6 +133,136 @@ describe('Anthropic instrumentation', function () {
       'server.address': 'api.anthropic.com',
     });
     expectResponseAttributes(spans[0], response);
+    expect(spans[0].attributes['gen_ai.input.messages']).toBeUndefined();
+    expect(spans[0].attributes['gen_ai.output.messages']).toBeUndefined();
+  });
+
+  it('captures messages, system instructions, tool calls, and thinking when enabled', async () => {
+    instrumentation.disable();
+    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.enable();
+    nock('https://api.anthropic.com')
+      .post('/v1/messages')
+      .reply(200, {
+        id: 'msg_content_capture',
+        type: 'message',
+        role: 'assistant',
+        model,
+        content: [
+          { type: 'thinking', thinking: 'Check the tool.', signature: 'sig' },
+          { type: 'text', text: 'Calling weather.' },
+          {
+            type: 'tool_use',
+            id: 'toolu_123',
+            name: 'get_weather',
+            input: { city: 'Paris' },
+          },
+        ],
+        stop_reason: 'tool_use',
+        stop_sequence: null,
+        usage: {
+          input_tokens: 20,
+          output_tokens: 12,
+          cache_creation_input_tokens: 0,
+          cache_read_input_tokens: 0,
+        },
+      });
+
+    await mockClient.messages.create({
+      model,
+      max_tokens: 64,
+      system: 'You are a weather assistant.',
+      messages: [
+        { role: 'user', content: 'What is the weather in Paris?' },
+        {
+          role: 'assistant',
+          content: [
+            {
+              type: 'tool_use',
+              id: 'toolu_previous',
+              name: 'get_weather',
+              input: { city: 'London' },
+            },
+          ],
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'toolu_previous',
+              content: 'Rainy',
+            },
+          ],
+        },
+      ],
+    });
+
+    const attributes = getTestSpans()[0].attributes;
+    expect(
+      JSON.parse(String(attributes['gen_ai.system_instructions']))
+    ).toEqual([{ type: 'text', content: 'You are a weather assistant.' }]);
+    expect(JSON.parse(String(attributes['gen_ai.input.messages']))).toEqual([
+      {
+        role: 'user',
+        parts: [{ type: 'text', content: 'What is the weather in Paris?' }],
+      },
+      {
+        role: 'assistant',
+        parts: [
+          {
+            type: 'tool_call',
+            id: 'toolu_previous',
+            name: 'get_weather',
+            arguments: { city: 'London' },
+          },
+        ],
+      },
+      {
+        role: 'user',
+        parts: [
+          {
+            type: 'tool_call_response',
+            id: 'toolu_previous',
+            response: 'Rainy',
+          },
+        ],
+      },
+    ]);
+    expect(JSON.parse(String(attributes['gen_ai.output.messages']))).toEqual([
+      {
+        role: 'assistant',
+        finish_reason: 'tool_calls',
+        parts: [
+          { type: 'reasoning', content: 'Check the tool.' },
+          { type: 'text', content: 'Calling weather.' },
+          {
+            type: 'tool_call',
+            id: 'toolu_123',
+            name: 'get_weather',
+            arguments: { city: 'Paris' },
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('honors the content capture environment variable', () => {
+    const original =
+      process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
+    process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT = 'true';
+    try {
+      expect(
+        new AnthropicInstrumentation().getConfig().captureMessageContent
+      ).toBe(true);
+    } finally {
+      if (original === undefined) {
+        delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
+      } else {
+        process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT =
+          original;
+      }
+    }
   });
 
   it('records request parameters and custom server attributes', async () => {
@@ -260,6 +392,9 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('creates a span for messages.stream', async () => {
+    instrumentation.disable();
+    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.enable();
     let response: Anthropic.Messages.Message;
     const { nockDone } = await nockBack('anthropic-messages-stream.json', {
       afterRecord: sanitizeRecordings,
@@ -283,6 +418,26 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
     expectResponseAttributes(spans[0], response);
+    expect(
+      JSON.parse(String(spans[0].attributes['gen_ai.input.messages']))
+    ).toEqual([
+      {
+        role: 'user',
+        parts: [{ type: 'text', content: input }],
+      },
+    ]);
+    expect(
+      JSON.parse(String(spans[0].attributes['gen_ai.output.messages']))
+    ).toEqual([
+      {
+        role: 'assistant',
+        finish_reason: 'stop',
+        parts: response.content.map(block => ({
+          type: 'text',
+          content: block.type === 'text' ? block.text : undefined,
+        })),
+      },
+    ]);
   });
 
   it('records messages.create errors', async () => {

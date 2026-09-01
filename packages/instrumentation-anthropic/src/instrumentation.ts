@@ -15,7 +15,16 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  StreamContentAccumulator,
+  normalizeFinishReason,
+  serializeInputMessages,
+  serializeOutputMessage,
+  serializeSystemInstructions,
+} from './content';
+import {
+  ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_MODEL,
@@ -30,6 +39,7 @@ import {
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
 } from './semconv';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
@@ -44,6 +54,8 @@ interface SpanState {
   span: Span;
   ended: boolean;
   usage: UsageState;
+  captureMessageContent: boolean;
+  content?: StreamContentAccumulator;
 }
 
 interface UsageState {
@@ -87,20 +99,6 @@ function isAnthropicMessage(
   );
 }
 
-function normalizeFinishReason(reason: Anthropic.Messages.StopReason): string {
-  switch (reason) {
-    case 'end_turn':
-    case 'stop_sequence':
-      return 'stop';
-    case 'max_tokens':
-      return 'length';
-    case 'tool_use':
-      return 'tool_calls';
-    default:
-      return reason;
-  }
-}
-
 function getServerAttributes(resource: unknown): Attributes {
   if (resource === null || typeof resource !== 'object') return {};
   const client = '_client' in resource ? resource._client : undefined;
@@ -139,6 +137,20 @@ function getRequestAttributes(
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
   constructor(config: AnthropicInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    const capture =
+      process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
+    if (capture?.toLowerCase() === 'true') {
+      this.getConfig().captureMessageContent = true;
+    } else if (capture?.toLowerCase() === 'false') {
+      this.getConfig().captureMessageContent = false;
+    }
+  }
+
+  override setConfig(config: AnthropicInstrumentationConfig = {}): void {
+    super.setConfig({
+      ...config,
+      captureMessageContent: Boolean(config.captureMessageContent),
+    });
   }
 
   protected init() {
@@ -178,11 +190,22 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         }
 
         const params = args[0] as Anthropic.Messages.MessageCreateParams;
+        const captureMessageContent = Boolean(
+          instrumentation.getConfig().captureMessageContent
+        );
         const span = instrumentation.tracer.startSpan(`chat ${params.model}`, {
           kind: SpanKind.CLIENT,
           attributes: getRequestAttributes(params, this),
         });
-        const state: SpanState = { span, ended: false, usage: {} };
+        const state: SpanState = {
+          span,
+          ended: false,
+          usage: {},
+          captureMessageContent,
+        };
+        if (captureMessageContent) {
+          instrumentation._recordRequestContent(state, params);
+        }
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -214,6 +237,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   }
 
   private _wrapStream(stream: AnthropicStream, state: SpanState): void {
+    if (state.captureMessageContent) {
+      state.content = new StreamContentAccumulator();
+    }
     // `Stream.tee()` calls `iterator()` directly, bypassing
     // `Symbol.asyncIterator`, so wrap the internal iterator method.
     this._wrap(stream, 'iterator', originalIterator => {
@@ -290,6 +316,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         normalizeFinishReason(message.stop_reason),
       ]);
     }
+    const outputMessages = serializeOutputMessage(message);
+    if (state.captureMessageContent && outputMessages) {
+      state.span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
+    }
     state.usage = message.usage;
     this._recordUsage(state);
   }
@@ -298,6 +328,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     state: SpanState,
     event: Anthropic.Messages.RawMessageStreamEvent
   ): void {
+    state.content?.add(event);
     if (event.type === 'message_start') {
       this._recordMessage(state, event.message);
       return;
@@ -310,6 +341,22 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         ]);
       }
       this._recordUsage(state);
+    }
+  }
+
+  private _recordRequestContent(
+    state: SpanState,
+    params: Anthropic.Messages.MessageCreateParams
+  ): void {
+    try {
+      const inputMessages = serializeInputMessages(params.messages);
+      const systemInstructions = serializeSystemInstructions(params.system);
+      state.span.setAttributes({
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputMessages,
+        [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: systemInstructions,
+      });
+    } catch (error) {
+      this._diag.debug('error recording Anthropic request content:', error);
     }
   }
 
@@ -336,6 +383,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   private _endSpan(state: SpanState): void {
     if (state.ended) return;
     state.ended = true;
+    const outputMessages = state.content?.serialize();
+    if (outputMessages) {
+      state.span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
+    }
     state.span.end();
   }
 
