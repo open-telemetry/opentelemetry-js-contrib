@@ -74,16 +74,3 @@ export function getContentCaptureMode(
 export function isSpanContentCaptureEnabled(mode: ContentCaptureMode): boolean {
   return mode === 'span_only';
 }
-
-/**
- * Returns true if content should be emitted via log events.
- *
- * NOTE: Currently returns false until the OpenTelemetry JS Logs & Events SDK stabilizes.
- *
- * @experimental This function is experimental and subject to change.
- */
-export function isEventContentCaptureEnabled(
-  _mode: ContentCaptureMode
-): boolean {
-  return false;
-}

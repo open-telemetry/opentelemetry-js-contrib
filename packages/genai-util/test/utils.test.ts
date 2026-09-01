@@ -28,7 +28,6 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
-  getSpanName,
   getErrorType,
   getRequestOptionsAttributes,
 } from '../src/utils';
@@ -98,17 +97,6 @@ describe('GenAI Utils', () => {
         'You are a helpful assistant.'
       );
       assert.strictEqual(formatSystemInstructions(undefined), undefined);
-    });
-  });
-
-  describe('getSpanName', () => {
-    it('should format span name correctly', () => {
-      assert.strictEqual(getSpanName('chat', 'gpt-4o'), 'chat gpt-4o');
-      assert.strictEqual(getSpanName('chat'), 'chat');
-      assert.strictEqual(
-        getSpanName('embeddings', 'text-embedding-3-small'),
-        'embeddings text-embedding-3-small'
-      );
     });
   });
 

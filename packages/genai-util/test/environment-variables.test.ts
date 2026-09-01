@@ -9,7 +9,6 @@ import {
   getContentCaptureMode,
   parseContentCaptureMode,
   isSpanContentCaptureEnabled,
-  isEventContentCaptureEnabled,
 } from '../src/environment-variables';
 
 describe('Environment Variables and Content Capture', () => {
@@ -65,11 +64,6 @@ describe('Environment Variables and Content Capture', () => {
     it('isSpanContentCaptureEnabled', () => {
       assert.strictEqual(isSpanContentCaptureEnabled('none'), false);
       assert.strictEqual(isSpanContentCaptureEnabled('span_only'), true);
-    });
-
-    it('isEventContentCaptureEnabled placeholder', () => {
-      assert.strictEqual(isEventContentCaptureEnabled('none'), false);
-      assert.strictEqual(isEventContentCaptureEnabled('span_only'), false);
     });
   });
 });

@@ -25,7 +25,6 @@ import {
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_TOP_P,
-  GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from './semconv';
 import type {
   GenAIRequestOptions,
@@ -176,19 +175,6 @@ export function formatSystemInstructions(
   } catch {
     return undefined;
   }
-}
-
-/**
- * Construct standardized span name following GenAI semantic conventions.
- * E.g. "chat gpt-4o", "embeddings text-embedding-3-small", "generate_content gemini-1.5-pro".
- *
- * @param operationName - GenAI operation name (e.g. `'chat'`, `'embeddings'`).
- * @param model - Optional model name or identifier.
- * @returns Standardized span name in the format `"{operation} {model}"` or `"{operation}"`.
- */
-export function getSpanName(operationName: string, model?: string): string {
-  const op = operationName || GEN_AI_OPERATION_NAME_VALUE_CHAT;
-  return model ? `${op} ${model}` : op;
 }
 
 /**
