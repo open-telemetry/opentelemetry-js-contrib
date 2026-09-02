@@ -82,7 +82,11 @@ jobs:
         run: npm run --if-present --workspaces test-all-versions ${INPUTS_NPM_WORKSPACE_ARGS}
         env:
           INPUTS_NPM_WORKSPACE_ARGS: ${{ inputs.npm-workspace-args }}
+          # `tav` resolves the versions under test straight from the registry, so it
+          # will often pick up releases that are younger than the `min-release-age`
+          # from `.npmrc`, which `npm install` then refuses to install.
+          NPM_CONFIG_MIN_RELEASE_AGE: 0
       - name: Stop Test Services
         if: always()
         run: npm run test-services:stop
-      
+

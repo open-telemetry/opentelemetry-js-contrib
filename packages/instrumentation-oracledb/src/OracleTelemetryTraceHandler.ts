@@ -1,20 +1,22 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import {
-  Span,
+  type Span,
   SpanStatusCode,
-  Tracer,
+  type Tracer,
   context,
   SpanKind,
   trace,
   diag,
   TraceFlags,
-  SpanContext,
+  type SpanContext,
+  type Attributes,
+  type HrTime,
 } from '@opentelemetry/api';
 import {
   ATTR_DB_NAMESPACE,
@@ -24,6 +26,7 @@ import {
   ATTR_SERVER_PORT,
   ATTR_SERVER_ADDRESS,
   ATTR_NETWORK_TRANSPORT,
+  ATTR_ERROR_TYPE,
 } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_DB_OPERATION_PARAMETER,
@@ -34,14 +37,19 @@ import {
   ATTR_ORACLE_DB_SERVICE,
   DB_SYSTEM_NAME_VALUE_ORACLE_DB,
 } from './semconv';
+import { hrTime } from '@opentelemetry/core';
 
 import type * as oracleDBTypes from 'oracledb';
 type TraceHandlerBaseCtor = new () => any;
 const OUT_BIND = 3003; // bindinfo direction value.
 
 // Local modules.
-import { OracleInstrumentationConfig, SpanConnectionConfig } from './types';
-import { TraceSpanData, SpanCallLevelConfig } from './internal-types';
+import type {
+  OracleInstrumentationConfig,
+  SpanConnectionConfig,
+} from './types';
+import type { TraceSpanData, SpanCallLevelConfig } from './internal-types';
+import * as metricsUtils from './metricUtils';
 import { SpanNames } from './constants';
 
 // It dynamically retrieves the TraceHandlerBase class from the oracledb module
@@ -58,15 +66,36 @@ function getTraceHandlerBaseClass(
   }
 }
 
-function parseNormalizedOperationName(statement: string): string {
-  const trimmedStatement = statement.trim();
-  const indexOfFirstSpace = trimmedStatement.indexOf(' ');
-  let sqlCommand =
-    indexOfFirstSpace === -1
-      ? trimmedStatement
-      : trimmedStatement.slice(0, indexOfFirstSpace);
+// Parses the database operation name used for metrics attributes.
+// PLSQL blocks are reported as `PLSQL` or `BATCH PLSQL`; other operations are
+// prepended with `BATCH` when executed through `executeMany()`.
+function parseMetricOperationName(
+  statement: string | undefined,
+  isBatch: boolean
+): string {
+  if (!statement || typeof statement !== 'string') return 'UNKNOWN';
 
-  sqlCommand = sqlCommand.toUpperCase();
+  const operationName = parseNormalizedOperationName(statement);
+
+  if (operationName === 'BEGIN' || operationName === 'DECLARE') {
+    return isBatch ? 'BATCH PLSQL' : 'PLSQL';
+  }
+
+  return isBatch ? `BATCH ${operationName}` : operationName;
+}
+
+function parseNormalizedOperationName(statement: string): string {
+  const trimmed = statement.trim();
+  let end = trimmed.length;
+  for (let i = 0; i < trimmed.length; i++) {
+    const code = trimmed.charCodeAt(i);
+    // Checks for space (32), tab (9), LF (10), VT (11), FF (12), CR (13)
+    if (code === 32 || (code >= 9 && code <= 13)) {
+      end = i;
+      break;
+    }
+  }
+  const sqlCommand = trimmed.slice(0, end).toUpperCase();
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
 }
 
@@ -83,13 +112,15 @@ export function getOracleTelemetryTraceHandlerClass(
   if (!traceHandlerBase) {
     return undefined;
   }
+  metricsUtils.setPoolStatusOpen(obj.POOL_STATUS_OPEN);
 
   /**
    * OracleTelemetryTraceHandler extends TraceHandlerBase from oracledb module
    * It implements the abstract methods; `onEnterFn`, `onExitFn`,
-   * `onBeginRoundTrip` and `onEndRoundTrip` of TraceHandlerBase class.
+   * `onBeginRoundTrip`, `onEndRoundTrip` and pool event hooks like `onPoolAcquire`,
+   * `onPoolRelease`, `onPoolWait`, etc. of TraceHandlerBase class.
    * Inside these overridden methods, the input traceContext data is used
-   * to generate attributes for span.
+   * to generate attributes for spans and metrics.
    */
   class OracleTelemetryTraceHandler extends traceHandlerBase {
     private _getTracer: () => Tracer;
@@ -322,10 +353,14 @@ export function getOracleTelemetryTraceHandlerClass(
       );
     }
 
-    // Updates the span with final traceContext attributes
-    // which are updated after the exported function call.
-    // roundTrip flag will skip dumping bind values for
-    // internal roundtrip spans generated for exported functions.
+    /**
+     * Updates the span with final traceContext attributes which are updated
+     * after the exported function call.
+     *
+     * @param traceContext - Context containing span instance, connection configs, and execution status/errors.
+     * @param roundTrip - Optional flag. When true, skips recording bind values for internal round-trip spans generated for exported functions.
+     * @returns The attribute map used for recording database client operation duration metrics.
+     */
     private _updateFinalSpanAttributes(
       traceContext: TraceSpanData,
       roundTrip = false
@@ -333,11 +368,11 @@ export function getOracleTelemetryTraceHandlerClass(
       const span = traceContext.userContext.span;
       // Set if additional connection and call parameters
       // are available
-      if (traceContext.connectLevelConfig) {
-        span.setAttributes(
-          this._getConnectionSpanAttributes(traceContext.connectLevelConfig)
-        );
-      }
+      const connAttrs: Attributes = traceContext.connectLevelConfig
+        ? this._getConnectionSpanAttributes(traceContext.connectLevelConfig)
+        : {};
+      span.setAttributes(connAttrs);
+
       if (traceContext.callLevelConfig) {
         this._setCallLevelAttributes(
           span,
@@ -352,6 +387,48 @@ export function getOracleTelemetryTraceHandlerClass(
           message: traceContext.error.message,
         });
       }
+
+      // Builds the attribute set used for execute duration metrics.
+      const isBatch = traceContext.operation === SpanNames.EXECUTE_MANY;
+      const metricsAttributes: Attributes = {
+        [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_ORACLE_DB,
+        [ATTR_DB_OPERATION_NAME]: parseMetricOperationName(
+          traceContext.callLevelConfig?.statement,
+          isBatch
+        ),
+      };
+
+      for (const attributeName of [
+        ATTR_DB_NAMESPACE,
+        ATTR_SERVER_PORT,
+        ATTR_SERVER_ADDRESS,
+      ]) {
+        const value = connAttrs[attributeName];
+        if (value !== undefined) {
+          metricsAttributes[attributeName] = value;
+        }
+      }
+
+      if (traceContext.error) {
+        const errorCode = traceContext.error.code;
+        if (errorCode !== undefined) {
+          metricsAttributes[ATTR_ERROR_TYPE] = String(errorCode);
+        }
+      }
+
+      return metricsAttributes;
+    }
+
+    private _recordExecuteDuration(
+      attributes: Attributes,
+      startExecTime: HrTime | undefined
+    ) {
+      if (startExecTime === undefined) return;
+      metricsUtils.recordOperationDuration(attributes, startExecTime);
+    }
+
+    private _updatePool(pool: oracleDBTypes.Pool) {
+      metricsUtils.updateCounter(pool);
     }
 
     setInstrumentConfig(config: OracleInstrumentationConfig = {}) {
@@ -359,7 +436,7 @@ export function getOracleTelemetryTraceHandlerClass(
     }
 
     // This method is invoked before calling an exported function
-    // from oracledb module.
+    // from oracledb module. It also stores the time when the span is started.
     onEnterFn(traceContext: TraceSpanData) {
       if (this._shouldSkipInstrumentation()) {
         return;
@@ -375,6 +452,7 @@ export function getOracleTelemetryTraceHandlerClass(
           kind: SpanKind.CLIENT,
           attributes: spanAttributes,
         }),
+        startTime: hrTime(),
       };
 
       if (traceContext.fn) {
@@ -416,23 +494,31 @@ export function getOracleTelemetryTraceHandlerClass(
 
     // This method is invoked after exported function from oracledb module
     // completes.
-    onExitFn(traceContext: TraceSpanData) {
-      if (!traceContext.userContext?.span) {
+    onExitFn(traceContext: TraceSpanData): void {
+      const userContext = traceContext.userContext;
+      if (!userContext?.span) {
         return;
       }
-      this._updateFinalSpanAttributes(traceContext);
-      switch (traceContext.operation) {
+
+      const { span, startTime } = userContext;
+      const { operation } = traceContext;
+      const metricAttributes = this._updateFinalSpanAttributes(traceContext);
+
+      const isExecute = operation === SpanNames.EXECUTE;
+      const isExecuteMany = operation === SpanNames.EXECUTE_MANY;
+
+      if (isExecute || isExecuteMany) {
+        this._recordExecuteDuration(metricAttributes, startTime);
+      }
+
+      switch (operation) {
         case SpanNames.EXECUTE:
-          this._handleExecuteCustomResult(
-            traceContext.userContext.span,
-            traceContext
-          );
-          break;
-        default:
+          this._handleExecuteCustomResult(span, traceContext);
           break;
       }
+
       this._updateSpanName(traceContext);
-      traceContext.userContext.span.end();
+      span.end();
     }
 
     // This method is invoked before a round trip call to DB is done
@@ -463,6 +549,34 @@ export function getOracleTelemetryTraceHandlerClass(
       this._updateFinalSpanAttributes(traceContext, true);
       this._updateSpanName(traceContext);
       traceContext.userContext.span.end();
+    }
+
+    onPoolExpand(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolShrink(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolAcquire(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolRelease(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolWait(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolRequestTimeout(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
+    }
+
+    onPoolClose(pool: oracleDBTypes.Pool) {
+      this._updatePool(pool);
     }
   }
   return OracleTelemetryTraceHandler;

@@ -1,6 +1,19 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.65.0...instrumentation-user-interaction-v0.66.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** compute the XPath inside the span creation try/catch ([#3636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3636)) ([5179edc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5179edc04c4978d7881f56fe12b56ecc9db8668a))
+* **instrumentation-user-interaction:** preserve bare event listener calls ([#3653](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3653)) ([00db003](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/00db003a3f7a61f5bc57d84a08e43526881ad497))
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.64.0...instrumentation-user-interaction-v0.65.0) (2026-07-23)
 
 

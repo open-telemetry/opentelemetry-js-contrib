@@ -56,6 +56,7 @@ export const EVENT_LISTENERS_SET = Symbol(
 );
 
 export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
+  ending: boolean;
   options: PgPoolOptionsParams;
   [EVENT_LISTENERS_SET]?: boolean; // flag to identify if the event listeners for instrumentation have been set
 }

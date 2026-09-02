@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-net",
-  "version": "0.65.0",
+  "version": "0.66.0",
   "description": "OpenTelemetry instrumentation for `node:net` network API module",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -50,7 +50,7 @@
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.221.0",
+    "@opentelemetry/instrumentation": "^0.222.0",
     "@opentelemetry/semantic-conventions": "^1.33.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net#readme"
