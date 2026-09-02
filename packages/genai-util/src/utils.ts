@@ -207,8 +207,7 @@ export function formatSystemInstructions(
  * 1. Error `code` if present and non-empty (e.g., `'ECONNREFUSED'`, `404`, `'429'`)
  * 2. Explicit `error.name` if set and not the default `'Error'` (e.g., `'RateLimitError'`)
  * 3. Class / constructor name for subclasses (e.g., `class CustomAPIError extends Error`)
- * 4. Non-empty string if `error` is a string
- * 5. Fallback `'_OTHER'`
+ * 4. Fallback `'_OTHER'`
  *
  * @param error - The caught error, exception, or value.
  * @returns The standardized error type string.
@@ -231,9 +230,6 @@ export function getErrorType(error: unknown): string {
       return constructorName;
     }
     return error.name || 'Error';
-  }
-  if (typeof error === 'string' && error.trim().length > 0) {
-    return error;
   }
   return '_OTHER';
 }

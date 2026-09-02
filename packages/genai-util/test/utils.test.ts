@@ -215,8 +215,8 @@ describe('GenAI Utils', () => {
       assert.strictEqual(getErrorType(noConstructorError), 'Error');
     });
 
-    it('should extract error type from string error inputs', () => {
-      assert.strictEqual(getErrorType('RateLimitError'), 'RateLimitError');
+    it('should return default "_OTHER" for string error inputs', () => {
+      assert.strictEqual(getErrorType('RateLimitError'), '_OTHER');
       assert.strictEqual(getErrorType('   '), '_OTHER');
       assert.strictEqual(getErrorType(''), '_OTHER');
     });
