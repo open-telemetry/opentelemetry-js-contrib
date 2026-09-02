@@ -99,8 +99,8 @@ export interface BlobPart {
   type: 'blob';
   /** Modality of the content (e.g. image, audio, video, document). */
   modality: Modality;
-  /** Raw bytes of the attached data, encoded as a base64 string. */
-  content: string;
+  /** Raw bytes of the attached data. */
+  content: Uint8Array;
   /** The IANA MIME type of the attached data. */
   mime_type?: string | null;
   [key: string]: unknown;
@@ -194,11 +194,7 @@ export interface GenericServerToolCall {
 /**
  * Generic server-side tool call response details.
  */
-export interface GenericServerToolCallResponse {
-  /** Type identifier for the server tool call response. */
-  type: string;
-  [key: string]: unknown;
-}
+export type GenericServerToolCallResponse = GenericServerToolCall;
 
 /**
  * Server-side tool call requested by the provider (e.g. built-in web search, code interpreter).

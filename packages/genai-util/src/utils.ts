@@ -113,6 +113,21 @@ export function serializeContent(content: unknown): string {
   }
 }
 
+function uint8ArrayToBase64(bytes: Uint8Array): string {
+  if (typeof Buffer !== 'undefined') {
+    return Buffer.from(
+      bytes.buffer,
+      bytes.byteOffset,
+      bytes.byteLength
+    ).toString('base64');
+  }
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 /**
  * Format input messages into a JSON string for span attribute storage.
  *
@@ -120,16 +135,18 @@ export function serializeContent(content: unknown): string {
  * @returns JSON string representation of input messages, or `undefined` if empty/invalid.
  */
 export function formatInputMessages(
-  messages?: InputMessages | string
+  messages?: InputMessages
 ): string | undefined {
   if (!messages) {
     return undefined;
   }
-  if (typeof messages === 'string') {
-    return messages;
-  }
   try {
-    return JSON.stringify(messages);
+    return JSON.stringify(messages, (_key, value) => {
+      if (value instanceof Uint8Array) {
+        return uint8ArrayToBase64(value);
+      }
+      return value;
+    });
   } catch {
     return undefined;
   }
@@ -149,7 +166,12 @@ export function formatOutputMessages(messages: unknown): string | undefined {
     return messages;
   }
   try {
-    return JSON.stringify(messages);
+    return JSON.stringify(messages, (_key, value) => {
+      if (value instanceof Uint8Array) {
+        return uint8ArrayToBase64(value);
+      }
+      return value;
+    });
   } catch {
     return undefined;
   }

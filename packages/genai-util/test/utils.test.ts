@@ -31,6 +31,7 @@ import {
   getErrorType,
   getRequestOptionsAttributes,
 } from '../src/utils';
+import type { BlobPart, InputMessages } from '../src/types';
 
 describe('GenAI Utils', () => {
   describe('getAttrsFromBaseURL', () => {
@@ -72,6 +73,36 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatInputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatInputMessages(undefined), undefined);
+
+      // BlobPart handling with Uint8Array base64 encoding
+      const blobPart: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: new Uint8Array([72, 101, 108, 108, 111]), // 'Hello'
+        mime_type: 'image/png',
+      };
+      const msgsWithBlob: InputMessages = [
+        {
+          role: 'user',
+          parts: [blobPart],
+        },
+      ];
+      assert.strictEqual(
+        formatInputMessages(msgsWithBlob),
+        JSON.stringify([
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: 'SGVsbG8=',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
     });
 
     it('formatOutputMessages', () => {
