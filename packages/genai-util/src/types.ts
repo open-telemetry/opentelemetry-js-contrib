@@ -49,13 +49,6 @@ export type Role = 'system' | 'user' | 'assistant' | 'tool' | string;
 export type Modality = 'image' | 'video' | 'audio' | 'document' | string;
 
 /**
- * Content type requested by the client.
- *
- * Corresponds to `gen_ai.output.type`.
- */
-export type OutputType = 'text' | 'json' | 'image' | 'speech' | string;
-
-/**
  * Classification of tool utilized by an agent.
  *
  * Corresponds to `gen_ai.tool.type`.
@@ -415,116 +408,6 @@ export interface ToolInvocationOptions {
   toolType?: ToolType;
   /** Arguments provided to the tool (`gen_ai.tool.call.arguments`). */
   toolArguments?: unknown;
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
-}
-
-/**
- * Options for starting an agent invocation (e.g. local in-process agent).
- */
-export interface AgentInvocationOptions {
-  /** Unique ID of the agent (`gen_ai.agent.id`). */
-  agentId?: string;
-  /** Name of the agent (`gen_ai.agent.name`). */
-  agentName?: string;
-  /** Description of the agent (`gen_ai.agent.description`). */
-  agentDescription?: string;
-  /** Version of the agent (`gen_ai.agent.version`). */
-  agentVersion?: string;
-  /** Name of the model requested by or configured for the agent (`gen_ai.request.model`). */
-  requestModel?: string;
-  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
-  conversationId?: string;
-  /** Indicates whether the conversation context was compacted (`gen_ai.conversation.compacted`). */
-  conversationCompacted?: boolean;
-  /** Data source identifier used by RAG/agent applications (`gen_ai.data_source.id`). */
-  dataSourceId?: string;
-  /** Represents the content type requested by the client (`gen_ai.output.type`). */
-  outputType?: OutputType;
-  /** Request parameters/settings. */
-  requestOptions?: GenAIRequestOptions;
-  /** Input messages sent to the agent (`gen_ai.input.messages`). */
-  inputMessages?: InputMessages;
-  /** System instructions (`gen_ai.system_instructions`). */
-  systemInstructions?: SystemInstructions;
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
-}
-
-/**
- * Options for starting a remote agent invocation (CLIENT span kind).
- */
-export interface RemoteAgentInvocationOptions extends AgentInvocationOptions {
-  /** Name of the remote GenAI provider (`gen_ai.provider.name`). */
-  providerName: string;
-  /** Server address (e.g. hostname). */
-  serverAddress?: string;
-  /** Server port. */
-  serverPort?: number;
-}
-
-/**
- * Options for starting a workflow invocation.
- */
-export interface WorkflowInvocationOptions {
-  /** Name of the workflow (`gen_ai.workflow.name`). */
-  workflowName: string;
-  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
-  conversationId?: string;
-  /** Input messages sent to the workflow (`gen_ai.input.messages`). */
-  inputMessages?: InputMessages;
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
-}
-
-/**
- * Options for starting a retrieval invocation.
- */
-export interface RetrievalInvocationOptions {
-  /** Data source identifier (`gen_ai.data_source.id`). */
-  dataSourceId?: string;
-  /** Name of the provider (`gen_ai.provider.name`). */
-  providerName?: string;
-  /** Model name if an embedding/reranking model is used during retrieval (`gen_ai.request.model`). */
-  requestModel?: string;
-  /** Top-k number of documents requested (`gen_ai.retrieval.top_k`). */
-  topK?: number;
-  /** Query text submitted to retrieval (`gen_ai.retrieval.query.text`). */
-  queryText?: string;
-  /** Retrieved documents if known up-front (`gen_ai.retrieval.documents`). */
-  documents?: Record<string, unknown>[];
-  /** Server address (e.g. hostname). */
-  serverAddress?: string;
-  /** Server port. */
-  serverPort?: number;
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
-}
-
-/**
- * Options for starting a fetch response invocation.
- */
-export interface FetchResponseInvocationOptions {
-  /** Name of the provider (`gen_ai.provider.name`). */
-  providerName: string;
-  /** Identifier of the response being fetched (`gen_ai.response.id`). */
-  responseId: string;
-  /** Whether the fetched response is streamed. */
-  requestStream?: boolean;
-  /** Stream cursor for resuming a stream from a previous position (`gen_ai.request.stream_cursor`). */
-  streamCursor?: string;
-  /** Server address. */
-  serverAddress?: string;
-  /** Server port. */
-  serverPort?: number;
   /** Parent context. */
   parentContext?: Context;
   /** Custom initial span attributes. */
