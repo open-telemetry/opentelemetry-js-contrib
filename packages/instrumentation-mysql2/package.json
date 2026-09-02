@@ -54,7 +54,7 @@
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/contrib-test-utils": "^0.69.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
-    "mysql2": "3.11.5"
+    "mysql2": "3.22.0"
   },
   "dependencies": {
     "@opentelemetry/instrumentation": "^0.222.0",
