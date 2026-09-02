@@ -388,8 +388,6 @@ export interface ToolInvocationOptions {
   toolCallId?: string;
   /** Type classification of the tool (`gen_ai.tool.type`). */
   toolType?: ToolType;
-  /** Arguments provided to the tool (`gen_ai.tool.call.arguments`). */
-  toolArguments?: unknown;
   /** Parent context. */
   parentContext?: Context;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
