@@ -356,16 +356,6 @@ export interface InferenceInvocationOptions {
   operationName?: string;
   /** Model name requested (`gen_ai.request.model`). */
   requestModel?: string;
-  /** Request parameters/settings. */
-  requestOptions?: GenAIRequestOptions;
-  /** Input messages sent to the model (`gen_ai.input.messages`). */
-  inputMessages?: InputMessages;
-  /** System instructions (`gen_ai.system_instructions`). */
-  systemInstructions?: SystemInstructions;
-  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
-  conversationId?: string;
-  /** Parent context for the span. */
-  parentContext?: Context;
   /** Custom initial span attributes. */
   attributes?: Attributes;
   /** Server address (e.g. hostname). */
@@ -382,16 +372,12 @@ export interface EmbeddingInvocationOptions {
   providerName: string;
   /** Model name requested (`gen_ai.request.model`). */
   requestModel?: string;
-  /** Input texts to embed. */
-  inputTexts?: string[];
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
   /** Server address. */
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
 }
 
 /**
@@ -410,6 +396,8 @@ export interface ToolInvocationOptions {
   toolArguments?: unknown;
   /** Parent context. */
   parentContext?: Context;
+  /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
+  agentName?: string;
   /** Custom initial span attributes. */
   attributes?: Attributes;
 }
