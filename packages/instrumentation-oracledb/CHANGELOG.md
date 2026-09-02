@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.47.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.46.0...instrumentation-oracledb-v0.47.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+* **instrumentation-oracledb:** add database client metrics ([#3657](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3657)) ([7eb7053](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7eb70536040b3419f84a3b3c0f2d1c7995d1c40e))
+
+
+### Bug Fixes
+
+* **deps:** move unused [@types](https://github.com/types) packages out of runtime dependencies ([#3702](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3702)) ([49ebdaf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49ebdaf9cac16d74ed748ae15a5bc573a82e4a0e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.46.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.45.0...instrumentation-oracledb-v0.46.0) (2026-07-23)
 
 
