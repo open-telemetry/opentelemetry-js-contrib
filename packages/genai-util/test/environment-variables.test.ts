@@ -6,7 +6,6 @@
 import * as assert from 'assert';
 import {
   ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
-  ENV_GENAI_COMPLETION_HOOK,
   parseContentCaptureMode,
   isSpanContentCaptureEnabled,
 } from '../src/environment-variables';
@@ -17,10 +16,6 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(
         ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
         'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT'
-      );
-      assert.strictEqual(
-        ENV_GENAI_COMPLETION_HOOK,
-        'OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK'
       );
     });
   });

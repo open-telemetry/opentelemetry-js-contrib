@@ -12,12 +12,6 @@ export const ENV_GENAI_CAPTURE_MESSAGE_CONTENT =
   'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT' as const;
 
 /**
- * Environment variable specifying custom completion hook module.
- */
-export const ENV_GENAI_COMPLETION_HOOK =
-  'OTEL_INSTRUMENTATION_GENAI_COMPLETION_HOOK' as const;
-
-/**
  * Parse an arbitrary input value into a valid ContentCaptureMode.
  *
  * @experimental This function is experimental and subject to change.
