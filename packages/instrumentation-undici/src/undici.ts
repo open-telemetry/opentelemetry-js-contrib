@@ -396,9 +396,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const { span, attributes } = record;
+    const isError = response.statusCode >= 400;
     const spanAttributes: Attributes = {
       [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
+
+    if (isError) {
+      spanAttributes[ATTR_ERROR_TYPE] = String(response.statusCode);
+    }
 
     const config = this.getConfig();
 
@@ -432,10 +437,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     span.setAttributes(spanAttributes);
     span.setStatus({
-      code:
-        response.statusCode >= 400
-          ? SpanStatusCode.ERROR
-          : SpanStatusCode.UNSET,
+      code: isError ? SpanStatusCode.ERROR : SpanStatusCode.UNSET,
     });
     record.attributes = Object.assign(attributes, spanAttributes);
   }

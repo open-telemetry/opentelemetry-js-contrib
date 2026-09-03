@@ -65,6 +65,12 @@ describe('UndiciInstrumentation metrics tests', function () {
         res.destroy();
         return;
       }
+      const status = req.url?.match(/^\/status\/(\d+)/);
+      if (status) {
+        res.statusCode = Number(status[1]);
+        res.end();
+        return;
+      }
       // Return a valid response always
       res.statusCode = 200;
       res.setHeader('content-type', 'application/json');
@@ -168,6 +174,34 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
       assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], 'UND_ERR_SOCKET');
+    });
+
+    it('should use the status code as error.type in "http.client.request.duration" metric', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/status/500`;
+      await fetch(fetchUrl);
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const metrics = resourceMetrics[0].scopeMetrics[0].metrics;
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 500);
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], '500');
+    });
+
+    it('should not set error.type for a successful response', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/status/204`;
+      await fetch(fetchUrl);
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const metrics = resourceMetrics[0].scopeMetrics[0].metrics;
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 204);
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], undefined);
     });
   });
 });
