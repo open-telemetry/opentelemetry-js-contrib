@@ -247,6 +247,73 @@ describe('utils', () => {
         delete process.env.OTEL_NODE_DISABLED_INSTRUMENTATIONS;
       }
     });
+
+    it('should parse HTTP header capture env vars and set headersToSpanAttributes on HttpInstrumentation', () => {
+      process.env.OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS =
+        'content-type, x-custom-request';
+      process.env.OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_RESPONSE_HEADERS =
+        'content-length';
+      process.env.OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_REQUEST_HEADERS =
+        'accept';
+      process.env.OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_RESPONSE_HEADERS =
+        'cache-control';
+
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+        const httpInstr = instrumentations.find(
+          i => i.instrumentationName === '@opentelemetry/instrumentation-http'
+        ) as any;
+
+        assert.deepStrictEqual(httpInstr._config.headersToSpanAttributes, {
+          server: {
+            requestHeaders: ['content-type', 'x-custom-request'],
+            responseHeaders: ['content-length'],
+          },
+          client: {
+            requestHeaders: ['accept'],
+            responseHeaders: ['cache-control'],
+          },
+        });
+      } finally {
+        delete process.env
+          .OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS;
+        delete process.env
+          .OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_RESPONSE_HEADERS;
+        delete process.env
+          .OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_REQUEST_HEADERS;
+        delete process.env
+          .OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_RESPONSE_HEADERS;
+      }
+    });
+
+    it('should allow user programmatic headersToSpanAttributes config to take precedence over env vars', () => {
+      process.env.OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS =
+        'from-env';
+      try {
+        const instrumentations = getNodeAutoInstrumentations({
+          '@opentelemetry/instrumentation-http': {
+            headersToSpanAttributes: {
+              server: {
+                requestHeaders: ['from-user-config'],
+              },
+            },
+          },
+        });
+        const httpInstr = instrumentations.find(
+          i => i.instrumentationName === '@opentelemetry/instrumentation-http'
+        ) as any;
+
+        assert.deepStrictEqual(
+          httpInstr._config.headersToSpanAttributes.server,
+          {
+            requestHeaders: ['from-user-config'],
+          }
+        );
+      } finally {
+        delete process.env
+          .OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS;
+      }
+    });
   });
 
   describe('getResourceDetectorsFromEnv', () => {
