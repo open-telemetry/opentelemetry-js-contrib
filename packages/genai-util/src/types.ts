@@ -382,10 +382,6 @@ export interface EmbeddingInvocationOptions {
 export interface ToolInvocationOptions {
   /** Name of the tool being executed (`gen_ai.tool.name`). */
   toolName: string;
-  /** Description of the tool (`gen_ai.tool.description`). */
-  toolDescription?: string;
-  /** Unique ID of the tool call (`gen_ai.tool.call.id`). */
-  toolCallId?: string;
   /** Type classification of the tool (`gen_ai.tool.type`). */
   toolType?: ToolType;
   /** Parent context. */
