@@ -90,6 +90,8 @@ describe('force flush', () => {
   afterEach(() => {
     process.env = oldEnv;
     instrumentation.disable();
+    // Reset the global logger provider so the delegating-proxy test starts clean.
+    logs.disable();
 
     traceMemoryExporter.reset();
     metricMemoryExporter.reset();
@@ -179,10 +181,11 @@ describe('force flush', () => {
   });
 
   it('should force flush a LoggerProvider obtained via the API (delegating proxy)', async () => {
-    // Obtaining the provider from the API before a global is registered yields a
-    // delegating ProxyLoggerProvider. setGlobalLoggerProvider then wires the
-    // delegate, mirroring how instrumentations capture the provider at load time.
-    logs.disable();
+    // A LoggerProvider obtained from the logs API is a delegating
+    // ProxyLoggerProvider. We wire its delegate to a real LoggerProvider and
+    // then hand the proxy to the instrumentation, mirroring the
+    // ProxyTracerProvider test above. The delegate is wired before
+    // setLoggerProvider because the force-flusher is resolved at that point.
     const provider = logs.getLoggerProvider();
 
     const loggerProvider = new LoggerProvider({
@@ -206,7 +209,6 @@ describe('force flush', () => {
     await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
-    logs.disable();
   });
 
   it('should complete handler after force flush providers', async () => {
