@@ -23,47 +23,23 @@ export const ENV_GENAI_COMPLETION_HOOK =
  * @experimental This function is experimental and subject to change.
  */
 export function parseContentCaptureMode(
-  value?: string | boolean | ContentCaptureMode
+  value: string | undefined | null
 ): ContentCaptureMode {
   if (value === undefined || value === null) {
     return 'none';
   }
 
-  if (typeof value === 'boolean') {
-    return value ? 'span_only' : 'none';
-  }
-
   const strVal = String(value).trim().toLowerCase();
   switch (strVal) {
-    case 'true':
-    case '1':
     case 'span_only':
     case 'span':
       return 'span_only';
-    case 'false':
-    case '0':
     case 'none':
     case 'no_content':
     case '':
     default:
       return 'none';
   }
-}
-
-/**
- * Resolve effective ContentCaptureMode based on explicit config and environment variable.
- *
- * @experimental This function is experimental and subject to change.
- */
-export function getContentCaptureMode(
-  configVal?: boolean | ContentCaptureMode,
-  envVarName: string = ENV_GENAI_CAPTURE_MESSAGE_CONTENT
-): ContentCaptureMode {
-  const envVal = process.env[envVarName];
-  if (envVal !== undefined && envVal !== '') {
-    return parseContentCaptureMode(envVal);
-  }
-  return parseContentCaptureMode(configVal);
 }
 
 /**
