@@ -30,7 +30,10 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
     });
   } else {
     // // fallback to previous version
-    const perf: Performance & PerformanceLegacy = performance as Performance & PerformanceLegacy;
+    const perf: Performance & PerformanceLegacy = performance as Performance &
+      PerformanceLegacy;
+    // PerformanceTiming is required for legacy browser support.
+    // eslint-disable-next-line baseline-js/use-baseline
     const performanceTiming = perf.timing;
     if (performanceTiming) {
       const keys = Object.values(PTN);
@@ -38,7 +41,7 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
         if (hasKey(performanceTiming, key)) {
           const value = performanceTiming[key];
           if (typeof value === 'number') {
-            entries[key] = value;
+            entries[key as keyof PerformanceEntries] = value;
           }
         }
       });
