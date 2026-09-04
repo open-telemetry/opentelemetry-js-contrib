@@ -8,16 +8,11 @@
  * `@opentelemetry/semantic-conventions/incubating`.
  *
  * Rationale:
- * 1. Per OpenTelemetry JavaScript Contrib repository guidelines (GUIDELINES.md),
- *    packages must not depend on `@opentelemetry/semantic-conventions/incubating`
- *    because incubating semantic conventions are experimental/unstable and subject
- *    to breaking changes across minor releases.
- * 2. Defining attributes, metric names, and event names as local `as const` string
- *    literals isolates this utility package and all downstream GenAI instrumentations
- *    from upstream breaking changes and prevents version-conflict / diamond-dependency
- *    issues across packages in the ecosystem.
+ * Per OpenTelemetry JavaScript Contrib repository guidelines (GUIDELINES.md),
+ * packages must not depend on `@opentelemetry/semantic-conventions/incubating`
+ * because incubating semantic conventions are experimental/unstable and subject
+ * to breaking changes across minor releases.
  *
- * @see https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/gen-ai-spans.md
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-agent-spans.md
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-events.md
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-metrics.md
