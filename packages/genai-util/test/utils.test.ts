@@ -31,7 +31,7 @@ import {
   getErrorType,
   getRequestOptionsAttributes,
 } from '../src/utils';
-import type { BlobPart, InputMessages } from '../src/types';
+import type { BlobPart, InputMessages, SystemInstructions } from '../src/types';
 
 describe('GenAI Utils', () => {
   describe('getAttrsFromBaseURL', () => {
@@ -118,15 +118,56 @@ describe('GenAI Utils', () => {
     });
 
     it('formatSystemInstructions', () => {
-      const instructions = [{ type: 'text' as const, content: 'test' }];
+      const instructions: SystemInstructions = [
+        { type: 'text', content: 'test' },
+      ];
       assert.strictEqual(
         formatSystemInstructions(instructions),
         JSON.stringify(instructions)
       );
+
+      const multipleInstructions: SystemInstructions = [
+        { type: 'text', content: 'You are a helpful assistant.' },
+        { type: 'text', content: 'Be concise.' },
+      ];
+      assert.strictEqual(
+        formatSystemInstructions(multipleInstructions),
+        JSON.stringify(multipleInstructions)
+      );
+
+      // Normalizes plain string input to SystemInstructions JSON array
       assert.strictEqual(
         formatSystemInstructions('You are a helpful assistant.'),
-        'You are a helpful assistant.'
+        JSON.stringify([
+          { type: 'text', content: 'You are a helpful assistant.' },
+        ])
       );
+
+      // Preserves already-serialized JSON array of parts
+      assert.strictEqual(
+        formatSystemInstructions(
+          JSON.stringify([{ type: 'text', content: 'serialized' }])
+        ),
+        JSON.stringify([{ type: 'text', content: 'serialized' }])
+      );
+
+      // Wraps string array starting with [ as plain text, preventing schema corruption
+      assert.strictEqual(
+        formatSystemInstructions('["Rule 1", "Rule 2"]'),
+        JSON.stringify([{ type: 'text', content: '["Rule 1", "Rule 2"]' }])
+      );
+
+      // Handles non-array JSON string starting with [
+      assert.strictEqual(
+        formatSystemInstructions('[invalid json'),
+        JSON.stringify([{ type: 'text', content: '[invalid json' }])
+      );
+
+      // Handles empty inputs by returning undefined
+      assert.strictEqual(formatSystemInstructions(''), undefined);
+      assert.strictEqual(formatSystemInstructions('   '), undefined);
+      assert.strictEqual(formatSystemInstructions([]), undefined);
+      assert.strictEqual(formatSystemInstructions('[]'), undefined);
       assert.strictEqual(formatSystemInstructions(undefined), undefined);
     });
   });

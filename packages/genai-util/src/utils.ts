@@ -29,6 +29,7 @@ import {
 import type {
   GenAIRequestOptions,
   InputMessages,
+  SystemInstructionPart,
   SystemInstructions,
 } from './types';
 
@@ -178,22 +179,93 @@ export function formatOutputMessages(messages: unknown): string | undefined {
 }
 
 /**
- * Format system instructions into a JSON string or plain string.
+ * Type guard checking if a candidate object conforms to SystemInstructionPart.
+ */
+function isSystemInstructionPart(part: unknown): part is SystemInstructionPart {
+  if (typeof part !== 'object' || part === null || Array.isArray(part)) {
+    return false;
+  }
+  if (
+    !('type' in part) ||
+    typeof part.type !== 'string' ||
+    part.type.trim().length === 0
+  ) {
+    return false;
+  }
+  if (
+    part.type === 'text' &&
+    (!('content' in part) || typeof part.content !== 'string')
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Normalizes system instructions into a standard SystemInstructions array.
+ *
+ * Handles:
+ * - Plain string instructions: wrapped in a single TextPart.
+ * - Serialized JSON string of SystemInstructions parts: validated and preserved.
+ * - SystemInstructions array: passed through if non-empty.
+ * - Empty strings, whitespace, or empty arrays: returns undefined.
+ */
+function normalizeSystemInstructions(
+  instructions?: SystemInstructions | string
+): SystemInstructions | undefined {
+  if (!instructions) {
+    return undefined;
+  }
+
+  if (typeof instructions === 'string') {
+    const trimmed = instructions.trim();
+    if (trimmed.length === 0) {
+      return undefined;
+    }
+    if (trimmed.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          if (parsed.length === 0) {
+            return undefined;
+          }
+          if (parsed.every(isSystemInstructionPart)) {
+            return parsed as SystemInstructions;
+          }
+        }
+      } catch {
+        // Fall through to wrap as plain text
+      }
+    }
+    return [{ type: 'text', content: instructions }];
+  }
+
+  if (Array.isArray(instructions)) {
+    if (instructions.length === 0) {
+      return undefined;
+    }
+    return instructions;
+  }
+
+  return undefined;
+}
+
+/**
+ * Format system instructions into a JSON string conforming to
+ * OpenTelemetry GenAI semantic conventions.
  *
  * @param instructions - System instructions payload to format.
- * @returns JSON or plain string representation of system instructions, or `undefined` if empty/invalid.
+ * @returns JSON string representation of system instructions, or `undefined` if empty/invalid.
  */
 export function formatSystemInstructions(
   instructions?: SystemInstructions | string
 ): string | undefined {
-  if (!instructions) {
+  const normalized = normalizeSystemInstructions(instructions);
+  if (!normalized) {
     return undefined;
   }
-  if (typeof instructions === 'string') {
-    return instructions;
-  }
   try {
-    return JSON.stringify(instructions);
+    return JSON.stringify(normalized);
   } catch {
     return undefined;
   }
