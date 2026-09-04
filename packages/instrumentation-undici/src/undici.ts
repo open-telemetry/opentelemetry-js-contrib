@@ -34,6 +34,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_FULL,
@@ -363,6 +364,11 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       [ATTR_NETWORK_PEER_PORT]: remotePort,
     };
 
+    const protocolVersion = this.getProtocolVersion(socket);
+    if (protocolVersion) {
+      spanAttributes[ATTR_NETWORK_PROTOCOL_VERSION] = protocolVersion;
+    }
+
     // After hooks have been processed (which may modify request headers)
     // we can collect the headers based on the configuration
     if (config.headersToSpanAttributes?.requestHeaders) {
@@ -380,6 +386,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     span.setAttributes(spanAttributes);
+    record.attributes = Object.assign(record.attributes, spanAttributes);
   }
 
   // This is the 3rd message we get for each request and it's fired when the server
@@ -552,5 +559,27 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     return '_OTHER';
+  }
+
+  private getProtocolVersion(
+    socket: { alpnProtocol?: string | boolean } | undefined | null
+  ): string | undefined {
+    if (!socket) {
+      return undefined;
+    }
+    if (typeof socket.alpnProtocol === 'string') {
+      const alpn = socket.alpnProtocol.toLowerCase();
+      if (alpn.startsWith('http/')) {
+        return alpn.slice(5);
+      }
+      if (alpn === 'h2') {
+        return '2';
+      }
+      if (alpn === 'h3') {
+        return '3';
+      }
+      return socket.alpnProtocol;
+    }
+    return '1.1';
   }
 }

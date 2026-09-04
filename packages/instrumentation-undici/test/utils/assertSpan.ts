@@ -19,6 +19,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
@@ -40,6 +41,7 @@ export const assertSpan = (
     query?: string | null;
     forceStatus?: SpanStatus;
     noNetPeer?: boolean; // we don't expect net peer info when request throw before being sent
+    protocolVersion?: string;
     error?: Exception;
   }
 ) => {
@@ -148,6 +150,11 @@ export const assertSpan = (
     assert.ok(
       span.attributes[ATTR_NETWORK_PEER_PORT],
       `must have ${ATTR_NETWORK_PEER_PORT}`
+    );
+    assert.strictEqual(
+      span.attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+      validations.protocolVersion || '1.1',
+      `attributes['${ATTR_NETWORK_PROTOCOL_VERSION}'] is correct`
     );
   }
   assert.ok(

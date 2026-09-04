@@ -14,7 +14,11 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+} from '@opentelemetry/semantic-conventions';
+import * as sinon from 'sinon';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -955,6 +959,71 @@ describe('UndiciInstrumentation `undici` tests', function () {
         query: '?query=test',
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
+    });
+
+    it('should set network.protocol.version attribute on client spans', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
+      const { body } = await undici.request(requestUrl);
+      await consumeResponseBody(body);
+
+      spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(span.attributes[ATTR_NETWORK_PROTOCOL_VERSION], '1.1');
+    });
+
+    describe('getProtocolVersion', function () {
+      it('should correctly parse various socket alpnProtocol values', function () {
+        const getProto = (instrumentation as any).getProtocolVersion.bind(
+          instrumentation
+        );
+
+        assert.strictEqual(getProto(undefined), undefined);
+        assert.strictEqual(getProto(null), undefined);
+        assert.strictEqual(getProto({}), '1.1');
+        assert.strictEqual(getProto({ alpnProtocol: false }), '1.1');
+        assert.strictEqual(getProto({ alpnProtocol: 'http/1.1' }), '1.1');
+        assert.strictEqual(getProto({ alpnProtocol: 'HTTP/1.1' }), '1.1');
+        assert.strictEqual(getProto({ alpnProtocol: 'http/1.0' }), '1.0');
+        assert.strictEqual(getProto({ alpnProtocol: 'h2' }), '2');
+        assert.strictEqual(getProto({ alpnProtocol: 'H2' }), '2');
+        assert.strictEqual(getProto({ alpnProtocol: 'h3' }), '3');
+        assert.strictEqual(getProto({ alpnProtocol: 'custom' }), 'custom');
+      });
+
+      it('should set negotiated protocol version from socket in onRequestHeaders', function () {
+        const fakeSpan: any = {
+          setAttributes: sinon.spy(),
+        };
+        const fakeRecord: any = {
+          span: fakeSpan,
+          attributes: {},
+        };
+        const fakeRequest = {} as any;
+        (instrumentation as any)._recordFromReq.set(fakeRequest, fakeRecord);
+
+        (instrumentation as any).onRequestHeaders({
+          request: fakeRequest,
+          socket: {
+            remoteAddress: '127.0.0.1',
+            remotePort: 443,
+            alpnProtocol: 'h2',
+          },
+        });
+
+        assert.ok(fakeSpan.setAttributes.calledOnce);
+        const attrs = fakeSpan.setAttributes.firstCall.args[0];
+        assert.strictEqual(attrs[ATTR_NETWORK_PROTOCOL_VERSION], '2');
+        assert.strictEqual(
+          fakeRecord.attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+          '2'
+        );
+
+        (instrumentation as any)._recordFromReq.delete(fakeRequest);
+      });
     });
   });
 });
