@@ -5,8 +5,8 @@
 
 This module provides automatic OpenTelemetry instrumentation for the
 [`@openai/agents`](https://www.npmjs.com/package/@openai/agents) JavaScript SDK.
-It uses the SDK's tracing processor callbacks to emit GenAI workflow, agent,
-and function-tool spans.
+It uses the SDK's tracing processor callbacks to emit GenAI agent and
+function-tool spans.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -52,11 +52,13 @@ The instrumentation is also enabled by default when using
 
 The OpenAI client instrumentation remains responsible for model-call spans.
 This package emits the agent orchestration spans and preserves the SDK's task
-and turn spans as hierarchy-only callbacks, avoiding duplicate LLM spans.
+and turn spans as hierarchy-only callbacks, avoiding duplicate LLM spans. Each
+run uses a neutral `openai.agents.run` container span for correlation; it is not
+classified as a GenAI workflow.
 
 The JavaScript tracing callbacks are lifecycle notifications; they do not keep
 an OpenTelemetry context active between start and end. This instrumentation
-therefore constructs the workflow, agent, and tool hierarchy explicitly, but
+therefore constructs the run, agent, and tool hierarchy explicitly, but
 model-call spans from separate client instrumentation are not guaranteed to be
 children of the agent span. Guaranteeing that relationship would require an
 additional runner-boundary context hook.
@@ -65,7 +67,7 @@ additional runner-boundary context hook.
 
 | Agents SDK callback | OpenTelemetry span | `gen_ai.operation.name` |
 | ------------------- | ------------------ | ----------------------- |
-| Trace | `invoke_workflow <name>` | `invoke_workflow` |
+| Trace | `openai.agents.run` | _not set_ |
 | Agent span | `invoke_agent <name>` | `invoke_agent` |
 | Function span | `execute_tool <name>` | `execute_tool` |
 

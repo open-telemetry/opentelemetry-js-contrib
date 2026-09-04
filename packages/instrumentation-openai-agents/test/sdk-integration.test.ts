@@ -29,7 +29,6 @@ import {
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_TOOL_NAME,
-  ATTR_GEN_AI_WORKFLOW_NAME,
 } from '../src/semconv';
 
 function sanitizeRecordings(scopes: Definition[]): Definition[] {
@@ -116,11 +115,7 @@ describe('OpenAI Agents SDK integration', () => {
     const spans = exporter.getFinishedSpans();
     assert.deepStrictEqual(
       spans.map(span => span.name),
-      [
-        'execute_tool real-tool',
-        'invoke_agent real-agent',
-        'invoke_workflow real-workflow',
-      ]
+      ['execute_tool real-tool', 'invoke_agent real-agent', 'openai.agents.run']
     );
   });
 
@@ -155,18 +150,15 @@ describe('OpenAI Agents SDK integration', () => {
 
       assert.strictEqual(result.finalOutput, 'hello from agent');
       const spans = exporter.getFinishedSpans();
-      const workflowSpan = spans.find(
-        span =>
-          span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_workflow'
-      );
+      const runSpan = spans.find(span => span.name === 'openai.agents.run');
       const agentSpan = spans.find(
         span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
       );
-      assert.ok(workflowSpan);
+      assert.ok(runSpan);
       assert.ok(agentSpan);
       assert.strictEqual(
-        workflowSpan.attributes[ATTR_GEN_AI_WORKFLOW_NAME],
-        'Agent workflow'
+        runSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
+        undefined
       );
       assert.strictEqual(
         agentSpan.attributes[ATTR_GEN_AI_AGENT_NAME],
@@ -174,7 +166,7 @@ describe('OpenAI Agents SDK integration', () => {
       );
       assert.strictEqual(
         agentSpan.parentSpanContext?.spanId,
-        workflowSpan.spanContext().spanId
+        runSpan.spanContext().spanId
       );
     });
 
@@ -202,13 +194,10 @@ describe('OpenAI Agents SDK integration', () => {
       const agentSpan = spans.find(
         span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
       );
-      const workflowSpan = spans.find(
-        span =>
-          span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_workflow'
-      );
+      const runSpan = spans.find(span => span.name === 'openai.agents.run');
       assert.ok(toolSpan);
       assert.ok(agentSpan);
-      assert.ok(workflowSpan);
+      assert.ok(runSpan);
       assert.strictEqual(
         toolSpan.attributes[ATTR_GEN_AI_TOOL_NAME],
         'get_weather'
@@ -227,7 +216,7 @@ describe('OpenAI Agents SDK integration', () => {
       );
       assert.strictEqual(
         agentSpan.parentSpanContext?.spanId,
-        workflowSpan.spanContext().spanId
+        runSpan.spanContext().spanId
       );
     });
   });

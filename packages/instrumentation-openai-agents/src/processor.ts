@@ -30,10 +30,8 @@ import {
   ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_TYPE,
-  ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
-  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
 } from './semconv';
 import type { OpenAIAgentsInstrumentationConfig } from './types';
@@ -41,6 +39,11 @@ import type { OpenAIAgentsInstrumentationConfig } from './types';
 interface SpanRecord {
   context: Context;
   span?: Span;
+  errorTarget?: Span;
+}
+
+interface TraceRecord extends SpanRecord {
+  span: Span;
 }
 
 export class OpenAIAgentsTracingProcessor
@@ -49,9 +52,10 @@ export class OpenAIAgentsTracingProcessor
   private _enabled = true;
   private _captureMessageContent = false;
   private _spanRecords = new WeakMap<object, SpanRecord>();
-  private _spanContexts = new Map<string, Context>();
-  private _traceRecords = new WeakMap<object, SpanRecord>();
-  private _traceContexts = new Map<string, Context>();
+  private _spanRecordsById = new Map<string, SpanRecord>();
+  private _traceRecords = new WeakMap<object, TraceRecord>();
+  private _traceRecordsById = new Map<string, TraceRecord>();
+  private _failedSpans = new WeakSet<Span>();
   private readonly _openSpans = new Set<Span>();
 
   constructor(
@@ -79,28 +83,22 @@ export class OpenAIAgentsTracingProcessor
         return;
       }
 
-      const name = trace.name?.trim();
       const parentContext = context.active();
-      const attributes: Attributes = {
-        [ATTR_GEN_AI_OPERATION_NAME]:
-          GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-      };
-      if (name) {
-        attributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
-      }
       const span = this._getTracer().startSpan(
-        name
-          ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW} ${name}`
-          : GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+        'openai.agents.run',
         {
           kind: SpanKind.INTERNAL,
-          attributes,
         },
         parentContext
       );
       const spanContext = otelTrace.setSpan(parentContext, span);
-      this._traceRecords.set(trace, { context: spanContext, span });
-      this._traceContexts.set(trace.traceId, spanContext);
+      const record: TraceRecord = {
+        context: spanContext,
+        span,
+        errorTarget: span,
+      };
+      this._traceRecords.set(trace, record);
+      this._traceRecordsById.set(trace.traceId, record);
       this._openSpans.add(span);
     });
     return Promise.resolve();
@@ -112,12 +110,10 @@ export class OpenAIAgentsTracingProcessor
       if (!record) {
         return;
       }
-      record.span?.end();
-      if (record.span) {
-        this._openSpans.delete(record.span);
-      }
+      record.span.end();
+      this._openSpans.delete(record.span);
       this._traceRecords.delete(trace);
-      this._traceContexts.delete(trace.traceId);
+      this._traceRecordsById.delete(trace.traceId);
     });
     return Promise.resolve();
   }
@@ -128,14 +124,20 @@ export class OpenAIAgentsTracingProcessor
         return;
       }
 
-      const parentContext = this._parentContext(span);
+      const parentRecord = this._parentRecord(span);
+      const parentContext = parentRecord?.context || context.active();
       const otelSpan = this._startMappedSpan(span, parentContext);
       const spanContext = otelSpan
         ? otelTrace.setSpan(parentContext, otelSpan)
         : parentContext;
 
-      this._spanRecords.set(span, { context: spanContext, span: otelSpan });
-      this._spanContexts.set(span.spanId, spanContext);
+      const record: SpanRecord = {
+        context: spanContext,
+        span: otelSpan,
+        errorTarget: otelSpan || parentRecord?.errorTarget,
+      };
+      this._spanRecords.set(span, record);
+      this._spanRecordsById.set(span.spanId, record);
       if (otelSpan) {
         this._openSpans.add(otelSpan);
       }
@@ -168,10 +170,12 @@ export class OpenAIAgentsTracingProcessor
         this._setError(record.span, span);
         record.span.end(this._asTimeInput(span.endedAt));
         this._openSpans.delete(record.span);
+      } else if (span.error && record.errorTarget) {
+        this._setError(record.errorTarget, span);
       }
 
       this._spanRecords.delete(span);
-      this._spanContexts.delete(span.spanId);
+      this._spanRecordsById.delete(span.spanId);
     });
     return Promise.resolve();
   }
@@ -182,9 +186,10 @@ export class OpenAIAgentsTracingProcessor
     }
     this._openSpans.clear();
     this._spanRecords = new WeakMap<object, SpanRecord>();
-    this._spanContexts.clear();
-    this._traceRecords = new WeakMap<object, SpanRecord>();
-    this._traceContexts.clear();
+    this._spanRecordsById.clear();
+    this._traceRecords = new WeakMap<object, TraceRecord>();
+    this._traceRecordsById.clear();
+    this._failedSpans = new WeakSet<Span>();
     return Promise.resolve();
   }
 
@@ -246,20 +251,21 @@ export class OpenAIAgentsTracingProcessor
     return undefined;
   }
 
-  private _parentContext(span: OpenAIAgentsSpan): Context {
+  private _parentRecord(span: OpenAIAgentsSpan): SpanRecord | undefined {
     if (span.parentId) {
-      const parent = this._spanContexts.get(span.parentId);
+      const parent = this._spanRecordsById.get(span.parentId);
       if (parent) {
         return parent;
       }
     }
-    return this._traceContexts.get(span.traceId) || context.active();
+    return this._traceRecordsById.get(span.traceId);
   }
 
   private _setError(otelSpan: Span, span: OpenAIAgentsSpan): void {
-    if (!span.error) {
+    if (!span.error || this._failedSpans.has(otelSpan)) {
       return;
     }
+    this._failedSpans.add(otelSpan);
     otelSpan.recordException(span.error.message);
     otelSpan.setStatus({
       code: SpanStatusCode.ERROR,
