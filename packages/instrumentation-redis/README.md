@@ -50,6 +50,8 @@ Redis instrumentation has a few options available to choose from. You can set th
 | `dbStatementSerializer` | `DbStatementSerializer` (function)                | Redis instrumentation will serialize the command to the `db.statement` attribute using the specified function. |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, moduleVersion, cmdName, cmdArgs` |
 | `requireParentSpan`     | `boolean`                                         | Require parent to create redis span, default when unset is false.                                              |
+| `serializeKeys`         | `boolean`                                         | Serialize the key for commands that accept only keys, masked with `maskStatementHook`. Default is false.       |
+| `maskStatementHook`     | `DbStatementMaskingHook` (function)               | Hook used to mask the statement when `serializeKeys` is true.                                                  |
 
 #### Custom `db.statement` Serializer
 
@@ -69,6 +71,54 @@ const redisInstrumentation = new RedisInstrumentation({
   dbStatementSerializer: function (cmdName, cmdArgs) {
     return [cmdName, ...cmdArgs].join(" ");
   },
+});
+```
+
+#### Serializing redis keys
+
+By default, commands that accept only a key are serialized without it, so every
+call looks the same:
+
+```text
+HGETALL [1 other arguments]
+TTL [1 other arguments]
+```
+
+Set `serializeKeys` to `true` to record the key instead. Segments that identify
+a single entity are replaced with `?`, so the key pattern is visible without
+`db.query.text` becoming high cardinality:
+
+```javascript
+const { RedisInstrumentation } = require('@opentelemetry/instrumentation-redis');
+
+const instrumentation = new RedisInstrumentation({
+  serializeKeys: true,
+});
+```
+
+| default | `serializeKeys: true` |
+| --- | --- |
+| `HGETALL [1 other arguments]` | `HGETALL player:?:stats` |
+| `HGETALL [1 other arguments]` | `HGETALL tournament:leaderboard:sc:daily` |
+| `TTL [1 other arguments]` | `TTL auth_revoked:?` |
+| `MGET [2 other arguments]` | `MGET player:?:stats player:?:stats` |
+| `SET session:42 [1 other arguments]` | `SET session:? [1 other arguments]` |
+
+Only commands whose arguments are keys, hash fields, patterns, numbers or fixed
+tokens are affected. Commands that accept values, such as `SET`, `HSET` and
+`EVAL`, keep their values redacted either way.
+
+A segment is masked when it looks like a number, uuid, hex digest, ulid or email
+address. Segments that describe a class of keys, such as `queue:high` or
+`feature_flags`, are left alone, as is the command name.
+
+Pass `maskStatementHook` to replace the masking rule, or
+`statement => statement` to record keys unmasked:
+
+```javascript
+const instrumentation = new RedisInstrumentation({
+  serializeKeys: true,
+  maskStatementHook: statement => statement.replace(/tenant:[^\s]+/g, 'tenant:?'),
 });
 ```
 
