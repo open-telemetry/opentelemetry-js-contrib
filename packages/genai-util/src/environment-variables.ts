@@ -56,12 +56,3 @@ export function getContentCaptureMode(
   }
   return parseContentCaptureMode(configVal);
 }
-
-/**
- * Returns true if content should be attached to span attributes.
- *
- * @experimental This function is experimental and subject to change.
- */
-export function isSpanContentCaptureEnabled(mode: ContentCaptureMode): boolean {
-  return mode === 'span_only';
-}

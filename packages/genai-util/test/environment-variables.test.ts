@@ -8,7 +8,6 @@ import {
   ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
   getContentCaptureMode,
   parseContentCaptureMode,
-  isSpanContentCaptureEnabled,
 } from '../src/environment-variables';
 
 describe('Environment Variables and Content Capture', () => {
@@ -99,13 +98,6 @@ describe('Environment Variables and Content Capture', () => {
         getContentCaptureMode('none', 'TEST_CUSTOM_CAPTURE_ENV'),
         'span_only'
       );
-    });
-  });
-
-  describe('mode checkers', () => {
-    it('isSpanContentCaptureEnabled', () => {
-      assert.strictEqual(isSpanContentCaptureEnabled('none'), false);
-      assert.strictEqual(isSpanContentCaptureEnabled('span_only'), true);
     });
   });
 });
