@@ -5,10 +5,6 @@
 
 import * as assert from 'assert';
 import {
-  ATTR_SERVER_ADDRESS,
-  ATTR_SERVER_PORT,
-} from '@opentelemetry/semantic-conventions';
-import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
@@ -23,7 +19,6 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_P,
 } from '../src/semconv';
 import {
-  getAttrsFromBaseURL,
   serializeContent,
   formatInputMessages,
   formatOutputMessages,
@@ -34,28 +29,6 @@ import {
 import type { BlobPart, InputMessages, SystemInstructions } from '../src/types';
 
 describe('GenAI Utils', () => {
-  describe('getAttrsFromBaseURL', () => {
-    it('should parse URL into server.address and server.port', () => {
-      const attrs1 = getAttrsFromBaseURL('https://api.openai.com/v1');
-      assert.deepStrictEqual(attrs1, {
-        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-        [ATTR_SERVER_PORT]: 443,
-      });
-
-      const attrs2 = getAttrsFromBaseURL('http://localhost:8080/v1');
-      assert.deepStrictEqual(attrs2, {
-        [ATTR_SERVER_ADDRESS]: 'localhost',
-        [ATTR_SERVER_PORT]: 8080,
-      });
-
-      const attrs3 = getAttrsFromBaseURL(undefined);
-      assert.strictEqual(attrs3, undefined);
-
-      const attrs4 = getAttrsFromBaseURL('invalid-url-string');
-      assert.strictEqual(attrs4, undefined);
-    });
-  });
-
   describe('serialization helpers', () => {
     it('serializeContent', () => {
       assert.strictEqual(serializeContent('hello'), 'hello');

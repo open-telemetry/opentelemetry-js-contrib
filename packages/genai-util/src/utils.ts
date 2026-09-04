@@ -6,12 +6,7 @@
 /**
  * Functions declared in this file are only meant to be used within the genai-util package.
  */
-import { diag } from '@opentelemetry/api';
-import type { Attributes, DiagLogger } from '@opentelemetry/api';
-import {
-  ATTR_SERVER_ADDRESS,
-  ATTR_SERVER_PORT,
-} from '@opentelemetry/semantic-conventions';
+import type { Attributes } from '@opentelemetry/api';
 import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
@@ -32,51 +27,6 @@ import type {
   SystemInstructionPart,
   SystemInstructions,
 } from './types';
-
-const SERVER_PORT_FROM_URL_PROTOCOL = {
-  'https:': 443,
-  'http:': 80,
-} as const;
-
-/**
- * Extract `server.address` and `server.port` attributes from a client baseURL.
- *
- * @param baseURL - Base URL of the API client (e.g. `'https://api.openai.com/v1'`).
- * @param diag_ - Optional diagnostic logger for debug logging.
- * @returns Attributes object containing `server.address` and `server.port`, or `undefined` if baseURL is not provided or invalid.
- */
-export function getAttrsFromBaseURL(
-  baseURL: string | undefined,
-  diag_: DiagLogger = diag
-): Attributes | undefined {
-  if (!baseURL) {
-    return undefined;
-  }
-
-  let u: URL;
-  try {
-    u = new URL(baseURL);
-  } catch (ex) {
-    diag_.debug(
-      `could not determine server.address/server.port from baseURL: ${ex}`
-    );
-    return undefined;
-  }
-
-  const port = u.port
-    ? Number(u.port)
-    : SERVER_PORT_FROM_URL_PROTOCOL[u.protocol];
-
-  const attrs: Attributes = {
-    [ATTR_SERVER_ADDRESS]: u.hostname,
-  };
-
-  if (typeof port === 'number' && !isNaN(port)) {
-    attrs[ATTR_SERVER_PORT] = port;
-  }
-
-  return attrs;
-}
 
 /**
  * Serialize arbitrary data to a JSON string or string representation safely.
