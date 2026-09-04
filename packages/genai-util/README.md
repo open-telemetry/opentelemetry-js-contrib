@@ -40,7 +40,7 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.client.operation.duration` (in seconds)
   - `gen_ai.client.token.usage` (input & output tokens)
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
-- **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`, `event_only`, `span_and_event`) configurable in code or via environment variables.
+- **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
 - **Completion Hooks**: Pluggable lifecycle hooks (`CompletionHookManager`) for custom logging, evaluations, or forwarding prompts and completions to external analysis services.
 
 ---

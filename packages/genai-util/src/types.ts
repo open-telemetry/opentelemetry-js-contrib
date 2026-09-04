@@ -449,12 +449,10 @@ export interface CompletionHook {
 export interface GenAIInstrumentationConfig {
   /**
    * Controls capturing of prompt, completion, and tool call contents.
-   * - `false` or `'none'`: no content captured (default).
-   * - `true` or `'span_only'`: content captured on span attributes.
-   * - `'event_only'`: content captured in span events.
-   * - `'span_and_event'`: content captured in both spans and events.
+   * - `'none'`: no content captured (default).
+   * - `'span_only'`: content captured on span attributes.
    */
-  captureMessageContent?: boolean | ContentCaptureMode;
+  captureMessageContent?: ContentCaptureMode;
 
   /**
    * Optional custom completion hooks.
