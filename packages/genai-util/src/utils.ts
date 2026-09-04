@@ -24,6 +24,7 @@ import {
 import type {
   GenAIRequestOptions,
   InputMessages,
+  OutputMessages,
   SystemInstructionPart,
   SystemInstructions,
 } from './types';
@@ -109,7 +110,9 @@ export function formatInputMessages(
  * @param messages - Output messages payload to format.
  * @returns JSON string representation of output messages, or `undefined` if empty/invalid.
  */
-export function formatOutputMessages(messages: unknown): string | undefined {
+export function formatOutputMessages(
+  messages?: OutputMessages
+): string | undefined {
   if (!messages) {
     return undefined;
   }

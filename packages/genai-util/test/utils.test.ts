@@ -26,7 +26,12 @@ import {
   getErrorType,
   getRequestOptionsAttributes,
 } from '../src/utils';
-import type { BlobPart, InputMessages, SystemInstructions } from '../src/types';
+import type {
+  BlobPart,
+  InputMessages,
+  OutputMessages,
+  SystemInstructions,
+} from '../src/types';
 
 describe('GenAI Utils', () => {
   describe('serialization helpers', () => {
@@ -76,10 +81,39 @@ describe('GenAI Utils', () => {
           },
         ])
       );
+
+      const emptyBlobPart: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: new Uint8Array([]),
+        mime_type: 'image/png',
+      };
+      const msgsWithEmptyBlob: InputMessages = [
+        {
+          role: 'user',
+          parts: [emptyBlobPart],
+        },
+      ];
+      assert.strictEqual(
+        formatInputMessages(msgsWithEmptyBlob),
+        JSON.stringify([
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: '',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
     });
 
     it('formatOutputMessages', () => {
-      const msgs = [
+      const msgs: OutputMessages = [
         {
           role: 'assistant',
           parts: [{ type: 'text', content: 'world' }],
@@ -88,6 +122,64 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatOutputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatOutputMessages(undefined), undefined);
+
+      const blobPart: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: new Uint8Array([72, 101, 108, 108, 111]),
+        mime_type: 'image/png',
+      };
+      const msgsWithBlob: OutputMessages = [
+        {
+          role: 'assistant',
+          parts: [blobPart],
+        },
+      ];
+      assert.strictEqual(
+        formatOutputMessages(msgsWithBlob),
+        JSON.stringify([
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: 'SGVsbG8=',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
+
+      const emptyBlobPart: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: new Uint8Array([]),
+        mime_type: 'image/png',
+      };
+      const msgsWithEmptyBlob: OutputMessages = [
+        {
+          role: 'assistant',
+          parts: [emptyBlobPart],
+        },
+      ];
+      assert.strictEqual(
+        formatOutputMessages(msgsWithEmptyBlob),
+        JSON.stringify([
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: '',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
     });
 
     it('formatSystemInstructions', () => {
