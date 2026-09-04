@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
+import * as diagch from 'diagnostics_channel';
 import { Writable } from 'stream';
 
 import {
@@ -14,7 +15,10 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+} from '@opentelemetry/semantic-conventions';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -955,6 +959,31 @@ describe('UndiciInstrumentation `undici` tests', function () {
         query: '?query=test',
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
+    });
+
+    it('should set network.protocol.version to 2 when ALPN is h2', function () {
+      const request: any = {
+        method: 'GET',
+        origin: 'https://localhost:443',
+        path: '/',
+        headers: [],
+      };
+      const socket = {
+        remoteAddress: '127.0.0.1',
+        remotePort: 443,
+        alpnProtocol: 'h2',
+      };
+
+      diagch.channel('undici:request:create').publish({ request });
+      diagch.channel('undici:client:sendHeaders').publish({ request, socket });
+      diagch.channel('undici:request:trailers').publish({ request });
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '2'
+      );
     });
   });
 });
