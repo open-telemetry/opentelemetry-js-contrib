@@ -15,7 +15,7 @@ import {
   TestCollector,
 } from '@opentelemetry/contrib-test-utils';
 
-import { DataloaderInstrumentation } from '../src';
+import { DataloaderInstrumentation } from '../src/index';
 const instrumentation = new DataloaderInstrumentation();
 
 // For testing that double shimming/wrapping does not occur
@@ -25,6 +25,8 @@ extraInstrumentation.disable();
 import * as assert from 'assert';
 import * as Dataloader from 'dataloader';
 import * as crypto from 'crypto';
+import * as semver from 'semver';
+import * as path from 'path';
 
 function getMd5HashFromIdx(idx: number) {
   return crypto.createHash('md5').update(String(idx)).digest('hex');
@@ -633,12 +635,124 @@ describe('DataloaderInstrumentation', () => {
     assert.strictEqual(loadSpan.name, 'dataloader.load');
     assert.strictEqual(batchSpan.name, 'dataloader.batch');
   });
+
+  describe('synchronous error handling', () => {
+    it('correctly catches synchronous exceptions in batch function', async () => {
+      const failingDataloader = new Dataloader(keys => {
+        throw new Error('Sync batch error');
+      });
+
+      try {
+        await failingDataloader.load('test');
+        assert.fail('.load should throw');
+      } catch (e: any) {
+        assert.ok(e.message.includes('Sync batch error'));
+      }
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(finishedSpans.length, 3);
+      const [batchSpan, _clearSpan, loadSpan] = finishedSpans;
+
+      assert.strictEqual(batchSpan.status.code, SpanStatusCode.ERROR);
+      assert.ok(batchSpan.status.message?.includes('Sync batch error'));
+      assert.strictEqual(loadSpan.status.code, SpanStatusCode.ERROR);
+      assert.ok(loadSpan.status.message?.includes('Sync batch error'));
+    });
+
+    it('correctly catches synchronous exceptions in prime', () => {
+      class FailingMap extends Map {
+        override set(_key: any, _value: any): this {
+          throw new Error('Sync prime error');
+        }
+      }
+
+      const loader = new Dataloader(async keys => keys, {
+        cacheMap: new FailingMap(),
+      });
+
+      assert.throws(
+        () => loader.prime('k', 'v'),
+        (err: Error) => err.message === 'Sync prime error'
+      );
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(finishedSpans.length, 1);
+      const [primeSpan] = finishedSpans;
+
+      assert.strictEqual(primeSpan.name, 'dataloader.prime');
+      assert.deepStrictEqual(primeSpan.status, {
+        code: SpanStatusCode.ERROR,
+        message: 'Sync prime error',
+      });
+    });
+
+    it('correctly catches synchronous exceptions in clear', () => {
+      class FailingMap extends Map {
+        override delete(_key: any): boolean {
+          throw new Error('Sync clear error');
+        }
+      }
+
+      const loader = new Dataloader(async keys => keys, {
+        cacheMap: new FailingMap(),
+      });
+
+      assert.throws(
+        () => loader.clear('k'),
+        (err: Error) => err.message === 'Sync clear error'
+      );
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(finishedSpans.length, 1);
+      const [clearSpan] = finishedSpans;
+
+      assert.strictEqual(clearSpan.name, 'dataloader.clear');
+      assert.deepStrictEqual(clearSpan.status, {
+        code: SpanStatusCode.ERROR,
+        message: 'Sync clear error',
+      });
+    });
+
+    it('correctly catches synchronous exceptions in clearAll', () => {
+      class FailingMap extends Map {
+        override clear(): void {
+          throw new Error('Sync clearAll error');
+        }
+      }
+
+      const loader = new Dataloader(async keys => keys, {
+        cacheMap: new FailingMap(),
+      });
+
+      assert.throws(
+        () => loader.clearAll(),
+        (err: Error) => err.message === 'Sync clearAll error'
+      );
+
+      const finishedSpans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(finishedSpans.length, 1);
+      const [clearAllSpan] = finishedSpans;
+
+      assert.strictEqual(clearAllSpan.name, 'dataloader.clearAll');
+      assert.deepStrictEqual(clearAllSpan.status, {
+        code: SpanStatusCode.ERROR,
+        message: 'Sync clearAll error',
+      });
+    });
+  });
 });
 
 describe('ESM usage', () => {
   it('should work with ESM default import', async function () {
+    if (semver.gte(process.version, '20.6.0')) {
+      // --experimental-loader hook is not supported on Node.js >= 20.6.0
+      this.skip();
+    }
+    const fixtureDir = __dirname.endsWith('build/test')
+      ? path.resolve(__dirname, '../../test')
+      : __dirname;
     await runTestFixture({
-      cwd: __dirname,
+      cwd: fixtureDir,
       argv: ['fixtures/use-dataloader-default-import.mjs'],
       env: {
         NODE_OPTIONS:
