@@ -448,12 +448,17 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           }),
         ];
 
-        const eachMessagePromise = context.with(
-          trace.setSpan(propagatedContext, span),
-          () => {
-            return original!.apply(this, args);
-          }
-        );
+        let eachMessagePromise: Promise<void>;
+        try {
+          eachMessagePromise = context.with(
+            trace.setSpan(propagatedContext, span),
+            () => {
+              return original!.apply(this, args);
+            }
+          );
+        } catch (err: any) {
+          eachMessagePromise = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           [span],
           pendingMetrics,
@@ -548,10 +553,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                 )
               );
             });
-            const batchMessagePromise: Promise<void> = original!.apply(
-              this,
-              args
-            );
+            let batchMessagePromise: Promise<void>;
+            try {
+              batchMessagePromise = original!.apply(this, args);
+            } catch (err: any) {
+              batchMessagePromise = Promise.reject(err);
+            }
             spans.unshift(receivingSpan);
             return instrumentation._endSpansOnPromise(
               spans,
@@ -574,7 +581,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         const transactionSpan = instrumentation.tracer.startSpan('transaction');
         const producer = this;
 
-        const transactionPromise = original.apply(this, args);
+        let transactionPromise: Promise<kafkaJs.Transaction>;
+        try {
+          transactionPromise = original.apply(this, args);
+        } catch (err: any) {
+          transactionPromise = Promise.reject(err);
+        }
 
         transactionPromise
           .then((transaction: kafkaJs.Transaction) => {
@@ -712,10 +724,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             );
           });
         });
-        const origSendResult: Promise<RecordMetadata[]> = original.apply(
-          this,
-          args
-        );
+        let origSendResult: Promise<RecordMetadata[]>;
+        try {
+          origSendResult = original.apply(this, args);
+        } catch (err: any) {
+          origSendResult = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           spans,
           pendingMetrics,
@@ -755,10 +769,12 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
               : {}),
           })
         );
-        const origSendResult: Promise<RecordMetadata[]> = original.apply(
-          this,
-          args
-        );
+        let origSendResult: Promise<RecordMetadata[]>;
+        try {
+          origSendResult = original.apply(this, args);
+        } catch (err: any) {
+          origSendResult = Promise.reject(err);
+        }
         return instrumentation._endSpansOnPromise(
           spans,
           pendingMetrics,
@@ -784,6 +800,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         if (typeof reason === 'string' || reason === undefined) {
           errorMessage = reason;
         } else if (
+          reason !== null &&
           typeof reason === 'object' &&
           Object.prototype.hasOwnProperty.call(reason, 'message')
         ) {
@@ -793,6 +810,9 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         pendingMetrics.forEach(m => m(errorType));
 
         spans.forEach(span => {
+          if (reason !== undefined && reason !== null) {
+            span.recordException(reason);
+          }
           span.setAttribute(ATTR_ERROR_TYPE, errorType);
           span.setStatus({
             code: SpanStatusCode.ERROR,
