@@ -33,10 +33,10 @@ import type {
   SystemInstructions,
 } from './types';
 
-const SERVER_PORT_FROM_URL_PROTOCOL: Record<string, number> = {
+const SERVER_PORT_FROM_URL_PROTOCOL = {
   'https:': 443,
   'http:': 80,
-};
+} as const;
 
 /**
  * Extract `server.address` and `server.port` attributes from a client baseURL.
