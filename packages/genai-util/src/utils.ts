@@ -113,9 +113,6 @@ export function formatOutputMessages(messages: unknown): string | undefined {
   if (!messages) {
     return undefined;
   }
-  if (typeof messages === 'string') {
-    return messages;
-  }
   try {
     return JSON.stringify(messages, (_key, value) => {
       if (value instanceof Uint8Array) {
@@ -203,6 +200,13 @@ function normalizeSystemInstructions(
 /**
  * Format system instructions into a JSON string conforming to
  * OpenTelemetry GenAI semantic conventions.
+ *
+ * Note: Serialization to a JSON string is done because OpenTelemetry JS
+ * does not currently support complex/structured attribute values on spans.
+ * Per semantic conventions, structured attributes should be serialized to a
+ * JSON string on spans until complex attributes are supported.
+ *
+ * @see https://github.com/open-telemetry/opentelemetry-js/issues/7071
  *
  * @param instructions - System instructions payload to format.
  * @returns JSON string representation of system instructions, or `undefined` if empty/invalid.
