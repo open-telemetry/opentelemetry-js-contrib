@@ -26,6 +26,7 @@
     "packages/contrib-test-utils": {},
     "packages/winston-transport": {},
     "packages/instrumentation-amqplib": {},
+    "packages/instrumentation-anthropic": {},
     "packages/instrumentation-cucumber": {},
     "packages/instrumentation-dataloader": {},
     "packages/instrumentation-fs": {},
