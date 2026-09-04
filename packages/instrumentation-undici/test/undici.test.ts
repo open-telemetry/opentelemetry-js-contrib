@@ -14,6 +14,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -82,6 +83,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
       if (req.url === '/error') {
         // Simulate an error
         res.destroy();
+        return;
+      }
+      const status = req.url?.match(/^\/status\/(\d+)/);
+      if (status) {
+        res.statusCode = Number(status[1]);
+        res.end();
         return;
       }
       // There are some situations where there is no way to access headers
@@ -729,6 +736,41 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
         done();
       });
+    });
+
+    it('should set error.type to the status code for a failing response', async function () {
+      for (const statusCode of [404, 500]) {
+        memoryExporter.reset();
+
+        const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/${statusCode}`;
+        const response = await undici.request(requestUrl);
+        await response.body.dump();
+
+        const span = memoryExporter.getFinishedSpans()[0];
+        assert.ok(span, 'a span is present');
+        assertSpan(span, {
+          hostname,
+          httpMethod: 'GET',
+          path: `/status/${statusCode}`,
+          httpStatusCode: statusCode,
+        });
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(
+          span.attributes[ATTR_ERROR_TYPE],
+          String(statusCode)
+        );
+      }
+    });
+
+    it('should not set error.type for a successful response', async function () {
+      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/204`;
+      const response = await undici.request(requestUrl);
+      await response.body.dump();
+
+      const span = memoryExporter.getFinishedSpans()[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], undefined);
     });
 
     it('should capture errors while doing request', async function () {

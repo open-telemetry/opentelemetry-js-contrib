@@ -14,6 +14,7 @@ import {
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  ATTR_ERROR_TYPE,
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
@@ -117,6 +118,15 @@ export const assertSpan = (
       isStatusUnset ? SpanStatusCode.UNSET : SpanStatusCode.ERROR,
       'span `status.code` is correct'
     );
+
+    // error.type accompanies an error status, carrying the status code
+    if (httpStatusCode !== undefined) {
+      assert.strictEqual(
+        span.attributes[ATTR_ERROR_TYPE],
+        isStatusUnset ? undefined : String(httpStatusCode),
+        `attributes['${ATTR_ERROR_TYPE}'] is correct`
+      );
+    }
   }
 
   assert.ok(span.endTime, 'must be finished');
