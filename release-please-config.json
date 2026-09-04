@@ -29,6 +29,7 @@
     "packages/instrumentation-cucumber": {},
     "packages/instrumentation-dataloader": {},
     "packages/instrumentation-fs": {},
+    "packages/instrumentation-ibmmq": {},
     "packages/instrumentation-kafkajs": {},
     "packages/instrumentation-lru-memoizer": {},
     "packages/instrumentation-mongoose": {},

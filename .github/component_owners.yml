@@ -59,6 +59,8 @@ components:
     - henrinormak
   packages/instrumentation-fs: []
     # Unmaintained
+  packages/instrumentation-ibmmq:
+    - Aryan16138
   packages/instrumentation-kafkajs:
     - seemk
   packages/instrumentation-lru-memoizer:
