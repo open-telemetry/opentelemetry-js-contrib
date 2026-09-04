@@ -16,18 +16,21 @@ import {
   WEBSITE_SKU,
 } from './types';
 
+export function getAzureSubscriptionId(): string | undefined {
+  const websiteOwnerName = process.env[WEBSITE_OWNER_NAME];
+  if (websiteOwnerName && websiteOwnerName.indexOf('+') !== -1) {
+    return websiteOwnerName.split('+')[0];
+  }
+  return websiteOwnerName;
+}
+
 export function getAzureResourceUri(
   websiteSiteName: string
 ): string | undefined {
   const websiteResourceGroup = process.env[WEBSITE_RESOURCE_GROUP];
-  const websiteOwnerName = process.env[WEBSITE_OWNER_NAME];
+  const subscriptionId = getAzureSubscriptionId();
 
-  let subscriptionId = websiteOwnerName;
-  if (websiteOwnerName && websiteOwnerName.indexOf('+') !== -1) {
-    subscriptionId = websiteOwnerName.split('+')[0];
-  }
-
-  if (!subscriptionId && !websiteOwnerName) {
+  if (!subscriptionId) {
     return undefined;
   }
 
