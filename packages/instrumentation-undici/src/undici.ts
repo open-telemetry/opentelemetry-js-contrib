@@ -493,7 +493,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       // message.
       const errorType = error.code || error.name || 'Error';
       attributes[ATTR_ERROR_TYPE] = errorType;
-      span.setAttribute(ATTR_ERROR_TYPE, errorType)
+      span.setAttribute(ATTR_ERROR_TYPE, errorType);
 
       span.recordException(error);
       span.setStatus({
