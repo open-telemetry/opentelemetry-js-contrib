@@ -3,13 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace } from '@opentelemetry/api';
+import {
+  context,
+  diag,
+  DiagLogLevel,
+  trace,
+  DiagLogger,
+} from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 import {
   TracerProvider,
   InMemorySpanExporter,
   SimpleSpanProcessor,
+  AlwaysOffSampler,
 } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as pg from 'pg';
@@ -17,7 +24,27 @@ import { PgInstrumentationConfig } from '../src';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { PgClientExtended, PgPoolOptionsParams } from '../src/internal-types';
 import * as utils from '../src/utils';
-import { ATTR_SERVER_PORT } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+
+/**
+ * Installs a diag logger that records warnings, so that tests can assert the
+ * instrumentation reported a failing hook rather than swallowing it.
+ */
+const captureDiagWarnings = () => {
+  const warnings: string[] = [];
+  const logger: DiagLogger = {
+    error: () => {},
+    warn: message => warnings.push(message),
+    info: () => {},
+    debug: () => {},
+    verbose: () => {},
+  };
+  diag.setLogger(logger, DiagLogLevel.WARN);
+  return warnings;
+};
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -42,6 +69,11 @@ describe('utils.ts', () => {
     spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('external');
+  const nonRecordingProvider = new TracerProvider({
+    sampler: new AlwaysOffSampler(),
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
+  });
+  const nonRecordingTracer = nonRecordingProvider.getTracer('external');
 
   const instrumentationConfig: PgInstrumentationConfig & InstrumentationConfig =
     {};
@@ -130,6 +162,36 @@ describe('utils.ts', () => {
     });
   });
 
+  describe('.parseNormalizedOperationName()', () => {
+    it('splits on a tab as well as a space', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("SELECT\t'x' FROM t"),
+        'SELECT'
+      );
+    });
+
+    it('splits on a newline', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("SELECT\n'secret'"),
+        'SELECT'
+      );
+    });
+
+    it('splits on a carriage return', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName("UPDATE\r\nt SET c='x'"),
+        'UPDATE'
+      );
+    });
+
+    it('returns the whole trimmed input when it has no whitespace', () => {
+      assert.strictEqual(
+        utils.parseNormalizedOperationName('  SELECT  '),
+        'SELECT'
+      );
+    });
+  });
+
   describe('.shouldSkipInstrumentation()', () => {
     it('returns false when requireParentSpan=false', async () => {
       assert.strictEqual(
@@ -158,6 +220,115 @@ describe('utils.ts', () => {
           requireParentSpan: true,
         }),
         true
+      );
+    });
+  });
+
+  describe('.sanitizeQueryText()', () => {
+    const query = "SELECT * FROM t WHERE a = 'secret' AND b = 42";
+
+    afterEach(() => {
+      diag.disable();
+    });
+
+    it('applies the default hook when sanitization is not configured', () => {
+      assert.strictEqual(
+        utils.sanitizeQueryText(query, {}),
+        'SELECT * FROM t WHERE a = ? AND b = ?'
+      );
+    });
+
+    it('returns the query unchanged when skipQueryTextSanitization is true', () => {
+      assert.strictEqual(
+        utils.sanitizeQueryText(query, { skipQueryTextSanitization: true }),
+        query
+      );
+    });
+
+    it('applies the default hook when skipQueryTextSanitization is explicitly false', () => {
+      assert.strictEqual(
+        utils.sanitizeQueryText(query, { skipQueryTextSanitization: false }),
+        'SELECT * FROM t WHERE a = ? AND b = ?'
+      );
+    });
+
+    it('preserves parameter placeholders', () => {
+      assert.strictEqual(
+        utils.sanitizeQueryText('SELECT * FROM t WHERE a = $1', {
+          skipQueryTextSanitization: false,
+        }),
+        'SELECT * FROM t WHERE a = $1'
+      );
+    });
+
+    it('applies a custom hook to the raw query text', () => {
+      const seen: string[] = [];
+      const sanitized = utils.sanitizeQueryText(query, {
+        skipQueryTextSanitization: false,
+        queryTextSanitizationHook: text => {
+          seen.push(text);
+          return 'REDACTED';
+        },
+      });
+
+      assert.strictEqual(sanitized, 'REDACTED');
+      assert.deepStrictEqual(seen, [query]);
+    });
+
+    it('does not call the hook when sanitization is skipped', () => {
+      let called = false;
+      utils.sanitizeQueryText(query, {
+        skipQueryTextSanitization: true,
+        queryTextSanitizationHook: text => {
+          called = true;
+          return text;
+        },
+      });
+
+      assert.strictEqual(called, false);
+    });
+
+    it('omits the text and warns when the hook throws', () => {
+      const warnings = captureDiagWarnings();
+      const sanitized = utils.sanitizeQueryText(query, {
+        skipQueryTextSanitization: false,
+        queryTextSanitizationHook: () => {
+          throw new Error('hook failure');
+        },
+      });
+
+      assert.strictEqual(sanitized, undefined);
+      assert.strictEqual(warnings.length, 1);
+      assert.ok(warnings[0].includes('queryTextSanitizationHook'));
+    });
+
+    for (const [description, value] of [
+      ['a non-string', 42],
+      ['nothing', undefined],
+      ['null', null],
+    ] as const) {
+      it(`omits the text and warns when the hook returns ${description}`, () => {
+        const warnings = captureDiagWarnings();
+        const sanitized = utils.sanitizeQueryText(query, {
+          skipQueryTextSanitization: false,
+          queryTextSanitizationHook: (() => value) as unknown as (
+            q: string
+          ) => string,
+        });
+
+        assert.strictEqual(sanitized, undefined);
+        assert.strictEqual(warnings.length, 1);
+        assert.ok(warnings[0].includes('non-string'));
+      });
+    }
+
+    it('omits the text when sanitization leaves it empty', () => {
+      assert.strictEqual(
+        utils.sanitizeQueryText(query, {
+          skipQueryTextSanitization: false,
+          queryTextSanitizationHook: () => '',
+        }),
+        undefined
       );
     });
   });
@@ -200,6 +371,163 @@ describe('utils.ts', () => {
 
       const pgValues = readableSpan.attributes[AttributeNames.PG_VALUES];
       assert.deepStrictEqual(pgValues, ['0']);
+    });
+
+    it("records a parameterized query's text verbatim", () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        instrumentationConfig,
+        queryConfig
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT $1::text'
+      );
+    });
+
+    it('never sanitizes the text of a parameterized query, even when sanitization is not skipped', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        { ...instrumentationConfig, skipQueryTextSanitization: false },
+        { text: "SELECT $1::text WHERE label = 'literal'", values: ['0'] }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        "SELECT $1::text WHERE label = 'literal'"
+      );
+    });
+
+    it('sanitizes the text of a query given an empty values array', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        instrumentationConfig,
+        { text: "SELECT * FROM t WHERE label = 'literal'", values: [] }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT * FROM t WHERE label = ?'
+      );
+    });
+
+    it('records sanitized query text when sanitization is not skipped', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        { ...instrumentationConfig, skipQueryTextSanitization: false },
+        { text: "SELECT 'secret'::text" }
+      );
+      querySpan.end();
+
+      assert.strictEqual(
+        getLatestSpan().attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT ?::text'
+      );
+    });
+
+    it('omits only the query text when the sanitization hook fails', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        {
+          ...instrumentationConfig,
+          skipQueryTextSanitization: false,
+          queryTextSanitizationHook: () => {
+            throw new Error('hook failure');
+          },
+        },
+        { text: queryConfig.text, name: 'a-plan' }
+      );
+      querySpan.end();
+
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_DB_QUERY_TEXT],
+        undefined
+      );
+      // The rest of the span is unaffected: a failing hook withholds one
+      // attribute rather than degrading the span.
+      assert.strictEqual(
+        readableSpan.attributes[AttributeNames.PG_PLAN],
+        'a-plan'
+      );
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_SERVER_PORT],
+        CONFIG.port
+      );
+    });
+
+    it('still records raw values when enhancedDatabaseReporting is combined with sanitization', () => {
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        tracer,
+        {
+          ...instrumentationConfig,
+          skipQueryTextSanitization: false,
+          enhancedDatabaseReporting: true,
+        },
+        queryConfig
+      );
+      querySpan.end();
+
+      const readableSpan = getLatestSpan();
+      assert.strictEqual(
+        readableSpan.attributes[ATTR_DB_QUERY_TEXT],
+        'SELECT $1::text'
+      );
+      assert.deepStrictEqual(
+        readableSpan.attributes[AttributeNames.PG_VALUES],
+        ['0']
+      );
+    });
+
+    it('does not run the sanitization hook for a non-recording span', () => {
+      let called = false;
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        nonRecordingTracer,
+        {
+          ...instrumentationConfig,
+          skipQueryTextSanitization: false,
+          queryTextSanitizationHook: (text: string) => {
+            called = true;
+            return text;
+          },
+        },
+        // Non-parameterized: a parameterized queryConfig would also skip the
+        // hook, which would leave this assertion true for the wrong reason.
+        { text: queryConfig.text }
+      );
+      querySpan.end();
+
+      assert.strictEqual(called, false);
+    });
+
+    it('does not convert values for a non-recording span', () => {
+      const value = {
+        toPostgres: () => {
+          throw new Error('should not be called');
+        },
+      };
+      const querySpan = utils.handleConfigQuery.call(
+        client,
+        nonRecordingTracer,
+        {
+          ...instrumentationConfig,
+          enhancedDatabaseReporting: true,
+        },
+        { ...queryConfig, values: [value] }
+      );
+
+      assert.doesNotThrow(() => querySpan.end());
     });
   });
 
