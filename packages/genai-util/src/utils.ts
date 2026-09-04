@@ -214,9 +214,12 @@ export function formatSystemInstructions(
  */
 export function getErrorType(error: unknown): string {
   if (error instanceof Error) {
-    const code = (error as { code?: string | number }).code;
-    if (code !== undefined && code !== null && String(code).trim().length > 0) {
-      return String(code);
+    if (
+      'code' in error &&
+      error.code != null &&
+      String(error.code).trim().length > 0
+    ) {
+      return String(error.code);
     }
     if (error.name && error.name !== 'Error') {
       return error.name;
