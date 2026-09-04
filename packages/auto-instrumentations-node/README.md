@@ -39,8 +39,7 @@ env NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 ```
 
 The module is highly configurable using environment variables.
-Many aspects of the auto instrumentation's behavior can be configured for your needs, such as resource detectors, exporter choice, exporter configuration, trace context propagation headers, and much more.
-Instrumentation configuration is not yet supported through environment variables. Users that require instrumentation configuration must initialize OpenTelemetry programmatically.
+Many aspects of the auto instrumentation's behavior can be configured for your needs, such as resource detectors, exporter choice, exporter configuration, trace context propagation headers, and HTTP request/response header capture.
 
 ```shell
 export OTEL_TRACES_EXPORTER="otlp"
@@ -52,6 +51,10 @@ export OTEL_EXPORTER_OTLP_TRACES_HEADERS="x-api-key=your-api-key"
 export OTEL_RESOURCE_ATTRIBUTES="service.namespace=my-namespace"
 export OTEL_NODE_RESOURCE_DETECTORS="host,os,serviceinstance,env"
 export OTEL_SERVICE_NAME="client"
+export OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS="content-type,accept"
+export OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_RESPONSE_HEADERS="content-length"
+export OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_REQUEST_HEADERS="x-custom-header"
+export OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_RESPONSE_HEADERS="cache-control"
 export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 node app.js
 ```
