@@ -41,7 +41,6 @@ export const assertSpan = (
     query?: string | null;
     forceStatus?: SpanStatus;
     noNetPeer?: boolean; // we don't expect net peer info when request throw before being sent
-    protocolVersion?: string;
     error?: Exception;
   }
 ) => {
@@ -153,7 +152,7 @@ export const assertSpan = (
     );
     assert.strictEqual(
       span.attributes[ATTR_NETWORK_PROTOCOL_VERSION],
-      validations.protocolVersion || '1.1',
+      '1.1',
       `attributes['${ATTR_NETWORK_PROTOCOL_VERSION}'] is correct`
     );
   }

@@ -358,16 +358,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const config = this.getConfig();
     const { span } = record;
-    const { remoteAddress, remotePort } = socket;
+    const { remoteAddress, remotePort, alpnProtocol } = socket;
     const spanAttributes: Attributes = {
       [ATTR_NETWORK_PEER_ADDRESS]: remoteAddress,
       [ATTR_NETWORK_PEER_PORT]: remotePort,
+      // undici only ever offers `http/1.1` and, with `allowH2`, `h2` as ALPN
+      // protocols; a connection that negotiated neither is HTTP/1.1.
+      [ATTR_NETWORK_PROTOCOL_VERSION]: alpnProtocol === 'h2' ? '2' : '1.1',
     };
-
-    const protocolVersion = this.getProtocolVersion(socket);
-    if (protocolVersion) {
-      spanAttributes[ATTR_NETWORK_PROTOCOL_VERSION] = protocolVersion;
-    }
 
     // After hooks have been processed (which may modify request headers)
     // we can collect the headers based on the configuration
@@ -523,6 +521,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       ATTR_SERVER_PORT,
       ATTR_URL_SCHEME,
       ATTR_ERROR_TYPE,
+      ATTR_NETWORK_PROTOCOL_VERSION,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {
@@ -559,27 +558,5 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     return '_OTHER';
-  }
-
-  private getProtocolVersion(
-    socket: { alpnProtocol?: string | boolean } | undefined | null
-  ): string | undefined {
-    if (!socket) {
-      return undefined;
-    }
-    if (typeof socket.alpnProtocol === 'string') {
-      const alpn = socket.alpnProtocol.toLowerCase();
-      if (alpn.startsWith('http/')) {
-        return alpn.slice(5);
-      }
-      if (alpn === 'h2') {
-        return '2';
-      }
-      if (alpn === 'h3') {
-        return '3';
-      }
-      return socket.alpnProtocol;
-    }
-    return '1.1';
   }
 }
