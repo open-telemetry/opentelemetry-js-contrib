@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-instrumentations-node",
-  "version": "0.80.0",
+  "version": "0.80.1",
   "description": "Metapackage which bundles opentelemetry node core and contrib instrumentations",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-instrumentations-node#readme",
@@ -83,7 +83,7 @@
     "@opentelemetry/instrumentation-runtime-node": "^0.35.0",
     "@opentelemetry/instrumentation-socket.io": "^0.69.0",
     "@opentelemetry/instrumentation-tedious": "^0.41.0",
-    "@opentelemetry/instrumentation-undici": "^0.32.0",
+    "@opentelemetry/instrumentation-undici": "^0.32.1",
     "@opentelemetry/instrumentation-winston": "^0.66.0",
     "@opentelemetry/resource-detector-alibaba-cloud": "^0.37.0",
     "@opentelemetry/resource-detector-aws": "^2.22.0",

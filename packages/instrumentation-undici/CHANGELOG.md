@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.32.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.32.0...instrumentation-undici-v0.32.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** add error.type to spans and metrics ([#3731](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3731)) ([914f249](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/914f249a07ba56b87d359b793340a3673acef32d))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.31.0...instrumentation-undici-v0.32.0) (2026-08-31)
 
 
