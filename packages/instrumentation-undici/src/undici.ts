@@ -213,6 +213,40 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     return result;
   }
 
+  // Drop every instance of `name` so a later inject can overwrite instead of
+  // appending. Header names are matched case-insensitively.
+  private removeRequestHeader(request: UndiciRequest, name: string): void {
+    const needle = name.toLowerCase();
+
+    if (Array.isArray(request.headers)) {
+      // headers are an array [k1, v1, k2, v2] (undici v6+)
+      for (let i = request.headers.length - 2; i >= 0; i -= 2) {
+        const key = request.headers[i];
+        if (typeof key === 'string' && key.toLowerCase() === needle) {
+          request.headers.splice(i, 2);
+        }
+      }
+      return;
+    }
+
+    if (typeof request.headers === 'string') {
+      // headers are a raw string (undici v5)
+      const lines = request.headers.split('\r\n');
+      request.headers = lines
+        .filter(line => {
+          if (!line) {
+            return true;
+          }
+          const colonIndex = line.indexOf(':');
+          if (colonIndex === -1) {
+            return true;
+          }
+          return line.substring(0, colonIndex).trim().toLowerCase() !== needle;
+        })
+        .join('\r\n');
+    }
+  }
+
   // This is the 1st message we receive for each request (fired after request creation). Here we will
   // create the span and populate some atttributes, then link the span to the request for further
   // span processing
@@ -323,10 +357,22 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     );
 
     // Context propagation goes last so no hook can tamper
-    // the propagation headers
+    // the propagation headers. undici's header APIs append, so a
+    // pre-set traceparent/tracestate would otherwise become a second
+    // value. Receivers fold that into one malformed header and drop
+    // the parent. Remove the fields we are about to write first so
+    // injection overwrites, matching instrumentation-http.
     const requestContext = trace.setSpan(context.active(), span);
     const addedHeaders: Record<string, string> = {};
     propagation.inject(requestContext, addedHeaders);
+
+    const namesToReplace = new Set<string>([
+      ...propagation.fields(),
+      ...Object.keys(addedHeaders),
+    ]);
+    for (const name of namesToReplace) {
+      this.removeRequestHeader(request, name);
+    }
 
     const headerEntries = Object.entries(addedHeaders);
 

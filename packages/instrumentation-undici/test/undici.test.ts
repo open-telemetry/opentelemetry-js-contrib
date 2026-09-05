@@ -91,6 +91,20 @@ describe('UndiciInstrumentation `undici` tests', function () {
         res.end();
         return;
       }
+      if (req.url?.startsWith('/echo-headers')) {
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.write(
+          JSON.stringify({
+            [MockPropagation.TRACE_CONTEXT_KEY]:
+              req.headers[MockPropagation.TRACE_CONTEXT_KEY],
+            [MockPropagation.SPAN_CONTEXT_KEY]:
+              req.headers[MockPropagation.SPAN_CONTEXT_KEY],
+          })
+        );
+        res.end();
+        return;
+      }
       // There are some situations where there is no way to access headers
       // for trace propagation asserts like:
       // const resp = await fetch('http://host:port')
@@ -218,6 +232,41 @@ describe('UndiciInstrumentation `undici` tests', function () {
 
       spans = memoryExporter.getFinishedSpans();
       assert.ok(spans.length === 0, 'ignoreRequestHook is filtering requests');
+    });
+
+    it('should overwrite a pre-set propagation header instead of appending a second value', async function () {
+      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/echo-headers`;
+      const { statusCode, body } = await undici.request(requestUrl, {
+        headers: {
+          [MockPropagation.TRACE_CONTEXT_KEY]: 'preset-trace-id',
+          [MockPropagation.SPAN_CONTEXT_KEY]: 'preset-span-id',
+        },
+      });
+      const chunks: Buffer[] = [];
+      for await (const chunk of body) {
+        chunks.push(Buffer.from(chunk));
+      }
+      const echoed = JSON.parse(Buffer.concat(chunks).toString()) as Record<
+        string,
+        string
+      >;
+      const spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+
+      assert.strictEqual(statusCode, 200);
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(
+        echoed[MockPropagation.TRACE_CONTEXT_KEY],
+        span.spanContext().traceId
+      );
+      assert.strictEqual(
+        echoed[MockPropagation.SPAN_CONTEXT_KEY],
+        span.spanContext().spanId
+      );
+      assert.ok(
+        !String(echoed[MockPropagation.TRACE_CONTEXT_KEY]).includes(','),
+        'trace header must not be a folded duplicate'
+      );
     });
 
     it('should create valid spans for different request methods', async function () {
