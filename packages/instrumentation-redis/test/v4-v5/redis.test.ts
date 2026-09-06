@@ -604,7 +604,8 @@ describe('redis v4-v5', () => {
 
       const [span] = getTestSpans();
       assert.strictEqual(getTestSpans().length, 1);
-      assert.strictEqual(span.name, 'redis-MULTI SET');
+      assert.strictEqual(span.name, 'redis-SET');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'SET');
       assert.strictEqual(
         span.attributes[ATTR_DB_OPERATION_BATCH_SIZE],
         undefined
@@ -613,6 +614,16 @@ describe('redis v4-v5', () => {
         span.attributes[ATTR_DB_QUERY_TEXT],
         'SET key [1 other arguments]'
       );
+    });
+
+    it('marks an empty transaction as a zero-size batch', async () => {
+      await client.multi().exec();
+
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-MULTI');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MULTI');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_BATCH_SIZE], 0);
     });
 
     it('emits one span for a pipeline', async () => {
@@ -660,16 +671,27 @@ describe('redis v4-v5', () => {
       );
     });
 
-    it('invokes the response hook for each reply using the aggregate span', async () => {
-      const commands: string[] = [];
+    it('invokes the response hook once for the aggregate operation', async () => {
+      const calls: Array<{
+        commandName: string;
+        commandArgs: Array<string | Buffer>;
+        response: unknown;
+      }> = [];
       instrumentation.setConfig({
         aggregateMultiCommandSpans: true,
-        responseHook: (_span, commandName) => commands.push(commandName),
+        responseHook: (_span, commandName, commandArgs, response) =>
+          calls.push({ commandName, commandArgs, response }),
       });
 
       await client.multi().set('key', 'value').get('key').exec();
 
-      assert.deepStrictEqual(commands, ['SET', 'GET']);
+      assert.deepStrictEqual(calls, [
+        {
+          commandName: 'MULTI',
+          commandArgs: [],
+          response: ['OK', 'value'],
+        },
+      ]);
       assert.strictEqual(getTestSpans().length, 1);
     });
   });

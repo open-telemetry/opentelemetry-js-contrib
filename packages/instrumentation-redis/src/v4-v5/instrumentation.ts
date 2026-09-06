@@ -156,6 +156,9 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         if (isWrapped(redisClientMultiCommandPrototype?.exec)) {
           this._unwrap(redisClientMultiCommandPrototype, 'exec');
         }
+        if (isWrapped(redisClientMultiCommandPrototype?.execAsPipeline)) {
+          this._unwrap(redisClientMultiCommandPrototype, 'execAsPipeline');
+        }
         if (isWrapped(redisClientMultiCommandPrototype?.addCommand)) {
           this._unwrap(redisClientMultiCommandPrototype, 'addCommand');
         }
@@ -270,6 +273,15 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
           this._getPatchMultiCommandsExec(false)
         );
 
+        if (isWrapped(redisClusterMultiCommandPrototype?.execAsPipeline)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'execAsPipeline');
+        }
+        this._wrap(
+          redisClusterMultiCommandPrototype,
+          'execAsPipeline',
+          this._getPatchMultiCommandsExec(true)
+        );
+
         if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
           this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
         }
@@ -286,6 +298,9 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
           moduleExports?.default?.prototype;
         if (isWrapped(redisClusterMultiCommandPrototype?.exec)) {
           this._unwrap(redisClusterMultiCommandPrototype, 'exec');
+        }
+        if (isWrapped(redisClusterMultiCommandPrototype?.execAsPipeline)) {
+          this._unwrap(redisClusterMultiCommandPrototype, 'execAsPipeline');
         }
         if (isWrapped(redisClusterMultiCommandPrototype?.addCommand)) {
           this._unwrap(redisClusterMultiCommandPrototype, 'addCommand');
@@ -581,6 +596,7 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
   ) {
     const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
     if (hasNoParentSpan && this.getConfig().requireParentSpan) {
+      delete origThis[MULTI_COMMANDS];
       return origFunction.apply(origThis, origArguments);
     }
 
@@ -620,7 +636,14 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         origFunction.apply(origThis, origArguments)
       );
     } catch (error) {
-      this._endMultiCommandSpan(span, commands, [], error as Error);
+      delete origThis[MULTI_COMMANDS];
+      this._endMultiCommandSpan(
+        span,
+        commands,
+        [],
+        operationName,
+        error as Error
+      );
       throw error;
     }
 
@@ -628,13 +651,15 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       this._diag.error(
         'non-promise result when patching aggregate exec/execAsPipeline'
       );
+      delete origThis[MULTI_COMMANDS];
       span.end();
       return execRes;
     }
 
     return execRes.then(
       (replies: unknown[]) => {
-        this._endMultiCommandSpan(span, commands, replies);
+        delete origThis[MULTI_COMMANDS];
+        this._endMultiCommandSpan(span, commands, replies, operationName);
         return replies;
       },
       (error: Error) => {
@@ -642,7 +667,14 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
           error.constructor.name === 'MultiErrorReply'
             ? (error as MultiErrorReply).replies
             : [];
-        this._endMultiCommandSpan(span, commands, replies, error);
+        delete origThis[MULTI_COMMANDS];
+        this._endMultiCommandSpan(
+          span,
+          commands,
+          replies,
+          operationName,
+          error
+        );
         return Promise.reject(error);
       }
     );
@@ -658,6 +690,9 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     }
 
     const firstCommand = commands[0].commandName;
+    if (commands.length === 1) {
+      return firstCommand;
+    }
     return commands.every(({ commandName }) => commandName === firstCommand)
       ? `${batchName} ${firstCommand}`
       : batchName;
@@ -667,30 +702,15 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     span: Span,
     commands: MultiCommand[],
     replies: unknown[],
+    operationName: string,
     error?: Error
   ) {
     const { responseHook } = this.getConfig();
-    for (let index = 0; index < commands.length; index++) {
-      const reply = replies[index];
-      if (reply instanceof Error) {
-        span.recordException(reply);
-        continue;
-      }
-      if (!responseHook || index >= replies.length) {
-        continue;
-      }
-
-      try {
-        const { commandName, commandArgs } = commands[index];
-        responseHook(span, commandName, commandArgs, reply);
-      } catch (hookError) {
-        this._diag.error('responseHook throw an exception', hookError);
-      }
-    }
-
-    const replyError = replies.find(reply => reply instanceof Error) as
-      | Error
-      | undefined;
+    const replyErrors = replies.filter(
+      (reply): reply is Error => reply instanceof Error
+    );
+    replyErrors.forEach(replyError => span.recordException(replyError));
+    const replyError = replyErrors[0];
     const spanError = error || replyError;
     if (spanError) {
       if (!replyError) {
@@ -700,6 +720,19 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
         code: SpanStatusCode.ERROR,
         message: spanError.message,
       });
+    }
+
+    if (!spanError && responseHook) {
+      try {
+        if (commands.length === 1) {
+          const { commandName, commandArgs } = commands[0];
+          responseHook(span, commandName, commandArgs, replies[0]);
+        } else {
+          responseHook(span, operationName, [], replies);
+        }
+      } catch (hookError) {
+        this._diag.error('responseHook throw an exception', hookError);
+      }
     }
     span.end();
   }
