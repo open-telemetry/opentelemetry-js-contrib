@@ -50,6 +50,14 @@ Redis instrumentation has a few options available to choose from. You can set th
 | `dbStatementSerializer` | `DbStatementSerializer` (function)                | Redis instrumentation will serialize the command to the `db.statement` attribute using the specified function. |
 | `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response. Receives params: `span, moduleVersion, cmdName, cmdArgs` |
 | `requireParentSpan`     | `boolean`                                         | Require parent to create redis span, default when unset is false.                                              |
+| `aggregateMultiCommandSpans` | `boolean`                                    | Emit one span with `db.operation.batch.size` for a transaction or pipeline instead of one span per queued command. Defaults to `false`. |
+
+When `aggregateMultiCommandSpans` is enabled, the aggregate span's operation
+name is `MULTI <command>` or `PIPELINE <command>` when every command is the
+same, and `MULTI` or `PIPELINE` for mixed commands. `responseHook` is invoked
+once for each successful command response with the same aggregate span.
+Batch spans omit `db.query.text` to avoid replacing span amplification with a
+potentially large concatenated attribute.
 
 #### Custom `db.statement` Serializer
 

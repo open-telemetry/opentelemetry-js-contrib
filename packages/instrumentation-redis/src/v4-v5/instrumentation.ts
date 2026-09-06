@@ -22,6 +22,7 @@ import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
 import {
+  ATTR_DB_OPERATION_BATCH_SIZE,
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
 } from '@opentelemetry/semantic-conventions';
@@ -33,11 +34,20 @@ const OTEL_OPEN_SPANS = Symbol(
 const MULTI_COMMAND_OPTIONS = Symbol(
   'opentelemetry.instrumentation.redis.multi_command_options'
 );
+const AGGREGATE_MULTI_COMMAND_SPANS = Symbol(
+  'opentelemetry.instrumentation.redis.aggregate_multi_command_spans'
+);
+const MULTI_COMMANDS = Symbol(
+  'opentelemetry.instrumentation.redis.multi_commands'
+);
 
-interface MultiCommandInfo {
-  span: Span;
+interface MultiCommand {
   commandName: string;
   commandArgs: Array<string | Buffer>;
+}
+
+interface MultiCommandInfo extends MultiCommand {
+  span: Span;
 }
 
 export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrumentationConfig> {
@@ -336,6 +346,15 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const plugin = this;
     return function execPatchWrapper(original: Function) {
       return function execPatch(this: any) {
+        if (this[AGGREGATE_MULTI_COMMAND_SPANS]) {
+          return plugin._traceMultiCommand(
+            original,
+            this,
+            arguments,
+            isPipeline
+          );
+        }
+
         const execRes = original.apply(this, arguments);
         if (typeof execRes?.then !== 'function') {
           plugin._diag.error(
@@ -396,21 +415,27 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     };
   }
   private _getPatchRedisClusterMulti() {
+    const plugin = this;
     return function multiPatchWrapper(original: Function) {
       return function multiPatch(this: any) {
         const multiRes = original.apply(this, arguments);
         // Store cluster options so _traceClientCommand can read connection attributes
         multiRes[MULTI_COMMAND_OPTIONS] = this._options;
+        multiRes[AGGREGATE_MULTI_COMMAND_SPANS] =
+          plugin.getConfig().aggregateMultiCommandSpans;
         return multiRes;
       };
     };
   }
 
   private _getPatchRedisClientMulti() {
+    const plugin = this;
     return function multiPatchWrapper(original: Function) {
       return function multiPatch(this: any) {
         const multiRes = original.apply(this, arguments);
         multiRes[MULTI_COMMAND_OPTIONS] = this.options;
+        multiRes[AGGREGATE_MULTI_COMMAND_SPANS] =
+          plugin.getConfig().aggregateMultiCommandSpans;
         return multiRes;
       };
     };
@@ -471,6 +496,16 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     origArguments: IArguments,
     redisCommandArguments: Array<string | Buffer>
   ) {
+    if (origThis[AGGREGATE_MULTI_COMMAND_SPANS]) {
+      const res = origFunction.apply(origThis, origArguments);
+      res[MULTI_COMMANDS] = res[MULTI_COMMANDS] || [];
+      res[MULTI_COMMANDS].push({
+        commandName: redisCommandArguments[0].toString(),
+        commandArgs: redisCommandArguments.slice(1),
+      });
+      return res;
+    }
+
     const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
     if (hasNoParentSpan && this.getConfig().requireParentSpan) {
       return origFunction.apply(origThis, origArguments);
@@ -536,6 +571,137 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
       });
     }
     return res;
+  }
+
+  private _traceMultiCommand(
+    origFunction: Function,
+    origThis: any,
+    origArguments: IArguments,
+    isPipeline: boolean
+  ) {
+    const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
+    if (hasNoParentSpan && this.getConfig().requireParentSpan) {
+      return origFunction.apply(origThis, origArguments);
+    }
+
+    const commands: MultiCommand[] = origThis[MULTI_COMMANDS] || [];
+    const operationName = this._getMultiOperationName(commands, isPipeline);
+    const attributes = getClientAttributes(origThis[MULTI_COMMAND_OPTIONS]);
+    attributes[ATTR_DB_OPERATION_NAME] = operationName;
+    if (commands.length === 1) {
+      const { commandName, commandArgs } = commands[0];
+      const dbStatementSerializer =
+        this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
+      try {
+        const dbStatement = dbStatementSerializer(commandName, commandArgs);
+        if (dbStatement != null) {
+          attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
+        }
+      } catch (error) {
+        this._diag.error('dbStatementSerializer throw an exception', error, {
+          commandName,
+        });
+      }
+    } else {
+      attributes[ATTR_DB_OPERATION_BATCH_SIZE] = commands.length;
+    }
+
+    const span = this.tracer.startSpan(
+      `${RedisInstrumentationV4_V5.COMPONENT}-${operationName}`,
+      {
+        kind: SpanKind.CLIENT,
+        attributes,
+      }
+    );
+
+    let execRes;
+    try {
+      execRes = context.with(trace.setSpan(context.active(), span), () =>
+        origFunction.apply(origThis, origArguments)
+      );
+    } catch (error) {
+      this._endMultiCommandSpan(span, commands, [], error as Error);
+      throw error;
+    }
+
+    if (typeof execRes?.then !== 'function') {
+      this._diag.error(
+        'non-promise result when patching aggregate exec/execAsPipeline'
+      );
+      span.end();
+      return execRes;
+    }
+
+    return execRes.then(
+      (replies: unknown[]) => {
+        this._endMultiCommandSpan(span, commands, replies);
+        return replies;
+      },
+      (error: Error) => {
+        const replies =
+          error.constructor.name === 'MultiErrorReply'
+            ? (error as MultiErrorReply).replies
+            : [];
+        this._endMultiCommandSpan(span, commands, replies, error);
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private _getMultiOperationName(
+    commands: MultiCommand[],
+    isPipeline: boolean
+  ): string {
+    const batchName = isPipeline ? 'PIPELINE' : 'MULTI';
+    if (commands.length === 0) {
+      return batchName;
+    }
+
+    const firstCommand = commands[0].commandName;
+    return commands.every(({ commandName }) => commandName === firstCommand)
+      ? `${batchName} ${firstCommand}`
+      : batchName;
+  }
+
+  private _endMultiCommandSpan(
+    span: Span,
+    commands: MultiCommand[],
+    replies: unknown[],
+    error?: Error
+  ) {
+    const { responseHook } = this.getConfig();
+    for (let index = 0; index < commands.length; index++) {
+      const reply = replies[index];
+      if (reply instanceof Error) {
+        span.recordException(reply);
+        continue;
+      }
+      if (!responseHook || index >= replies.length) {
+        continue;
+      }
+
+      try {
+        const { commandName, commandArgs } = commands[index];
+        responseHook(span, commandName, commandArgs, reply);
+      } catch (hookError) {
+        this._diag.error('responseHook throw an exception', hookError);
+      }
+    }
+
+    const replyError = replies.find(reply => reply instanceof Error) as
+      | Error
+      | undefined;
+    const spanError = error || replyError;
+    if (spanError) {
+      if (!replyError) {
+        span.recordException(spanError);
+      }
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: spanError.message,
+      });
+    }
+    span.end();
   }
 
   private _endSpansWithRedisReplies(

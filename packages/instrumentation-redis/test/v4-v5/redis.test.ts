@@ -29,6 +29,7 @@ import {
 } from '@opentelemetry/api';
 import {
   ATTR_DB_SYSTEM_NAME,
+  ATTR_DB_OPERATION_BATCH_SIZE,
   ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
   ATTR_SERVER_ADDRESS,
@@ -550,6 +551,126 @@ describe('redis v4-v5', () => {
         multiGetSpan.attributes['test.db.response'],
         'another-value'
       );
+    });
+  });
+
+  describe('aggregate multi command spans', () => {
+    beforeEach(() => {
+      instrumentation.setConfig({ aggregateMultiCommandSpans: true });
+    });
+
+    afterEach(() => {
+      instrumentation.setConfig({});
+    });
+
+    it('emits one span for a transaction containing the same command', async () => {
+      const replies = await client
+        .multi()
+        .set('key-1', 'value-1')
+        .set('key-2', 'value-2')
+        .exec();
+
+      assert.deepStrictEqual(replies, ['OK', 'OK']);
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-MULTI SET');
+      assert.strictEqual(span.kind, SpanKind.CLIENT);
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MULTI SET');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_BATCH_SIZE], 2);
+      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
+      assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], undefined);
+    });
+
+    it('uses a generic operation name for a transaction containing mixed commands', async () => {
+      await context.with(suppressTracing(context.active()), () =>
+        client.set('another-key', 'another-value')
+      );
+      const replies = await client
+        .multi()
+        .set('key', 'value')
+        .get('another-key')
+        .exec();
+
+      assert.deepStrictEqual(replies, ['OK', 'another-value']);
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-MULTI');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'MULTI');
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_BATCH_SIZE], 2);
+    });
+
+    it('does not mark a single-command transaction as a batch', async () => {
+      await client.multi().set('key', 'value').exec();
+
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-MULTI SET');
+      assert.strictEqual(
+        span.attributes[ATTR_DB_OPERATION_BATCH_SIZE],
+        undefined
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_DB_QUERY_TEXT],
+        'SET key [1 other arguments]'
+      );
+    });
+
+    it('emits one span for a pipeline', async () => {
+      const replies = await client
+        .multi()
+        .set('key-1', 'value-1')
+        .set('key-2', 'value-2')
+        .execAsPipeline();
+
+      assert.deepStrictEqual(replies, ['OK', 'OK']);
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-PIPELINE SET');
+      assert.strictEqual(
+        span.attributes[ATTR_DB_OPERATION_NAME],
+        'PIPELINE SET'
+      );
+      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_BATCH_SIZE], 2);
+    });
+
+    it('records transaction command errors on the aggregate span', async () => {
+      await context.with(suppressTracing(context.active()), () =>
+        client.set('key', 'value')
+      );
+
+      let replies;
+      try {
+        replies = await client
+          .multi()
+          .set('other-key', 'value')
+          .incr('key')
+          .exec();
+      } catch (error) {
+        replies = (error as MultiErrorReply).replies;
+      }
+      assert.ok(replies[1] instanceof Error);
+
+      const [span] = getTestSpans();
+      assert.strictEqual(getTestSpans().length, 1);
+      assert.strictEqual(span.name, 'redis-MULTI');
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(
+        span.events.filter(event => event.name === 'exception').length,
+        1
+      );
+    });
+
+    it('invokes the response hook for each reply using the aggregate span', async () => {
+      const commands: string[] = [];
+      instrumentation.setConfig({
+        aggregateMultiCommandSpans: true,
+        responseHook: (_span, commandName) => commands.push(commandName),
+      });
+
+      await client.multi().set('key', 'value').get('key').exec();
+
+      assert.deepStrictEqual(commands, ['SET', 'GET']);
+      assert.strictEqual(getTestSpans().length, 1);
     });
   });
 
