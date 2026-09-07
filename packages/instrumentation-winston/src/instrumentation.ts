@@ -189,13 +189,17 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
               let newTransports = Array.isArray(originalTransports)
                 ? originalTransports
                 : [];
-              let transportOptions = {};
+              const transportOptions: Record<string, any> = {};
+              if (config.severityMapping) {
+                transportOptions.severityMapping = config.severityMapping;
+              }
               if (config.logSeverity) {
                 const winstonLevel = instrumentation._winstonLevelFromSeverity(
                   config.logSeverity,
-                  args[0].levels
+                  args[0].levels,
+                  config.severityMapping
                 );
-                transportOptions = { level: winstonLevel };
+                transportOptions.level = winstonLevel;
               }
               const openTelemetryTransport = new OpenTelemetryTransportV3(
                 transportOptions
@@ -239,10 +243,47 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
 
   private _winstonLevelFromSeverity(
     severity: SeverityNumber,
-    winstonLevels: { [key: string]: number } | undefined
+    winstonLevels: { [key: string]: number } | undefined,
+    severityMapping?: Record<string, SeverityNumber>
   ): string | undefined {
     if (winstonLevels) {
-      if (isNpmLevels(winstonLevels)) {
+      if (severityMapping) {
+        let matchedLevel: string | undefined;
+        let maxPriority = -Infinity;
+        for (const [levelName, levelPriority] of Object.entries(
+          winstonLevels
+        )) {
+          const mappedSeverity = severityMapping[levelName];
+          if (
+            mappedSeverity !== undefined &&
+            mappedSeverity >= severity &&
+            typeof levelPriority === 'number' &&
+            levelPriority > maxPriority
+          ) {
+            maxPriority = levelPriority;
+            matchedLevel = levelName;
+          }
+        }
+        if (matchedLevel !== undefined) {
+          return matchedLevel;
+        }
+      }
+
+      if (isOtelLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.FATAL) {
+          return 'fatal';
+        } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'trace';
+        }
+      } else if (isNpmLevels(winstonLevels)) {
         if (severity >= SeverityNumber.ERROR) {
           return 'error';
         } else if (severity >= SeverityNumber.WARN) {
@@ -302,6 +343,18 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
       // Unknown level
       this._diag.warn(
         'failed to configure severity with existing winston levels'
+      );
+    }
+
+    function isOtelLevels(arg: any): boolean {
+      return (
+        arg &&
+        arg.fatal !== undefined &&
+        arg.error !== undefined &&
+        arg.warn !== undefined &&
+        arg.info !== undefined &&
+        arg.debug !== undefined &&
+        arg.trace !== undefined
       );
     }
 
