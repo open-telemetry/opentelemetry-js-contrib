@@ -50,8 +50,51 @@ const logger = winston.createLogger({
 });
 ```
 
-> [!IMPORTANT]
-> Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
+### Log Levels and Severity Mapping
+
+By default, `@opentelemetry/winston-transport` maps standard Winston log levels (`npm`, `syslog`, `cli`, and OpenTelemetry native levels) to OpenTelemetry `SeverityNumber`.
+
+#### OpenTelemetry Log Levels
+
+You can use the exported `otelLogLevels` map to configure Winston with native OpenTelemetry log levels:
+
+```js
+const { OpenTelemetryTransportV3, otelLogLevels } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  levels: otelLogLevels, // { fatal: 0, error: 1, warn: 2, info: 3, debug: 4, trace: 5 }
+  level: 'info',
+  transports: [
+    new winston.transports.Console(),
+    new OpenTelemetryTransportV3()
+  ]
+});
+```
+
+#### Custom Severity Mapping
+
+For custom Winston log levels, you can supply a custom `severityMapping`:
+
+```js
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  levels: { emergency: 0, alert: 1, notice: 2 },
+  level: 'notice',
+  transports: [
+    new OpenTelemetryTransportV3({
+      severityMapping: {
+        emergency: SeverityNumber.FATAL,
+        alert: SeverityNumber.ERROR,
+        notice: SeverityNumber.INFO,
+      }
+    })
+  ]
+});
+```
 
 ### Error handling
 
