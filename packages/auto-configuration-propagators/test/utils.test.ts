@@ -47,8 +47,8 @@ describe('utils', () => {
     });
 
     it('should return the selected propagators when multiple are in the list', () => {
-      process.env.OTEL_PROPAGATORS = 'b3,jaeger';
-      assert.deepStrictEqual(getPropagator().fields(), ['b3', 'uber-trace-id']);
+      process.env.OTEL_PROPAGATORS = 'b3,ottrace';
+      assert.deepStrictEqual(getPropagator().fields(), ['b3', 'ot-tracer-span-id', 'ot-tracer-trace-id', 'ot-tracer-sampled']);
     });
 
     it('should return no-op propagator if all propagators are unknown', () => {
