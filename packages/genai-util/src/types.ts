@@ -365,8 +365,18 @@ export interface InferenceInvocationOptions {
   providerName: string;
   /** Operation name (e.g. 'chat', 'text_completion', 'generate_content'). Defaults to 'chat'. */
   operationName?: string;
-  /** Model name requested (`gen_ai.request.model`). */
+  /** Model name requested. */
   requestModel?: string;
+  /** Request parameters/settings. */
+  requestOptions?: GenAIRequestOptions;
+  /** Input messages sent to the model. */
+  inputMessages?: InputMessages;
+  /** System instructions. */
+  systemInstructions?: SystemInstructions;
+  /** Conversation / session / thread ID. */
+  conversationId?: string;
+  /** Parent context for the span. */
+  parentContext?: Context;
   /** Custom initial span attributes. */
   attributes?: Attributes;
   /** Server address (e.g. hostname). */
@@ -379,26 +389,36 @@ export interface InferenceInvocationOptions {
  * Options for starting an embedding invocation.
  */
 export interface EmbeddingInvocationOptions {
-  /** Name of the provider (`gen_ai.provider.name`). */
+  /** Name of the provider. */
   providerName: string;
-  /** Model name requested (`gen_ai.request.model`). */
+  /** Model name requested. */
   requestModel?: string;
+  /** Input texts to embed. */
+  inputTexts?: string[];
+  /** Parent context. */
+  parentContext?: Context;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
   /** Server address. */
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
 }
 
 /**
  * Options for starting a tool execution invocation.
  */
 export interface ToolInvocationOptions {
-  /** Name of the tool being executed (`gen_ai.tool.name`). */
+  /** Name of the tool being executed. */
   toolName: string;
-  /** Type classification of the tool (`gen_ai.tool.type`). */
-  toolType?: ToolType;
+  /** Description of the tool. */
+  toolDescription?: string;
+  /** Unique ID of the tool call. */
+  toolCallId?: string;
+  /** Type classification of the tool ('function', 'extension', 'datastore'). */
+  toolType?: string;
+  /** Arguments provided to the tool. */
+  toolArguments?: unknown;
   /** Parent context. */
   parentContext?: Context;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */

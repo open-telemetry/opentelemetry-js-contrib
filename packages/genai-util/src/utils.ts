@@ -20,6 +20,7 @@ import {
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_K,
   ATTR_GEN_AI_REQUEST_TOP_P,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from './semconv';
 import type {
   GenAIRequestOptions,
@@ -243,6 +244,22 @@ export function formatSystemInstructions(
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Format a GenAI span name according to OpenTelemetry semantic conventions.
+ * Format is `<gen_ai.operation.name> <gen_ai.request.model>` when model is present,
+ * or `<gen_ai.operation.name>` when model is omitted.
+ *
+ * @param operationName - The GenAI operation name (defaults to 'chat').
+ * @param model - Optional model name requested.
+ * @returns Standardized span name string.
+ *
+ * @experimental This function is experimental and subject to change.
+ */
+export function getSpanName(operationName?: string, model?: string): string {
+  const op = operationName || GEN_AI_OPERATION_NAME_VALUE_CHAT;
+  return model ? `${op} ${model}` : op;
 }
 
 /**
