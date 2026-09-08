@@ -157,6 +157,19 @@ export class TelemetryHandler {
   }
 
   /**
+   * Return whether message content (prompts, completions, tool calls) should be captured.
+   *
+   * Content should be captured when the content capture mode is enabled (e.g. `'span_only'`)
+   * or when at least one completion hook is registered.
+   */
+  public shouldCaptureContent(): boolean {
+    return (
+      this._contentCaptureMode !== 'none' ||
+      this._hookManager.getHooks().length > 0
+    );
+  }
+
+  /**
    * Return the CompletionHookManager.
    */
   public getCompletionHookManager(): CompletionHookManager {

@@ -163,6 +163,31 @@ describe('TelemetryHandler', () => {
     delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
   });
 
+  it('should determine whether to capture content based on mode or completion hooks', () => {
+    // 1. Defaults to false when mode is none and no hooks
+    const handlerDefault = new TelemetryHandler();
+    assert.strictEqual(handlerDefault.shouldCaptureContent(), false);
+
+    // 2. True when capture mode is span_only
+    const handlerSpanOnly = new TelemetryHandler({
+      contentCaptureMode: 'span_only',
+    });
+    assert.strictEqual(handlerSpanOnly.shouldCaptureContent(), true);
+
+    // 3. True when mode is none but completion hook is present
+    const handlerWithHook = new TelemetryHandler({
+      contentCaptureMode: 'none',
+      completionHooks: [{ onCompletion: () => {} }],
+    });
+    assert.strictEqual(handlerWithHook.shouldCaptureContent(), true);
+
+    // 4. Becomes true when hook is added dynamically
+    const handlerDynamic = new TelemetryHandler();
+    assert.strictEqual(handlerDynamic.shouldCaptureContent(), false);
+    handlerDynamic.addCompletionHook({ onCompletion: () => {} });
+    assert.strictEqual(handlerDynamic.shouldCaptureContent(), true);
+  });
+
   it('should integrate with BaseInvocation and execute completion hooks on stop', async () => {
     const tracer = ctx.tracerProvider.getTracer('test-tracer');
     let hookResult: CompletionResult | undefined;
