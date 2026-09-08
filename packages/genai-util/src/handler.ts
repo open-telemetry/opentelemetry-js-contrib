@@ -45,6 +45,7 @@ import {
   GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
   GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
 } from './semconv';
+import { wrapAsyncStream, type AsyncStreamWrapperOptions } from './stream';
 import type {
   ContentCaptureMode,
   EmbeddingInvocationOptions,
@@ -236,6 +237,20 @@ export class TelemetryHandler {
    */
   public startTool(options: ToolInvocationOptions): ToolInvocation {
     return new ToolInvocation(this, options);
+  }
+
+  /**
+   * Wrap any async iterable stream with telemetry instrumentation.
+   */
+  public wrapAsyncStream<TStream extends AsyncIterable<unknown>>(
+    stream: TStream,
+    optionsOrInvocation?:
+      | AsyncStreamWrapperOptions<
+          TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
+        >
+      | InferenceInvocation
+  ): TStream {
+    return wrapAsyncStream(stream, optionsOrInvocation);
   }
 
   /**

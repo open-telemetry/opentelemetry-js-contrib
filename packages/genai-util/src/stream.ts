@@ -1,0 +1,258 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { ATTR_GEN_AI_REQUEST_STREAM } from './semconv';
+import { InferenceInvocation } from './invocations/inference';
+
+/**
+ * Structural interface for asynchronous stream objects.
+ */
+export interface AsyncStream<TChunk> extends AsyncIterable<TChunk> {
+  close?: () => Promise<void> | void;
+}
+
+/**
+ * Options for wrapping an async stream with telemetry.
+ *
+ * @experimental This interface is experimental and subject to change.
+ */
+export interface AsyncStreamWrapperOptions<TChunk> {
+  /** The active invocation (InferenceInvocation). */
+  invocation?: InferenceInvocation;
+  /** Hook called for each stream chunk. */
+  onChunk?: (chunk: TChunk) => void | Promise<void>;
+  /** Hook called when the stream ends successfully. */
+  onEnd?: () => void | Promise<void>;
+  /** Hook called when the stream encounters an error. */
+  onError?: (error: unknown) => void | Promise<void>;
+}
+
+/**
+ * Base class and proxy wrapper for asynchronous GenAI stream responses.
+ *
+ * @experimental This class is experimental and subject to change.
+ *
+ * Wraps an SDK async iterable/stream and intercepts iteration to:
+ * 1. Track stream lifecycle (start -> chunks -> end/error) and complete the active invocation.
+ * 2. Record stream metrics (`time_to_first_chunk` and `time_per_output_chunk`).
+ * 3. Invoke telemetry hooks (`_processChunk`, `_onStreamEnd`, `_onStreamError`).
+ * 4. Transparently proxy underlying SDK methods and properties (via ES6 Proxy).
+ */
+export class AsyncStreamWrapper<
+  TChunk,
+  TStream extends AsyncStream<TChunk> = AsyncStream<TChunk>,
+> implements AsyncIterable<TChunk>
+{
+  protected readonly _stream: TStream;
+  protected readonly _invocation?: InferenceInvocation;
+  protected readonly _options?: AsyncStreamWrapperOptions<TChunk>;
+  private _isFinalized = false;
+
+  constructor(
+    stream: TStream,
+    optionsOrInvocation?:
+      | AsyncStreamWrapperOptions<TChunk>
+      | InferenceInvocation
+  ) {
+    this._stream = stream;
+
+    if (optionsOrInvocation instanceof InferenceInvocation) {
+      this._invocation = optionsOrInvocation;
+    } else if (optionsOrInvocation) {
+      this._options = optionsOrInvocation;
+      this._invocation = this._options.invocation;
+    }
+
+    if (this._invocation) {
+      this._invocation.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    }
+
+    return new Proxy(this, {
+      get(target, prop, receiver) {
+        if (prop in target) {
+          return Reflect.get(target, prop, receiver);
+        }
+        const val = Reflect.get(target._stream, prop);
+        if (typeof val === 'function') {
+          return (val as (...args: unknown[]) => unknown).bind(target._stream);
+        }
+        return val;
+      },
+      set(target, prop, value) {
+        if (prop in target) {
+          return Reflect.set(target, prop, value);
+        }
+        return Reflect.set(target._stream, prop, value);
+      },
+      has(target, prop) {
+        return prop in target || prop in target._stream;
+      },
+    });
+  }
+
+  public [Symbol.asyncIterator](): AsyncIterator<TChunk> {
+    const iterator =
+      typeof this._stream[Symbol.asyncIterator] === 'function'
+        ? this._stream[Symbol.asyncIterator]()
+        : (this._stream as unknown as AsyncIterator<TChunk>);
+
+    const self = this;
+
+    const advance = async (
+      step: () => Promise<IteratorResult<TChunk>>
+    ): Promise<IteratorResult<TChunk>> => {
+      try {
+        const result = await step();
+        if (result.done) {
+          await self._finalizeSuccess();
+          return result;
+        }
+
+        await self._processChunk(result.value);
+        // Record after _processChunk so response.model set during chunk processing is included on metrics.
+        self._invocation?.recordStreamChunk();
+        return result;
+      } catch (error) {
+        await self._finalizeFailure(error);
+        throw error;
+      }
+    };
+
+    return {
+      async next(...args): Promise<IteratorResult<TChunk>> {
+        return advance(() => iterator.next(...args));
+      },
+
+      async return(value?: unknown): Promise<IteratorResult<TChunk>> {
+        try {
+          const result: IteratorResult<TChunk> =
+            typeof iterator.return === 'function'
+              ? await iterator.return(value)
+              : { done: true, value: value as unknown as TChunk };
+          await self._finalizeSuccess();
+          return result;
+        } catch (error) {
+          await self._finalizeFailure(error);
+          throw error;
+        }
+      },
+
+      async throw(error?: unknown): Promise<IteratorResult<TChunk>> {
+        if (typeof iterator.throw === 'function') {
+          return advance(() => iterator.throw!(error));
+        }
+        await self._finalizeFailure(error);
+        throw error;
+      },
+    };
+  }
+
+  /**
+   * Close the stream and finalize telemetry.
+   */
+  public async close(): Promise<void> {
+    try {
+      if (typeof this._stream.close === 'function') {
+        await this._stream.close();
+      }
+      await this._finalizeSuccess();
+    } catch (error) {
+      await this._finalizeFailure(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Hook called for each chunk. Subclasses can override to process chunk data.
+   */
+  protected async _processChunk(chunk: TChunk): Promise<void> {
+    if (this._options?.onChunk) {
+      await this._options.onChunk(chunk);
+    }
+  }
+
+  /**
+   * Hook called on successful stream completion.
+   */
+  protected async _onStreamEnd(): Promise<void> {
+    if (this._options?.onEnd) {
+      await this._options.onEnd();
+    }
+    if (this._invocation) {
+      this._invocation.stop();
+    }
+  }
+
+  /**
+   * Hook called on stream error.
+   */
+  protected async _onStreamError(error: unknown): Promise<void> {
+    if (this._options?.onError) {
+      await this._options.onError(error);
+    }
+    if (this._invocation) {
+      this._invocation.fail({
+        exception: error instanceof Error ? error : undefined,
+      });
+    }
+  }
+
+  /**
+   * Finalizes the stream telemetry on successful completion.
+   *
+   * Guards against duplicate finalization if the stream is closed or ended
+   * multiple times, ensuring `_onStreamEnd` (and consequently span stopping
+   * and final metric recording) runs at most once.
+   */
+  private async _finalizeSuccess(): Promise<void> {
+    if (this._isFinalized) {
+      return;
+    }
+    this._isFinalized = true;
+    await this._onStreamEnd();
+  }
+
+  /**
+   * Finalizes the stream telemetry when an error occurs during iteration or closing.
+   *
+   * Ensures the error hook is invoked and the active span is marked as failed
+   * exactly once, preventing duplicate error recordings if multiple failure paths
+   * are encountered.
+   *
+   * @param error - The error or exception encountered during stream processing.
+   */
+  private async _finalizeFailure(error: unknown): Promise<void> {
+    if (this._isFinalized) {
+      return;
+    }
+    this._isFinalized = true;
+    await this._onStreamError(error);
+  }
+}
+
+/**
+ * Wrap any async iterable stream with telemetry instrumentation.
+ *
+ * @experimental This function is experimental and subject to change.
+ */
+export function wrapAsyncStream<TStream extends AsyncIterable<unknown>>(
+  stream: TStream,
+  optionsOrInvocation?:
+    | AsyncStreamWrapperOptions<
+        TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
+      >
+    | InferenceInvocation
+): TStream {
+  return new AsyncStreamWrapper(
+    stream as unknown as AsyncStream<
+      TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
+    >,
+    optionsOrInvocation as
+      | AsyncStreamWrapperOptions<
+          TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
+        >
+      | InferenceInvocation
+  ) as unknown as TStream;
+}
