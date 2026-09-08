@@ -39,13 +39,13 @@ export function serializeContent(content: unknown): string {
   if (typeof content === 'string') {
     return content;
   }
-  if (content === null || content === undefined) {
+  if (content == null) {
     return '';
   }
 
-  // Handle types we know JSON.stringify drops (returns undefined for)
-  if (typeof content === 'function' || typeof content === 'symbol') {
-    return String(content);
+  // Functions should not be serialized as they can be very large.
+  if (typeof content === 'function') {
+    return '[Unserializable Content]';
   }
 
   try {
@@ -57,7 +57,7 @@ export function serializeContent(content: unknown): string {
     // Ignored, fall through to fallback below (e.g., circular references, BigInt)
   }
 
-  // Fallback for circular references, BigInts, or custom undefined toJSON()
+  // Fallback for circular references, BigInts, Symbols, or custom undefined toJSON()
   try {
     return String(content);
   } catch {

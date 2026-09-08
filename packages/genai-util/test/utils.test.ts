@@ -38,8 +38,34 @@ describe('GenAI Utils', () => {
     it('serializeContent', () => {
       assert.strictEqual(serializeContent('hello'), 'hello');
       assert.strictEqual(serializeContent({ a: 1 }), '{"a":1}');
+      assert.strictEqual(serializeContent([1, 2]), '[1,2]');
+      assert.strictEqual(serializeContent(123), '123');
+      assert.strictEqual(serializeContent(true), 'true');
       assert.strictEqual(serializeContent(null), '');
       assert.strictEqual(serializeContent(undefined), '');
+      assert.strictEqual(
+        serializeContent(() => {}),
+        '[Unserializable Content]'
+      );
+      assert.strictEqual(serializeContent(Symbol('test')), 'Symbol(test)');
+      assert.strictEqual(serializeContent(BigInt(42)), '42');
+
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+      assert.strictEqual(serializeContent(circular), '[object Object]');
+
+      const undefinedToJSON = { toJSON: () => undefined };
+      assert.strictEqual(serializeContent(undefinedToJSON), '[object Object]');
+
+      const throwing: Record<string, unknown> = {};
+      throwing.self = throwing;
+      throwing.toString = () => {
+        throw new Error('fail');
+      };
+      assert.strictEqual(
+        serializeContent(throwing),
+        '[Unserializable Content]'
+      );
     });
 
     it('formatInputMessages', () => {
