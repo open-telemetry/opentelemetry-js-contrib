@@ -104,11 +104,11 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
   });
 
-  it('should safely delegate metric recordings when meter is configured', () => {
+  it('should record metrics and handle boundary values when meter is configured', () => {
     const meter = ctx.meterProvider.getMeter('test-meter');
     const handler = new TelemetryHandler({ meter });
 
-    // Should record without throwing
+    // Valid recordings
     handler.recordOperationDuration(1.23, { 'gen_ai.system': 'openai' });
     handler.recordTokenUsage(
       { inputTokens: 10, outputTokens: 25 },
@@ -116,6 +116,17 @@ describe('TelemetryHandler', () => {
     );
     handler.recordTimeToFirstChunk(0.45, { 'gen_ai.system': 'openai' });
     handler.recordServerTimeToFirstToken(0.35, { 'gen_ai.system': 'openai' });
+
+    // Boundary/invalid duration values should be ignored without error
+    handler.recordOperationDuration(-1);
+    handler.recordOperationDuration(NaN);
+    handler.recordOperationDuration(Infinity);
+
+    // Boundary/partial token usage values
+    handler.recordTokenUsage({ inputTokens: 10 }); // only input tokens
+    handler.recordTokenUsage({ outputTokens: 20 }); // only output tokens
+    handler.recordTokenUsage({ inputTokens: -5, outputTokens: -10 }); // negative tokens ignored
+    handler.recordTokenUsage(undefined as any); // undefined usage ignored
   });
 
   it('should safely handle metric recordings when meter is not configured', () => {
