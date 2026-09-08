@@ -76,20 +76,14 @@ export interface MetricCreationOptions {
  *
  * @experimental
  */
-export function createDurationHistogram(
-  meter: Meter,
-  options?: MetricCreationOptions
-): Histogram {
-  return meter.createHistogram(
-    options?.name ?? METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-    {
-      description: options?.description ?? 'GenAI operation duration',
-      unit: options?.unit ?? 's',
-      advice: {
-        explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
-      },
-    }
-  );
+export function createDurationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_CLIENT_OPERATION_DURATION, {
+    description: 'Duration of GenAI client operation',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
+    },
+  });
 }
 
 /**
@@ -97,22 +91,14 @@ export function createDurationHistogram(
  *
  * @experimental
  */
-export function createTokenUsageHistogram(
-  meter: Meter,
-  options?: MetricCreationOptions
-): Histogram {
-  return meter.createHistogram(
-    options?.name ?? METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-    {
-      description:
-        options?.description ??
-        'Measures number of input and output tokens used',
-      unit: options?.unit ?? '{token}',
-      advice: {
-        explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
-      },
-    }
-  );
+export function createTokenUsageHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_CLIENT_TOKEN_USAGE, {
+    description: 'Number of input and output tokens used by GenAI clients',
+    unit: '{token}',
+    advice: {
+      explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
+    },
+  });
 }
 
 /**
@@ -120,17 +106,13 @@ export function createTokenUsageHistogram(
  *
  * @experimental
  */
-export function createTimeToFirstChunkHistogram(
-  meter: Meter,
-  options?: MetricCreationOptions
-): Histogram {
+export function createTimeToFirstChunkHistogram(meter: Meter): Histogram {
   return meter.createHistogram(
-    options?.name ?? METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+    METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
     {
       description:
-        options?.description ??
-        'Time to first chunk for streaming response in seconds',
-      unit: options?.unit ?? 's',
+        'Time to receive the first chunk, measured from when the client issues the generation request to when the first chunk is received in the response stream.',
+      unit: 's',
       advice: {
         explicitBucketBoundaries: GENAI_TIME_TO_FIRST_CHUNK_BUCKETS,
       },
@@ -143,36 +125,14 @@ export function createTimeToFirstChunkHistogram(
  *
  * @experimental
  */
-export function createServerTimeToFirstTokenHistogram(
-  meter: Meter,
-  options?: MetricCreationOptions
-): Histogram {
-  return meter.createHistogram(
-    options?.name ?? METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN,
-    {
-      description:
-        options?.description ??
-        'Time to first token for streaming response in seconds',
-      unit: options?.unit ?? 's',
-      advice: {
-        explicitBucketBoundaries: GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS,
-      },
-    }
-  );
-}
-
-/**
- * Internal helper to validate and record a duration value in seconds.
- */
-function _recordDuration(
-  histogram: Histogram | undefined,
-  durationSeconds: number,
-  attributes?: Attributes
-): void {
-  if (!histogram || durationSeconds < 0 || !isFinite(durationSeconds)) {
-    return;
-  }
-  histogram.record(durationSeconds, attributes);
+export function createServerTimeToFirstTokenHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN, {
+    description: 'Time to first token for streaming response in seconds',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS,
+    },
+  });
 }
 
 /**
@@ -185,7 +145,10 @@ export function recordOperationDuration(
   durationSeconds: number,
   attributes?: Attributes
 ): void {
-  _recordDuration(histogram, durationSeconds, attributes);
+  if (!histogram || durationSeconds < 0 || !isFinite(durationSeconds)) {
+    return;
+  }
+  histogram.record(durationSeconds, attributes);
 }
 
 /**
@@ -215,30 +178,4 @@ export function recordTokenUsage(
       [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
     });
   }
-}
-
-/**
- * Record time to first chunk metric.
- *
- * @experimental
- */
-export function recordTimeToFirstChunk(
-  histogram: Histogram | undefined,
-  durationSeconds: number,
-  attributes?: Attributes
-): void {
-  _recordDuration(histogram, durationSeconds, attributes);
-}
-
-/**
- * Record server time to first token metric.
- *
- * @experimental
- */
-export function recordServerTimeToFirstToken(
-  histogram: Histogram | undefined,
-  durationSeconds: number,
-  attributes?: Attributes
-): void {
-  _recordDuration(histogram, durationSeconds, attributes);
 }

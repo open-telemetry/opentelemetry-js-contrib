@@ -458,6 +458,8 @@ export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
   'gen_ai.client.operation.duration' as const;
 export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
   'gen_ai.client.token.usage' as const;
+export const METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN =
+  'gen_ai.server.time_to_first_token' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
   'gen_ai.client.operation.time_to_first_chunk' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =

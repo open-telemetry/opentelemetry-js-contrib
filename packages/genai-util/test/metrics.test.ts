@@ -12,11 +12,10 @@ import {
   createServerTimeToFirstTokenHistogram,
   recordOperationDuration,
   recordTokenUsage,
-  recordTimeToFirstChunk,
-  recordServerTimeToFirstToken,
   GENAI_OPERATION_DURATION_BUCKETS,
   GENAI_TOKEN_USAGE_BUCKETS,
   GENAI_TIME_TO_FIRST_CHUNK_BUCKETS,
+  GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS,
 } from '../src/metrics';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -45,6 +44,7 @@ describe('GenAI Metrics Helpers', () => {
     assert.strictEqual(GENAI_OPERATION_DURATION_BUCKETS[0], 0.01);
     assert.strictEqual(GENAI_TOKEN_USAGE_BUCKETS[0], 1);
     assert.strictEqual(GENAI_TIME_TO_FIRST_CHUNK_BUCKETS[0], 0.001);
+    assert.strictEqual(GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS[0], 0.001);
   });
 
   it('should create duration and token usage histograms', () => {
@@ -88,27 +88,17 @@ describe('GenAI Metrics Helpers', () => {
     recordTokenUsage(tokenUsageHistogram, undefined);
   });
 
-  it('should create and record time to first chunk histogram', () => {
+  it('should create time to first chunk histogram', () => {
     const meter = meterProvider.getMeter('test-meter');
     const ttftHistogram = createTimeToFirstChunkHistogram(meter);
 
     assert.ok(ttftHistogram);
-    recordTimeToFirstChunk(ttftHistogram, 0.123, {
-      [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
-    });
-    recordTimeToFirstChunk(undefined, 0.123);
-    recordTimeToFirstChunk(ttftHistogram, -1);
   });
 
-  it('should create and record server time to first token histogram', () => {
+  it('should create server time to first token histogram', () => {
     const meter = meterProvider.getMeter('test-meter');
     const ttftHistogram = createServerTimeToFirstTokenHistogram(meter);
 
     assert.ok(ttftHistogram);
-    recordServerTimeToFirstToken(ttftHistogram, 0.123, {
-      [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
-    });
-    recordServerTimeToFirstToken(undefined, 0.123);
-    recordServerTimeToFirstToken(ttftHistogram, -1);
   });
 });
