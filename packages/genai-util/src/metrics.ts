@@ -58,20 +58,6 @@ export const GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS = [
 ];
 
 /**
- * Options for creating GenAI metric instruments.
- *
- * @experimental
- */
-export interface MetricCreationOptions {
-  /** Metric instrument name override. */
-  name?: string;
-  /** Metric description override. */
-  description?: string;
-  /** Metric unit override. */
-  unit?: string;
-}
-
-/**
  * Create standard `gen_ai.client.operation.duration` histogram.
  *
  * @experimental
