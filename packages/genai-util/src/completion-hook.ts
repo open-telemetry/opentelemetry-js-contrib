@@ -10,6 +10,13 @@ import type { CompletionHook, CompletionResult } from './types';
 /**
  * Manages registration and safe execution of GenAI completion hooks.
  *
+ * Responsible for:
+ * - Maintaining registered {@link CompletionHook} instances.
+ * - Executing hooks concurrently via `Promise.all` upon invocation completion.
+ * - Isolating errors: catching synchronous and asynchronous exceptions so user
+ *   applications are never interrupted by telemetry failures.
+ *
+ * @see {@link CompletionHook} for examples of implementing a completion hook.
  * @experimental This class is experimental and subject to change.
  */
 export class CompletionHookManager {
