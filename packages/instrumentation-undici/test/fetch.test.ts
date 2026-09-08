@@ -381,6 +381,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpMethod: 'GET',
         path: '/error',
         error: fetchError,
+        errorType: 'UND_ERR_SOCKET',
         noNetPeer: true, // do not check network attribs
         forceStatus: {
           code: SpanStatusCode.ERROR,
