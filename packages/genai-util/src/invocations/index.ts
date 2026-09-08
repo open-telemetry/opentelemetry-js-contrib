@@ -4,3 +4,6 @@
  */
 
 export * from './base';
+export * from './inference';
+export * from './embedding';
+export * from './tool';

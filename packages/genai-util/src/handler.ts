@@ -4,6 +4,7 @@
  */
 
 import {
+  SpanKind,
   diag,
   metrics,
   trace,
@@ -20,6 +21,9 @@ import {
   getContentCaptureMode,
   parseContentCaptureMode,
 } from './environment-variables';
+import { EmbeddingInvocation } from './invocations/embedding';
+import { InferenceInvocation } from './invocations/inference';
+import { ToolInvocation } from './invocations/tool';
 import {
   createDurationHistogram,
   createTimePerOutputChunkHistogram,
@@ -31,12 +35,19 @@ import {
   GEN_AI_SCHEMA_URL,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from './semconv';
 import type {
   ContentCaptureMode,
+  EmbeddingInvocationOptions,
   GenAIInstrumentationConfig,
+  InferenceInvocationOptions,
   TokenUsage,
+  ToolInvocationOptions,
 } from './types';
+import { getSpanName } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -156,6 +167,67 @@ export class TelemetryHandler {
    */
   public shouldCaptureContent(): boolean {
     return this._contentCaptureMode !== 'none';
+  }
+
+  /**
+   * Start an LLM / GenAI inference invocation.
+   */
+  public startInference(
+    options: InferenceInvocationOptions
+  ): InferenceInvocation {
+    const spanName = getSpanName(
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT,
+      options.requestModel
+    );
+
+    const span = this._tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.CLIENT,
+      },
+      options.parentContext
+    );
+
+    return new InferenceInvocation(span, this, options);
+  }
+
+  /**
+   * Start an Embedding invocation.
+   */
+  public startEmbedding(
+    options: EmbeddingInvocationOptions
+  ): EmbeddingInvocation {
+    const spanName = getSpanName(
+      GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+      options.requestModel
+    );
+
+    const span = this._tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.CLIENT,
+      },
+      options.parentContext
+    );
+
+    return new EmbeddingInvocation(span, this, options);
+  }
+
+  /**
+   * Start a Tool execution invocation.
+   */
+  public startTool(options: ToolInvocationOptions): ToolInvocation {
+    const spanName = `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${options.toolName}`;
+
+    const span = this._tracer.startSpan(
+      spanName,
+      {
+        kind: SpanKind.INTERNAL,
+      },
+      options.parentContext
+    );
+
+    return new ToolInvocation(span, options, this);
   }
 
   /**

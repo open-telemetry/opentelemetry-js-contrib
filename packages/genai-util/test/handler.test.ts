@@ -6,6 +6,7 @@
 import * as assert from 'assert';
 import { diag, type DiagLogger } from '@opentelemetry/api';
 import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
+import { SpanKind } from '@opentelemetry/api';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
 import {
   createTestTelemetryContext,
@@ -51,11 +52,11 @@ describe('TelemetryHandler', () => {
 
   it('should initialize with custom options', () => {
     const customDiag: DiagLogger = {
-      verbose: () => {},
-      debug: () => {},
-      info: () => {},
-      warn: () => {},
-      error: () => {},
+      verbose: () => { },
+      debug: () => { },
+      info: () => { },
+      warn: () => { },
+      error: () => { },
     };
 
     const handler = createHandler({
@@ -174,5 +175,41 @@ describe('TelemetryHandler', () => {
       contentCaptureMode: 'span_only',
     });
     assert.strictEqual(handlerSpanOnly.shouldCaptureContent(), true);
+  });
+
+  it('should start inference, embedding, and tool invocations with appropriate span kinds', () => {
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+    const handler = new TelemetryHandler({ tracer });
+
+    const inference = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+      requestModel: 'gpt-4o',
+    });
+    inference.stop();
+
+    const embedding = handler.startEmbedding({
+      providerName: 'openai',
+      requestModel: 'text-embedding-3-small',
+    });
+    embedding.stop();
+
+    const tool = handler.startTool({
+      toolName: 'calculator',
+    });
+    tool.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3);
+
+    const [infSpan, embSpan, toolSpan] = spans;
+    assert.strictEqual(infSpan.name, 'chat gpt-4o');
+    assert.strictEqual(infSpan.kind, SpanKind.CLIENT);
+
+    assert.strictEqual(embSpan.name, 'embeddings text-embedding-3-small');
+    assert.strictEqual(embSpan.kind, SpanKind.CLIENT);
+
+    assert.strictEqual(toolSpan.name, 'execute_tool calculator');
+    assert.strictEqual(toolSpan.kind, SpanKind.INTERNAL);
   });
 });
