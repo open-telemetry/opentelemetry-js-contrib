@@ -22,9 +22,12 @@ import {
   createServerTimeToFirstTokenHistogram,
   createTimeToFirstChunkHistogram,
   createTokenUsageHistogram,
-  recordOperationDuration,
-  recordTokenUsage,
 } from './metrics';
+import {
+  ATTR_GEN_AI_TOKEN_TYPE,
+  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+} from './semconv';
 import type {
   CompletionHook,
   ContentCaptureMode,
@@ -167,18 +170,37 @@ export class TelemetryHandler {
     durationSeconds: number,
     attributes?: Attributes
   ): void {
-    recordOperationDuration(
-      this._operationDurationHistogram,
-      durationSeconds,
-      attributes
-    );
+    if (
+      !this._operationDurationHistogram ||
+      durationSeconds < 0 ||
+      !isFinite(durationSeconds)
+    ) {
+      return;
+    }
+    this._operationDurationHistogram.record(durationSeconds, attributes);
   }
 
   /**
    * Record token usage metric.
    */
   public recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
-    recordTokenUsage(this._tokenUsageHistogram, usage, attributes);
+    if (!this._tokenUsageHistogram || !usage) {
+      return;
+    }
+
+    if (typeof usage.inputTokens === 'number' && usage.inputTokens >= 0) {
+      this._tokenUsageHistogram.record(usage.inputTokens, {
+        ...attributes,
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+      });
+    }
+
+    if (typeof usage.outputTokens === 'number' && usage.outputTokens >= 0) {
+      this._tokenUsageHistogram.record(usage.outputTokens, {
+        ...attributes,
+        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+      });
+    }
   }
 
   /**
