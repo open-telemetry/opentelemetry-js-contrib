@@ -188,14 +188,22 @@ export class TelemetryHandler {
       return;
     }
 
-    if (typeof usage.inputTokens === 'number' && usage.inputTokens >= 0) {
+    if (
+      typeof usage.inputTokens === 'number' &&
+      Number.isFinite(usage.inputTokens) &&
+      usage.inputTokens >= 0
+    ) {
       this._tokenUsageHistogram.record(usage.inputTokens, {
         ...attributes,
         [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
       });
     }
 
-    if (typeof usage.outputTokens === 'number' && usage.outputTokens >= 0) {
+    if (
+      typeof usage.outputTokens === 'number' &&
+      Number.isFinite(usage.outputTokens) &&
+      usage.outputTokens >= 0
+    ) {
       this._tokenUsageHistogram.record(usage.outputTokens, {
         ...attributes,
         [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
