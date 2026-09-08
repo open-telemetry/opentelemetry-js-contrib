@@ -9,9 +9,9 @@ import {
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-  METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN,
 } from './semconv';
 import type { TokenUsage } from './types';
 
@@ -41,20 +41,18 @@ export const GENAI_TOKEN_USAGE_BUCKETS = [
  * @experimental
  */
 export const GENAI_TIME_TO_FIRST_CHUNK_BUCKETS = [
-  0.001, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30,
+  0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48,
+  40.96, 81.92,
 ];
 
 /**
- * Standard explicit bucket boundaries for GenAI time to first token (in seconds).
- *
- * Adopted from vLLM: https://github.com/vllm-project/vllm/blob/main/vllm/v1/metrics/loggers.py
+ * Standard explicit bucket boundaries for GenAI time per output chunk (in seconds).
  *
  * @experimental
  */
-export const GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS = [
-  0.001, 0.005, 0.01, 0.02, 0.04, 0.06, 0.08, 0.1, 0.25, 0.5, 0.75, 1.0, 1.25,
-  1.5, 1.75, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0,
-  8.5, 9.0, 9.5, 10.0,
+export const GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS = [
+  0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48,
+  40.96, 81.92,
 ];
 
 /**
@@ -107,18 +105,22 @@ export function createTimeToFirstChunkHistogram(meter: Meter): Histogram {
 }
 
 /**
- * Create standard `gen_ai.server.time_to_first_token` histogram.
+ * Create standard `gen_ai.client.operation.time_per_output_chunk` histogram.
  *
  * @experimental
  */
-export function createServerTimeToFirstTokenHistogram(meter: Meter): Histogram {
-  return meter.createHistogram(METRIC_GEN_AI_SERVER_TIME_TO_FIRST_TOKEN, {
-    description: 'Time to first token for streaming response in seconds',
-    unit: 's',
-    advice: {
-      explicitBucketBoundaries: GENAI_SERVER_TIME_TO_FIRST_TOKEN_BUCKETS,
-    },
-  });
+export function createTimePerOutputChunkHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(
+    METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
+    {
+      description:
+        'Time per output chunk, recorded for each chunk received after the first one, measured as the time elapsed from the end of the previous chunk to the end of the current chunk.',
+      unit: 's',
+      advice: {
+        explicitBucketBoundaries: GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS,
+      },
+    }
+  );
 }
 
 /**
