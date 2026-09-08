@@ -7,6 +7,10 @@
  * Semantic conventions in this file are defined locally rather than imported from
  * `@opentelemetry/semantic-conventions/incubating`.
  *
+ * These conventions were referenced from the repository
+ * https://github.com/open-telemetry/semantic-conventions-genai at commit ID
+ * fee465db333bdd6a7d2faa320edab5cf3101a4f4
+ *
  * Rationale:
  * Per OpenTelemetry JavaScript Contrib repository guidelines (GUIDELINES.md),
  * packages must not depend on `@opentelemetry/semantic-conventions/incubating`
