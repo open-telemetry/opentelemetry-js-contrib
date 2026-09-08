@@ -6,6 +6,12 @@
       // Ensure register.ts is considered an entry-point (the `!` is to be
       // included with the `--production` flag).
       "entry": "src/register.ts!"
+    },
+    "packages/genai-util": {
+      // Temporary entry override during the incubation phase while src/index.ts has 0 public exports.
+      // This prevents Knip from falsely flagging @opentelemetry/core and @opentelemetry/semantic-conventions as unused.
+      // REMOVE this configuration once the first exports are added to packages/genai-util/src/index.ts.
+      "entry": ["src/handler.ts!", "src/invocations/index.ts!"]
     }
   }
 }
