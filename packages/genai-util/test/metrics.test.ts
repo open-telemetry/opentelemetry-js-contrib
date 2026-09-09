@@ -43,7 +43,7 @@ describe('GenAI Metrics Helpers', () => {
   it('should define standard bucket boundaries', () => {
     assert.strictEqual(GENAI_OPERATION_DURATION_BUCKETS[0], 0.01);
     assert.strictEqual(GENAI_TOKEN_USAGE_BUCKETS[0], 1);
-    assert.strictEqual(GENAI_TIME_TO_FIRST_CHUNK_BUCKETS[0], 0.001);
+    assert.strictEqual(GENAI_TIME_TO_FIRST_CHUNK_BUCKETS[0], 0.01);
     assert.strictEqual(GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS[0], 0.01);
   });
 
