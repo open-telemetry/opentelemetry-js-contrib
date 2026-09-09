@@ -115,7 +115,6 @@ describe('TelemetryHandler', () => {
       { 'gen_ai.system': 'openai' }
     );
     handler.recordTimeToFirstChunk(0.45, { 'gen_ai.system': 'openai' });
-    handler.recordServerTimeToFirstToken(0.35, { 'gen_ai.system': 'openai' });
 
     // Boundary/invalid duration values should be ignored without error
     handler.recordOperationDuration(-1);
@@ -137,7 +136,6 @@ describe('TelemetryHandler', () => {
       handler.recordOperationDuration(1.0);
       handler.recordTokenUsage({ inputTokens: 5, outputTokens: 10 });
       handler.recordTimeToFirstChunk(0.2);
-      handler.recordServerTimeToFirstToken(0.1);
     });
   });
 

@@ -19,7 +19,6 @@ import {
 } from './environment-variables';
 import {
   createDurationHistogram,
-  createServerTimeToFirstTokenHistogram,
   createTimeToFirstChunkHistogram,
   createTokenUsageHistogram,
 } from './metrics';
@@ -69,7 +68,6 @@ export class TelemetryHandler {
   private _operationDurationHistogram?: Histogram;
   private _tokenUsageHistogram?: Histogram;
   private _timeToFirstChunkHistogram?: Histogram;
-  private _timeToFirstTokenHistogram?: Histogram;
 
   constructor(options: TelemetryHandlerOptions = {}) {
     this._tracer =
@@ -99,8 +97,6 @@ export class TelemetryHandler {
     this._operationDurationHistogram = createDurationHistogram(meter);
     this._tokenUsageHistogram = createTokenUsageHistogram(meter);
     this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(meter);
-    this._timeToFirstTokenHistogram =
-      createServerTimeToFirstTokenHistogram(meter);
   }
 
   /**
@@ -239,22 +235,5 @@ export class TelemetryHandler {
       return;
     }
     this._timeToFirstChunkHistogram.record(durationSeconds, attributes);
-  }
-
-  /**
-   * Record server time to first token metric for streaming responses.
-   */
-  public recordServerTimeToFirstToken(
-    durationSeconds: number,
-    attributes?: Attributes
-  ): void {
-    if (
-      !this._timeToFirstTokenHistogram ||
-      durationSeconds < 0 ||
-      !isFinite(durationSeconds)
-    ) {
-      return;
-    }
-    this._timeToFirstTokenHistogram.record(durationSeconds, attributes);
   }
 }
