@@ -100,7 +100,20 @@ jobs:
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:affected
+        run: |
+          for attempt in 1 2 3; do
+            if npm run test-services:start:affected; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+
+            echo "Failed to start test services, retrying in 5 seconds..."
+            npm run test-services:stop || true
+            sleep 5
+          done
       - name: Unit tests (Nodejs - Delta)
         run: npm run test:ci:affected
       - name: Stop Test Services (Delta)
@@ -146,7 +159,20 @@ jobs:
       - name: Compile (Delta)
         run: npm run compile:ci:affected
       - name: Start Test Services (Delta)
-        run: npm run test-services:start:affected
+        run: |
+          for attempt in 1 2 3; do
+            if npm run test-services:start:affected; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              exit 1
+            fi
+
+            echo "Failed to start test services, retrying in 5 seconds..."
+            npm run test-services:stop || true
+            sleep 5
+          done
       - name: Test All Versions (Delta)
         run: npm run test-all-versions:ci:affected
       - name: Stop Test Services (Delta)
