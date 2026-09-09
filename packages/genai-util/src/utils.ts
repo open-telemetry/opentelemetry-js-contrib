@@ -81,6 +81,36 @@ function uint8ArrayToBase64(bytes: Uint8Array): string {
 }
 
 /**
+ * JSON.stringify replacer function for message serialization.
+ *
+ * Ensures binary content (Uint8Array and Node.js Buffer instances) is serialized
+ * as base64-encoded strings per OpenTelemetry GenAI semantic conventions.
+ * Reads `this[key]` to intercept raw `Buffer` instances before Node.js's built-in
+ * `Buffer.prototype.toJSON()` converts them into plain objects.
+ *
+ * @param this - The parent object/array holding the property currently being serialized.
+ * @param key - The property key or array index being stringified.
+ * @param value - The value after any `toJSON()` conversion, or raw value.
+ * @returns The base64 string for binary data, or the original/transformed value.
+ */
+function serializeMessageReplacer(
+  this: Record<string, unknown>,
+  key: string,
+  value: unknown
+): unknown {
+  const rawValue = this[key];
+
+  if (
+    rawValue instanceof Uint8Array ||
+    (typeof Buffer !== 'undefined' && Buffer.isBuffer(rawValue))
+  ) {
+    return uint8ArrayToBase64(rawValue);
+  }
+
+  return value;
+}
+
+/**
  * Format input messages into a JSON string for span attribute storage.
  *
  * @param messages - Input messages payload to format.
@@ -93,12 +123,7 @@ export function formatInputMessages(
     return undefined;
   }
   try {
-    return JSON.stringify(messages, (_key, value) => {
-      if (value instanceof Uint8Array) {
-        return uint8ArrayToBase64(value);
-      }
-      return value;
-    });
+    return JSON.stringify(messages, serializeMessageReplacer);
   } catch {
     return undefined;
   }
@@ -117,12 +142,7 @@ export function formatOutputMessages(
     return undefined;
   }
   try {
-    return JSON.stringify(messages, (_key, value) => {
-      if (value instanceof Uint8Array) {
-        return uint8ArrayToBase64(value);
-      }
-      return value;
-    });
+    return JSON.stringify(messages, serializeMessageReplacer);
   } catch {
     return undefined;
   }

@@ -108,6 +108,36 @@ describe('GenAI Utils', () => {
         ])
       );
 
+      // BlobPart handling with Buffer base64 encoding
+      const blobPartWithBuffer: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: Buffer.from([72, 101, 108, 108, 111]), // 'Hello'
+        mime_type: 'image/png',
+      };
+      const msgsWithBuffer: InputMessages = [
+        {
+          role: 'user',
+          parts: [blobPartWithBuffer],
+        },
+      ];
+      assert.strictEqual(
+        formatInputMessages(msgsWithBuffer),
+        JSON.stringify([
+          {
+            role: 'user',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: 'SGVsbG8=',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
+
       const emptyBlobPart: BlobPart = {
         type: 'blob',
         modality: 'image',
@@ -163,6 +193,35 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(
         formatOutputMessages(msgsWithBlob),
+        JSON.stringify([
+          {
+            role: 'assistant',
+            parts: [
+              {
+                type: 'blob',
+                modality: 'image',
+                content: 'SGVsbG8=',
+                mime_type: 'image/png',
+              },
+            ],
+          },
+        ])
+      );
+
+      const bufferBlobPart: BlobPart = {
+        type: 'blob',
+        modality: 'image',
+        content: Buffer.from([72, 101, 108, 108, 111]),
+        mime_type: 'image/png',
+      };
+      const msgsWithBufferBlob: OutputMessages = [
+        {
+          role: 'assistant',
+          parts: [bufferBlobPart],
+        },
+      ];
+      assert.strictEqual(
+        formatOutputMessages(msgsWithBufferBlob),
         JSON.stringify([
           {
             role: 'assistant',
