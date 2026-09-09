@@ -737,5 +737,40 @@ describe('WinstonInstrumentation', () => {
         assert.strictEqual(logRecords[1].body, 'emergency');
       }
     });
+
+    it('custom severityMapping with fallback to default levels', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.INFO,
+          severityMapping: {
+            critical: SeverityNumber.FATAL,
+            caution: SeverityNumber.WARN,
+          },
+        });
+        const customLevels = {
+          critical: 0,
+          error: 1,
+          caution: 2,
+          warn: 3,
+          info: 4,
+          debug: 5,
+        };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('critical', 'crit msg');
+        logger.log('error', 'err msg');
+        logger.log('caution', 'caution msg');
+        logger.log('warn', 'warn msg');
+        logger.log('info', 'info msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 5);
+        assert.strictEqual(logRecords[0].body, 'crit msg');
+        assert.strictEqual(logRecords[1].body, 'err msg');
+        assert.strictEqual(logRecords[2].body, 'caution msg');
+        assert.strictEqual(logRecords[3].body, 'warn msg');
+        assert.strictEqual(logRecords[4].body, 'info msg');
+      }
+    });
   });
 });

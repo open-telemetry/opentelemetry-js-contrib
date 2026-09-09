@@ -22,6 +22,7 @@ import type {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { getSeverityNumber } from './otel-levels';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
@@ -253,7 +254,7 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
         for (const [levelName, levelPriority] of Object.entries(
           winstonLevels
         )) {
-          const mappedSeverity = severityMapping[levelName];
+          const mappedSeverity = getSeverityNumber(levelName, severityMapping);
           if (
             mappedSeverity !== undefined &&
             mappedSeverity >= severity &&
