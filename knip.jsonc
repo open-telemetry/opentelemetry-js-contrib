@@ -9,7 +9,7 @@
     },
     "packages/genai-util": {
       // Temporary ignore during foundation phase before handlers and invocations are added in follow-up PRs.
-      // REMOVE this configuration once the exports and handlers are added to packages/genai-util/src/index.ts.
+      // TODO: REMOVE this configuration once exports and handlers are added to packages/genai-util/src/index.ts.
       "ignoreDependencies": [
         "@opentelemetry/core",
         "@opentelemetry/semantic-conventions"

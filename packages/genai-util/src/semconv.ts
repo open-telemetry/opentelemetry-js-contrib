@@ -152,7 +152,7 @@ export const ATTR_GEN_AI_RESPONSE_MODEL = 'gen_ai.response.model' as const;
  * Array of reasons why the model stopped generating tokens for each response choice.
  *
  * @example ["stop"]
- * @example ["tool_calls"]
+ * @example ["tool_call"]
  */
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;

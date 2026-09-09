@@ -100,10 +100,7 @@ function serializeMessageReplacer(
 ): unknown {
   const rawValue = this[key];
 
-  if (
-    rawValue instanceof Uint8Array ||
-    (typeof Buffer !== 'undefined' && Buffer.isBuffer(rawValue))
-  ) {
+  if (rawValue instanceof Uint8Array) {
     return uint8ArrayToBase64(rawValue);
   }
 
