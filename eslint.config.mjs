@@ -189,6 +189,7 @@ const baseConfig = tseslint.config(
       '**/packages/**/browser/**/*',
       '**/packages/auto-instrumentations-web/**/*',
       '**/packages/instrumentation-document-load/**/*',
+      '**/packages/instrumentation-long-animation-frame/**/*',
       '**/packages/instrumentation-long-task/**/*',
       '**/packages/instrumentation-user-interaction/**/*',
       '**/packages/instrumentation-web-exception/**/*',

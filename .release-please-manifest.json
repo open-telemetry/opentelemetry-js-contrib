@@ -64,6 +64,7 @@
   "packages/instrumentation-winston": "0.66.0",
   "packages/instrumentation-document-load": "0.67.0",
   "packages/instrumentation-web-exception": "0.15.0",
+  "packages/instrumentation-long-animation-frame": "0.1.0",
   "packages/instrumentation-long-task": "0.66.0",
   "packages/instrumentation-user-interaction": "0.66.0",
   "packages/plugin-react-load": "0.54.0",
