@@ -1,5 +1,7 @@
 # OpenTelemetry Long Task Instrumentation for web
 
+> **Deprecated:** This package is deprecated because the Long Tasks API is deprecated. Use instrumentation based on the [Long Animation Frames API][mdn-long-animation-frames] when available.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
@@ -81,3 +83,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-long-task.svg
 [mdn-long-task]: https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API
 [mdn-performance-long-task-timing]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongTaskTiming
+[mdn-long-animation-frames]: https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Long_animation_frame_timing
