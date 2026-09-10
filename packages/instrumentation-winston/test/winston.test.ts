@@ -63,7 +63,8 @@ describe('WinstonInstrumentation', () => {
   function initLogger(
     levelsType?: LevelsType,
     formatType?: string,
-    customLevels?: Record<string, number>
+    customLevels?: Record<string, number>,
+    loggerLevel?: string
   ) {
     const winston = require('winston');
 
@@ -113,7 +114,7 @@ describe('WinstonInstrumentation', () => {
     if (winston['createLogger']) {
       // winston 3.x
       logger = winston.createLogger({
-        level: defaultLevel,
+        level: loggerLevel ?? defaultLevel,
         levels: levels,
         format,
         transports: [
@@ -813,6 +814,51 @@ describe('WinstonInstrumentation', () => {
         assert.strictEqual(logRecords.length, 2);
         assert.strictEqual(logRecords[0].body, 'mid msg');
         assert.strictEqual(logRecords[1].body, 'high msg');
+      }
+    });
+
+    it('permissive transport level when severityMapping is set with logSeverity', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.DEBUG,
+          severityMapping: {},
+        });
+        initLogger(LevelsType.npm, undefined, undefined, 'info');
+        logger.log('info', 'info msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'info msg');
+        assert.strictEqual(logRecords[1].body, 'debug msg');
+      }
+    });
+
+    it('custom levels extending npm with fatal/trace does not trigger otel levels shortcut', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.DEBUG2,
+        });
+        const customLevels = {
+          fatal: 0,
+          error: 1,
+          warn: 2,
+          info: 3,
+          http: 4,
+          verbose: 5,
+          debug: 6,
+          silly: 7,
+          trace: 8,
+        };
+        initLogger(undefined, undefined, customLevels, 'trace');
+        logger.log('http', 'http msg');
+        logger.log('verbose', 'verbose msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'http msg');
+        assert.strictEqual(logRecords[1].body, 'verbose msg');
       }
     });
   });

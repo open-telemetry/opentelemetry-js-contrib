@@ -195,15 +195,15 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
               }
               if (config.logSeverity != null) {
                 transportOptions.logSeverity = config.logSeverity;
-                if (!config.severityMapping) {
-                  const winstonLevel = instrumentation._winstonLevelFromSeverity(
-                    config.logSeverity,
-                    args[0].levels
-                  );
-                  if (winstonLevel) {
-                    transportOptions.level = winstonLevel;
-                  }
-                }
+                const winstonLevel = !config.severityMapping
+                  ? instrumentation._winstonLevelFromSeverity(
+                      config.logSeverity,
+                      args[0].levels
+                    )
+                  : undefined;
+                transportOptions.level =
+                  winstonLevel ??
+                  instrumentation._getPermissiveLevel(args[0].levels);
               }
               const openTelemetryTransport = new OpenTelemetryTransportV3(
                 transportOptions
@@ -340,6 +340,7 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     function isOtelLevels(arg: any): boolean {
       return (
         arg &&
+        Object.keys(arg).length === 6 &&
         arg.fatal !== undefined &&
         arg.error !== undefined &&
         arg.warn !== undefined &&
@@ -393,5 +394,22 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     }
 
     return;
+  }
+
+  private _getPermissiveLevel(
+    winstonLevels?: Record<string, number>
+  ): string | undefined {
+    if (!winstonLevels) {
+      return 'silly';
+    }
+    let maxPriority = -Infinity;
+    let permissiveLevel: string | undefined;
+    for (const [levelName, levelPriority] of Object.entries(winstonLevels)) {
+      if (typeof levelPriority === 'number' && levelPriority > maxPriority) {
+        maxPriority = levelPriority;
+        permissiveLevel = levelName;
+      }
+    }
+    return permissiveLevel;
   }
 }
