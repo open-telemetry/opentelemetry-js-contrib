@@ -22,6 +22,10 @@ class ContextSetter
     key: string,
     value: string
   ) {
+    if (value === '') {
+      return;
+    }
+
     carrier[key] = {
       DataType: 'String',
       StringValue: value as string,

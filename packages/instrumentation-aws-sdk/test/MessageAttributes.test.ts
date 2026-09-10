@@ -58,6 +58,14 @@ describe('MessageAttributes', () => {
       };
       expect(contextCarrier).toStrictEqual(expectedContext);
     });
+
+    it('should not set empty propagation values', () => {
+      const contextCarrier = {};
+
+      contextSetter.set(contextCarrier, 'tracestate', '');
+
+      expect(contextCarrier).toStrictEqual({});
+    });
   });
 
   describe('injectPropagationContext', () => {
