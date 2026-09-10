@@ -85,10 +85,11 @@ export abstract class BaseInvocation {
     this._recordMetrics(durationSec);
     this._emitContentEvents(endHr);
 
-    this._span.setStatus({ code: SpanStatusCode.OK });
-    this._span.end(endHr);
-
-    this._runCompletionHook(durationSec);
+    try {
+      this._runCompletionHook(durationSec);
+    } finally {
+      this._span.end(endHr);
+    }
   }
 
   /**
@@ -127,9 +128,12 @@ export abstract class BaseInvocation {
       code: SpanStatusCode.ERROR,
       message: errorMessage,
     });
-    this._span.end(endHr);
 
-    this._runCompletionHook(durationSec, errorObj);
+    try {
+      this._runCompletionHook(durationSec, errorObj);
+    } finally {
+      this._span.end(endHr);
+    }
   }
 
   /**
