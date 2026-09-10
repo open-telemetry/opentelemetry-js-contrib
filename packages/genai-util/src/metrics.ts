@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Attributes, Histogram, Meter } from '@opentelemetry/api';
+import {
+  ValueType,
+  type Attributes,
+  type Histogram,
+  type Meter,
+} from '@opentelemetry/api';
 import {
   ATTR_GEN_AI_TOKEN_TYPE,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
@@ -79,6 +84,7 @@ export function createTokenUsageHistogram(meter: Meter): Histogram {
   return meter.createHistogram(METRIC_GEN_AI_CLIENT_TOKEN_USAGE, {
     description: 'Number of input and output tokens used by GenAI clients',
     unit: '{token}',
+    valueType: ValueType.INT,
     advice: {
       explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
     },
