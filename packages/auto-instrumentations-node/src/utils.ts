@@ -199,7 +199,23 @@ export function getNodeAutoInstrumentations(
   >) {
     const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
-    const userConfig: any = inputConfigs[name] ?? {};
+    const userConfig: any = { ...inputConfigs[name] };
+
+    if (name === '@opentelemetry/instrumentation-http') {
+      const envHeaders = getHeadersToSpanAttributesFromEnv();
+      if (envHeaders) {
+        userConfig.headersToSpanAttributes = {
+          server: {
+            ...envHeaders.server,
+            ...userConfig.headersToSpanAttributes?.server,
+          },
+          client: {
+            ...envHeaders.client,
+            ...userConfig.headersToSpanAttributes?.client,
+          },
+        };
+      }
+    }
 
     const shouldDisable = shouldDisableInstrumentation(
       name,
@@ -221,6 +237,47 @@ export function getNodeAutoInstrumentations(
   }
 
   return instrumentations;
+}
+
+function parseHeaderListFromEnv(
+  envVar: string | undefined
+): string[] | undefined {
+  if (!envVar) return undefined;
+  const headers = envVar
+    .split(',')
+    .map(header => header.trim())
+    .filter(header => header.length > 0);
+  return headers.length > 0 ? headers : undefined;
+}
+
+function getHeadersToSpanAttributesFromEnv() {
+  const serverReq = parseHeaderListFromEnv(
+    process.env.OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_REQUEST_HEADERS
+  );
+  const serverRes = parseHeaderListFromEnv(
+    process.env.OTEL_INSTRUMENTATION_HTTP_SERVER_CAPTURE_RESPONSE_HEADERS
+  );
+  const clientReq = parseHeaderListFromEnv(
+    process.env.OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_REQUEST_HEADERS
+  );
+  const clientRes = parseHeaderListFromEnv(
+    process.env.OTEL_INSTRUMENTATION_HTTP_CLIENT_CAPTURE_RESPONSE_HEADERS
+  );
+
+  if (!serverReq && !serverRes && !clientReq && !clientRes) {
+    return undefined;
+  }
+
+  return {
+    server: {
+      ...(serverReq && { requestHeaders: serverReq }),
+      ...(serverRes && { responseHeaders: serverRes }),
+    },
+    client: {
+      ...(clientReq && { requestHeaders: clientReq }),
+      ...(clientRes && { responseHeaders: clientRes }),
+    },
+  };
 }
 
 function checkManuallyProvidedInstrumentationNames(
