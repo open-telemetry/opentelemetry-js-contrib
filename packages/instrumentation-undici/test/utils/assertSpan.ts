@@ -19,6 +19,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
@@ -148,6 +149,11 @@ export const assertSpan = (
     assert.ok(
       span.attributes[ATTR_NETWORK_PEER_PORT],
       `must have ${ATTR_NETWORK_PEER_PORT}`
+    );
+    assert.strictEqual(
+      span.attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+      '1.1',
+      `attributes['${ATTR_NETWORK_PROTOCOL_VERSION}'] is correct`
     );
   }
   assert.ok(

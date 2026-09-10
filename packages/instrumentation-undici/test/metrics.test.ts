@@ -18,6 +18,7 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_SCHEME,
@@ -133,6 +134,10 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], 'localhost');
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
       assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 200);
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
+      );
     });
 
     it('should use error code as error.type in "http.client.request.duration" metric', async () => {
@@ -188,6 +193,10 @@ describe('UndiciInstrumentation metrics tests', function () {
       const metricAttributes = metrics[0].dataPoints[0].attributes;
       assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 500);
       assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], '500');
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
+      );
     });
 
     it('should not set error.type for a successful response', async () => {
@@ -202,6 +211,10 @@ describe('UndiciInstrumentation metrics tests', function () {
       const metricAttributes = metrics[0].dataPoints[0].attributes;
       assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 204);
       assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], undefined);
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
+      );
     });
   });
 });

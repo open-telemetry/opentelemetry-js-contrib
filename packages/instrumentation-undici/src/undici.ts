@@ -34,6 +34,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_FULL,
@@ -357,10 +358,13 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const config = this.getConfig();
     const { span } = record;
-    const { remoteAddress, remotePort } = socket;
+    const { remoteAddress, remotePort, alpnProtocol } = socket;
     const spanAttributes: Attributes = {
       [ATTR_NETWORK_PEER_ADDRESS]: remoteAddress,
       [ATTR_NETWORK_PEER_PORT]: remotePort,
+      // undici only ever offers `http/1.1` and, with `allowH2`, `h2` as ALPN
+      // protocols; a connection that negotiated neither is HTTP/1.1.
+      [ATTR_NETWORK_PROTOCOL_VERSION]: alpnProtocol === 'h2' ? '2' : '1.1',
     };
 
     // After hooks have been processed (which may modify request headers)
@@ -380,6 +384,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     span.setAttributes(spanAttributes);
+    record.attributes = Object.assign(record.attributes, spanAttributes);
   }
 
   // This is the 3rd message we get for each request and it's fired when the server
@@ -516,6 +521,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       ATTR_SERVER_PORT,
       ATTR_URL_SCHEME,
       ATTR_ERROR_TYPE,
+      ATTR_NETWORK_PROTOCOL_VERSION,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {
