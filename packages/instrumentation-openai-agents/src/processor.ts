@@ -160,7 +160,7 @@ export class OpenAIAgentsTracingProcessor
               this._stringValue(span.spanData.input)
             );
           }
-          if (span.spanData.output !== undefined) {
+          if (!span.error && span.spanData.output !== undefined) {
             record.span.setAttribute(
               ATTR_GEN_AI_TOOL_CALL_RESULT,
               this._stringValue(span.spanData.output)

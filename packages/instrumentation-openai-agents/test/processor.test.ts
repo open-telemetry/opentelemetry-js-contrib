@@ -217,6 +217,38 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
   });
 
+  it('does not capture fallback tool output when execution fails', async () => {
+    processor.setConfig({ captureMessageContent: true });
+    const tool = createSpan('agents-trace', 'tool', 'function', undefined, {
+      name: 'lookup_order',
+      input: { id: '123' },
+      output: { status: 'unavailable' },
+    });
+    tool.error = {
+      message: 'tool failed',
+      data: { type: 'ToolError' },
+    };
+
+    await processor.onSpanStart(tool);
+    await processor.onSpanEnd(tool);
+
+    const [toolSpan] = exporter.getFinishedSpans();
+    assert.ok(toolSpan);
+    assert.strictEqual(
+      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+      '{"id":"123"}'
+    );
+    assert.strictEqual(
+      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+      undefined
+    );
+    assert.deepStrictEqual(toolSpan.status, {
+      code: SpanStatusCode.ERROR,
+      message: 'tool failed',
+    });
+    assert.strictEqual(toolSpan.attributes['error.type'], 'ToolError');
+  });
+
   it('records Agents SDK span errors', async () => {
     const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
       name: 'triage',
