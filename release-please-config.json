@@ -72,6 +72,7 @@
     "packages/instrumentation-router": {},
     "packages/instrumentation-winston": {},
     "packages/instrumentation-document-load": {},
+    "packages/instrumentation-long-animation-frame": {},
     "packages/instrumentation-long-task": {},
     "packages/instrumentation-user-interaction": {},
     "packages/instrumentation-web-exception": {},
