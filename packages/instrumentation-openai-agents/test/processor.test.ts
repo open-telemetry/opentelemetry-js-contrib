@@ -309,7 +309,7 @@ describe('OpenAIAgentsTracingProcessor', () => {
       name: 'support',
     };
     const task = createSpan('agents-trace', 'task', 'task');
-    const child = createSpan('agents-trace', 'child', 'handoff', 'task');
+    const child = createSpan('agents-trace', 'child', 'turn', 'task');
     child.error = {
       message: 'Error in agent run',
       data: { error: 'ChildError: child failed' },
@@ -366,6 +366,93 @@ describe('OpenAIAgentsTracingProcessor', () => {
     });
     assert.strictEqual(agentSpan.attributes['error.type'], 'AgentError');
     assert.strictEqual(agentSpan.events.length, 2);
+  });
+
+  it('does not propagate a recovered model attempt error', async () => {
+    const sdkTrace: OpenAIAgentsTrace = {
+      traceId: 'agents-trace',
+      name: 'support',
+    };
+    const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
+      name: 'triage',
+    });
+    const failedAttempt = createSpan(
+      'agents-trace',
+      'generation',
+      'generation',
+      'agent'
+    );
+    failedAttempt.error = {
+      message: 'Model request failed',
+      data: { error: 'APIConnectionError: temporary failure' },
+    };
+
+    await processor.onTraceStart(sdkTrace);
+    await processor.onSpanStart(agent);
+    await processor.onSpanStart(failedAttempt);
+    await processor.onSpanEnd(failedAttempt);
+    await processor.onSpanEnd(agent);
+    await processor.onTraceEnd(sdkTrace);
+
+    const agentSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'invoke_agent triage');
+    assert.ok(agentSpan);
+    assert.deepStrictEqual(agentSpan.status, { code: SpanStatusCode.UNSET });
+    assert.strictEqual(agentSpan.attributes['error.type'], undefined);
+    assert.strictEqual(agentSpan.events.length, 0);
+  });
+
+  it('ends the run span when a failed task skips trace end', async () => {
+    const sdkTrace: OpenAIAgentsTrace = {
+      traceId: 'agents-trace',
+      name: 'support',
+    };
+    const task = createSpan('agents-trace', 'task', 'task');
+    task.error = {
+      message: 'Error in agent run',
+      data: { error: 'RunError: run failed' },
+    };
+
+    await processor.onTraceStart(sdkTrace);
+    await processor.onSpanStart(task);
+    await processor.onSpanEnd(task);
+
+    const [runSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(runSpan.name, 'openai.agents.run');
+    assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
+    assert.strictEqual(
+      (
+        processor as unknown as {
+          _traceRecordsById: Map<string, unknown>;
+        }
+      )._traceRecordsById.size,
+      0
+    );
+
+    await processor.onTraceEnd(sdkTrace);
+    assert.strictEqual(exporter.getFinishedSpans().length, 1);
+  });
+
+  it('ends an active run when its failed task started after disabling', async () => {
+    const sdkTrace: OpenAIAgentsTrace = {
+      traceId: 'agents-trace',
+      name: 'support',
+    };
+    const task = createSpan('agents-trace', 'task', 'task');
+    task.error = {
+      message: 'Error in agent run',
+      data: { error: 'RunError: run failed' },
+    };
+
+    await processor.onTraceStart(sdkTrace);
+    processor.setEnabled(false);
+    await processor.onSpanStart(task);
+    await processor.onSpanEnd(task);
+
+    const [runSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(runSpan.name, 'openai.agents.run');
+    assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
   });
 
   it('does not use arbitrary error detail as error.type', async () => {
