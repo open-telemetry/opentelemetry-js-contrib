@@ -105,13 +105,29 @@ Populates `container` and `k8s.cluster_name` for containers running on [Amazon E
 Populates `faas` and `cloud` for functions running on [AWS Lambda](https://aws.amazon.com/lambda/).
 `faas.id` is currently not populated as it is not provided by the runtime at startup.
 
-| Resource Attribute | Description                                                         |
-|--------------------|---------------------------------------------------------------------|
-| cloud.platform     | The cloud platform. In this context, it's always "aws_lambda"       |
-| cloud.provider     | The cloud provider. In this context, it's always "aws"              |
-| cloud.region       | Value of Process Environment Variable `AWS_REGION`                  |
-| faas.name          | Value of Process Environment Variable `AWS_LAMBDA_FUNCTION_NAME`    |
-| faas.version       | Value of Process Environment Variable `AWS_LAMBDA_FUNCTION_VERSION` |
+| Resource Attribute      | Description                                                                |
+|-------------------------|----------------------------------------------------------------------------|
+| cloud.availability_zone | Value of `AvailabilityZoneID` when `fetchAvailabilityZone` is enabled      |
+| cloud.platform          | The cloud platform. In this context, it's always "aws_lambda"              |
+| cloud.provider          | The cloud provider. In this context, it's always "aws"                     |
+| cloud.region            | Value of Process Environment Variable `AWS_REGION`                         |
+| faas.name               | Value of Process Environment Variable `AWS_LAMBDA_FUNCTION_NAME`           |
+| faas.version            | Value of Process Environment Variable `AWS_LAMBDA_FUNCTION_VERSION`        |
+
+#### Availability zone (opt-in)
+
+By default the Lambda detector only reads attributes from environment variables. Populating `cloud.availability_zone` additionally requires an HTTP request to the [Lambda metadata endpoint](https://docs.aws.amazon.com/lambda/latest/dg/configuration-metadata-endpoint.html) on the initialization (cold-start) path, so it is opt-in and disabled by default. Enable it by constructing the detector with `fetchAvailabilityZone: true`:
+
+```typescript
+import { detectResources } from '@opentelemetry/resources';
+import { AwsLambdaDetector } from '@opentelemetry/resource-detector-aws';
+
+const resource = detectResources({
+  detectors: [new AwsLambdaDetector({ fetchAvailabilityZone: true })],
+});
+```
+
+When enabled, `cloud.availability_zone` is populated with the Lambda metadata endpoint's AZ ID (for example `use1-az1`). The metadata endpoint only exposes the AZ ID, not the AZ name (for example `us-east-1a`). The other AWS detectors in this package (EC2 and ECS) populate `cloud.availability_zone` with the AZ name, so the Lambda value is not directly comparable across detectors.
 
 ## Useful links
 
