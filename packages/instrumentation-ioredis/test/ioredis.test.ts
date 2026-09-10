@@ -73,6 +73,79 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
   });
 };
 
+describe('command completion', () => {
+  it('completes the span once when command callbacks run repeatedly', () => {
+    const recordException = sinon.spy();
+    const setStatus = sinon.spy();
+    const end = sinon.spy();
+    const responseHook = sinon.spy();
+    const commandSpan = {
+      recordException,
+      setStatus,
+      end,
+    } as unknown as Span;
+    const testInstrumentation = new IORedisInstrumentation({
+      enabled: false,
+      requireParentSpan: false,
+      responseHook,
+    });
+    testInstrumentation.setTracerProvider({
+      getTracer: () => ({ startSpan: () => commandSpan }),
+    } as unknown as TracerProvider);
+
+    const originalResolve = sinon.spy();
+    const originalReject = sinon.spy();
+    const command = {
+      name: 'get',
+      args: ['test-key'],
+      resolve: originalResolve,
+      reject: originalReject,
+    } as unknown as ioredisTypes.Command;
+    const result = Promise.resolve();
+    const originalSendCommand = sinon.stub().returns(result);
+    const tracedSendCommand = (
+      testInstrumentation as unknown as {
+        _traceSendCommand(
+          original: (...args: unknown[]) => unknown
+        ): (
+          this: { options: { host: string; port: number } },
+          cmd: ioredisTypes.Command
+        ) => unknown;
+      }
+    )._traceSendCommand(originalSendCommand);
+
+    assert.strictEqual(
+      tracedSendCommand.call(
+        { options: { host: 'localhost', port: 6379 } },
+        command
+      ),
+      result
+    );
+
+    const timeoutError = new Error('Command timed out');
+    const connectionError = new Error('Connection is closed');
+    const lateResult = 'late result';
+    command.reject(timeoutError);
+    command.resolve(lateResult);
+    command.reject(connectionError);
+
+    assert.strictEqual(responseHook.callCount, 0);
+    assert.strictEqual(recordException.callCount, 1);
+    assert.strictEqual(recordException.firstCall.firstArg, timeoutError);
+    assert.strictEqual(setStatus.callCount, 1);
+    assert.deepStrictEqual(setStatus.firstCall.firstArg, {
+      code: SpanStatusCode.ERROR,
+      message: timeoutError.message,
+    });
+    assert.strictEqual(end.callCount, 1);
+    assert.strictEqual(originalResolve.callCount, 1);
+    assert.deepStrictEqual(originalResolve.firstCall.args, [lateResult]);
+    assert.strictEqual(originalReject.callCount, 2);
+    assert.deepStrictEqual(originalReject.firstCall.args, [timeoutError]);
+    assert.deepStrictEqual(originalReject.secondCall.args, [connectionError]);
+  });
+});
+
 describe('ioredis', () => {
   const provider = new TracerProvider({
     spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
