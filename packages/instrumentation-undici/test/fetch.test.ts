@@ -18,6 +18,8 @@ import {
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
 
+import { W3CTraceContextPropagator } from '@opentelemetry/core';
+
 import { UndiciInstrumentation } from '../src/undici';
 
 import { MockPropagation } from './utils/mock-propagation';
@@ -66,6 +68,22 @@ describe('UndiciInstrumentation `fetch` tests', function () {
       if (req.url === '/error') {
         // Simulate an error
         res.destroy();
+        return;
+      }
+      if (req.url?.startsWith('/echo-headers')) {
+        res.statusCode = 200;
+        res.setHeader('content-type', 'application/json');
+        res.write(
+          JSON.stringify({
+            [MockPropagation.TRACE_CONTEXT_KEY]:
+              req.headers[MockPropagation.TRACE_CONTEXT_KEY],
+            [MockPropagation.SPAN_CONTEXT_KEY]:
+              req.headers[MockPropagation.SPAN_CONTEXT_KEY],
+            traceparent: req.headers.traceparent,
+            tracestate: req.headers.tracestate,
+          })
+        );
+        res.end();
         return;
       }
       // There are some situations where there is no way to access headers
@@ -496,6 +514,64 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         'genuine errors should record an exception event'
       );
       assert.ok(fetchError, 'fetch should have thrown');
+    });
+
+    it('should overwrite a pre-set propagation header instead of appending a second value', async function () {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/echo-headers`;
+      const response = await fetch(fetchUrl, {
+        headers: {
+          [MockPropagation.TRACE_CONTEXT_KEY]: 'preset-trace-id',
+          [MockPropagation.SPAN_CONTEXT_KEY]: 'preset-span-id',
+        },
+      });
+      const echoed = (await response.json()) as Record<string, string>;
+      const spans = memoryExporter.getFinishedSpans();
+      const span = spans[0];
+
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(
+        echoed[MockPropagation.TRACE_CONTEXT_KEY],
+        span.spanContext().traceId
+      );
+      assert.strictEqual(
+        echoed[MockPropagation.SPAN_CONTEXT_KEY],
+        span.spanContext().spanId
+      );
+      assert.ok(
+        !String(echoed[MockPropagation.TRACE_CONTEXT_KEY]).includes(','),
+        'trace header must not be a folded duplicate'
+      );
+    });
+
+    it('should overwrite a caller-supplied W3C traceparent instead of appending', async function () {
+      // The API accepts only one global propagator registration at a time.
+      propagation.disable();
+      propagation.setGlobalPropagator(new W3CTraceContextPropagator());
+      try {
+        const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/echo-headers`;
+        const preset =
+          '00-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbb-01';
+        const response = await fetch(fetchUrl, {
+          headers: { Traceparent: preset },
+        });
+        const echoed = (await response.json()) as Record<string, string>;
+        const spans = memoryExporter.getFinishedSpans();
+        const span = spans[0];
+
+        assert.ok(span, 'a span is present');
+        assert.strictEqual(typeof echoed.traceparent, 'string');
+        assert.ok(
+          !String(echoed.traceparent).includes(','),
+          'traceparent must not be a folded duplicate'
+        );
+        assert.notStrictEqual(echoed.traceparent, preset);
+        assert.ok(
+          String(echoed.traceparent).includes(span.spanContext().traceId)
+        );
+      } finally {
+        propagation.disable();
+        propagation.setGlobalPropagator(new MockPropagation());
+      }
     });
   });
 });
