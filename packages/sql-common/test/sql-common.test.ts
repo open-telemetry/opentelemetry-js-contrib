@@ -48,6 +48,38 @@ describe('addSqlCommenterComment', () => {
     );
   });
 
+  it('does not add a comment when a stray closing delimiter precedes a block comment', () => {
+    const span = trace.wrapSpanContext({
+      traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+      spanId: '6e0c63257de34c92',
+      traceFlags: TraceFlags.SAMPLED,
+    });
+
+    // The `*/` inside the string literal comes before the real comment, so
+    // searching for it from the start of the query finds the wrong one.
+    const query = "SELECT '*/' as a /* Test comment */";
+    assert.strictEqual(addSqlCommenterComment(span, query), query);
+  });
+
+  it('adds a comment when a block comment is never closed', () => {
+    const span = trace.wrapSpanContext({
+      traceId: 'd4cda95b652f4a1592b449d5929fda1b',
+      spanId: '6e0c63257de34c92',
+      traceFlags: TraceFlags.SAMPLED,
+    });
+
+    // An unterminated `/*` is not a complete comment, and that holds whether or
+    // not a stray `*/` appears earlier in the query.
+    assert.strictEqual(
+      addSqlCommenterComment(span, "SELECT '*/' as a /* unterminated"),
+      "SELECT '*/' as a /* unterminated /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
+    );
+    assert.strictEqual(
+      addSqlCommenterComment(span, 'SELECT 1 /* unterminated'),
+      "SELECT 1 /* unterminated /*traceparent='00-d4cda95b652f4a1592b449d5929fda1b-6e0c63257de34c92-01'*/"
+    );
+  });
+
   it('does not add a comment to an empty query', () => {
     const spanContext: SpanContext = {
       traceId: 'd4cda95b652f4a1592b449d5929fda1b',
