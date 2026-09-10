@@ -147,6 +147,7 @@ describe('TelemetryHandler', () => {
       { 'gen_ai.system': 'openai' }
     );
     handler.recordTimeToFirstChunk(0.45, { 'gen_ai.system': 'openai' });
+    handler.recordTimePerOutputChunk(0.12, { 'gen_ai.system': 'openai' });
 
     // Boundary/invalid duration values should be ignored without error
     handler.recordOperationDuration(-1);
@@ -155,6 +156,9 @@ describe('TelemetryHandler', () => {
     handler.recordTimeToFirstChunk(-1);
     handler.recordTimeToFirstChunk(NaN);
     handler.recordTimeToFirstChunk(Infinity);
+    handler.recordTimePerOutputChunk(-1);
+    handler.recordTimePerOutputChunk(NaN);
+    handler.recordTimePerOutputChunk(Infinity);
 
     // Boundary/partial token usage values
     handler.recordTokenUsage({ inputTokens: 10 }); // only input tokens
@@ -171,6 +175,7 @@ describe('TelemetryHandler', () => {
       handler.recordOperationDuration(1.0);
       handler.recordTokenUsage({ inputTokens: 5, outputTokens: 10 });
       handler.recordTimeToFirstChunk(0.2);
+      handler.recordTimePerOutputChunk(0.05);
     });
   });
 

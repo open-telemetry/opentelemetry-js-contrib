@@ -22,6 +22,7 @@ import {
 } from './environment-variables';
 import {
   createDurationHistogram,
+  createTimePerOutputChunkHistogram,
   createTimeToFirstChunkHistogram,
   createTokenUsageHistogram,
 } from './metrics';
@@ -73,6 +74,7 @@ export class TelemetryHandler {
   private _operationDurationHistogram?: Histogram;
   private _tokenUsageHistogram?: Histogram;
   private _timeToFirstChunkHistogram?: Histogram;
+  private _timePerOutputChunkHistogram?: Histogram;
 
   constructor(options: TelemetryHandlerOptions = {}) {
     const tracerProvider = options.tracerProvider ?? trace.getTracerProvider();
@@ -107,6 +109,8 @@ export class TelemetryHandler {
     this._operationDurationHistogram = createDurationHistogram(meter);
     this._tokenUsageHistogram = createTokenUsageHistogram(meter);
     this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(meter);
+    this._timePerOutputChunkHistogram =
+      createTimePerOutputChunkHistogram(meter);
   }
 
   /**
@@ -245,5 +249,22 @@ export class TelemetryHandler {
       return;
     }
     this._timeToFirstChunkHistogram.record(durationSeconds, attributes);
+  }
+
+  /**
+   * Record time per output chunk metric for streaming responses.
+   */
+  public recordTimePerOutputChunk(
+    durationSeconds: number,
+    attributes?: Attributes
+  ): void {
+    if (
+      !this._timePerOutputChunkHistogram ||
+      durationSeconds < 0 ||
+      !isFinite(durationSeconds)
+    ) {
+      return;
+    }
+    this._timePerOutputChunkHistogram.record(durationSeconds, attributes);
   }
 }
