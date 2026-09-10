@@ -10,7 +10,7 @@ import {
   Span,
   ROOT_CONTEXT,
 } from '@opentelemetry/api';
-import { otperformance, TRACE_PARENT_HEADER } from '@opentelemetry/core';
+import { TRACE_PARENT_HEADER } from '@opentelemetry/core';
 import {
   addSpanNetworkEvent,
   addSpanNetworkEvents,
@@ -69,9 +69,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    * @param rootSpan
    */
   private _addResourcesSpans(rootSpan: Span): void {
-    const resources: PerformanceResourceTiming[] = (
-      otperformance as unknown as Performance
-    ).getEntriesByType?.('resource') as PerformanceResourceTiming[];
+    const resources: PerformanceResourceTiming[] =
+      performance.getEntriesByType?.('resource') as PerformanceResourceTiming[];
     if (resources) {
       resources.forEach(resource => {
         this._initResourceSpan(resource, rootSpan);
