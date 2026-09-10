@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.6...auto-configuration-propagators-v0.5.0) (2026-09-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auto-configuration-propagators:** remove jaeger propagator support ([#3741](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3741))
+
+### Features
+
+* **auto-configuration-propagators:** remove jaeger propagator support ([#3741](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3741)) ([a4f5d9b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a4f5d9bb87ba8aa15965f637ce4b5ab6cd612699))
+
 ## [0.4.6](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-configuration-propagators-v0.4.5...auto-configuration-propagators-v0.4.6) (2025-12-17)
 
 
