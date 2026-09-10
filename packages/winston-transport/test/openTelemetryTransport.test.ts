@@ -12,7 +12,11 @@ import {
 } from '@opentelemetry/sdk-logs';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
-import { OpenTelemetryTransportV3 } from '../src';
+import {
+  OpenTelemetryTransportV3,
+  otelLogLevels,
+  otelSeverityMapping,
+} from '../src';
 
 const memoryLogExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
@@ -454,6 +458,146 @@ describe('OpenTelemetryTransportV3', () => {
       assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.INFO2);
       assert.strictEqual(logRecords[6].severityNumber, SeverityNumber.INFO);
       assert.strictEqual(logRecords[7].severityNumber, SeverityNumber.DEBUG);
+    });
+
+    it('otel levels', () => {
+      const callback = () => {};
+      const transport = new OpenTelemetryTransportV3();
+      const sym = Symbol.for('level');
+      for (const level of [
+        'fatal',
+        'error',
+        'warn',
+        'info',
+        'debug',
+        'trace',
+      ]) {
+        transport.log({ message: kMessage, level, [sym]: level }, callback);
+      }
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 6);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL);
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.ERROR);
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.INFO);
+      assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.DEBUG);
+      assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.TRACE);
+    });
+
+    it('custom severityMapping', () => {
+      const callback = () => {};
+      const transport = new OpenTelemetryTransportV3({
+        severityMapping: {
+          critical: SeverityNumber.FATAL2,
+          caution: SeverityNumber.WARN2,
+          trace: SeverityNumber.TRACE,
+        },
+      });
+      const sym = Symbol.for('level');
+      for (const level of ['critical', 'caution', 'trace', 'info']) {
+        transport.log({ message: kMessage, level, [sym]: level }, callback);
+      }
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 4);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL2);
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN2);
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.TRACE);
+      assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.INFO);
+    });
+
+    it('exports otelLogLevels and otelSeverityMapping constants', () => {
+      assert.deepStrictEqual(otelLogLevels, {
+        fatal: 0,
+        error: 1,
+        warn: 2,
+        info: 3,
+        debug: 4,
+        trace: 5,
+      });
+      assert.deepStrictEqual(otelSeverityMapping, {
+        fatal: SeverityNumber.FATAL,
+        error: SeverityNumber.ERROR,
+        warn: SeverityNumber.WARN,
+        info: SeverityNumber.INFO,
+        debug: SeverityNumber.DEBUG,
+        trace: SeverityNumber.TRACE,
+      });
+    });
+
+    it('filters records by logSeverity', () => {
+      const callback = () => {};
+      const transport = new OpenTelemetryTransportV3({
+        logSeverity: SeverityNumber.WARN,
+      });
+      const sym = Symbol.for('level');
+      for (const level of [
+        'fatal',
+        'error',
+        'warn',
+        'info',
+        'debug',
+        'trace',
+      ]) {
+        transport.log({ message: level, level, [sym]: level }, callback);
+      }
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 3);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL);
+      assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.ERROR);
+      assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.WARN);
+    });
+
+    it('filters records by intermediate logSeverity', () => {
+      const callback = () => {};
+      const transport = new OpenTelemetryTransportV3({
+        logSeverity: SeverityNumber.ERROR2,
+      });
+      const sym = Symbol.for('level');
+      transport.log(
+        { message: 'fatal', level: 'fatal', [sym]: 'fatal' },
+        callback
+      );
+      transport.log(
+        { message: 'error', level: 'error', [sym]: 'error' },
+        callback
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 1);
+      assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL);
+      assert.strictEqual(logRecords[0].body, 'fatal');
+    });
+
+    it('filters records with custom severityMapping regardless of order', () => {
+      const callback = () => {};
+      const transport = new OpenTelemetryTransportV3({
+        logSeverity: SeverityNumber.WARN,
+        severityMapping: {
+          catastrophic: SeverityNumber.FATAL,
+          minor: SeverityNumber.DEBUG,
+          moderate: SeverityNumber.WARN,
+        },
+      });
+      const sym = Symbol.for('level');
+      transport.log(
+        { message: 'catastrophic', level: 'catastrophic', [sym]: 'catastrophic' },
+        callback
+      );
+      transport.log(
+        { message: 'minor', level: 'minor', [sym]: 'minor' },
+        callback
+      );
+      transport.log(
+        { message: 'moderate', level: 'moderate', [sym]: 'moderate' },
+        callback
+      );
+      transport.log(
+        { message: 'info', level: 'info', [sym]: 'info' },
+        callback
+      );
+      const logRecords = memoryLogExporter.getFinishedLogRecords();
+      assert.strictEqual(logRecords.length, 2);
+      assert.strictEqual(logRecords[0].body, 'catastrophic');
+      assert.strictEqual(logRecords[1].body, 'moderate');
     });
   });
 

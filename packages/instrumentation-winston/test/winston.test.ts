@@ -21,7 +21,11 @@ import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { Writable } from 'stream';
 import type { Winston2Logger, Winston3Logger } from '../src/internal-types';
-import { WinstonInstrumentation } from '../src';
+import {
+  WinstonInstrumentation,
+  otelLogLevels,
+  otelSeverityMapping,
+} from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new TracerProvider({
@@ -44,17 +48,24 @@ describe('WinstonInstrumentation', () => {
   let instrumentation: WinstonInstrumentation;
   let isWinston2 = false;
 
-  enum LevelsType {
-    npm,
-    syslog,
-    cli,
-  }
+  const LevelsType = {
+    npm: 0,
+    syslog: 1,
+    cli: 2,
+    otel: 3,
+  } as const;
+  type LevelsType = (typeof LevelsType)[keyof typeof LevelsType];
 
   /**
    * Set `logger` to a new Winston logger instance with the given
    * configuration, and setup with `writeSpy` to spy on emitted logs.
    */
-  function initLogger(levelsType?: LevelsType, formatType?: string) {
+  function initLogger(
+    levelsType?: LevelsType,
+    formatType?: string,
+    customLevels?: Record<string, number>,
+    loggerLevel?: string
+  ) {
     const winston = require('winston');
 
     let levels = winston.config.npm.levels;
@@ -62,6 +73,10 @@ describe('WinstonInstrumentation', () => {
       levels = winston.config.syslog.levels;
     } else if (levelsType === LevelsType.cli) {
       levels = winston.config.cli.levels;
+    } else if (levelsType === LevelsType.otel) {
+      levels = otelLogLevels;
+    } else if (customLevels) {
+      levels = customLevels;
     }
 
     let format;
@@ -87,10 +102,19 @@ describe('WinstonInstrumentation', () => {
     stream._write = () => {};
     writeSpy = sinon.spy(stream, 'write');
 
+    let defaultLevel = 'debug';
+    if (levelsType === LevelsType.otel) {
+      defaultLevel = 'trace';
+    } else if (customLevels) {
+      defaultLevel = Object.keys(customLevels).reduce((a, b) =>
+        customLevels[a] > customLevels[b] ? a : b
+      );
+    }
+
     if (winston['createLogger']) {
       // winston 3.x
       logger = winston.createLogger({
-        level: 'debug',
+        level: loggerLevel ?? defaultLevel,
         levels: levels,
         format,
         transports: [
@@ -515,6 +539,76 @@ describe('WinstonInstrumentation', () => {
         assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL3);
       }
     });
+
+    it('otel levels', () => {
+      if (!isWinston2) {
+        initLogger(LevelsType.otel);
+        logger.log('trace', 'trace msg');
+        logger.log('debug', 'debug msg');
+        logger.log('info', 'info msg');
+        logger.log('warn', 'warn msg');
+        logger.log('error', 'error msg');
+        logger.log('fatal', 'fatal msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 6);
+        assert.strictEqual(logRecords[0].severityText, 'trace');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.TRACE);
+        assert.strictEqual(logRecords[1].severityText, 'debug');
+        assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.DEBUG);
+        assert.strictEqual(logRecords[2].severityText, 'info');
+        assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO);
+        assert.strictEqual(logRecords[3].severityText, 'warn');
+        assert.strictEqual(logRecords[3].severityNumber, SeverityNumber.WARN);
+        assert.strictEqual(logRecords[4].severityText, 'error');
+        assert.strictEqual(logRecords[4].severityNumber, SeverityNumber.ERROR);
+        assert.strictEqual(logRecords[5].severityText, 'fatal');
+        assert.strictEqual(logRecords[5].severityNumber, SeverityNumber.FATAL);
+      }
+    });
+
+    it('custom severityMapping', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          severityMapping: {
+            critical: SeverityNumber.FATAL2,
+            caution: SeverityNumber.WARN2,
+          },
+        });
+        const customLevels = { critical: 0, caution: 1, info: 2 };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('critical', 'crit msg');
+        logger.log('caution', 'warn msg');
+        logger.log('info', 'info msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 3);
+        assert.strictEqual(logRecords[0].severityText, 'critical');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.FATAL2);
+        assert.strictEqual(logRecords[1].severityText, 'caution');
+        assert.strictEqual(logRecords[1].severityNumber, SeverityNumber.WARN2);
+        assert.strictEqual(logRecords[2].severityText, 'info');
+        assert.strictEqual(logRecords[2].severityNumber, SeverityNumber.INFO);
+      }
+    });
+
+    it('exports otelLogLevels and otelSeverityMapping constants', () => {
+      assert.deepStrictEqual(otelLogLevels, {
+        fatal: 0,
+        error: 1,
+        warn: 2,
+        info: 3,
+        debug: 4,
+        trace: 5,
+      });
+      assert.deepStrictEqual(otelSeverityMapping, {
+        fatal: SeverityNumber.FATAL,
+        error: SeverityNumber.ERROR,
+        warn: SeverityNumber.WARN,
+        info: SeverityNumber.INFO,
+        debug: SeverityNumber.DEBUG,
+        trace: SeverityNumber.TRACE,
+      });
+    });
   });
   describe('logSeverity config', () => {
     beforeEach(() => {
@@ -598,6 +692,173 @@ describe('WinstonInstrumentation', () => {
         assert.strictEqual(logRecords[2].body, 'crit');
         assert.strictEqual(logRecords[3].body, 'alert');
         assert.strictEqual(logRecords[4].body, 'emerg');
+      }
+    });
+
+    it('otel levels', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.WARN,
+        });
+        initLogger(LevelsType.otel);
+        logger.log('trace', 'trace');
+        logger.log('debug', 'debug');
+        logger.log('info', 'info');
+        logger.log('warn', 'warn');
+        logger.log('error', 'error');
+        logger.log('fatal', 'fatal');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 3);
+        assert.strictEqual(logRecords[0].body, 'warn');
+        assert.strictEqual(logRecords[1].body, 'error');
+        assert.strictEqual(logRecords[2].body, 'fatal');
+      }
+    });
+
+    it('custom severityMapping', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.ERROR,
+          severityMapping: {
+            emergency: SeverityNumber.FATAL,
+            alert: SeverityNumber.ERROR,
+            notice: SeverityNumber.INFO,
+          },
+        });
+        const customLevels = { emergency: 0, alert: 1, notice: 2 };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('notice', 'notice');
+        logger.log('alert', 'alert');
+        logger.log('emergency', 'emergency');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'alert');
+        assert.strictEqual(logRecords[1].body, 'emergency');
+      }
+    });
+
+    it('custom severityMapping with fallback to default levels', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.INFO,
+          severityMapping: {
+            critical: SeverityNumber.FATAL,
+            caution: SeverityNumber.WARN,
+          },
+        });
+        const customLevels = {
+          critical: 0,
+          error: 1,
+          caution: 2,
+          warn: 3,
+          info: 4,
+          debug: 5,
+        };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('critical', 'crit msg');
+        logger.log('error', 'err msg');
+        logger.log('caution', 'caution msg');
+        logger.log('warn', 'warn msg');
+        logger.log('info', 'info msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 5);
+        assert.strictEqual(logRecords[0].body, 'crit msg');
+        assert.strictEqual(logRecords[1].body, 'err msg');
+        assert.strictEqual(logRecords[2].body, 'caution msg');
+        assert.strictEqual(logRecords[3].body, 'warn msg');
+        assert.strictEqual(logRecords[4].body, 'info msg');
+      }
+    });
+
+    it('otel levels with intermediate severity (e.g. ERROR2)', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.ERROR2,
+        });
+        initLogger(LevelsType.otel);
+        logger.log('trace', 'trace');
+        logger.log('debug', 'debug');
+        logger.log('info', 'info');
+        logger.log('warn', 'warn');
+        logger.log('error', 'error');
+        logger.log('fatal', 'fatal');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'fatal');
+      }
+    });
+
+    it('custom severityMapping with non-monotonic priority order', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.WARN,
+          severityMapping: {
+            // Non-monotonic: priority 0 is less severe (DEBUG), priority 2 is more severe (FATAL)
+            lowLevel: SeverityNumber.DEBUG,
+            midLevel: SeverityNumber.WARN,
+            highLevel: SeverityNumber.FATAL,
+          },
+        });
+        const customLevels = { lowLevel: 0, midLevel: 1, highLevel: 2 };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('lowLevel', 'low msg');
+        logger.log('midLevel', 'mid msg');
+        logger.log('highLevel', 'high msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'mid msg');
+        assert.strictEqual(logRecords[1].body, 'high msg');
+      }
+    });
+
+    it('permissive transport level when severityMapping is set with logSeverity', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.DEBUG,
+          severityMapping: {},
+        });
+        initLogger(LevelsType.npm, undefined, undefined, 'info');
+        logger.log('info', 'info msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'info msg');
+        assert.strictEqual(logRecords[1].body, 'debug msg');
+      }
+    });
+
+    it('custom levels extending npm with fatal/trace does not trigger otel levels shortcut', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.DEBUG2,
+        });
+        const customLevels = {
+          fatal: 0,
+          error: 1,
+          warn: 2,
+          info: 3,
+          http: 4,
+          verbose: 5,
+          debug: 6,
+          silly: 7,
+          trace: 8,
+        };
+        initLogger(undefined, undefined, customLevels, 'trace');
+        logger.log('http', 'http msg');
+        logger.log('verbose', 'verbose msg');
+        logger.log('debug', 'debug msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'http msg');
+        assert.strictEqual(logRecords[1].body, 'verbose msg');
       }
     });
   });

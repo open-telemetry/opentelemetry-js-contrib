@@ -189,13 +189,21 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
               let newTransports = Array.isArray(originalTransports)
                 ? originalTransports
                 : [];
-              let transportOptions = {};
-              if (config.logSeverity) {
-                const winstonLevel = instrumentation._winstonLevelFromSeverity(
-                  config.logSeverity,
-                  args[0].levels
-                );
-                transportOptions = { level: winstonLevel };
+              const transportOptions: Record<string, any> = {};
+              if (config.severityMapping) {
+                transportOptions.severityMapping = config.severityMapping;
+              }
+              if (config.logSeverity != null) {
+                transportOptions.logSeverity = config.logSeverity;
+                const winstonLevel = !config.severityMapping
+                  ? instrumentation._winstonLevelFromSeverity(
+                      config.logSeverity,
+                      args[0].levels
+                    )
+                  : undefined;
+                transportOptions.level =
+                  winstonLevel ??
+                  instrumentation._getPermissiveLevel(args[0].levels);
               }
               const openTelemetryTransport = new OpenTelemetryTransportV3(
                 transportOptions
@@ -242,7 +250,31 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     winstonLevels: { [key: string]: number } | undefined
   ): string | undefined {
     if (winstonLevels) {
-      if (isNpmLevels(winstonLevels)) {
+      if (isOtelLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.FATAL) {
+          return 'fatal';
+        } else if (severity > SeverityNumber.ERROR) {
+          return 'fatal';
+        } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity > SeverityNumber.WARN) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity > SeverityNumber.INFO) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity > SeverityNumber.DEBUG) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity > SeverityNumber.TRACE) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'trace';
+        }
+      } else if (isNpmLevels(winstonLevels)) {
         if (severity >= SeverityNumber.ERROR) {
           return 'error';
         } else if (severity >= SeverityNumber.WARN) {
@@ -305,6 +337,19 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
       );
     }
 
+    function isOtelLevels(arg: any): boolean {
+      return (
+        arg &&
+        Object.keys(arg).length === 6 &&
+        arg.fatal !== undefined &&
+        arg.error !== undefined &&
+        arg.warn !== undefined &&
+        arg.info !== undefined &&
+        arg.debug !== undefined &&
+        arg.trace !== undefined
+      );
+    }
+
     function isCliLevels(arg: any): boolean {
       return (
         arg &&
@@ -349,5 +394,22 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     }
 
     return;
+  }
+
+  private _getPermissiveLevel(
+    winstonLevels?: Record<string, number>
+  ): string | undefined {
+    if (!winstonLevels) {
+      return 'silly';
+    }
+    let maxPriority = -Infinity;
+    let permissiveLevel: string | undefined;
+    for (const [levelName, levelPriority] of Object.entries(winstonLevels)) {
+      if (typeof levelPriority === 'number' && levelPriority > maxPriority) {
+        maxPriority = levelPriority;
+        permissiveLevel = levelName;
+      }
+    }
+    return permissiveLevel;
   }
 }

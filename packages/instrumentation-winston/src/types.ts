@@ -24,6 +24,11 @@ export interface WinstonInstrumentationConfig extends InstrumentationConfig {
   logSeverity?: SeverityNumber;
 
   /**
+   * Custom mapping of winston log level names to OpenTelemetry SeverityNumber.
+   */
+  severityMapping?: Record<string, SeverityNumber>;
+
+  /**
    * Whether to disable the injection trace-context fields, and possibly other
    * fields from `logHook()`, into log records for log correlation.
    * @default false
