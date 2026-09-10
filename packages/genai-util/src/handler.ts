@@ -5,12 +5,15 @@
 
 import {
   diag,
+  metrics,
   trace,
   type Attributes,
   type DiagLogger,
   type Histogram,
   type Meter,
+  type MeterProvider,
   type Tracer,
+  type TracerProvider,
 } from '@opentelemetry/api';
 import { CompletionHookManager } from './completion-hook';
 import {
@@ -24,6 +27,7 @@ import {
 } from './metrics';
 import {
   ATTR_GEN_AI_TOKEN_TYPE,
+  GEN_AI_SCHEMA_URL,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
 } from './semconv';
@@ -33,6 +37,7 @@ import type {
   GenAIInstrumentationConfig,
   TokenUsage,
 } from './types';
+import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -40,10 +45,10 @@ import type {
  * @experimental This interface is experimental and subject to change.
  */
 export interface TelemetryHandlerOptions {
-  /** Tracer instance. If not provided, standard global tracer is used. */
-  tracer?: Tracer;
-  /** Meter instance for emitting metrics. */
-  meter?: Meter;
+  /** TracerProvider instance used to create the tracer. If not provided, standard global tracer provider is used. */
+  tracerProvider?: TracerProvider;
+  /** MeterProvider instance used to create the meter. If not provided, standard global meter provider is used. */
+  meterProvider?: MeterProvider;
   /** Diagnostic logger. */
   diag?: DiagLogger;
   /** Instrumentation configuration. */
@@ -61,7 +66,7 @@ export interface TelemetryHandlerOptions {
  */
 export class TelemetryHandler {
   private _tracer: Tracer;
-  private _meter?: Meter;
+  private _meter: Meter;
   private _diag: DiagLogger;
   private _contentCaptureMode: ContentCaptureMode;
   private readonly _hookManager: CompletionHookManager;
@@ -70,9 +75,16 @@ export class TelemetryHandler {
   private _timeToFirstChunkHistogram?: Histogram;
 
   constructor(options: TelemetryHandlerOptions = {}) {
-    this._tracer =
-      options.tracer ?? trace.getTracer('@opentelemetry/genai-util');
-    this._meter = options.meter;
+    const tracerProvider = options.tracerProvider ?? trace.getTracerProvider();
+    this._tracer = tracerProvider.getTracer(PACKAGE_NAME, PACKAGE_VERSION, {
+      schemaUrl: GEN_AI_SCHEMA_URL,
+    });
+
+    const meterProvider = options.meterProvider ?? metrics.getMeterProvider();
+    this._meter = meterProvider.getMeter(PACKAGE_NAME, PACKAGE_VERSION, {
+      schemaUrl: GEN_AI_SCHEMA_URL,
+    });
+
     this._diag = options.diag ?? diag;
     this._hookManager = new CompletionHookManager(
       options.completionHooks ?? options.config?.completionHooks ?? []
@@ -88,9 +100,7 @@ export class TelemetryHandler {
       );
     }
 
-    if (this._meter) {
-      this._initMetrics(this._meter);
-    }
+    this._initMetrics(this._meter);
   }
 
   private _initMetrics(meter: Meter): void {
@@ -124,9 +134,9 @@ export class TelemetryHandler {
   }
 
   /**
-   * Return the Meter instance if set.
+   * Return the Meter instance.
    */
-  public getMeter(): Meter | undefined {
+  public getMeter(): Meter {
     return this._meter;
   }
 

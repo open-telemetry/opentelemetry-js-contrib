@@ -7,7 +7,9 @@ import * as assert from 'assert';
 import { diag, type DiagLogger } from '@opentelemetry/api';
 import { TelemetryHandler } from '../src/handler';
 import { BaseInvocation } from '../src/invocations/base';
+import { GEN_AI_SCHEMA_URL } from '../src/semconv';
 import type { CompletionResult } from '../src/types';
+import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
@@ -46,15 +48,13 @@ describe('TelemetryHandler', () => {
     const handler = new TelemetryHandler();
 
     assert.ok(handler.getTracer());
-    assert.strictEqual(handler.getMeter(), undefined);
+    assert.ok(handler.getMeter());
     assert.strictEqual(handler.getDiag(), diag);
     assert.strictEqual(handler.getContentCaptureMode(), 'none');
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 0);
   });
 
   it('should initialize with custom options and initialize histograms', () => {
-    const tracer = ctx.tracerProvider.getTracer('custom-tracer');
-    const meter = ctx.meterProvider.getMeter('custom-meter');
     const customDiag: DiagLogger = {
       verbose: () => {},
       debug: () => {},
@@ -64,8 +64,8 @@ describe('TelemetryHandler', () => {
     };
 
     const handler = new TelemetryHandler({
-      tracer,
-      meter,
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
       diag: customDiag,
       contentCaptureMode: 'span_only',
       completionHooks: [
@@ -75,11 +75,44 @@ describe('TelemetryHandler', () => {
       ],
     });
 
-    assert.strictEqual(handler.getTracer(), tracer);
-    assert.strictEqual(handler.getMeter(), meter);
+    assert.ok(handler.getTracer());
+    assert.ok(handler.getMeter());
     assert.strictEqual(handler.getDiag(), customDiag);
     assert.strictEqual(handler.getContentCaptureMode(), 'span_only');
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
+  });
+
+  it('should initialize tracer and meter with package version and SemConv schema URL', async () => {
+    const handler = new TelemetryHandler({
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const span = handler.getTracer().startSpan('test-schema-span');
+    span.end();
+
+    const finishedSpans = ctx.memoryExporter.getFinishedSpans();
+    const spanRecord = finishedSpans.find(s => s.name === 'test-schema-span');
+    assert.ok(spanRecord);
+    assert.strictEqual(spanRecord.instrumentationScope.name, PACKAGE_NAME);
+    assert.strictEqual(
+      spanRecord.instrumentationScope.version,
+      PACKAGE_VERSION
+    );
+    assert.strictEqual(
+      spanRecord.instrumentationScope.schemaUrl,
+      GEN_AI_SCHEMA_URL
+    );
+
+    handler.recordOperationDuration(0.5);
+    const metricCollection = await ctx.metricReader.collect();
+    const scopeMetric = metricCollection.resourceMetrics.scopeMetrics.find(
+      sm => sm.scope.name === PACKAGE_NAME
+    );
+    assert.ok(scopeMetric);
+    assert.strictEqual(scopeMetric.scope.name, PACKAGE_NAME);
+    assert.strictEqual(scopeMetric.scope.version, PACKAGE_VERSION);
+    assert.strictEqual(scopeMetric.scope.schemaUrl, GEN_AI_SCHEMA_URL);
   });
 
   it('should allow dynamic setter of tracer and meter', () => {
@@ -104,9 +137,8 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
   });
 
-  it('should record metrics and handle boundary values when meter is configured', () => {
-    const meter = ctx.meterProvider.getMeter('test-meter');
-    const handler = new TelemetryHandler({ meter });
+  it('should record metrics and handle boundary values when meterProvider is configured', () => {
+    const handler = new TelemetryHandler({ meterProvider: ctx.meterProvider });
 
     // Valid recordings
     handler.recordOperationDuration(1.23, { 'gen_ai.system': 'openai' });
@@ -120,6 +152,9 @@ describe('TelemetryHandler', () => {
     handler.recordOperationDuration(-1);
     handler.recordOperationDuration(NaN);
     handler.recordOperationDuration(Infinity);
+    handler.recordTimeToFirstChunk(-1);
+    handler.recordTimeToFirstChunk(NaN);
+    handler.recordTimeToFirstChunk(Infinity);
 
     // Boundary/partial token usage values
     handler.recordTokenUsage({ inputTokens: 10 }); // only input tokens
@@ -128,10 +163,10 @@ describe('TelemetryHandler', () => {
     handler.recordTokenUsage(undefined as any); // undefined usage ignored
   });
 
-  it('should safely handle metric recordings when meter is not configured', () => {
+  it('should safely handle metric recordings with default meter', () => {
     const handler = new TelemetryHandler();
 
-    // None of these should throw when meter is undefined
+    // None of these should throw
     assert.doesNotThrow(() => {
       handler.recordOperationDuration(1.0);
       handler.recordTokenUsage({ inputTokens: 5, outputTokens: 10 });
@@ -187,11 +222,10 @@ describe('TelemetryHandler', () => {
   });
 
   it('should integrate with BaseInvocation and execute completion hooks on stop', async () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
     let hookResult: CompletionResult | undefined;
 
     const handler = new TelemetryHandler({
-      tracer,
+      tracerProvider: ctx.tracerProvider,
       completionHooks: [
         {
           onCompletion(result: CompletionResult) {
@@ -201,7 +235,7 @@ describe('TelemetryHandler', () => {
       ],
     });
 
-    const span = tracer.startSpan('test-span');
+    const span = handler.getTracer().startSpan('test-span');
     const invocation = new TestInvocation(span, handler);
     invocation.stop();
 
@@ -215,11 +249,10 @@ describe('TelemetryHandler', () => {
   });
 
   it('should integrate with BaseInvocation and execute completion hooks on fail', async () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
     let hookResult: CompletionResult | undefined;
 
     const handler = new TelemetryHandler({
-      tracer,
+      tracerProvider: ctx.tracerProvider,
       completionHooks: [
         {
           onCompletion(result: CompletionResult) {
@@ -229,7 +262,7 @@ describe('TelemetryHandler', () => {
       ],
     });
 
-    const span = tracer.startSpan('test-span-error');
+    const span = handler.getTracer().startSpan('test-span-error');
     const invocation = new TestInvocation(span, handler);
     const testError = new Error('Test failure');
     invocation.fail(testError);
