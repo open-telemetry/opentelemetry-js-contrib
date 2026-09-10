@@ -153,6 +153,28 @@ describe('redis v4-v5 cluster mock (no live Redis required)', () => {
           assert.strictEqual(s.attributes[ATTR_DB_OPERATION_NAME], 'MULTI SET');
         });
     });
+
+    it('should instrument commands run as a cluster pipeline', async () => {
+      const multi = makeMultiCommand([5, 3]);
+
+      multi.addCommand('key1', true, ['ZCARD', 'key1'], undefined);
+      multi.addCommand(
+        'key2',
+        false,
+        ['ZREMRANGEBYSCORE', 'key2', '-inf', '+inf'],
+        undefined
+      );
+
+      try {
+        await multi.execAsPipeline();
+      } catch {}
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 2);
+      spans.forEach((span: any) =>
+        assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'PIPELINE')
+      );
+    });
   });
 
   describe('cluster exec — error paths', () => {
