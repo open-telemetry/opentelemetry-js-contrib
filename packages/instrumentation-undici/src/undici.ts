@@ -487,18 +487,20 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (isAbort) {
       span.end();
     } else {
+      // error.type must be a low-cardinality class of error per semconv, and an
+      // empty value collapses into a duplicate series on Prometheus-based
+      // exporters. Use the error code/name, never the free-form, possibly empty
+      // message.
+      const errorType = error.code || error.name || 'Error';
+      attributes[ATTR_ERROR_TYPE] = errorType;
+      span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
       span.recordException(error);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: error.message,
       });
       span.end();
-
-      // error.type must be a low-cardinality class of error per semconv, and an
-      // empty value collapses into a duplicate series on Prometheus-based
-      // exporters. Use the error code/name, never the free-form, possibly empty
-      // message.
-      attributes[ATTR_ERROR_TYPE] = error.code || error.name || 'Error';
     }
 
     this._recordFromReq.delete(request);
