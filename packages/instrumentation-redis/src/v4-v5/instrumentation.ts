@@ -17,7 +17,14 @@ import {
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import { getClientAttributes } from './utils';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import {
+  createDbStatementSerializer,
+  defaultDbStatementMaskingHook,
+  defaultDbStatementSerializer,
+} from '@opentelemetry/redis-common';
+
+// built once, the option is read per command but the serializer is stateless
+const keySerializer = createDbStatementSerializer({ serializeKeys: true });
 import { RedisInstrumentationConfig } from '../types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from '../version';
@@ -481,20 +488,30 @@ export class RedisInstrumentationV4_V5 extends InstrumentationBase<RedisInstrume
     const commandName = redisCommandArguments[0] as string; // types also allows it to be a Buffer, but in practice it only string
     const commandArgs = redisCommandArguments.slice(1);
 
-    const dbStatementSerializer =
-      this.getConfig().dbStatementSerializer || defaultDbStatementSerializer;
+    const { dbStatementSerializer, serializeKeys, maskStatementHook } =
+      this.getConfig();
+    const serializer =
+      dbStatementSerializer ||
+      (serializeKeys ? keySerializer : defaultDbStatementSerializer);
 
     const attributes = getClientAttributes(clientOptions);
     attributes[ATTR_DB_OPERATION_NAME] = commandName;
     try {
-      const dbStatement = dbStatementSerializer(commandName, commandArgs);
+      let dbStatement = serializer(commandName, commandArgs);
+      if (dbStatement != null && serializeKeys) {
+        dbStatement = (maskStatementHook || defaultDbStatementMaskingHook)(
+          dbStatement
+        );
+      }
       if (dbStatement != null) {
         attributes[ATTR_DB_QUERY_TEXT] = dbStatement;
       }
     } catch (e) {
-      this._diag.error('dbStatementSerializer throw an exception', e, {
-        commandName,
-      });
+      this._diag.error(
+        'dbStatementSerializer or maskStatementHook threw an exception',
+        e,
+        { commandName }
+      );
     }
 
     const span = this.tracer.startSpan(

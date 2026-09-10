@@ -95,6 +95,54 @@ requestHook: function (
 
 ```
 
+#### Serializing redis keys
+
+By default, commands that accept only a key are serialized without it, so every
+call looks the same:
+
+```text
+hgetall [1 other arguments]
+ttl [1 other arguments]
+```
+
+Set `serializeKeys` to `true` to record the key instead. Segments that identify
+a single entity are replaced with `?`, so the key pattern is visible without
+`db.query.text` becoming high cardinality:
+
+```javascript
+const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
+
+const instrumentation = new IORedisInstrumentation({
+  serializeKeys: true,
+});
+```
+
+| default | `serializeKeys: true` |
+| --- | --- |
+| `hgetall [1 other arguments]` | `hgetall player:?:stats` |
+| `hgetall [1 other arguments]` | `hgetall tournament:leaderboard:sc:daily` |
+| `ttl [1 other arguments]` | `ttl auth_revoked:?` |
+| `mget [2 other arguments]` | `mget player:?:stats player:?:stats` |
+| `set session:42 [1 other arguments]` | `set session:? [1 other arguments]` |
+
+Only commands whose arguments are keys, hash fields, patterns, numbers or fixed
+tokens are affected. Commands that accept values, such as `set`, `hset` and
+`eval`, keep their values redacted either way.
+
+A segment is masked when it looks like a number, uuid, hex digest, ulid or email
+address. Segments that describe a class of keys, such as `queue:high` or
+`feature_flags`, are left alone, as is the command name.
+
+Pass `maskStatementHook` to replace the masking rule, or
+`statement => statement` to record keys unmasked:
+
+```javascript
+const instrumentation = new IORedisInstrumentation({
+  serializeKeys: true,
+  maskStatementHook: statement => statement.replace(/tenant:[^\s]+/g, 'tenant:?'),
+});
+```
+
 ## Semantic Conventions
 
 The `instrumentation-ioredis` versions 0.68.0 and later emit the stable v1.33.0+ semantic conventions.
