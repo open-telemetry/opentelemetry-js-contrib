@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import * as fs from 'fs';
+import * as path from 'path';
 import * as semver from 'semver';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
@@ -18,7 +20,14 @@ import { getRequester, setup, App } from './setup';
 
 import * as util from 'util';
 
-const LIB_VERSION = require('@nestjs/core/package.json').version;
+// Read package.json through the file system: the "exports" map of
+// `@nestjs/core` 12+ does not expose it to `require()`.
+const LIB_VERSION: string = JSON.parse(
+  fs.readFileSync(
+    path.join(path.dirname(require.resolve('@nestjs/core')), 'package.json'),
+    'utf8'
+  )
+).version;
 
 const instrumentation = new NestInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
