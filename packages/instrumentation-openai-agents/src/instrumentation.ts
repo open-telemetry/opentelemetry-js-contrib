@@ -22,25 +22,37 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
   private _registeredModule?: OpenAIAgentsModule;
   private _registered = false;
   private _registrationMode?: RegistrationMode;
+  private _captureMessageContentFromEnv?: boolean;
 
   constructor(config: OpenAIAgentsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
 
-    const envCaptureContent = getEnvBool(
+    this._captureMessageContentFromEnv = getEnvBool(
       'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT',
       this._diag
     );
-    if (envCaptureContent !== undefined) {
-      const currentConfig = this.getConfig();
-      currentConfig.captureMessageContent = envCaptureContent;
+    if (this._captureMessageContentFromEnv !== undefined) {
+      this.setConfig(this.getConfig());
     }
   }
 
   override setConfig(config: OpenAIAgentsInstrumentationConfig = {}): void {
+    let disableOpenAITraceExport = !!config.disableOpenAITraceExport;
+    if (
+      this._registered &&
+      this._registrationMode &&
+      disableOpenAITraceExport !== (this._registrationMode === 'replace')
+    ) {
+      this._diag.warn(
+        'disableOpenAITraceExport cannot be changed after the OpenAI Agents trace processor is registered; keeping the existing registration mode'
+      );
+      disableOpenAITraceExport = this._registrationMode === 'replace';
+    }
     const normalizedConfig = {
       ...config,
-      captureMessageContent: !!config.captureMessageContent,
-      disableOpenAITraceExport: !!config.disableOpenAITraceExport,
+      captureMessageContent:
+        this._captureMessageContentFromEnv ?? !!config.captureMessageContent,
+      disableOpenAITraceExport,
     };
     super.setConfig(normalizedConfig);
     this._processor?.setConfig(normalizedConfig);
@@ -72,22 +84,8 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           this._registerProcessor(agents);
           return moduleExports;
         },
-        moduleExports => {
-          const agents = this._normalizeModule(moduleExports);
+        _moduleExports => {
           this._processor?.setEnabled(false);
-
-          if (agents && this._registrationMode === 'replace') {
-            if (agents.setDefaultOpenAITracingExporter) {
-              agents.setDefaultOpenAITracingExporter();
-            } else {
-              this._diag.warn(
-                'Could not restore the OpenAI Agents default trace exporter'
-              );
-            }
-            this._registered = false;
-            this._registeredModule = undefined;
-            this._registrationMode = undefined;
-          }
           this._module = undefined;
         }
       ),
@@ -113,16 +111,13 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
       ? 'replace'
       : 'add';
 
-    if (this._registered && this._registrationMode === desiredMode) {
+    if (this._registered) {
       return;
     }
 
     if (desiredMode === 'replace') {
       agents.setTraceProcessors([processor]);
     } else {
-      if (this._registrationMode === 'replace') {
-        agents.setDefaultOpenAITracingExporter?.();
-      }
       agents.addTraceProcessor(processor);
     }
     this._registered = true;

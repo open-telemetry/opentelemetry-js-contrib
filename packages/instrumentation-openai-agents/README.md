@@ -45,10 +45,10 @@ The instrumentation is also enabled by default when using
 
 ### Options
 
-| Option | Type | Default | Description |
-| ------ | ---- | ------- | ----------- |
-| `captureMessageContent` | `boolean` | `false` | Capture function tool arguments and results. This may expose sensitive data. The `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable can also set this option. |
-| `disableOpenAITraceExport` | `boolean` | `false` | Replace the Agents SDK trace processors with the OpenTelemetry processor, disabling its native OpenAI trace export. By default both processors run. |
+| Option                     | Type      | Default | Description                                                                                                                                                                                                                                                                                 |
+| -------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `captureMessageContent`    | `boolean` | `false` | Capture function tool arguments and results. This may expose sensitive data. The `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable can also set this option.                                                                                                        |
+| `disableOpenAITraceExport` | `boolean` | `false` | Replace the Agents SDK trace processors with the OpenTelemetry processor, disabling its native OpenAI trace export. By default both processors run. Set this before the Agents SDK is loaded; changing it after processor registration is ignored to avoid removing application processors. |
 
 The OpenAI client instrumentation remains responsible for model-call spans.
 This package emits the agent orchestration spans and preserves the SDK's task
@@ -65,11 +65,11 @@ additional runner-boundary context hook.
 
 ## Spans
 
-| Agents SDK callback | OpenTelemetry span | `gen_ai.operation.name` |
-| ------------------- | ------------------ | ----------------------- |
-| Trace | `openai.agents.run` | _not set_ |
-| Agent span | `invoke_agent <name>` | `invoke_agent` |
-| Function span | `execute_tool <name>` | `execute_tool` |
+| Agents SDK callback | OpenTelemetry span    | `gen_ai.operation.name` |
+| ------------------- | --------------------- | ----------------------- |
+| Trace               | `openai.agents.run`   | _not set_               |
+| Agent span          | `invoke_agent <name>` | `invoke_agent`          |
+| Function span       | `execute_tool <name>` | `execute_tool`          |
 
 ## Useful links
 

@@ -1,7 +1,9 @@
 '@openai/agents':
-  - versions: "0.14.3"
+  - versions: '0.14.0'
     commands: npm run test
   # The MCP client used by @openai/agents 0.15+ requires Node.js 20.
-  - versions: ">=0.15.0 <1"
-    node: ">=20"
+  - versions:
+      include: '>=0.15.0 <1'
+      mode: max-5
+    node: '>=20'
     commands: npm run test

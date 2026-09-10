@@ -40,6 +40,7 @@ interface SpanRecord {
   context: Context;
   span?: Span;
   errorTarget?: Span;
+  agentName?: string;
 }
 
 interface TraceRecord extends SpanRecord {
@@ -72,9 +73,6 @@ export class OpenAIAgentsTracingProcessor
 
   setEnabled(enabled: boolean): void {
     this._enabled = enabled;
-    if (!enabled) {
-      void this.shutdown();
-    }
   }
 
   onTraceStart(trace: OpenAIAgentsTrace): Promise<void> {
@@ -126,7 +124,16 @@ export class OpenAIAgentsTracingProcessor
 
       const parentRecord = this._parentRecord(span);
       const parentContext = parentRecord?.context || context.active();
-      const otelSpan = this._startMappedSpan(span, parentContext);
+      const ownAgentName =
+        span.spanData.type === 'agent'
+          ? this._nonEmptyString(span.spanData.name)
+          : undefined;
+      const agentName = ownAgentName || parentRecord?.agentName;
+      const otelSpan = this._startMappedSpan(
+        span,
+        parentContext,
+        parentRecord?.agentName
+      );
       const spanContext = otelSpan
         ? otelTrace.setSpan(parentContext, otelSpan)
         : parentContext;
@@ -135,6 +142,7 @@ export class OpenAIAgentsTracingProcessor
         context: spanContext,
         span: otelSpan,
         errorTarget: otelSpan || parentRecord?.errorTarget,
+        agentName,
       };
       this._spanRecords.set(span, record);
       this._spanRecordsById.set(span.spanId, record);
@@ -167,11 +175,11 @@ export class OpenAIAgentsTracingProcessor
             );
           }
         }
-        this._setError(record.span, span);
+        this._setError(record.span, span, true);
         record.span.end(this._asTimeInput(span.endedAt));
         this._openSpans.delete(record.span);
       } else if (span.error && record.errorTarget) {
-        this._setError(record.errorTarget, span);
+        this._setError(record.errorTarget, span, span.spanData.type === 'task');
       }
 
       this._spanRecords.delete(span);
@@ -199,13 +207,14 @@ export class OpenAIAgentsTracingProcessor
 
   private _startMappedSpan(
     span: OpenAIAgentsSpan,
-    parentContext: Context
+    parentContext: Context,
+    agentName?: string
   ): Span | undefined {
     const data = span.spanData;
     const startTime = this._asTimeInput(span.startedAt);
 
     if (data.type === 'agent') {
-      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      const name = this._nonEmptyString(data.name);
       const attributes: Attributes = {
         [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
       };
@@ -226,13 +235,16 @@ export class OpenAIAgentsTracingProcessor
     }
 
     if (data.type === 'function') {
-      const name = typeof data.name === 'string' ? data.name.trim() : '';
+      const name = this._nonEmptyString(data.name);
       const attributes: Attributes = {
         [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
         [ATTR_GEN_AI_TOOL_TYPE]: GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
       };
       if (name) {
         attributes[ATTR_GEN_AI_TOOL_NAME] = name;
+      }
+      if (agentName) {
+        attributes[ATTR_GEN_AI_AGENT_NAME] = agentName;
       }
       const toolSpan = this._getTracer().startSpan(
         name
@@ -261,21 +273,64 @@ export class OpenAIAgentsTracingProcessor
     return this._traceRecordsById.get(span.traceId);
   }
 
-  private _setError(otelSpan: Span, span: OpenAIAgentsSpan): void {
-    if (!span.error || this._failedSpans.has(otelSpan)) {
+  private _setError(
+    otelSpan: Span,
+    span: OpenAIAgentsSpan,
+    overwrite = false
+  ): void {
+    if (!span.error || (!overwrite && this._failedSpans.has(otelSpan))) {
       return;
     }
     this._failedSpans.add(otelSpan);
-    otelSpan.recordException(span.error.message);
+    const errorType = this._errorType(span.error.data?.error);
+    otelSpan.recordException({
+      name: errorType,
+      message: this._errorDetail(span.error.data?.error, span.error.message),
+    });
     otelSpan.setStatus({
       code: SpanStatusCode.ERROR,
       message: span.error.message,
     });
-    const errorType = span.error.data?.type;
-    otelSpan.setAttribute(
-      ATTR_ERROR_TYPE,
-      typeof errorType === 'string' ? errorType : '_OTHER'
-    );
+    otelSpan.setAttribute(ATTR_ERROR_TYPE, errorType);
+  }
+
+  private _errorType(error: unknown): string {
+    if (error instanceof Error) {
+      return this._boundedErrorName(error.name);
+    }
+    if (typeof error !== 'string') {
+      return '_OTHER';
+    }
+
+    const value = error.trim();
+    const prefix = /^([A-Za-z_$][A-Za-z0-9_$.]{0,127}):/.exec(value)?.[1];
+    if (prefix) {
+      return this._boundedErrorName(prefix);
+    }
+    return this._boundedErrorName(value);
+  }
+
+  private _boundedErrorName(name: string): string {
+    const value = name.trim();
+    return /^[A-Za-z_$][A-Za-z0-9_$.]{0,127}(?:Error|Exception|TripwireTriggered)$/.test(
+      value
+    )
+      ? value
+      : '_OTHER';
+  }
+
+  private _errorDetail(error: unknown, fallback: string): string {
+    if (error instanceof Error) {
+      return error.message || fallback;
+    }
+    return typeof error === 'string' && error ? error : fallback;
+  }
+
+  private _nonEmptyString(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+    return value.trim() || undefined;
   }
 
   private _asTimeInput(

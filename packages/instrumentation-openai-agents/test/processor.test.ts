@@ -114,6 +114,7 @@ describe('OpenAIAgentsTracingProcessor', () => {
       toolSpan.attributes[ATTR_GEN_AI_TOOL_NAME],
       'lookup_order'
     );
+    assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_AGENT_NAME], 'triage');
     assert.strictEqual(
       agentSpan.parentSpanContext?.spanId,
       runSpan.spanContext().spanId
@@ -225,8 +226,11 @@ describe('OpenAIAgentsTracingProcessor', () => {
       output: { status: 'unavailable' },
     });
     tool.error = {
-      message: 'tool failed',
-      data: { type: 'ToolError' },
+      message: 'Error running tool (non-fatal)',
+      data: {
+        tool_name: 'lookup_order',
+        error: 'TypeError: tool failed',
+      },
     };
 
     await processor.onSpanStart(tool);
@@ -244,9 +248,13 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
     assert.deepStrictEqual(toolSpan.status, {
       code: SpanStatusCode.ERROR,
-      message: 'tool failed',
+      message: 'Error running tool (non-fatal)',
     });
-    assert.strictEqual(toolSpan.attributes['error.type'], 'ToolError');
+    assert.strictEqual(toolSpan.attributes['error.type'], 'TypeError');
+    assert.strictEqual(
+      toolSpan.events[0].attributes?.['exception.message'],
+      'TypeError: tool failed'
+    );
   });
 
   it('records Agents SDK span errors', async () => {
@@ -254,8 +262,8 @@ describe('OpenAIAgentsTracingProcessor', () => {
       name: 'triage',
     });
     agent.error = {
-      message: 'agent failed',
-      data: { type: 'AgentError' },
+      message: 'Error in agent run',
+      data: { error: 'AgentError: agent failed' },
     };
 
     await processor.onSpanStart(agent);
@@ -265,7 +273,7 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.ok(agentSpan);
     assert.deepStrictEqual(agentSpan.status, {
       code: SpanStatusCode.ERROR,
-      message: 'agent failed',
+      message: 'Error in agent run',
     });
     assert.strictEqual(agentSpan.attributes['error.type'], 'AgentError');
   });
@@ -277,8 +285,8 @@ describe('OpenAIAgentsTracingProcessor', () => {
     };
     const task = createSpan('agents-trace', 'task', 'task');
     task.error = {
-      message: 'run failed',
-      data: { type: 'RunError' },
+      message: 'Error in agent run',
+      data: { error: 'RunError: run failed' },
     };
 
     await processor.onTraceStart(sdkTrace);
@@ -290,9 +298,37 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.strictEqual(runSpan.name, 'openai.agents.run');
     assert.deepStrictEqual(runSpan.status, {
       code: SpanStatusCode.ERROR,
-      message: 'run failed',
+      message: 'Error in agent run',
     });
     assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
+  });
+
+  it('lets a task error take precedence over a descendant error', async () => {
+    const sdkTrace: OpenAIAgentsTrace = {
+      traceId: 'agents-trace',
+      name: 'support',
+    };
+    const task = createSpan('agents-trace', 'task', 'task');
+    const child = createSpan('agents-trace', 'child', 'handoff', 'task');
+    child.error = {
+      message: 'Error in agent run',
+      data: { error: 'ChildError: child failed' },
+    };
+    task.error = {
+      message: 'Error in agent run',
+      data: { error: 'RunError: run failed' },
+    };
+
+    await processor.onTraceStart(sdkTrace);
+    await processor.onSpanStart(task);
+    await processor.onSpanStart(child);
+    await processor.onSpanEnd(child);
+    await processor.onSpanEnd(task);
+    await processor.onTraceEnd(sdkTrace);
+
+    const [runSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
+    assert.strictEqual(runSpan.events.length, 2);
   });
 
   it('records turn errors on the enclosing agent span', async () => {
@@ -305,12 +341,12 @@ describe('OpenAIAgentsTracingProcessor', () => {
     });
     const turn = createSpan('agents-trace', 'turn', 'turn', 'agent');
     turn.error = {
-      message: 'turn failed',
-      data: { type: 'TurnError' },
+      message: 'Error in agent run',
+      data: { error: 'TurnError: turn failed' },
     };
     agent.error = {
-      message: 'turn failed',
-      data: { type: 'TurnError' },
+      message: 'Error in agent run',
+      data: { error: 'AgentError: agent failed' },
     };
 
     await processor.onTraceStart(sdkTrace);
@@ -326,9 +362,57 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.ok(agentSpan);
     assert.deepStrictEqual(agentSpan.status, {
       code: SpanStatusCode.ERROR,
-      message: 'turn failed',
+      message: 'Error in agent run',
     });
-    assert.strictEqual(agentSpan.attributes['error.type'], 'TurnError');
-    assert.strictEqual(agentSpan.events.length, 1);
+    assert.strictEqual(agentSpan.attributes['error.type'], 'AgentError');
+    assert.strictEqual(agentSpan.events.length, 2);
+  });
+
+  it('does not use arbitrary error detail as error.type', async () => {
+    const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
+      name: 'triage',
+    });
+    agent.error = {
+      message: 'Error in agent run',
+      data: { error: 'customer123: request failed in region-7' },
+    };
+
+    await processor.onSpanStart(agent);
+    await processor.onSpanEnd(agent);
+
+    const [agentSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(agentSpan.attributes['error.type'], '_OTHER');
+    assert.strictEqual(
+      agentSpan.events[0].attributes?.['exception.message'],
+      'customer123: request failed in region-7'
+    );
+  });
+
+  it('allows active spans to finish after instrumentation is disabled', async () => {
+    const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
+      name: 'triage',
+    });
+    const ignoredTool = createSpan(
+      'agents-trace',
+      'tool',
+      'function',
+      'agent',
+      { name: 'lookup_order' }
+    );
+
+    await processor.onSpanStart(agent);
+    processor.setEnabled(false);
+    await processor.onSpanStart(ignoredTool);
+    agent.error = {
+      message: 'Error in agent run',
+      data: { error: 'AgentError: agent failed' },
+    };
+    await processor.onSpanEnd(agent);
+
+    const spans = exporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].name, 'invoke_agent triage');
+    assert.strictEqual(spans[0].attributes['error.type'], 'AgentError');
+    assert.strictEqual(spans[0].duration[0], 1);
   });
 });
