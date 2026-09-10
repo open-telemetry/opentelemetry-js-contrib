@@ -7,6 +7,7 @@ import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
 import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
+import { AnthropicInstrumentation } from '@opentelemetry/instrumentation-anthropic';
 import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
 import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
@@ -85,6 +86,7 @@ const RESOURCE_DETECTOR_GCP = 'gcp';
 
 const InstrumentationMap = {
   '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,
+  '@opentelemetry/instrumentation-anthropic': AnthropicInstrumentation,
   '@opentelemetry/instrumentation-aws-lambda': AwsLambdaInstrumentation,
   '@opentelemetry/instrumentation-aws-sdk': AwsInstrumentation,
   '@opentelemetry/instrumentation-bunyan': BunyanInstrumentation,
