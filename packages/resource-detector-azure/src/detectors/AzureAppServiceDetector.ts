@@ -6,16 +6,19 @@
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
 import {
   AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE,
+  AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE,
   REGION_NAME,
   WEBSITE_HOME_STAMPNAME,
   WEBSITE_HOSTNAME,
   WEBSITE_INSTANCE_ID,
+  WEBSITE_RESOURCE_GROUP,
   WEBSITE_SITE_NAME,
   WEBSITE_SLOT_NAME,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_REGION,
   ATTR_DEPLOYMENT_ENVIRONMENT_NAME,
   ATTR_HOST_ID,
@@ -27,11 +30,13 @@ import {
 } from '../semconv';
 import {
   getAzureResourceUri,
+  getAzureSubscriptionId,
   isAzureContainerApps,
   isAzureFunction,
 } from '../utils';
 
 const APP_SERVICE_ATTRIBUTE_ENV_VARS = {
+  [AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE]: WEBSITE_RESOURCE_GROUP,
   [ATTR_CLOUD_REGION]: REGION_NAME,
   [ATTR_DEPLOYMENT_ENVIRONMENT_NAME]: WEBSITE_SLOT_NAME,
   [ATTR_HOST_ID]: WEBSITE_HOSTNAME,
@@ -66,6 +71,14 @@ class AzureAppServiceDetector implements ResourceDetector {
         attributes = {
           ...attributes,
           ...{ [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: azureResourceUri },
+        };
+      }
+
+      const subscriptionId = getAzureSubscriptionId();
+      if (subscriptionId) {
+        attributes = {
+          ...attributes,
+          [ATTR_CLOUD_ACCOUNT_ID]: subscriptionId,
         };
       }
 
