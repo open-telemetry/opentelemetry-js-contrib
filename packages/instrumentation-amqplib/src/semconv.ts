@@ -30,3 +30,25 @@ export const ATTR_MESSAGING_OPERATION = 'messaging.operation' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
+
+/**
+ * The name of the RabbitMQ virtual host the connection is bound to.
+ *
+ * @example /
+ * @example tenant-a
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_RABBITMQ_VHOST_NAME =
+  'messaging.rabbitmq.vhost.name' as const;
+
+/**
+ * The name of the RabbitMQ cluster the connection is established with, as
+ * reported by the broker in the `cluster_name` server property.
+ *
+ * @example rabbit@my-broker
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME =
+  'messaging.rabbitmq.cluster.name' as const;

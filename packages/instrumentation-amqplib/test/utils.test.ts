@@ -12,7 +12,11 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
+import {
+  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
+  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from '../src/semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -40,6 +44,20 @@ describe('utils', () => {
 
     it('messaging system attribute', () => {
       const attributes = getConnectionAttributesFromServer(conn.connection);
+      expect(attributes[ATTR_MESSAGING_SYSTEM]).toStrictEqual('rabbitmq');
+    });
+
+    it('cluster name attribute', () => {
+      const attributes = getConnectionAttributesFromServer(conn.connection);
+      const clusterName = attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME];
+      expect(typeof clusterName).toStrictEqual('string');
+      expect(clusterName).not.toStrictEqual('');
+    });
+
+    it('cluster name attribute is omitted when the server does not report one', () => {
+      const attributes = getConnectionAttributesFromServer({
+        serverProperties: { product: 'RabbitMQ' },
+      } as unknown as amqp.Connection);
       expect(attributes).toStrictEqual({
         [ATTR_MESSAGING_SYSTEM]: 'rabbitmq',
       });
@@ -56,6 +74,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'host',
         [ATTR_SERVER_PORT]: 10000,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: 'vhost',
         [ATTR_MESSAGING_URL]: 'amqp://user:***@host:10000/vhost',
       });
     });
@@ -69,6 +88,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'ho%61st',
         [ATTR_SERVER_PORT]: 10000,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: 'v/host',
         [ATTR_MESSAGING_URL]: 'amqp://user%61:***@ho%61st:10000/v%2fhost',
       });
     });
@@ -80,6 +100,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'localhost',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: '/',
         [ATTR_MESSAGING_URL]: 'amqp://',
       });
     });
@@ -115,6 +136,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'host',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: '/',
         [ATTR_MESSAGING_URL]: 'amqp://host',
       });
     });
@@ -126,6 +148,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'localhost',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: 'vhost',
         [ATTR_MESSAGING_URL]: 'amqp:///vhost',
       });
     });
@@ -137,6 +160,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'host',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: '/',
         [ATTR_MESSAGING_URL]: 'amqp://host/',
       });
     });
@@ -148,6 +172,7 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: 'host',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: '/',
         [ATTR_MESSAGING_URL]: 'amqp://host/%2f',
       });
     });
@@ -159,7 +184,50 @@ describe('utils', () => {
         [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1',
         [ATTR_SERVER_ADDRESS]: '[::1]',
         [ATTR_SERVER_PORT]: 5672,
+        [ATTR_MESSAGING_RABBITMQ_VHOST_NAME]: '/',
         [ATTR_MESSAGING_URL]: 'amqp://[::1]',
+      });
+    });
+
+    describe('vhost', () => {
+      it('uses the vhost from the url options object', () => {
+        const attributes = getConnectionAttributesFromUrl({
+          protocol: 'amqp',
+          hostname: 'host',
+          port: 5672,
+          vhost: 'tenant-a',
+        });
+        expect(attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]).toEqual(
+          'tenant-a'
+        );
+      });
+
+      it('defaults to "/" when the url options object has no vhost', () => {
+        const attributes = getConnectionAttributesFromUrl({
+          protocol: 'amqp',
+          hostname: 'host',
+          port: 5672,
+        });
+        expect(attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]).toEqual('/');
+      });
+
+      it('defaults to "/" when the url options object has an empty vhost', () => {
+        const attributes = getConnectionAttributesFromUrl({
+          protocol: 'amqp',
+          hostname: 'host',
+          port: 5672,
+          vhost: '',
+        });
+        expect(attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]).toEqual('/');
+      });
+
+      it('reads the vhost from a url string with credentials', () => {
+        const attributes = getConnectionAttributesFromUrl(
+          'amqp://user:pass@host:5672/tenant-a'
+        );
+        expect(attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]).toEqual(
+          'tenant-a'
+        );
       });
     });
 
