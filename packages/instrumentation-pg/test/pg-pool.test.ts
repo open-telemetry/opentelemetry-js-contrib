@@ -476,6 +476,9 @@ describe('pg-pool', () => {
     describe('when specifying a responseHook configuration', () => {
       const dataAttributeName = 'pg_data';
       const query = 'SELECT 0::text';
+      // db.query.text is sanitized by default, so the recorded attribute
+      // differs from the raw text the driver receives.
+      const sanitizedQuery = 'SELECT ?::text';
       const events: TimedEvent[] = [];
 
       describe('AND valid responseHook', () => {
@@ -484,7 +487,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_QUERY_TEXT]: query,
+          [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
           [dataAttributeName]: '{"rowCount":1}',
         };
 
@@ -566,7 +569,7 @@ describe('pg-pool', () => {
         };
         const pgAttributes = {
           ...DEFAULT_PG_ATTRIBUTES,
-          [ATTR_DB_QUERY_TEXT]: query,
+          [ATTR_DB_QUERY_TEXT]: sanitizedQuery,
         };
 
         beforeEach(async () => {

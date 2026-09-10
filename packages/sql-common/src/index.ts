@@ -95,3 +95,6 @@ export function addSqlCommenterComment(span: Span, query: string): string {
 
   return `${query} /*${commentString}*/`;
 }
+
+export { sanitizeSql } from './sanitize';
+export type { SanitizeSqlOptions, SqlDialect } from './sanitize';
