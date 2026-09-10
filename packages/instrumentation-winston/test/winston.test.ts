@@ -772,5 +772,48 @@ describe('WinstonInstrumentation', () => {
         assert.strictEqual(logRecords[4].body, 'info msg');
       }
     });
+
+    it('otel levels with intermediate severity (e.g. ERROR2)', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.ERROR2,
+        });
+        initLogger(LevelsType.otel);
+        logger.log('trace', 'trace');
+        logger.log('debug', 'debug');
+        logger.log('info', 'info');
+        logger.log('warn', 'warn');
+        logger.log('error', 'error');
+        logger.log('fatal', 'fatal');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'fatal');
+      }
+    });
+
+    it('custom severityMapping with non-monotonic priority order', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+          logSeverity: SeverityNumber.WARN,
+          severityMapping: {
+            // Non-monotonic: priority 0 is less severe (DEBUG), priority 2 is more severe (FATAL)
+            lowLevel: SeverityNumber.DEBUG,
+            midLevel: SeverityNumber.WARN,
+            highLevel: SeverityNumber.FATAL,
+          },
+        });
+        const customLevels = { lowLevel: 0, midLevel: 1, highLevel: 2 };
+        initLogger(undefined, undefined, customLevels);
+        logger.log('lowLevel', 'low msg');
+        logger.log('midLevel', 'mid msg');
+        logger.log('highLevel', 'high msg');
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].body, 'mid msg');
+        assert.strictEqual(logRecords[1].body, 'high msg');
+      }
+    });
   });
 });

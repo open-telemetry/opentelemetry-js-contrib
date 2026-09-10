@@ -334,15 +334,24 @@ function getExceptionPayload(record: Record<string | symbol, any>): {
 export function emitLogRecord(
   record: Record<string | symbol, any>,
   logger: Logger,
-  severityMapping?: Record<string, SeverityNumber>
+  severityMapping?: Record<string, SeverityNumber>,
+  logSeverity?: SeverityNumber
 ): void {
+  const levelSym = record[Symbol.for('level')];
+  const severityNumber = getSeverityNumber(levelSym, severityMapping);
+  if (
+    logSeverity != null &&
+    (severityNumber ?? SeverityNumber.UNSPECIFIED) < logSeverity
+  ) {
+    return;
+  }
+
   const { message, level, ...splat } = record;
   const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
   const attributes: LogAttributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
   // property.
-  const levelSym = record[Symbol.for('level')];
   const exceptionPayload = getExceptionPayload(record);
   const excludedAttributes = new Set(
     exceptionPayload?.excludedAttributes ?? []
@@ -373,7 +382,7 @@ export function emitLogRecord(
   const context = record[OTEL_CONTEXT_SYMBOL];
 
   const logRecord: LogRecord = {
-    severityNumber: getSeverityNumber(levelSym, severityMapping),
+    severityNumber,
     severityText: levelSym,
     body: message,
     attributes: attributes,

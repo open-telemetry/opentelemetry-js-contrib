@@ -22,7 +22,6 @@ import type {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { getSeverityNumber } from './otel-levels';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
@@ -194,13 +193,17 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
               if (config.severityMapping) {
                 transportOptions.severityMapping = config.severityMapping;
               }
-              if (config.logSeverity) {
-                const winstonLevel = instrumentation._winstonLevelFromSeverity(
-                  config.logSeverity,
-                  args[0].levels,
-                  config.severityMapping
-                );
-                transportOptions.level = winstonLevel;
+              if (config.logSeverity != null) {
+                transportOptions.logSeverity = config.logSeverity;
+                if (!config.severityMapping) {
+                  const winstonLevel = instrumentation._winstonLevelFromSeverity(
+                    config.logSeverity,
+                    args[0].levels
+                  );
+                  if (winstonLevel) {
+                    transportOptions.level = winstonLevel;
+                  }
+                }
               }
               const openTelemetryTransport = new OpenTelemetryTransportV3(
                 transportOptions
@@ -244,42 +247,29 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
 
   private _winstonLevelFromSeverity(
     severity: SeverityNumber,
-    winstonLevels: { [key: string]: number } | undefined,
-    severityMapping?: Record<string, SeverityNumber>
+    winstonLevels: { [key: string]: number } | undefined
   ): string | undefined {
     if (winstonLevels) {
-      if (severityMapping) {
-        let matchedLevel: string | undefined;
-        let maxPriority = -Infinity;
-        for (const [levelName, levelPriority] of Object.entries(
-          winstonLevels
-        )) {
-          const mappedSeverity = getSeverityNumber(levelName, severityMapping);
-          if (
-            mappedSeverity !== undefined &&
-            mappedSeverity >= severity &&
-            typeof levelPriority === 'number' &&
-            levelPriority > maxPriority
-          ) {
-            maxPriority = levelPriority;
-            matchedLevel = levelName;
-          }
-        }
-        if (matchedLevel !== undefined) {
-          return matchedLevel;
-        }
-      }
-
       if (isOtelLevels(winstonLevels)) {
         if (severity >= SeverityNumber.FATAL) {
           return 'fatal';
+        } else if (severity > SeverityNumber.ERROR) {
+          return 'fatal';
         } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity > SeverityNumber.WARN) {
           return 'error';
         } else if (severity >= SeverityNumber.WARN) {
           return 'warn';
+        } else if (severity > SeverityNumber.INFO) {
+          return 'warn';
         } else if (severity >= SeverityNumber.INFO) {
           return 'info';
+        } else if (severity > SeverityNumber.DEBUG) {
+          return 'info';
         } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity > SeverityNumber.TRACE) {
           return 'debug';
         } else if (severity >= SeverityNumber.TRACE) {
           return 'trace';
