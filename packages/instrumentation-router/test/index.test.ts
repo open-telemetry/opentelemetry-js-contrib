@@ -362,4 +362,115 @@ describe('Router instrumentation', () => {
       }
     });
   });
+
+  describe('Response listener management (issue #3547)', () => {
+    it('does not emit MaxListenersExceededWarning with async middleware and streaming response', async () => {
+      const router = new Router();
+
+      // Async middleware: each defers calling next to the next event-loop
+      // iteration so that ensureFallbackListener runs before next() is called.
+      // This exercises the code path that attaches a 'close' listener and
+      // must not accumulate beyond Node's default threshold.
+      for (let i = 0; i < 20; i++) {
+        router.use((_req, _res, next) => setImmediate(next));
+      }
+
+      router.get('/stream', (_req, res) => {
+        // Stream the response without calling next to trigger the fallback
+        // close listener in the route handler layer as well.
+        const { Readable } = require('stream');
+        const readable = new Readable({
+          read() {
+            this.push('streamed');
+            this.push(null);
+          },
+        });
+        readable.pipe(res);
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+
+      try {
+        assert.strictEqual(await request('/stream', server), 'streamed');
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+      } finally {
+        process.removeListener('warning', onWarning);
+        server.close();
+      }
+    });
+
+    it('does not emit MaxListenersExceededWarning when response already has many close listeners', async () => {
+      const router = new Router();
+
+      // Pre-populate res with listeners to simulate third-party middleware
+      // (e.g. compression, logging) that also attach to 'close'.
+      router.use((_req, res, next) => {
+        // Add 9 external 'close' listeners to sit just below Node's default
+        // limit of 10 before the instrumentation adds its own.
+        for (let i = 0; i < 9; i++) {
+          res.on('close', () => {});
+        }
+        setImmediate(next);
+      });
+
+      router.get('/stream', (_req, res) => {
+        const { Readable } = require('stream');
+        const readable = new Readable({
+          read() {
+            this.push('ok');
+            this.push(null);
+          },
+        });
+        readable.pipe(res);
+      });
+
+      const server = http.createServer((req, res) => {
+        router(req, res, () => {
+          if (!res.headersSent) {
+            res.statusCode = 404;
+            res.end('not found');
+          }
+        });
+      });
+      await new Promise<void>(resolve => server.listen(0, resolve));
+
+      const warnings: Error[] = [];
+      const onWarning = (w: Error) => warnings.push(w);
+      process.on('warning', onWarning);
+
+      try {
+        assert.strictEqual(await request('/stream', server), 'ok');
+        const maxListenersWarn = warnings.find(
+          w => w.name === 'MaxListenersExceededWarning'
+        );
+        assert.strictEqual(
+          maxListenersWarn,
+          undefined,
+          `unexpected warning: ${maxListenersWarn?.message}`
+        );
+      } finally {
+        process.removeListener('warning', onWarning);
+        server.close();
+      }
+    });
+  });
 });
