@@ -5,6 +5,7 @@
 
 import {
   context,
+  createContextKey,
   SpanKind,
   SpanStatusCode,
   trace as otelTrace,
@@ -41,12 +42,17 @@ interface SpanRecord {
   span?: Span;
   errorTarget?: Span;
   agentName?: string;
+  runToken?: object;
 }
 
 interface TraceRecord extends SpanRecord {
   span: Span;
   trace: OpenAIAgentsTrace;
 }
+
+export const OPENAI_AGENTS_RUN_CONTEXT_KEY = createContextKey(
+  'opentelemetry.instrumentation.openai-agents.run'
+);
 
 export class OpenAIAgentsTracingProcessor
   implements OpenAIAgentsTracingProcessorApi
@@ -57,6 +63,7 @@ export class OpenAIAgentsTracingProcessor
   private _spanRecordsById = new Map<string, SpanRecord>();
   private _traceRecords = new WeakMap<object, TraceRecord>();
   private _traceRecordsById = new Map<string, TraceRecord>();
+  private _traceRecordsByRun = new WeakMap<object, TraceRecord>();
   private _failedSpans = new WeakSet<Span>();
   private readonly _openSpans = new Set<Span>();
 
@@ -83,6 +90,7 @@ export class OpenAIAgentsTracingProcessor
       }
 
       const parentContext = context.active();
+      const runToken = this._activeRunToken();
       const span = this._getTracer().startSpan(
         'openai.agents.run',
         {
@@ -96,9 +104,13 @@ export class OpenAIAgentsTracingProcessor
         span,
         errorTarget: span,
         trace,
+        runToken,
       };
       this._traceRecords.set(trace, record);
       this._traceRecordsById.set(trace.traceId, record);
+      if (runToken) {
+        this._traceRecordsByRun.set(runToken, record);
+      }
       this._openSpans.add(span);
     });
     return Promise.resolve();
@@ -142,6 +154,7 @@ export class OpenAIAgentsTracingProcessor
         span: otelSpan,
         errorTarget: otelSpan || parentRecord?.errorTarget,
         agentName,
+        runToken: this._activeRunToken(),
       };
       this._spanRecords.set(span, record);
       this._spanRecordsById.set(span.spanId, record);
@@ -156,7 +169,6 @@ export class OpenAIAgentsTracingProcessor
     this._safely('ending span', () => {
       const record = this._spanRecords.get(span);
       if (!record) {
-        this._endTraceOnFailedTask(span, true);
         return;
       }
 
@@ -181,15 +193,13 @@ export class OpenAIAgentsTracingProcessor
       } else if (
         span.error &&
         record.errorTarget &&
-        this._propagatesError(span)
+        this._propagatesError(span, record)
       ) {
         this._setError(record.errorTarget, span, span.spanData.type === 'task');
       }
 
       this._spanRecords.delete(span);
       this._spanRecordsById.delete(span.spanId);
-
-      this._endTraceOnFailedTask(span, false);
     });
     return Promise.resolve();
   }
@@ -203,12 +213,37 @@ export class OpenAIAgentsTracingProcessor
     this._spanRecordsById.clear();
     this._traceRecords = new WeakMap<object, TraceRecord>();
     this._traceRecordsById.clear();
+    this._traceRecordsByRun = new WeakMap<object, TraceRecord>();
     this._failedSpans = new WeakSet<Span>();
     return Promise.resolve();
   }
 
   forceFlush(): Promise<void> {
     return Promise.resolve();
+  }
+
+  onRunError(runToken: object, error: unknown): void {
+    this._safely('ending failed run trace', () => {
+      const record = this._traceRecordsByRun.get(runToken);
+      if (!record) {
+        return;
+      }
+      if (!this._failedSpans.has(record.span)) {
+        const errorType = this._errorType(error);
+        const errorDetail = this._errorDetail(
+          error,
+          'OpenAI Agents run failed'
+        );
+        this._failedSpans.add(record.span);
+        record.span.recordException({ name: errorType, message: errorDetail });
+        record.span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: errorDetail,
+        });
+        record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
+      }
+      this._endTrace(record);
+    });
   }
 
   private _startMappedSpan(
@@ -283,34 +318,33 @@ export class OpenAIAgentsTracingProcessor
     this._openSpans.delete(record.span);
     this._traceRecords.delete(record.trace);
     this._traceRecordsById.delete(record.trace.traceId);
+    if (record.runToken) {
+      this._traceRecordsByRun.delete(record.runToken);
+    }
     record.span.end(endTime);
   }
 
-  private _endTraceOnFailedTask(
+  private _propagatesError(
     span: OpenAIAgentsSpan,
-    recordError: boolean
-  ): void {
-    if (!span.error || span.spanData.type !== 'task') {
-      return;
-    }
-    // The SDK currently skips trace.end() when a runner task rejects. The
-    // failed task is the terminal callback in that path, so use its timestamp
-    // to close the run span and release the trace record.
-    const traceRecord = this._traceRecordsById.get(span.traceId);
-    if (!traceRecord) {
-      return;
-    }
-    if (recordError) {
-      this._setError(traceRecord.span, span, true);
-    }
-    this._endTrace(traceRecord, this._asTimeInput(span.endedAt));
-  }
-
-  private _propagatesError(span: OpenAIAgentsSpan): boolean {
+    record: SpanRecord
+  ): boolean {
     // Generation and response spans represent model attempts. The SDK may
     // retry them successfully, so only terminal runner lifecycle errors are
     // allowed to affect the enclosing run or agent span.
-    return span.spanData.type === 'task' || span.spanData.type === 'turn';
+    if (span.spanData.type === 'turn') {
+      return true;
+    }
+    if (span.spanData.type !== 'task' || !record.runToken) {
+      return span.spanData.type === 'task';
+    }
+    return (
+      this._traceRecordsById.get(span.traceId)?.runToken === record.runToken
+    );
+  }
+
+  private _activeRunToken(): object | undefined {
+    const value = context.active().getValue(OPENAI_AGENTS_RUN_CONTEXT_KEY);
+    return typeof value === 'object' && value !== null ? value : undefined;
   }
 
   private _setError(

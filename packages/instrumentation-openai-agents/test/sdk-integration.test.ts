@@ -11,6 +11,7 @@
  */
 
 import * as assert from 'assert';
+import { SpanStatusCode } from '@opentelemetry/api';
 // @openai/agents 0.14 loads this optional MCP module from its Node.js shim.
 // Keep this explicit import and dev dependency so Node.js 18 CI can resolve it.
 import '@modelcontextprotocol/sdk/shared/protocol.js';
@@ -116,6 +117,63 @@ describe('OpenAI Agents SDK integration', () => {
     assert.deepStrictEqual(
       spans.map(span => span.name),
       ['execute_tool real-tool', 'invoke_agent real-agent', 'openai.agents.run']
+    );
+  });
+
+  it('ends an internally-created trace when task spans are disabled', async () => {
+    const failure = new Error('model failed');
+    const model: import('@openai/agents').Model = {
+      getResponse: async () => {
+        throw failure;
+      },
+      getStreamedResponse: () => {
+        throw failure;
+      },
+    };
+    const agent = new agents.Agent({ name: 'failing-agent', model });
+    const runner = new agents.Runner({
+      tracing: { includeTaskAndTurnSpans: false },
+    });
+
+    await assert.rejects(runner.run(agent, 'fail'), failure);
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
+  });
+
+  it('leaves a caller-managed trace open when a nested run fails', async () => {
+    const failure = new Error('model failed');
+    const model: import('@openai/agents').Model = {
+      getResponse: async () => {
+        throw failure;
+      },
+      getStreamedResponse: () => {
+        throw failure;
+      },
+    };
+    const agent = new agents.Agent({ name: 'failing-agent', model });
+    const runner = new agents.Runner({
+      tracing: { includeTaskAndTurnSpans: false },
+    });
+
+    await agents.withTrace('shared-trace', async () => {
+      await assert.rejects(runner.run(agent, 'fail'), failure);
+      assert.strictEqual(
+        exporter
+          .getFinishedSpans()
+          .filter(span => span.name === 'openai.agents.run').length,
+        0
+      );
+    });
+
+    assert.strictEqual(
+      exporter
+        .getFinishedSpans()
+        .filter(span => span.name === 'openai.agents.run').length,
+      1
     );
   });
 

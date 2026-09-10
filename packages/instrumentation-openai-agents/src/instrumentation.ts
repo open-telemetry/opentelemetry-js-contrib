@@ -6,9 +6,14 @@
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  isWrapped,
 } from '@opentelemetry/instrumentation';
+import { context } from '@opentelemetry/api';
 import type { OpenAIAgentsModule } from './internal-types';
-import { OpenAIAgentsTracingProcessor } from './processor';
+import {
+  OPENAI_AGENTS_RUN_CONTEXT_KEY,
+  OpenAIAgentsTracingProcessor,
+} from './processor';
 import type { OpenAIAgentsInstrumentationConfig } from './types';
 import { getEnvBool } from './utils';
 /** @knipignore */
@@ -82,9 +87,14 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           }
           this._getProcessor().setEnabled(true);
           this._registerProcessor(agents);
+          this._patchRunner(agents);
           return moduleExports;
         },
-        _moduleExports => {
+        moduleExports => {
+          const agents = this._normalizeModule(moduleExports);
+          if (agents && isWrapped(agents.Runner.prototype.run)) {
+            this._unwrap(agents.Runner.prototype, 'run');
+          }
           this._processor?.setEnabled(false);
           this._module = undefined;
         }
@@ -125,6 +135,34 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     this._registrationMode = desiredMode;
   }
 
+  private _patchRunner(agents: OpenAIAgentsModule): void {
+    if (isWrapped(agents.Runner.prototype.run)) {
+      this._unwrap(agents.Runner.prototype, 'run');
+    }
+    const processor = this._getProcessor();
+    this._wrap(agents.Runner.prototype, 'run', original => {
+      return function patchedRun(this: unknown, ...args: unknown[]) {
+        // Trace processor callbacks remain the primary instrumentation path.
+        // This token only supplies the missing failure boundary: the SDK can
+        // skip onTraceEnd when Runner.run rejects, and task callbacks cannot
+        // be used as a fallback because they are optional and may belong to a
+        // caller-managed withTrace() scope.
+        const runToken = {};
+        const runContext = context
+          .active()
+          .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, runToken);
+        return context.with(runContext, async () => {
+          try {
+            return await original.apply(this, args);
+          } catch (error) {
+            processor.onRunError(runToken, error);
+            throw error;
+          }
+        });
+      };
+    });
+  }
+
   private _normalizeModule(
     moduleExports: unknown
   ): OpenAIAgentsModule | undefined {
@@ -149,7 +187,9 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     const candidate = value as Partial<OpenAIAgentsModule>;
     return (
       typeof candidate.addTraceProcessor === 'function' &&
-      typeof candidate.setTraceProcessors === 'function'
+      typeof candidate.setTraceProcessors === 'function' &&
+      typeof candidate.Runner === 'function' &&
+      typeof candidate.Runner.prototype?.run === 'function'
     );
   }
 }

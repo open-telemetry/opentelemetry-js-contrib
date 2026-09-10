@@ -40,7 +40,17 @@ export interface OpenAIAgentsTracingProcessor {
   forceFlush(): Promise<void>;
 }
 
+export type OpenAIAgentsRun = (...args: unknown[]) => Promise<unknown>;
+
+export interface OpenAIAgentsRunnerConstructor {
+  new (...args: never[]): unknown;
+  prototype: {
+    run: OpenAIAgentsRun;
+  };
+}
+
 export interface OpenAIAgentsModule {
+  Runner: OpenAIAgentsRunnerConstructor;
   addTraceProcessor(processor: OpenAIAgentsTracingProcessor): void;
   setTraceProcessors(processors: OpenAIAgentsTracingProcessor[]): void;
   setDefaultOpenAITracingExporter?(): void;

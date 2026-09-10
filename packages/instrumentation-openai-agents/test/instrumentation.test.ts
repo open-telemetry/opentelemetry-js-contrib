@@ -19,7 +19,13 @@ interface MockModule extends OpenAIAgentsModule {
 }
 
 function createMockModule(): MockModule {
+  class MockRunner {
+    run(): Promise<unknown> {
+      return Promise.resolve(undefined);
+    }
+  }
   const module: MockModule = {
+    Runner: MockRunner,
     added: [],
     processors: [],
     replacements: [],
@@ -110,6 +116,33 @@ describe('OpenAIAgentsInstrumentation', () => {
     definition.patch!(module, '0.14.3');
 
     assert.strictEqual(module.added.length, 1);
+    instrumentation.disable();
+  });
+
+  it('reports Runner.run rejections to the tracing processor', async () => {
+    const instrumentation = new OpenAIAgentsInstrumentation();
+    const module = createMockModule();
+    const failure = new Error('run failed');
+    module.Runner.prototype.run = async () => {
+      throw failure;
+    };
+    const definition = getDefinition(instrumentation);
+    definition.patch!(module, '0.14.0');
+
+    const processor = module.processors[0] as OpenAIAgentsTracingProcessor & {
+      onRunError(runToken: object, error: unknown): void;
+    };
+    const originalOnRunError = processor.onRunError.bind(processor);
+    let reportedError: unknown;
+    processor.onRunError = (runToken, error) => {
+      reportedError = error;
+      originalOnRunError(runToken, error);
+    };
+
+    await assert.rejects(module.Runner.prototype.run(), failure);
+    assert.strictEqual(reportedError, failure);
+
+    definition.unpatch!(module, '0.14.0');
     instrumentation.disable();
   });
 
