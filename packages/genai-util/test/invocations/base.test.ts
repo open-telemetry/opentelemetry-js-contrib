@@ -34,6 +34,7 @@ describe('BaseInvocation', () => {
     public runCompletionHookCalls: Array<{
       durationSec: number;
       error?: Error;
+      spanIsRecording?: boolean;
     }> = [];
 
     protected override _recordMetrics(
@@ -51,7 +52,11 @@ describe('BaseInvocation', () => {
       durationSec: number,
       error?: Error
     ): void {
-      this.runCompletionHookCalls.push({ durationSec, error });
+      this.runCompletionHookCalls.push({
+        durationSec,
+        error,
+        spanIsRecording: this._span.isRecording(),
+      });
     }
   }
 
@@ -85,10 +90,11 @@ describe('BaseInvocation', () => {
     );
     assert.ok(inv.runCompletionHookCalls[0].durationSec >= 0);
     assert.strictEqual(inv.runCompletionHookCalls[0].error, undefined);
+    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.OK);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
     assert.strictEqual(spans[0].attributes['custom.attr'], 'value1');
     assert.strictEqual(spans[0].attributes['custom.attr2'], 'value2');
   });
@@ -120,6 +126,7 @@ describe('BaseInvocation', () => {
       'number'
     );
     assert.ok(inv.runCompletionHookCalls[0].durationSec >= 0);
+    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -151,6 +158,7 @@ describe('BaseInvocation', () => {
       'String error message'
     );
     assert.ok(inv.runCompletionHookCalls[0].error instanceof Error);
+    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -173,7 +181,7 @@ describe('BaseInvocation', () => {
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.OK);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
   });
 
   it('should export span with endTime after startTime and non-zero positive duration', async () => {
@@ -206,5 +214,58 @@ describe('BaseInvocation', () => {
         hrTimeToMicroseconds(finishedSpan.endTime)
     );
     assert.ok(durationMs > 0, `Expected durationMs (${durationMs}) to be > 0`);
+  });
+
+  it('should allow modifying span attributes inside completion hook before span ends', () => {
+    class EnrichingInvocation extends BaseInvocation {
+      protected override _runCompletionHook(): void {
+        this._span.setAttribute('hook.enriched', 'true');
+      }
+    }
+
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+    const span = tracer.startSpan('enriching-span');
+    const inv = new EnrichingInvocation(span);
+    inv.stop();
+
+    const [finishedSpan] = ctx.memoryExporter.getFinishedSpans();
+    assert.ok(finishedSpan);
+    assert.strictEqual(finishedSpan.attributes['hook.enriched'], 'true');
+    assert.strictEqual(finishedSpan.status.code, SpanStatusCode.UNSET);
+  });
+
+  it('should guarantee span is ended even if completion hook throws on stop or fail', () => {
+    class ThrowingInvocation extends BaseInvocation {
+      protected override _runCompletionHook(): void {
+        throw new Error('Hook failure');
+      }
+    }
+
+    const tracer = ctx.tracerProvider.getTracer('test-tracer');
+
+    // Test stop() with throwing hook
+    const stopSpan = tracer.startSpan('throwing-stop-span');
+    const stopInv = new ThrowingInvocation(stopSpan);
+    assert.throws(() => stopInv.stop(), /Hook failure/);
+
+    // Test fail() with throwing hook
+    const failSpan = tracer.startSpan('throwing-fail-span');
+    const failInv = new ThrowingInvocation(failSpan);
+    assert.throws(
+      () => failInv.fail(new Error('Original failure')),
+      /Hook failure/
+    );
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+
+    const finishedStopSpan = spans.find(s => s.name === 'throwing-stop-span');
+    assert.ok(finishedStopSpan);
+    assert.strictEqual(finishedStopSpan.status.code, SpanStatusCode.UNSET);
+
+    const finishedFailSpan = spans.find(s => s.name === 'throwing-fail-span');
+    assert.ok(finishedFailSpan);
+    assert.strictEqual(finishedFailSpan.status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(finishedFailSpan.status.message, 'Original failure');
   });
 });
