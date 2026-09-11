@@ -37,6 +37,13 @@ export type OpenAIAgentsWithTrace = (
   options?: unknown
 ) => Promise<unknown>;
 
+export type OpenAIAgentsGetOrCreateTrace = (
+  fn: () => Promise<unknown>,
+  options?: unknown
+) => Promise<unknown>;
+
+export type OpenAIAgentsGetCurrentTrace = () => OpenAIAgentsTrace | null;
+
 export interface OpenAIAgentsTracingProcessor {
   onTraceStart(trace: OpenAIAgentsTrace): Promise<void>;
   onTraceEnd(trace: OpenAIAgentsTrace): Promise<void>;
@@ -58,6 +65,8 @@ export interface OpenAIAgentsRunnerConstructor {
 export interface OpenAIAgentsModule {
   Runner: OpenAIAgentsRunnerConstructor;
   withTrace: OpenAIAgentsWithTrace;
+  getOrCreateTrace: OpenAIAgentsGetOrCreateTrace;
+  getCurrentTrace: OpenAIAgentsGetCurrentTrace;
   addTraceProcessor(processor: OpenAIAgentsTracingProcessor): void;
   setTraceProcessors(processors: OpenAIAgentsTracingProcessor[]): void;
   setDefaultOpenAITracingExporter?(): void;

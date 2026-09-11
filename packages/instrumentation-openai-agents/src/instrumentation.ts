@@ -89,6 +89,7 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           this._registerProcessor(agents);
           this._patchRunner(agents);
           this._patchWithTrace(agents);
+          this._patchGetOrCreateTrace(agents);
           return moduleExports;
         },
         moduleExports => {
@@ -98,6 +99,9 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           }
           if (agents && isWrapped(agents.withTrace)) {
             this._unwrap(agents, 'withTrace');
+          }
+          if (agents && isWrapped(agents.getOrCreateTrace)) {
+            this._unwrap(agents, 'getOrCreateTrace');
           }
           this._processor?.setEnabled(false);
           this._module = undefined;
@@ -218,6 +222,36 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     });
   }
 
+  private _patchGetOrCreateTrace(agents: OpenAIAgentsModule): void {
+    if (isWrapped(agents.getOrCreateTrace)) {
+      this._unwrap(agents, 'getOrCreateTrace');
+    }
+    const processor = this._getProcessor();
+    this._wrap(agents, 'getOrCreateTrace', original => {
+      return function patchedGetOrCreateTrace(
+        this: unknown,
+        ...args: unknown[]
+      ) {
+        const callback = args[0];
+        if (typeof callback !== 'function') {
+          return original.apply(this, args as Parameters<typeof original>);
+        }
+        args[0] = async () => {
+          try {
+            return await callback();
+          } catch (error) {
+            const trace = agents.getCurrentTrace();
+            if (trace) {
+              processor.onTraceError(trace, error);
+            }
+            throw error;
+          }
+        };
+        return original.apply(this, args as Parameters<typeof original>);
+      };
+    });
+  }
+
   private _normalizeModule(
     moduleExports: unknown
   ): OpenAIAgentsModule | undefined {
@@ -244,6 +278,8 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
       typeof candidate.addTraceProcessor === 'function' &&
       typeof candidate.setTraceProcessors === 'function' &&
       typeof candidate.withTrace === 'function' &&
+      typeof candidate.getOrCreateTrace === 'function' &&
+      typeof candidate.getCurrentTrace === 'function' &&
       typeof candidate.Runner === 'function' &&
       typeof candidate.Runner.prototype?.run === 'function'
     );

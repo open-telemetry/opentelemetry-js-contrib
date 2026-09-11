@@ -206,6 +206,23 @@ describe('OpenAI Agents SDK integration', () => {
     assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
   });
 
+  it('ends a getOrCreateTrace scope when its callback rejects', async () => {
+    const failure = new Error('workflow failed');
+
+    await assert.rejects(
+      agents.getOrCreateTrace(async () => {
+        throw failure;
+      }),
+      failure
+    );
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
+  });
+
   describe('recorded OpenAI responses', function () {
     this.timeout(10000);
     nockBack.fixtures = path.join(__dirname, 'mock-responses');
