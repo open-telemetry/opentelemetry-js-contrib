@@ -531,6 +531,26 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
   });
 
+  it('accepts the built-in Error name in error.type', async () => {
+    const tool = createSpan('agents-trace', 'tool', 'function', undefined, {
+      name: 'lookup_order',
+    });
+    tool.error = {
+      message: 'Error running tool',
+      data: { error: 'Error: tool failed' },
+    };
+
+    await processor.onSpanStart(tool);
+    await processor.onSpanEnd(tool);
+
+    const [toolSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(toolSpan.attributes['error.type'], 'Error');
+    assert.strictEqual(
+      toolSpan.events[0].attributes?.['exception.type'],
+      'Error'
+    );
+  });
+
   it('allows active spans to finish after instrumentation is disabled', async () => {
     const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
       name: 'triage',

@@ -441,7 +441,7 @@ export class OpenAIAgentsTracingProcessor
 
   private _boundedErrorName(name: string): string {
     const value = name.trim();
-    return /^[A-Za-z_$][A-Za-z0-9_$.]{0,127}(?:Error|Exception|TripwireTriggered)$/.test(
+    return /^(?:Error|Exception|[A-Za-z_$][A-Za-z0-9_$.]{0,127}(?:Error|Exception|TripwireTriggered))$/.test(
       value
     )
       ? value
