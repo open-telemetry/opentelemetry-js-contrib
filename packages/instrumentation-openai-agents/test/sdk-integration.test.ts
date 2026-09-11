@@ -177,6 +177,35 @@ describe('OpenAI Agents SDK integration', () => {
     );
   });
 
+  it('ends a caller-managed trace when its callback rejects', async () => {
+    const failure = new Error('model failed');
+    const model: import('@openai/agents').Model = {
+      getResponse: async () => {
+        throw failure;
+      },
+      getStreamedResponse: () => {
+        throw failure;
+      },
+    };
+    const agent = new agents.Agent({ name: 'failing-agent', model });
+    const runner = new agents.Runner({
+      tracing: { includeTaskAndTurnSpans: false },
+    });
+
+    await assert.rejects(
+      agents.withTrace('failed-workflow', async () => {
+        await runner.run(agent, 'fail');
+      }),
+      failure
+    );
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
+  });
+
   describe('recorded OpenAI responses', function () {
     this.timeout(10000);
     nockBack.fixtures = path.join(__dirname, 'mock-responses');

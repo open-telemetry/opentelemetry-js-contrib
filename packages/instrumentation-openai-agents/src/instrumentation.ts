@@ -9,7 +9,10 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { context } from '@opentelemetry/api';
-import type { OpenAIAgentsModule } from './internal-types';
+import type {
+  OpenAIAgentsModule,
+  OpenAIAgentsTrace,
+} from './internal-types';
 import {
   OPENAI_AGENTS_RUN_CONTEXT_KEY,
   OpenAIAgentsTracingProcessor,
@@ -88,12 +91,16 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           this._getProcessor().setEnabled(true);
           this._registerProcessor(agents);
           this._patchRunner(agents);
+          this._patchWithTrace(agents);
           return moduleExports;
         },
         moduleExports => {
           const agents = this._normalizeModule(moduleExports);
           if (agents && isWrapped(agents.Runner.prototype.run)) {
             this._unwrap(agents.Runner.prototype, 'run');
+          }
+          if (agents && isWrapped(agents.withTrace)) {
+            this._unwrap(agents, 'withTrace');
           }
           this._processor?.setEnabled(false);
           this._module = undefined;
@@ -163,6 +170,30 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     });
   }
 
+  private _patchWithTrace(agents: OpenAIAgentsModule): void {
+    if (isWrapped(agents.withTrace)) {
+      this._unwrap(agents, 'withTrace');
+    }
+    const processor = this._getProcessor();
+    this._wrap(agents, 'withTrace', original => {
+      return function patchedWithTrace(this: unknown, ...args: unknown[]) {
+        const callback = args[1];
+        if (typeof callback !== 'function') {
+          return original.apply(this, args as Parameters<typeof original>);
+        }
+        args[1] = async (trace: unknown) => {
+          try {
+            return await callback(trace);
+          } catch (error) {
+            processor.onTraceError(trace as OpenAIAgentsTrace, error);
+            throw error;
+          }
+        };
+        return original.apply(this, args as Parameters<typeof original>);
+      };
+    });
+  }
+
   private _normalizeModule(
     moduleExports: unknown
   ): OpenAIAgentsModule | undefined {
@@ -188,6 +219,7 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     return (
       typeof candidate.addTraceProcessor === 'function' &&
       typeof candidate.setTraceProcessors === 'function' &&
+      typeof candidate.withTrace === 'function' &&
       typeof candidate.Runner === 'function' &&
       typeof candidate.Runner.prototype?.run === 'function'
     );

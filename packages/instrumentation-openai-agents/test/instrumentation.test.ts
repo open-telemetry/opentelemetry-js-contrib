@@ -26,6 +26,7 @@ function createMockModule(): MockModule {
   }
   const module: MockModule = {
     Runner: MockRunner,
+    withTrace: async (_trace, fn) => fn({ traceId: 'mock-trace' }),
     added: [],
     processors: [],
     replacements: [],

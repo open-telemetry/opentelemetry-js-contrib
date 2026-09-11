@@ -246,6 +246,31 @@ export class OpenAIAgentsTracingProcessor
     });
   }
 
+  onTraceError(trace: OpenAIAgentsTrace, error: unknown): void {
+    this._safely('ending failed trace', () => {
+      const record = this._traceRecords.get(trace) ??
+        this._traceRecordsById.get(trace.traceId);
+      if (!record) {
+        return;
+      }
+      if (!this._failedSpans.has(record.span)) {
+        const errorType = this._errorType(error);
+        const errorDetail = this._errorDetail(
+          error,
+          'OpenAI Agents trace failed'
+        );
+        this._failedSpans.add(record.span);
+        record.span.recordException({ name: errorType, message: errorDetail });
+        record.span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: errorDetail,
+        });
+        record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
+      }
+      this._endTrace(record);
+    });
+  }
+
   private _startMappedSpan(
     span: OpenAIAgentsSpan,
     parentContext: Context,
