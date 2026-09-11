@@ -190,21 +190,42 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
           );
         }
 
+        let spanEnded = false;
+
+        const endSpan = () => {
+          if (!spanEnded) {
+            spanEnded = true;
+            span.end();
+          }
+        };
+
         const patchedNext = (err?: any) => {
-          span.end();
+          endSpan();
           next(err);
         };
-        patchedNext.ifError = next.ifError;
+
+        const nextIfError = next.ifError;
+
+        if (nextIfError) {
+          patchedNext.ifError = (err?: any) => {
+            if (err) {
+              endSpan();
+            }
+            return nextIfError.call(patchedNext, err);
+          };
+        } else {
+          patchedNext.ifError = nextIfError;
+        }
 
         const wrapPromise = (promise: Promise<unknown>) => {
           return promise
             .then(value => {
-              span.end();
+              endSpan();
               return value;
             })
             .catch(err => {
               span.recordException(err);
-              span.end();
+              endSpan();
               throw err;
             });
         };
@@ -221,11 +242,10 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
               if (isPromise(result)) {
                 return wrapPromise(result);
               }
-              span.end();
               return result;
             } catch (err: any) {
               span.recordException(err);
-              span.end();
+              endSpan();
               throw err;
             }
           },
