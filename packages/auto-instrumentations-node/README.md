@@ -183,6 +183,7 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 - [@opentelemetry/instrumentation-nestjs-core](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core)
 - [@opentelemetry/instrumentation-net](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-net)
 - [@opentelemetry/instrumentation-openai](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-openai)
+- [@opentelemetry/instrumentation-openai-agents](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-openai-agents)
 - [@opentelemetry/instrumentation-oracledb](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-oracledb)
 - [@opentelemetry/instrumentation-pg](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-pg)
 - [@opentelemetry/instrumentation-pino](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-pino)

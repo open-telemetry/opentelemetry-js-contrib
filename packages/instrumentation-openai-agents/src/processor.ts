@@ -1,0 +1,498 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  context,
+  createContextKey,
+  SpanKind,
+  SpanStatusCode,
+  trace as otelTrace,
+} from '@opentelemetry/api';
+import type {
+  Attributes,
+  Context,
+  DiagLogger,
+  Span,
+  TimeInput,
+  Tracer,
+} from '@opentelemetry/api';
+import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import type {
+  OpenAIAgentsSpan,
+  OpenAIAgentsTrace,
+  OpenAIAgentsTracingProcessor as OpenAIAgentsTracingProcessorApi,
+} from './internal-types';
+import {
+  ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
+  ATTR_GEN_AI_TOOL_CALL_RESULT,
+  ATTR_GEN_AI_TOOL_NAME,
+  ATTR_GEN_AI_TOOL_TYPE,
+  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+  GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
+} from './semconv';
+import type { OpenAIAgentsInstrumentationConfig } from './types';
+
+interface SpanRecord {
+  context: Context;
+  span?: Span;
+  errorTarget?: Span;
+  agentName?: string;
+  runToken?: object;
+}
+
+interface TraceRecord extends SpanRecord {
+  span: Span;
+  trace: OpenAIAgentsTrace;
+  previousRunRecord?: TraceRecord;
+}
+
+export const OPENAI_AGENTS_RUN_CONTEXT_KEY = createContextKey(
+  'opentelemetry.instrumentation.openai-agents.run'
+);
+
+export class OpenAIAgentsTracingProcessor
+  implements OpenAIAgentsTracingProcessorApi
+{
+  private _enabled = true;
+  private _captureMessageContent = false;
+  private _spanRecords = new WeakMap<object, SpanRecord>();
+  private _spanRecordsById = new Map<string, SpanRecord>();
+  private _traceRecords = new WeakMap<object, TraceRecord>();
+  private _traceRecordsById = new Map<string, TraceRecord>();
+  private _traceRecordsByRun = new WeakMap<object, TraceRecord>();
+  private _failedSpans = new WeakSet<Span>();
+  private readonly _openSpans = new Set<Span>();
+
+  constructor(
+    private readonly _getTracer: () => Tracer,
+    config: OpenAIAgentsInstrumentationConfig,
+    private readonly _diag: DiagLogger
+  ) {
+    this.setConfig(config);
+  }
+
+  setConfig(config: OpenAIAgentsInstrumentationConfig): void {
+    this._captureMessageContent = !!config.captureMessageContent;
+  }
+
+  setEnabled(enabled: boolean): void {
+    this._enabled = enabled;
+  }
+
+  onTraceStart(trace: OpenAIAgentsTrace): Promise<void> {
+    this._safely('starting trace span', () => {
+      if (!this._enabled || this._traceRecords.has(trace)) {
+        return;
+      }
+
+      const parentContext = context.active();
+      const runToken = this._activeRunToken();
+      const previousRunRecord = runToken
+        ? this._traceRecordsByRun.get(runToken)
+        : undefined;
+      const span = this._getTracer().startSpan(
+        'openai.agents.run',
+        {
+          kind: SpanKind.INTERNAL,
+        },
+        parentContext
+      );
+      const spanContext = otelTrace.setSpan(parentContext, span);
+      const record: TraceRecord = {
+        context: spanContext,
+        span,
+        errorTarget: span,
+        trace,
+        runToken,
+        previousRunRecord,
+      };
+      this._traceRecords.set(trace, record);
+      this._traceRecordsById.set(trace.traceId, record);
+      if (runToken) {
+        this._traceRecordsByRun.set(runToken, record);
+      }
+      this._openSpans.add(span);
+    });
+    return Promise.resolve();
+  }
+
+  onTraceEnd(trace: OpenAIAgentsTrace): Promise<void> {
+    this._safely('ending trace span', () => {
+      const record = this._traceRecords.get(trace);
+      if (!record) {
+        return;
+      }
+      this._endTrace(record);
+    });
+    return Promise.resolve();
+  }
+
+  onSpanStart(span: OpenAIAgentsSpan): Promise<void> {
+    this._safely('starting span', () => {
+      if (!this._enabled || this._spanRecords.has(span)) {
+        return;
+      }
+
+      const parentRecord = this._parentRecord(span);
+      const parentContext = parentRecord?.context || context.active();
+      const ownAgentName =
+        span.spanData.type === 'agent'
+          ? this._nonEmptyString(span.spanData.name)
+          : undefined;
+      const agentName = ownAgentName || parentRecord?.agentName;
+      const otelSpan = this._startMappedSpan(
+        span,
+        parentContext,
+        parentRecord?.agentName
+      );
+      const spanContext = otelSpan
+        ? otelTrace.setSpan(parentContext, otelSpan)
+        : parentContext;
+
+      const record: SpanRecord = {
+        context: spanContext,
+        span: otelSpan,
+        errorTarget: otelSpan || parentRecord?.errorTarget,
+        agentName,
+        runToken: this._activeRunToken(),
+      };
+      this._spanRecords.set(span, record);
+      this._spanRecordsById.set(span.spanId, record);
+      if (otelSpan) {
+        this._openSpans.add(otelSpan);
+      }
+    });
+    return Promise.resolve();
+  }
+
+  onSpanEnd(span: OpenAIAgentsSpan): Promise<void> {
+    this._safely('ending span', () => {
+      const record = this._spanRecords.get(span);
+      if (!record) {
+        return;
+      }
+
+      if (record.span) {
+        if (span.spanData.type === 'function' && this._captureMessageContent) {
+          if (span.spanData.input !== undefined) {
+            record.span.setAttribute(
+              ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
+              this._stringValue(span.spanData.input)
+            );
+          }
+          if (!span.error && span.spanData.output !== undefined) {
+            record.span.setAttribute(
+              ATTR_GEN_AI_TOOL_CALL_RESULT,
+              this._stringValue(span.spanData.output)
+            );
+          }
+        }
+        this._setError(record.span, span, true);
+        record.span.end(this._asTimeInput(span.endedAt));
+        this._openSpans.delete(record.span);
+      } else if (
+        span.error &&
+        record.errorTarget &&
+        this._propagatesError(span, record)
+      ) {
+        this._setError(record.errorTarget, span, span.spanData.type === 'task');
+      }
+
+      this._spanRecords.delete(span);
+      this._spanRecordsById.delete(span.spanId);
+    });
+    return Promise.resolve();
+  }
+
+  shutdown(_timeout?: number): Promise<void> {
+    for (const span of [...this._openSpans].reverse()) {
+      span.end();
+    }
+    this._openSpans.clear();
+    this._spanRecords = new WeakMap<object, SpanRecord>();
+    this._spanRecordsById.clear();
+    this._traceRecords = new WeakMap<object, TraceRecord>();
+    this._traceRecordsById.clear();
+    this._traceRecordsByRun = new WeakMap<object, TraceRecord>();
+    this._failedSpans = new WeakSet<Span>();
+    return Promise.resolve();
+  }
+
+  forceFlush(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  onRunError(runToken: object, error: unknown): void {
+    this._safely('ending failed run trace', () => {
+      const record = this._traceRecordsByRun.get(runToken);
+      if (!record) {
+        return;
+      }
+      this._recordRunError(record, error, 'OpenAI Agents run failed');
+      this._endTrace(record);
+    });
+  }
+
+  onRunStreamError(runToken: object, error: unknown): void {
+    this._safely('recording failed streamed run', () => {
+      const record = this._traceRecordsByRun.get(runToken);
+      if (record) {
+        this._recordRunError(record, error, 'OpenAI Agents stream failed');
+      }
+    });
+  }
+
+  onTraceError(trace: OpenAIAgentsTrace, error: unknown): void {
+    this._safely('ending failed trace', () => {
+      const record =
+        this._traceRecords.get(trace) ??
+        this._traceRecordsById.get(trace.traceId);
+      if (!record) {
+        return;
+      }
+      if (!this._failedSpans.has(record.span)) {
+        const errorType = this._errorType(error);
+        const errorDetail = this._errorDetail(
+          error,
+          'OpenAI Agents trace failed'
+        );
+        this._failedSpans.add(record.span);
+        record.span.recordException({ name: errorType, message: errorDetail });
+        record.span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: errorDetail,
+        });
+        record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
+      }
+      this._endTrace(record);
+    });
+  }
+
+  private _recordRunError(
+    record: TraceRecord,
+    error: unknown,
+    fallbackDetail: string
+  ): void {
+    if (this._failedSpans.has(record.span)) {
+      return;
+    }
+    const errorType = this._errorType(error);
+    const errorDetail = this._errorDetail(error, fallbackDetail);
+    this._failedSpans.add(record.span);
+    record.span.recordException({ name: errorType, message: errorDetail });
+    record.span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: errorDetail,
+    });
+    record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
+  }
+
+  private _startMappedSpan(
+    span: OpenAIAgentsSpan,
+    parentContext: Context,
+    agentName?: string
+  ): Span | undefined {
+    const data = span.spanData;
+    const startTime = this._asTimeInput(span.startedAt);
+
+    if (data.type === 'agent') {
+      const name = this._nonEmptyString(data.name);
+      const attributes: Attributes = {
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+      };
+      if (name) {
+        attributes[ATTR_GEN_AI_AGENT_NAME] = name;
+      }
+      return this._getTracer().startSpan(
+        name
+          ? `${GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT} ${name}`
+          : GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
+        {
+          kind: SpanKind.INTERNAL,
+          startTime,
+          attributes,
+        },
+        parentContext
+      );
+    }
+
+    if (data.type === 'function') {
+      const name = this._nonEmptyString(data.name);
+      const attributes: Attributes = {
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+        [ATTR_GEN_AI_TOOL_TYPE]: GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
+      };
+      if (name) {
+        attributes[ATTR_GEN_AI_TOOL_NAME] = name;
+      }
+      if (agentName) {
+        attributes[ATTR_GEN_AI_AGENT_NAME] = agentName;
+      }
+      const toolSpan = this._getTracer().startSpan(
+        name
+          ? `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${name}`
+          : GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+        {
+          kind: SpanKind.INTERNAL,
+          startTime,
+          attributes,
+        },
+        parentContext
+      );
+      return toolSpan;
+    }
+
+    return undefined;
+  }
+
+  private _parentRecord(span: OpenAIAgentsSpan): SpanRecord | undefined {
+    if (span.parentId) {
+      const parent = this._spanRecordsById.get(span.parentId);
+      if (parent) {
+        return parent;
+      }
+    }
+    return this._traceRecordsById.get(span.traceId);
+  }
+
+  private _endTrace(record: TraceRecord, endTime?: TimeInput): void {
+    this._openSpans.delete(record.span);
+    this._traceRecords.delete(record.trace);
+    this._traceRecordsById.delete(record.trace.traceId);
+    if (record.runToken) {
+      if (this._traceRecordsByRun.get(record.runToken) === record) {
+        if (record.previousRunRecord) {
+          this._traceRecordsByRun.set(
+            record.runToken,
+            record.previousRunRecord
+          );
+        } else {
+          this._traceRecordsByRun.delete(record.runToken);
+        }
+      }
+    }
+    record.span.end(endTime);
+  }
+
+  private _propagatesError(
+    span: OpenAIAgentsSpan,
+    record: SpanRecord
+  ): boolean {
+    // Generation and response spans represent model attempts. The SDK may
+    // retry them successfully, so only terminal runner lifecycle errors are
+    // allowed to affect the enclosing run or agent span.
+    if (span.spanData.type === 'turn') {
+      return true;
+    }
+    if (span.spanData.type !== 'task' || !record.runToken) {
+      return span.spanData.type === 'task';
+    }
+    return (
+      this._traceRecordsById.get(span.traceId)?.runToken === record.runToken
+    );
+  }
+
+  private _activeRunToken(): object | undefined {
+    const value = context.active().getValue(OPENAI_AGENTS_RUN_CONTEXT_KEY);
+    return typeof value === 'object' && value !== null ? value : undefined;
+  }
+
+  private _setError(
+    otelSpan: Span,
+    span: OpenAIAgentsSpan,
+    overwrite = false
+  ): void {
+    if (!span.error || (!overwrite && this._failedSpans.has(otelSpan))) {
+      return;
+    }
+    this._failedSpans.add(otelSpan);
+    const errorType = this._errorType(span.error.data?.error);
+    otelSpan.recordException({
+      name: errorType,
+      message: this._errorDetail(span.error.data?.error, span.error.message),
+    });
+    otelSpan.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: span.error.message,
+    });
+    otelSpan.setAttribute(ATTR_ERROR_TYPE, errorType);
+  }
+
+  private _errorType(error: unknown): string {
+    if (error instanceof Error) {
+      return this._boundedErrorName(error.name);
+    }
+    if (typeof error !== 'string') {
+      return '_OTHER';
+    }
+
+    const value = error.trim();
+    const prefix = /^([A-Za-z_$][A-Za-z0-9_$.]{0,127}):/.exec(value)?.[1];
+    if (prefix) {
+      return this._boundedErrorName(prefix);
+    }
+    return this._boundedErrorName(value);
+  }
+
+  private _boundedErrorName(name: string): string {
+    const value = name.trim();
+    return /^(?:Error|Exception|[A-Za-z_$][A-Za-z0-9_$.]{0,127}(?:Error|Exception|TripwireTriggered))$/.test(
+      value
+    )
+      ? value
+      : '_OTHER';
+  }
+
+  private _errorDetail(error: unknown, fallback: string): string {
+    if (error instanceof Error) {
+      return error.message || fallback;
+    }
+    return typeof error === 'string' && error ? error : fallback;
+  }
+
+  private _nonEmptyString(value: unknown): string | undefined {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+    return value.trim() || undefined;
+  }
+
+  private _asTimeInput(
+    value: string | null | undefined
+  ): TimeInput | undefined {
+    if (!value) {
+      return undefined;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date;
+  }
+
+  private _stringValue(value: unknown): string {
+    if (typeof value === 'string') {
+      return value;
+    }
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  }
+
+  private _safely(description: string, callback: () => void): void {
+    try {
+      callback();
+    } catch (error) {
+      // The Agents SDK does not await processor callbacks when spans start, so
+      // processor failures must be contained here rather than rejected.
+      this._diag.error(
+        `OpenAI Agents instrumentation failed while ${description}`,
+        error
+      );
+    }
+  }
+}
