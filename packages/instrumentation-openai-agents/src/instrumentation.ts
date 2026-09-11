@@ -21,6 +21,14 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 type RegistrationMode = 'add' | 'replace';
 
+/**
+ * Instruments the OpenAI Agents SDK tracing lifecycle with OpenTelemetry.
+ *
+ * The SDK trace processor callbacks create the run, agent, and function-tool
+ * span hierarchy. Narrow wrappers around `Runner.run`, `withTrace`, and
+ * `getOrCreateTrace` only cover rejected or streamed lifecycles where the SDK
+ * does not emit a corresponding trace-end callback.
+ */
 export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgentsInstrumentationConfig> {
   private _processor?: OpenAIAgentsTracingProcessor;
   private _module?: OpenAIAgentsModule;
