@@ -14,6 +14,7 @@ import {
   CLOUD_PLATFORM_VALUE_GCP_KUBERNETES_ENGINE,
   CLOUD_PROVIDER_VALUE_GCP,
   ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_GCP_PROJECT_ID,
   ATTR_CLOUD_AVAILABILITY_ZONE,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
@@ -52,6 +53,7 @@ const ATTRIBUTE_NAMES = [
   ATTR_HOST_NAME,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_ACCOUNT_ID,
+  ATTR_GCP_PROJECT_ID,
   ATTR_FAAS_NAME,
   ATTR_FAAS_VERSION,
   ATTR_FAAS_INSTANCE,
@@ -188,6 +190,7 @@ async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
   return resourceFromAttributes({
     [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_GCP,
     [ATTR_CLOUD_ACCOUNT_ID]: project,
+    [ATTR_GCP_PROJECT_ID]: project,
     ...attrs,
   } satisfies GcpResourceAttributes);
 }

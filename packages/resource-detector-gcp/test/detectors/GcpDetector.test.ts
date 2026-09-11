@@ -56,6 +56,7 @@ describe('gcpDetector', () => {
       const resource = await detectAndWait();
       assert.deepStrictEqual(resource.attributes, {
         'cloud.account.id': 'fake-project-id',
+        'gcp.project_id': 'fake-project-id',
         'cloud.availability_zone': 'us-east4-b',
         'cloud.platform': 'gcp_kubernetes_engine',
         'cloud.provider': 'gcp',
@@ -71,6 +72,7 @@ describe('gcpDetector', () => {
       const resource = await detectAndWait();
       assert.deepStrictEqual(resource.attributes, {
         'cloud.account.id': 'fake-project-id',
+        'gcp.project_id': 'fake-project-id',
         'cloud.platform': 'gcp_kubernetes_engine',
         'cloud.provider': 'gcp',
         'cloud.region': 'us-east4',
@@ -97,6 +99,7 @@ describe('gcpDetector', () => {
     const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
+      'gcp.project_id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
       'cloud.platform': 'gcp_compute_engine',
       'cloud.provider': 'gcp',
@@ -121,6 +124,7 @@ describe('gcpDetector', () => {
     const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
+      'gcp.project_id': 'fake-project-id',
       'cloud.platform': 'gcp_cloud_run',
       'cloud.provider': 'gcp',
       'cloud.region': 'us-east4',
@@ -144,6 +148,7 @@ describe('gcpDetector', () => {
     const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
+      'gcp.project_id': 'fake-project-id',
       'cloud.platform': 'gcp_cloud_functions',
       'cloud.provider': 'gcp',
       'cloud.region': 'us-east4',
@@ -166,6 +171,7 @@ describe('gcpDetector', () => {
     const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
+      'gcp.project_id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
       'cloud.platform': 'gcp_app_engine',
       'cloud.provider': 'gcp',
@@ -187,6 +193,7 @@ describe('gcpDetector', () => {
     const resource = await detectAndWait();
     assert.deepStrictEqual(resource.attributes, {
       'cloud.account.id': 'fake-project-id',
+      'gcp.project_id': 'fake-project-id',
       'cloud.availability_zone': 'us-east4-b',
       'cloud.platform': 'gcp_app_engine',
       'cloud.provider': 'gcp',
