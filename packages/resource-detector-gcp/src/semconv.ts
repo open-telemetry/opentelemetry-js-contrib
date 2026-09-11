@@ -20,6 +20,16 @@
 export const ATTR_CLOUD_ACCOUNT_ID = 'cloud.account.id' as const;
 
 /**
+ * The Google Cloud project ID.
+ *
+ * @example my-project
+ * @example 233510669999
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_PROJECT_ID = 'gcp.project_id' as const;
+
+/**
  * Cloud regions often have multiple, isolated locations known as zones to increase availability. Availability zone represents the zone where the resource is running.
  *
  * @example us-east-1c
