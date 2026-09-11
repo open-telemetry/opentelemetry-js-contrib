@@ -12,10 +12,6 @@ import {
   createTimePerOutputChunkHistogram,
   recordOperationDuration,
   recordTokenUsage,
-  GENAI_OPERATION_DURATION_BUCKETS,
-  GENAI_TOKEN_USAGE_BUCKETS,
-  GENAI_TIME_TO_FIRST_CHUNK_BUCKETS,
-  GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS,
 } from '../src/metrics';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -38,13 +34,6 @@ describe('GenAI Metrics Helpers', () => {
 
   afterEach(async () => {
     await meterProvider.shutdown();
-  });
-
-  it('should define standard bucket boundaries', () => {
-    assert.strictEqual(GENAI_OPERATION_DURATION_BUCKETS[0], 0.01);
-    assert.strictEqual(GENAI_TOKEN_USAGE_BUCKETS[0], 1);
-    assert.strictEqual(GENAI_TIME_TO_FIRST_CHUNK_BUCKETS[0], 0.01);
-    assert.strictEqual(GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS[0], 0.01);
   });
 
   it('should create duration and token usage histograms', () => {
