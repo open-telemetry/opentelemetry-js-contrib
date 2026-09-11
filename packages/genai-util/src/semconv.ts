@@ -43,7 +43,7 @@ export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
  * @example openai
  * @example anthropic
  * @example aws.bedrock
- * @example google_genai
+ * @example gcp.gemini
  */
 export const ATTR_GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name' as const;
 
