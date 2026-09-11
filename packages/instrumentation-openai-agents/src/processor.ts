@@ -248,7 +248,8 @@ export class OpenAIAgentsTracingProcessor
 
   onTraceError(trace: OpenAIAgentsTrace, error: unknown): void {
     this._safely('ending failed trace', () => {
-      const record = this._traceRecords.get(trace) ??
+      const record =
+        this._traceRecords.get(trace) ??
         this._traceRecordsById.get(trace.traceId);
       if (!record) {
         return;

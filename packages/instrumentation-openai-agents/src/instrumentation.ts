@@ -9,10 +9,7 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import { context } from '@opentelemetry/api';
-import type {
-  OpenAIAgentsModule,
-  OpenAIAgentsTrace,
-} from './internal-types';
+import type { OpenAIAgentsModule, OpenAIAgentsTrace } from './internal-types';
 import {
   OPENAI_AGENTS_RUN_CONTEXT_KEY,
   OpenAIAgentsTracingProcessor,
