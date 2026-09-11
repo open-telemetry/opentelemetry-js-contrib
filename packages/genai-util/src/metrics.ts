@@ -3,22 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { ValueType, type Histogram, type Meter } from '@opentelemetry/api';
 import {
-  ValueType,
-  type Attributes,
-  type Histogram,
-  type Meter,
-} from '@opentelemetry/api';
-import {
-  ATTR_GEN_AI_TOKEN_TYPE,
-  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from './semconv';
-import type { TokenUsage } from './types';
 
 /**
  * Standard explicit bucket boundaries for GenAI operation duration (in seconds).
@@ -127,49 +118,4 @@ export function createTimePerOutputChunkHistogram(meter: Meter): Histogram {
       },
     }
   );
-}
-
-/**
- * Record operation duration metric.
- *
- * @experimental
- */
-export function recordOperationDuration(
-  histogram: Histogram | undefined,
-  durationSeconds: number,
-  attributes?: Attributes
-): void {
-  if (!histogram || durationSeconds < 0 || !isFinite(durationSeconds)) {
-    return;
-  }
-  histogram.record(durationSeconds, attributes);
-}
-
-/**
- * Record token usage metrics (both input and output tokens if present).
- *
- * @experimental
- */
-export function recordTokenUsage(
-  histogram: Histogram | undefined,
-  usage: TokenUsage | undefined,
-  attributes?: Attributes
-): void {
-  if (!histogram || !usage) {
-    return;
-  }
-
-  if (typeof usage.inputTokens === 'number' && usage.inputTokens >= 0) {
-    histogram.record(usage.inputTokens, {
-      ...attributes,
-      [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-    });
-  }
-
-  if (typeof usage.outputTokens === 'number' && usage.outputTokens >= 0) {
-    histogram.record(usage.outputTokens, {
-      ...attributes,
-      [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-    });
-  }
 }

@@ -10,13 +10,7 @@ import {
   createTokenUsageHistogram,
   createTimeToFirstChunkHistogram,
   createTimePerOutputChunkHistogram,
-  recordOperationDuration,
-  recordTokenUsage,
 } from '../src/metrics';
-import {
-  ATTR_GEN_AI_PROVIDER_NAME,
-  ATTR_GEN_AI_OPERATION_NAME,
-} from '../src/semconv';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}
@@ -43,38 +37,6 @@ describe('GenAI Metrics Helpers', () => {
 
     assert.ok(durationHistogram);
     assert.ok(tokenUsageHistogram);
-  });
-
-  it('should record operation duration without errors', () => {
-    const meter = meterProvider.getMeter('test-meter');
-    const durationHistogram = createDurationHistogram(meter);
-
-    recordOperationDuration(durationHistogram, 0.42, {
-      [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
-      [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-    });
-
-    // Should ignore invalid values
-    recordOperationDuration(durationHistogram, -1);
-    recordOperationDuration(undefined, 0.5);
-  });
-
-  it('should record token usage for input and output tokens', () => {
-    const meter = meterProvider.getMeter('test-meter');
-    const tokenUsageHistogram = createTokenUsageHistogram(meter);
-
-    recordTokenUsage(
-      tokenUsageHistogram,
-      { inputTokens: 100, outputTokens: 250 },
-      {
-        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
-        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-      }
-    );
-
-    // Should ignore undefined usage / histogram
-    recordTokenUsage(undefined, { inputTokens: 10 });
-    recordTokenUsage(tokenUsageHistogram, undefined);
   });
 
   it('should create time to first chunk histogram', () => {
