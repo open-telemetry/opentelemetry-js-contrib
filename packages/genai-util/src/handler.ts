@@ -114,27 +114,10 @@ export class TelemetryHandler {
   }
 
   /**
-   * Set or update the Tracer instance.
-   */
-  public setTracer(tracer: Tracer): this {
-    this._tracer = tracer;
-    return this;
-  }
-
-  /**
    * Return the Tracer instance.
    */
   public getTracer(): Tracer {
     return this._tracer;
-  }
-
-  /**
-   * Set or update the Meter instance and initialize histograms.
-   */
-  public setMeter(meter: Meter): this {
-    this._meter = meter;
-    this._initMetrics(meter);
-    return this;
   }
 
   /**
