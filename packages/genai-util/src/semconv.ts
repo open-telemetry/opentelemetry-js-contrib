@@ -30,7 +30,7 @@
  * The OpenTelemetry schema URL for GenAI semantic conventions.
  */
 export const GEN_AI_SCHEMA_URL =
-  'https://opentelemetry.io/schemas/1.37.0' as const;
+  'https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev' as const;
 
 // ============================================================================
 // Span Attributes

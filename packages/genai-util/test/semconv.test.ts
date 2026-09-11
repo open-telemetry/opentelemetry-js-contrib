@@ -41,7 +41,7 @@ describe('GenAI Semantic Conventions', () => {
   it('should define expected schema URL', () => {
     assert.strictEqual(
       GEN_AI_SCHEMA_URL,
-      'https://opentelemetry.io/schemas/1.37.0'
+      'https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev'
     );
   });
 
