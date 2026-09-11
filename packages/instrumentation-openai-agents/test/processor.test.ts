@@ -437,6 +437,29 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.strictEqual(exporter.getFinishedSpans().length, 1);
   });
 
+  it('restores the owning run mapping after a nested trace ends', async () => {
+    const token = {};
+    const outer: OpenAIAgentsTrace = { traceId: 'outer-trace' };
+    const nested: OpenAIAgentsTrace = { traceId: 'nested-trace' };
+    const failed = new Error('runner failed');
+    const runContext = context
+      .active()
+      .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, token);
+
+    await context.with(runContext, async () => {
+      await processor.onTraceStart(outer);
+      await processor.onTraceStart(nested);
+      await processor.onTraceEnd(nested);
+      processor.onRunError(token, failed);
+    });
+
+    const outerSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.status.code === SpanStatusCode.ERROR);
+    assert.ok(outerSpan);
+    assert.strictEqual(outerSpan.status.code, SpanStatusCode.ERROR);
+  });
+
   it('does not end a shared trace when one runner invocation fails', async () => {
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',

@@ -48,6 +48,7 @@ interface SpanRecord {
 interface TraceRecord extends SpanRecord {
   span: Span;
   trace: OpenAIAgentsTrace;
+  previousRunRecord?: TraceRecord;
 }
 
 export const OPENAI_AGENTS_RUN_CONTEXT_KEY = createContextKey(
@@ -91,6 +92,9 @@ export class OpenAIAgentsTracingProcessor
 
       const parentContext = context.active();
       const runToken = this._activeRunToken();
+      const previousRunRecord = runToken
+        ? this._traceRecordsByRun.get(runToken)
+        : undefined;
       const span = this._getTracer().startSpan(
         'openai.agents.run',
         {
@@ -105,6 +109,7 @@ export class OpenAIAgentsTracingProcessor
         errorTarget: span,
         trace,
         runToken,
+        previousRunRecord,
       };
       this._traceRecords.set(trace, record);
       this._traceRecordsById.set(trace.traceId, record);
@@ -345,7 +350,16 @@ export class OpenAIAgentsTracingProcessor
     this._traceRecords.delete(record.trace);
     this._traceRecordsById.delete(record.trace.traceId);
     if (record.runToken) {
-      this._traceRecordsByRun.delete(record.runToken);
+      if (this._traceRecordsByRun.get(record.runToken) === record) {
+        if (record.previousRunRecord) {
+          this._traceRecordsByRun.set(
+            record.runToken,
+            record.previousRunRecord
+          );
+        } else {
+          this._traceRecordsByRun.delete(record.runToken);
+        }
+      }
     }
     record.span.end(endTime);
   }
