@@ -147,6 +147,34 @@ describe('OpenAIAgentsInstrumentation', () => {
     instrumentation.disable();
   });
 
+  it('reports streamed Runner.run failures after the promise resolves', async () => {
+    const instrumentation = new OpenAIAgentsInstrumentation();
+    const module = createMockModule();
+    const failure = new Error('stream failed');
+    module.Runner.prototype.run = async () => ({
+      completed: Promise.reject(failure),
+    });
+    const definition = getDefinition(instrumentation);
+    definition.patch!(module, '0.14.0');
+
+    const processor = module.processors[0] as OpenAIAgentsTracingProcessor & {
+      onRunStreamError(runToken: object, error: unknown): void;
+    };
+    const originalOnRunStreamError = processor.onRunStreamError.bind(processor);
+    let reportedError: unknown;
+    processor.onRunStreamError = (runToken, error) => {
+      reportedError = error;
+      originalOnRunStreamError(runToken, error);
+    };
+
+    await module.Runner.prototype.run();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.strictEqual(reportedError, failure);
+
+    definition.unpatch!(module, '0.14.0');
+    instrumentation.disable();
+  });
+
   it('preserves the environment capture override across setConfig', () => {
     const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
     const previous = process.env[key];

@@ -233,21 +233,17 @@ export class OpenAIAgentsTracingProcessor
       if (!record) {
         return;
       }
-      if (!this._failedSpans.has(record.span)) {
-        const errorType = this._errorType(error);
-        const errorDetail = this._errorDetail(
-          error,
-          'OpenAI Agents run failed'
-        );
-        this._failedSpans.add(record.span);
-        record.span.recordException({ name: errorType, message: errorDetail });
-        record.span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: errorDetail,
-        });
-        record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
-      }
+      this._recordRunError(record, error, 'OpenAI Agents run failed');
       this._endTrace(record);
+    });
+  }
+
+  onRunStreamError(runToken: object, error: unknown): void {
+    this._safely('recording failed streamed run', () => {
+      const record = this._traceRecordsByRun.get(runToken);
+      if (record) {
+        this._recordRunError(record, error, 'OpenAI Agents stream failed');
+      }
     });
   }
 
@@ -275,6 +271,25 @@ export class OpenAIAgentsTracingProcessor
       }
       this._endTrace(record);
     });
+  }
+
+  private _recordRunError(
+    record: TraceRecord,
+    error: unknown,
+    fallbackDetail: string
+  ): void {
+    if (this._failedSpans.has(record.span)) {
+      return;
+    }
+    const errorType = this._errorType(error);
+    const errorDetail = this._errorDetail(error, fallbackDetail);
+    this._failedSpans.add(record.span);
+    record.span.recordException({ name: errorType, message: errorDetail });
+    record.span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: errorDetail,
+    });
+    record.span.setAttribute(ATTR_ERROR_TYPE, errorType);
   }
 
   private _startMappedSpan(

@@ -157,13 +157,40 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
           .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, runToken);
         return context.with(runContext, async () => {
           try {
-            return await original.apply(this, args);
+            const result = await original.apply(this, args);
+            OpenAIAgentsInstrumentation._watchStreamFailure(
+              result,
+              runToken,
+              processor
+            );
+            return result;
           } catch (error) {
             processor.onRunError(runToken, error);
             throw error;
           }
         });
       };
+    });
+  }
+
+  private static _watchStreamFailure(
+    result: unknown,
+    runToken: object,
+    processor: OpenAIAgentsTracingProcessor
+  ): void {
+    if (!result || typeof result !== 'object') {
+      return;
+    }
+    const completed = (result as { completed?: unknown }).completed;
+    if (
+      !completed ||
+      typeof completed !== 'object' ||
+      typeof (completed as PromiseLike<unknown>).then !== 'function'
+    ) {
+      return;
+    }
+    void Promise.resolve(completed).catch(error => {
+      processor.onRunStreamError(runToken, error);
     });
   }
 
