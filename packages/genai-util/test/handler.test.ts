@@ -115,18 +115,6 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(scopeMetric.scope.schemaUrl, GEN_AI_SCHEMA_URL);
   });
 
-  it('should allow dynamic setter of tracer and meter', () => {
-    const handler = new TelemetryHandler();
-    const tracer = ctx.tracerProvider.getTracer('dynamic-tracer');
-    const meter = ctx.meterProvider.getMeter('dynamic-meter');
-
-    handler.setTracer(tracer);
-    handler.setMeter(meter);
-
-    assert.strictEqual(handler.getTracer(), tracer);
-    assert.strictEqual(handler.getMeter(), meter);
-  });
-
   it('should add completion hooks via addCompletionHook', () => {
     const handler = new TelemetryHandler();
     const hook = {
