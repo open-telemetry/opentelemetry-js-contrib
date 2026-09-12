@@ -8,6 +8,7 @@ import {
   metrics,
   trace,
   type Attributes,
+  type Context,
   type DiagLogger,
   type Histogram,
   type Meter,
@@ -171,10 +172,18 @@ export class TelemetryHandler {
 
   /**
    * Record operation duration metric.
+   *
+   * @param durationSeconds - The duration of the operation, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Pass the invocation's context explicitly, since the
+   *   measurement is often recorded after the invocation's context is no
+   *   longer active. Defaults to the currently active context.
    */
   public recordOperationDuration(
     durationSeconds: number,
-    attributes?: Attributes
+    attributes?: Attributes,
+    context?: Context
   ): void {
     if (
       !this._operationDurationHistogram ||
@@ -183,13 +192,26 @@ export class TelemetryHandler {
     ) {
       return;
     }
-    this._operationDurationHistogram.record(durationSeconds, attributes);
+    this._operationDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
   }
 
   /**
    * Record token usage metric.
+   *
+   * @param usage - Input and output token counts.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
    */
-  public recordTokenUsage(usage: TokenUsage, attributes?: Attributes): void {
+  public recordTokenUsage(
+    usage: TokenUsage,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
     if (!this._tokenUsageHistogram || !usage) {
       return;
     }
@@ -199,10 +221,14 @@ export class TelemetryHandler {
       Number.isFinite(usage.inputTokens) &&
       usage.inputTokens >= 0
     ) {
-      this._tokenUsageHistogram.record(usage.inputTokens, {
-        ...attributes,
-        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-      });
+      this._tokenUsageHistogram.record(
+        usage.inputTokens,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+        },
+        context
+      );
     }
 
     if (
@@ -210,19 +236,29 @@ export class TelemetryHandler {
       Number.isFinite(usage.outputTokens) &&
       usage.outputTokens >= 0
     ) {
-      this._tokenUsageHistogram.record(usage.outputTokens, {
-        ...attributes,
-        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-      });
+      this._tokenUsageHistogram.record(
+        usage.outputTokens,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+        },
+        context
+      );
     }
   }
 
   /**
    * Record time to first chunk metric for streaming responses.
+   *
+   * @param durationSeconds - Time elapsed until the first chunk, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
    */
   public recordTimeToFirstChunk(
     durationSeconds: number,
-    attributes?: Attributes
+    attributes?: Attributes,
+    context?: Context
   ): void {
     if (
       !this._timeToFirstChunkHistogram ||
@@ -231,15 +267,25 @@ export class TelemetryHandler {
     ) {
       return;
     }
-    this._timeToFirstChunkHistogram.record(durationSeconds, attributes);
+    this._timeToFirstChunkHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
   }
 
   /**
    * Record time per output chunk metric for streaming responses.
+   *
+   * @param durationSeconds - Average time between output chunks, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
    */
   public recordTimePerOutputChunk(
     durationSeconds: number,
-    attributes?: Attributes
+    attributes?: Attributes,
+    context?: Context
   ): void {
     if (
       !this._timePerOutputChunkHistogram ||
@@ -248,6 +294,10 @@ export class TelemetryHandler {
     ) {
       return;
     }
-    this._timePerOutputChunkHistogram.record(durationSeconds, attributes);
+    this._timePerOutputChunkHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
   }
 }
