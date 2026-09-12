@@ -20,16 +20,14 @@ class TestInvocation extends BaseInvocation {
     durationSec: number,
     error?: Error
   ): void {
-    if (this._handler) {
-      void this._handler.getCompletionHookManager().execute(
-        {
-          span: this._span,
-          durationSeconds: durationSec,
-          error,
-        },
-        this._handler.getDiag()
-      );
-    }
+    void this._handler.getCompletionHookManager().execute(
+      {
+        span: this._span,
+        durationSeconds: durationSec,
+        error,
+      },
+      this._handler.getDiag()
+    );
   }
 }
 
@@ -228,15 +226,14 @@ describe('TelemetryHandler', () => {
       ],
     });
 
-    const span = handler.getTracer().startSpan('test-span');
-    const invocation = new TestInvocation(span, handler);
+    const invocation = new TestInvocation('test-span', handler);
     invocation.stop();
 
     // Wait for async execution of completion hook
     await new Promise(resolve => setTimeout(resolve, 50));
 
     assert.ok(hookResult);
-    assert.strictEqual(hookResult.span, span);
+    assert.strictEqual(hookResult.span, invocation.getSpan());
     assert.ok(typeof hookResult.durationSeconds === 'number');
     assert.strictEqual(hookResult.error, undefined);
   });
@@ -255,8 +252,7 @@ describe('TelemetryHandler', () => {
       ],
     });
 
-    const span = handler.getTracer().startSpan('test-span-error');
-    const invocation = new TestInvocation(span, handler);
+    const invocation = new TestInvocation('test-span-error', handler);
     const testError = new Error('Test failure');
     invocation.fail(testError);
 
@@ -264,7 +260,7 @@ describe('TelemetryHandler', () => {
     await new Promise(resolve => setTimeout(resolve, 50));
 
     assert.ok(hookResult);
-    assert.strictEqual(hookResult.span, span);
+    assert.strictEqual(hookResult.span, invocation.getSpan());
     assert.strictEqual(hookResult.error, testError);
   });
 });

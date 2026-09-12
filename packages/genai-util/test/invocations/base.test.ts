@@ -4,12 +4,20 @@
  */
 
 import * as assert from 'assert';
-import { SpanStatusCode, type HrTime } from '@opentelemetry/api';
+import {
+  SpanKind,
+  SpanStatusCode,
+  context,
+  trace,
+  type HrTime,
+} from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   hrTimeToMicroseconds,
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '../../src/handler';
 import { BaseInvocation } from '../../src/invocations/base';
 import {
   createTestTelemetryContext,
@@ -18,9 +26,23 @@ import {
 
 describe('BaseInvocation', () => {
   let ctx: TestTelemetryContext;
+  let handler: TelemetryHandler;
+  const contextManager = new AsyncLocalStorageContextManager();
+
+  before(() => {
+    context.setGlobalContextManager(contextManager.enable());
+  });
+
+  after(() => {
+    context.disable();
+  });
 
   beforeEach(() => {
     ctx = createTestTelemetryContext();
+    handler = new TelemetryHandler({
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
   });
 
   afterEach(async () => {
@@ -60,12 +82,41 @@ describe('BaseInvocation', () => {
     }
   }
 
-  it('should manage lifecycle and attributes correctly and execute all hooks on stop', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('custom-span');
-    const inv = new CustomInvocation(span);
+  it('should start the span on construction with the given name, kind and attributes', () => {
+    const inv = new CustomInvocation('custom-span', handler, {
+      kind: SpanKind.INTERNAL,
+      attributes: { 'gen_ai.operation.name': 'chat' },
+    });
 
-    assert.strictEqual(inv.getSpan(), span);
+    // The span is started, but not ended, by the constructor.
+    assert.strictEqual(inv.isEnded(), false);
+    assert.ok(inv.getSpan().isRecording());
+    assert.strictEqual(ctx.memoryExporter.getFinishedSpans().length, 0);
+    assert.strictEqual(
+      trace.getSpan(inv.getContext()),
+      inv.getSpan(),
+      'getContext() should contain the invocation span'
+    );
+
+    inv.stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.name, 'custom-span');
+    assert.strictEqual(span.kind, SpanKind.INTERNAL);
+    assert.strictEqual(span.attributes['gen_ai.operation.name'], 'chat');
+    assert.strictEqual(inv.isEnded(), true);
+  });
+
+  it('should default the span kind to CLIENT', () => {
+    new CustomInvocation('default-kind-span', handler).stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.kind, SpanKind.CLIENT);
+  });
+
+  it('should manage lifecycle and attributes correctly and execute all hooks on stop', () => {
+    const inv = new CustomInvocation('custom-span', handler);
+
     inv.setAttribute('custom.attr', 'value1');
     inv.setAttributes({ 'custom.attr2': 'value2' });
 
@@ -100,9 +151,7 @@ describe('BaseInvocation', () => {
   });
 
   it('should handle fail lifecycle with error and execute all hooks on fail with double fail protection', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('custom-fail-span');
-    const inv = new CustomInvocation(span);
+    const inv = new CustomInvocation('custom-fail-span', handler);
 
     const testError = new Error('Test failure');
     inv.fail(testError);
@@ -136,9 +185,7 @@ describe('BaseInvocation', () => {
   });
 
   it('should handle custom explicit endTime array and string errors', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('custom-endtime-span');
-    const inv = new CustomInvocation(span);
+    const inv = new CustomInvocation('custom-endtime-span', handler);
 
     const customEndTime: HrTime = [1000, 500000000];
     inv.fail('String error message', customEndTime);
@@ -168,11 +215,11 @@ describe('BaseInvocation', () => {
   });
 
   it('should accept Date and number TimeInput for startTime and endTime', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('date-time-span');
     const startDate = new Date(1700000000000);
     const endDate = new Date(1700000005000);
-    const inv = new CustomInvocation(span, undefined, startDate);
+    const inv = new CustomInvocation('date-time-span', handler, {
+      startTime: startDate,
+    });
 
     inv.stop(endDate);
 
@@ -182,12 +229,18 @@ describe('BaseInvocation', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(
+      hrTimeToMilliseconds(spans[0].startTime),
+      startDate.getTime()
+    );
+    assert.strictEqual(
+      hrTimeToMilliseconds(spans[0].endTime),
+      endDate.getTime()
+    );
   });
 
   it('should export span with endTime after startTime and non-zero positive duration', async () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('timing-span');
-    const inv = new CustomInvocation(span);
+    const inv = new CustomInvocation('timing-span', handler);
 
     // Wait a brief moment to ensure a measurable elapsed duration
     await new Promise(resolve => setTimeout(resolve, 10));
@@ -223,9 +276,7 @@ describe('BaseInvocation', () => {
       }
     }
 
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const span = tracer.startSpan('enriching-span');
-    const inv = new EnrichingInvocation(span);
+    const inv = new EnrichingInvocation('enriching-span', handler);
     inv.stop();
 
     const [finishedSpan] = ctx.memoryExporter.getFinishedSpans();
@@ -241,16 +292,12 @@ describe('BaseInvocation', () => {
       }
     }
 
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-
     // Test stop() with throwing hook
-    const stopSpan = tracer.startSpan('throwing-stop-span');
-    const stopInv = new ThrowingInvocation(stopSpan);
+    const stopInv = new ThrowingInvocation('throwing-stop-span', handler);
     assert.throws(() => stopInv.stop(), /Hook failure/);
 
     // Test fail() with throwing hook
-    const failSpan = tracer.startSpan('throwing-fail-span');
-    const failInv = new ThrowingInvocation(failSpan);
+    const failInv = new ThrowingInvocation('throwing-fail-span', handler);
     assert.throws(
       () => failInv.fail(new Error('Original failure')),
       /Hook failure/
@@ -267,5 +314,160 @@ describe('BaseInvocation', () => {
     assert.ok(finishedFailSpan);
     assert.strictEqual(finishedFailSpan.status.code, SpanStatusCode.ERROR);
     assert.strictEqual(finishedFailSpan.status.message, 'Original failure');
+  });
+
+  describe('context management', () => {
+    it('should parent the invocation span to the active span by default', () => {
+      const tracer = ctx.tracerProvider.getTracer('test-tracer');
+      const parentSpan = tracer.startSpan('parent-span');
+
+      context.with(trace.setSpan(context.active(), parentSpan), () => {
+        new CustomInvocation('child-invocation', handler).stop();
+      });
+      parentSpan.end();
+
+      const child = ctx.memoryExporter
+        .getFinishedSpans()
+        .find(s => s.name === 'child-invocation');
+      assert.ok(child);
+      assert.strictEqual(
+        child.parentSpanContext?.spanId,
+        parentSpan.spanContext().spanId
+      );
+      assert.strictEqual(
+        child.spanContext().traceId,
+        parentSpan.spanContext().traceId
+      );
+    });
+
+    it('should parent the invocation span to an explicit parentContext', () => {
+      const tracer = ctx.tracerProvider.getTracer('test-tracer');
+      const parentSpan = tracer.startSpan('explicit-parent-span');
+      const parentContext = trace.setSpan(context.active(), parentSpan);
+
+      new CustomInvocation('explicit-child-invocation', handler, {
+        parentContext,
+      }).stop();
+      parentSpan.end();
+
+      const child = ctx.memoryExporter
+        .getFinishedSpans()
+        .find(s => s.name === 'explicit-child-invocation');
+      assert.ok(child);
+      assert.strictEqual(
+        child.parentSpanContext?.spanId,
+        parentSpan.spanContext().spanId
+      );
+    });
+
+    it('withContext() should not leak the invocation context to the caller', () => {
+      const inv = new CustomInvocation('scoped-span', handler);
+
+      inv.withContext(invocation => {
+        assert.strictEqual(invocation, inv);
+        assert.strictEqual(trace.getSpan(context.active()), inv.getSpan());
+      });
+
+      assert.strictEqual(
+        trace.getSpan(context.active()),
+        undefined,
+        'the invocation context must not leak outside of withContext()'
+      );
+
+      inv.stop();
+    });
+
+    it('withContext() should keep the context active across awaits in an async callback', async () => {
+      const inv = new CustomInvocation('async-context-span', handler);
+
+      const result = await inv.withContext(async () => {
+        await new Promise(resolve => setTimeout(resolve, 5));
+        // The context survives the await point inside the callback.
+        assert.strictEqual(trace.getSpan(context.active()), inv.getSpan());
+        ctx.tracerProvider
+          .getTracer('test-tracer')
+          .startSpan('after-await')
+          .end();
+        return 42;
+      });
+
+      assert.strictEqual(result, 42);
+      // The invocation is still open: the caller decides when it ends.
+      assert.strictEqual(inv.isEnded(), false);
+      assert.strictEqual(
+        trace.getSpan(context.active()),
+        undefined,
+        'code after the awaited callback runs outside the invocation context'
+      );
+
+      inv.stop();
+
+      const child = ctx.memoryExporter
+        .getFinishedSpans()
+        .find(s => s.name === 'after-await');
+      assert.ok(child);
+      assert.strictEqual(
+        child.parentSpanContext?.spanId,
+        inv.getSpan().spanContext().spanId
+      );
+    });
+
+    it('should automatically nest invocations created inside withContext()', async () => {
+      const outer = new CustomInvocation('outer-invocation', handler);
+
+      await outer.withContext(async () => {
+        const inner = new CustomInvocation('inner-invocation', handler);
+        await new Promise(resolve => setTimeout(resolve, 1));
+        inner.stop();
+      });
+      outer.stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      const innerSpan = spans.find(s => s.name === 'inner-invocation');
+      const outerSpan = spans.find(s => s.name === 'outer-invocation');
+      assert.ok(innerSpan);
+      assert.ok(outerSpan);
+      assert.strictEqual(
+        innerSpan.parentSpanContext?.spanId,
+        outerSpan.spanContext().spanId
+      );
+      // Inner invocations must end before their parent.
+      assert.ok(
+        hrTimeToMicroseconds(innerSpan.endTime) <=
+          hrTimeToMicroseconds(outerSpan.endTime)
+      );
+    });
+
+    it('withContext() should activate the context without ending the invocation', () => {
+      const inv = new CustomInvocation('with-context-span', handler);
+
+      const result = inv.withContext(invocation => {
+        assert.strictEqual(invocation, inv);
+        ctx.tracerProvider
+          .getTracer('test-tracer')
+          .startSpan('deferred-child')
+          .end();
+        return 'still open';
+      });
+
+      assert.strictEqual(result, 'still open');
+      assert.strictEqual(inv.isEnded(), false);
+      assert.strictEqual(
+        ctx.memoryExporter.getFinishedSpans().length,
+        1,
+        'only the child span should have ended'
+      );
+
+      inv.stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      const child = spans.find(s => s.name === 'deferred-child');
+      assert.ok(child);
+      assert.strictEqual(
+        child.parentSpanContext?.spanId,
+        inv.getSpan().spanContext().spanId
+      );
+      assert.strictEqual(spans.length, 2);
+    });
   });
 });
