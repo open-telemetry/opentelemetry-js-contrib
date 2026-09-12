@@ -398,13 +398,22 @@ export interface ToolInvocationOptions {
 
 /**
  * Summary result passed to CompletionHook upon invocation finish.
+ *
+ * Different GenAI operations populate different subsets of fields. For instance,
+ * `inputMessages` and `outputMessages` are populated for chat/completion operations,
+ * while tool-specific or embedding-specific operations may leave them undefined.
+ * Check `operationName` to determine which fields are relevant for the current invocation.
  */
 export interface CompletionResult {
   /** The OpenTelemetry span for this invocation. */
   span: Span;
   /** Provider name (`gen_ai.provider.name`). */
   providerName?: string;
-  /** Operation name (`gen_ai.operation.name`). */
+  /**
+   * Operation name (`gen_ai.operation.name`).
+   * Common values include `'chat'`, `'text_completion'`, `'embeddings'`, `'execute_tool'`.
+   * See `GEN_AI_OPERATION_NAME_VALUE_*` constants in `@opentelemetry/genai-util`.
+   */
   operationName?: string;
   /** Requested model name (`gen_ai.request.model`). */
   requestModel?: string;
@@ -434,6 +443,28 @@ export interface CompletionResult {
 
 /**
  * Hook executed when a GenAI operation finishes (success or failure).
+ *
+ * Registered hooks are invoked across all operations handled by the TelemetryHandler.
+ * Inspect `result.operationName` to handle specific operations (e.g. `'chat'`, `'execute_tool'`).
+ *
+ * @example
+ * ```typescript
+ * import {
+ *   CompletionHook,
+ *   CompletionResult,
+ *   GEN_AI_OPERATION_NAME_VALUE_CHAT,
+ * } from '@opentelemetry/genai-util';
+ *
+ * const auditHook: CompletionHook = {
+ *   async onCompletion(result: CompletionResult) {
+ *     // Only audit chat operations
+ *     if (result.operationName === GEN_AI_OPERATION_NAME_VALUE_CHAT) {
+ *       const traceId = result.span.spanContext().traceId;
+ *       await uploadChatAuditLog(traceId, result.inputMessages, result.outputMessages);
+ *     }
+ *   },
+ * };
+ * ```
  */
 export interface CompletionHook {
   /**

@@ -23,6 +23,16 @@
  */
 
 // ============================================================================
+// Schema URL
+// ============================================================================
+
+/**
+ * The OpenTelemetry schema URL for GenAI semantic conventions.
+ */
+export const GEN_AI_SCHEMA_URL =
+  'https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev' as const;
+
+// ============================================================================
 // Span Attributes
 // ============================================================================
 
@@ -43,7 +53,7 @@ export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
  * @example openai
  * @example anthropic
  * @example aws.bedrock
- * @example google_genai
+ * @example gcp.gemini
  */
 export const ATTR_GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name' as const;
 
