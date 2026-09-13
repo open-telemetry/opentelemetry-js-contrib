@@ -12,6 +12,8 @@
         - "reflect-metadata@^0.2.0"
         - "rxjs@^7.1.0"
     commands: npm run test
+    env:
+      - NODE_OPTIONS=--experimental-loader=@opentelemetry/instrumentation/hook.mjs
 
   - versions:
       include: ">=11.0.0 <12"

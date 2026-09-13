@@ -19,7 +19,7 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 - [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <13`
 
-NestJS 12 is published as ESM. CommonJS applications that `require('@nestjs/core')` are instrumented without further setup. ESM applications need the loader hook described in the [ESM support](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md) guide, as with any other instrumentation.
+NestJS 12 is published as ESM. Instrumenting NestJS 12 requires the loader hook described in the [ESM support](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md) guide, including when the application itself is CommonJS.
 
 ## Usage
 
