@@ -3,10 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Attributes } from '@opentelemetry/api';
+import { Attributes, Context, ROOT_CONTEXT, propagation } from '@opentelemetry/api';
 import {
   ConnectionMeta,
   IbmMqModuleExports,
+  MQGMOLike,
+  MQMDLike,
   MQObjectLike,
   MQODLike,
   MQQueueManagerLike,
@@ -237,4 +239,217 @@ export function buildMessagingAttributes(
     attributes[ATTR_MESSAGING_IBMMQ_QUEUE_MANAGER_ID] = qmid;
   }
   return attributes;
+}
+
+/**
+ * IBM's own `mqiotel.js` hook (`getTraceAfter`) runs inside `mqigeta.js`'s
+ * `preJsAppCB`, one statement before our wrapped `Get` callback is invoked -
+ * so by the time our `process` span exists, whatever link that hook tried to
+ * add has already been discarded; there was no span yet to add it to. The
+ * functions below read the same two message properties ourselves and turn
+ * them into a parent context for the `process` span instead of a link.
+ *
+ * IBM's hook carries `traceparent`/`tracestate` in one of two places, and
+ * which one is used is decided entirely by how the application asked for
+ * its message, not by us. Per `mqiotel.js`'s `getTraceBefore`, IBM only
+ * creates a message handle for this delivery (and sets
+ * `MQGMO_PROPERTIES_IN_HANDLE`) when the application asked for
+ * `MQGMO_NO_PROPERTIES`, or asked for `MQGMO_PROPERTIES_AS_Q_DEF` while the
+ * queue's PROPCTL is `MQPROP_NONE`. Every other combination - which is the
+ * common default - leaves `gmo.MsgHandle` unset, and the properties arrive
+ * instead as an inline RFH2 header in the message body. So both carriers
+ * have to be tried: the message handle, via `InqMp`, and the RFH2 header,
+ * parsed by hand.
+ */
+const TRACEPARENT_PROPERTY = 'traceparent';
+const TRACESTATE_PROPERTY = 'tracestate';
+
+/**
+ * `InqMp` writes the raw property value into whatever buffer it is given.
+ * Allocating a fresh buffer per lookup would add an allocation on the
+ * message-delivery hot path for a value that is always short - a traceparent
+ * is a fixed 55 characters, and a tracestate is rarely long either. IBM's own
+ * `mqiotel.js` reuses a single 10240-byte buffer across every property
+ * lookup for the same reason; 1024 is ample here since only these two
+ * properties are ever read. `InqMp` is fully synchronous (the native call
+ * runs and its callback fires before `InqMp` itself returns), so this buffer
+ * is never in use by two lookups at once.
+ */
+const propertyValueBuffer = Buffer.alloc(1024);
+
+/**
+ * One `InqMp` lookup for a single named message property, trimmed. A missing
+ * property (MQRC_PROPERTY_NOT_AVAILABLE) is the normal case - most messages
+ * carry no propagated context at all, and a message can carry a traceparent
+ * without a tracestate - so every error here is swallowed; the caller only
+ * ever sees `undefined`, never an exception.
+ */
+function inqMessageProperty(
+  mq: IbmMqModuleExports,
+  hConn: MQQueueManagerLike,
+  msgHandle: bigint,
+  name: string
+): string | undefined {
+  let value: string | undefined;
+  try {
+    const impo = new mq.MQIMPO();
+    impo.Options = mq.MQC.MQIMPO_CONVERT_VALUE | mq.MQC.MQIMPO_INQ_FIRST;
+    const pd = new mq.MQPD();
+    mq.InqMp(
+      hConn,
+      msgHandle,
+      impo,
+      pd,
+      name,
+      propertyValueBuffer,
+      (err, _returnedName, propValue) => {
+        if (!err && typeof propValue === 'string') {
+          value = propValue.trim();
+        }
+      }
+    );
+  } catch {
+    // A malformed handle or an unexpected native-layer throw must never
+    // surface to the application; the property is simply treated as absent.
+  }
+  return value;
+}
+
+/** MQHM_NONE / MQHM_UNUSABLE_HMSG: no message properties can be read. */
+function isValidMsgHandle(
+  mq: IbmMqModuleExports,
+  msgHandle: bigint | undefined
+): msgHandle is bigint {
+  if (msgHandle === undefined) return false;
+  return (
+    msgHandle !== BigInt(mq.MQC.MQHM_NONE) &&
+    msgHandle !== BigInt(mq.MQC.MQHM_UNUSABLE_HMSG)
+  );
+}
+
+/**
+ * Pulls one named property's value out of an RFH2 "namevalue" folder string,
+ * without a full XML parse. A folder looks like
+ * `<usr><traceparent>00-...-01</traceparent></usr>`; a simple string search
+ * for the opening and closing tags is exact rather than approximate here
+ * because RFH2 property values come from a restricted character set that
+ * never includes `<`, so the first `<` after the opening tag is always the
+ * start of the next tag, never part of the value itself. IBM's own
+ * `mqiotel.js` (`extractRFH2PropVal`) relies on the same restriction.
+ */
+function extractRfh2PropertyValue(
+  properties: string[],
+  name: string
+): string | undefined {
+  const openTag = `<${name}>`;
+  for (const folder of properties) {
+    const start = folder.indexOf(openTag);
+    if (start === -1) continue;
+    const valueStart = start + openTag.length;
+    const end = folder.indexOf('<', valueStart);
+    if (end === -1) continue;
+    return folder.substring(valueStart, end);
+  }
+  return undefined;
+}
+
+/**
+ * Falls back to an inline RFH2 header for a single named message property,
+ * for the common case where IBM gave this delivery no message handle at
+ * all - see the doc comment above `TRACEPARENT_PROPERTY`. `mq.MQRFH2` is
+ * IBM's own public parser (`lib/mqi.js` re-exports it from `lib/mqstruc.js`),
+ * never reimplemented here. Every failure mode - no MD, no buffer, a format
+ * other than `MQFMT_RF_HEADER_2`, or a malformed header that throws inside
+ * `getHeader`/`getAllProperties` - returns `undefined` rather than
+ * surfacing to the application; a delivery callback is not the place for a
+ * parse error to escape from.
+ */
+function rfh2Property(
+  mq: IbmMqModuleExports,
+  md: MQMDLike | undefined,
+  buf: Buffer | undefined,
+  name: string
+): string | undefined {
+  // MQC's index type is numeric (see IbmMqModuleExports.MQC) since every
+  // other constant read from it in this file is; the MQFMT_* family is the
+  // one exception, and is a fixed string in the real object.
+  const rfh2Format = mq.MQC.MQFMT_RF_HEADER_2 as unknown as string;
+  if (!md || !buf || md.Format !== rfh2Format) {
+    return undefined;
+  }
+  try {
+    const header = mq.MQRFH2.getHeader(buf);
+    const properties = mq.MQRFH2.getAllProperties(header, buf);
+    return extractRfh2PropertyValue(properties, name);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Resolves one named propagation property for a delivery, trying the
+ * message handle first (the cheaper, already-parsed lookup) and falling
+ * back to the inline RFH2 header. Only one of the two carriers is ever
+ * actually populated for a given delivery - see the doc comment above
+ * `TRACEPARENT_PROPERTY` - so trying both in sequence costs nothing extra
+ * in the common case.
+ */
+function resolveMessageProperty(
+  mq: IbmMqModuleExports,
+  hConn: MQQueueManagerLike | undefined,
+  gmo: MQGMOLike | undefined,
+  md: MQMDLike | undefined,
+  buf: Buffer | undefined,
+  name: string
+): string | undefined {
+  const msgHandle = gmo?.MsgHandle;
+  if (hConn && isValidMsgHandle(mq, msgHandle)) {
+    const value = inqMessageProperty(mq, hConn, msgHandle, name);
+    if (value) return value;
+  }
+  return rfh2Property(mq, md, buf, name);
+}
+
+/**
+ * Builds the parent context for an async `Get` delivery's `process` span,
+ * from whichever of the two carriers described above `TRACEPARENT_PROPERTY`
+ * actually holds this message's properties. Returns `ROOT_CONTEXT` whenever
+ * there is nothing to extract: no connection, no usable carrier, or no
+ * `traceparent` in whichever carrier was present.
+ *
+ * `ROOT_CONTEXT` here is deliberate, not `context.active()`. Inheriting
+ * whatever context happens to be ambient when the listener fires is exactly
+ * what produced the unbounded receive-span chain fixed alongside this (see
+ * `callAndEndSpan`'s `callerContext` parameter) - a message with no inbound
+ * trace context has no parent, and must not silently inherit one.
+ */
+export function messageParentContext(
+  mq: IbmMqModuleExports,
+  hConn: MQQueueManagerLike | undefined,
+  gmo: MQGMOLike | undefined,
+  md: MQMDLike | undefined,
+  buf: Buffer | undefined
+): Context {
+  const traceparentValue = resolveMessageProperty(
+    mq,
+    hConn,
+    gmo,
+    md,
+    buf,
+    TRACEPARENT_PROPERTY
+  );
+  if (!traceparentValue) return ROOT_CONTEXT;
+
+  const carrier: Record<string, string> = { traceparent: traceparentValue };
+  const tracestateValue = resolveMessageProperty(
+    mq,
+    hConn,
+    gmo,
+    md,
+    buf,
+    TRACESTATE_PROPERTY
+  );
+  if (tracestateValue) carrier.tracestate = tracestateValue;
+
+  return propagation.extract(ROOT_CONTEXT, carrier);
 }

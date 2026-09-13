@@ -4,7 +4,7 @@
  */
 
 import * as assert from 'assert';
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { SpanKind, SpanStatusCode, context, trace } from '@opentelemetry/api';
 import {
   getTestSpans,
   registerInstrumentationTesting,
@@ -28,6 +28,24 @@ const instrumentation = registerInstrumentationTesting(
 // must trim it (session handoff section 21).
 const FAKE_QMID = 'TESTQM_2026-08-31_09.07.16';
 const FAKE_QMID_PADDED = FAKE_QMID.padEnd(48, ' ');
+
+/**
+ * Builds an RFH2 message body out of one or more "namevalue" folder
+ * strings, in the same length-prefixed layout the fake `MQRFH2` above (and
+ * the real `lib/mqstruc.js`) expects to walk. Standing in for a message
+ * IBM's client formatted with `<usr><traceparent>...</traceparent></usr>`
+ * inline in the body, because no message handle was created for it.
+ */
+function encodeRfh2Folders(folders: string[]): Buffer {
+  const parts: Buffer[] = [];
+  for (const folder of folders) {
+    const body = Buffer.from(folder, 'utf8');
+    const len = Buffer.alloc(4);
+    len.writeUInt32LE(body.length, 0);
+    parts.push(len, body);
+  }
+  return Buffer.concat(parts);
+}
 
 /**
  * A hand-built stand-in for the `ibmmq` module. The real package is a native
@@ -54,6 +72,20 @@ function createFakeMq() {
     constructor(public selector: number, public value?: unknown) {}
   }
 
+  class MQIMPO {
+    Options = 0;
+  }
+
+  // Opaque, exactly as real MQPD is to this instrumentation - InqMp requires
+  // one as an argument but we never read or set any of its fields.
+  class MQPD {}
+
+  // Message-handle -> property-name -> value, keyed by the bigint MsgHandle
+  // an async Get delivery's GMO carries. Mirrors what a real MsgHandle
+  // backs: the set of MQSETMP'd properties on one message.
+  let nextMsgHandle = 0n;
+  const msgHandleProperties = new Map<bigint, Record<string, string>>();
+
   const makeQueueManager = (name: string) => ({
     _hConn: ++nextId,
     _name: name,
@@ -65,9 +97,40 @@ function createFakeMq() {
       MQOO_INQUIRE: 0x2000,
       MQOT_Q_MGR: 6,
       MQCA_Q_MGR_IDENTIFIER: 2032,
+      MQHM_NONE: 0,
+      MQHM_UNUSABLE_HMSG: -1,
+      MQIMPO_CONVERT_VALUE: 32,
+      MQIMPO_INQ_FIRST: 0,
+      MQRC_PROPERTY_NOT_AVAILABLE: 2471,
+      // The real value (lib/mqidefs_darwin.js and friends); MQMD.Format is
+      // compared against this to recognize an inline RFH2 body.
+      MQFMT_RF_HEADER_2: 'MQHRF2',
     },
     MQOD,
     MQAttr,
+    MQIMPO,
+    MQPD,
+    // Real shape (lib/mqstruc.js): `getHeader` parses the fixed part of the
+    // RFH2 struct, `getAllProperties` walks the length-prefixed "namevalue"
+    // folder strings that follow it. This fake keeps the same two-call
+    // shape and the same length-prefixed layout, without the real fixed
+    // header fields this instrumentation never reads.
+    MQRFH2: {
+      getHeader(buf: Buffer) {
+        return { StrucLength: buf.length };
+      },
+      getAllProperties(hdr: { StrucLength: number }, buf: Buffer) {
+        const props: string[] = [];
+        let offset = 0;
+        while (offset < hdr.StrucLength) {
+          const len = buf.readUInt32LE(offset);
+          offset += 4;
+          props.push(buf.toString('utf8', offset, offset + len));
+          offset += len;
+        }
+        return props;
+      },
+    },
 
     // Test-only seam: makes the *next* Put/PutSync call fail, to exercise
     // the reconnect-invalidation path without a real broken connection.
@@ -83,6 +146,49 @@ function createFakeMq() {
     // for a real MQGET completion (message or error) on the async listener.
     __triggerGet(...args: unknown[]) {
       capturedGetCb?.(...args);
+    },
+    // Test-only seam: a GMO-shaped object carrying a fresh MsgHandle, with
+    // the given message properties available to be found by InqMp, standing
+    // in for what a real async Get delivery's GMO would carry after IBM's
+    // client populated it from the wire.
+    __createMessageHandle(props: Record<string, string> = {}) {
+      nextMsgHandle += 1n;
+      const msgHandle = nextMsgHandle;
+      msgHandleProperties.set(msgHandle, props);
+      return { MsgHandle: msgHandle, Options: 0 };
+    },
+    // `InqMp(jsQueueManager, jsHMsg, jsimpo, jspd, jsName, valueBuffer, cb)`
+    // (lib/mqi.js): synchronous, callback-shaped exactly like the real one -
+    // `(err, returnedName, value, propsLen, type)` - including the
+    // MQRC_PROPERTY_NOT_AVAILABLE error a real broker returns for a message
+    // property that was never set.
+    InqMp(
+      _hConn: unknown,
+      hMsg: bigint,
+      _impo: InstanceType<typeof MQIMPO>,
+      _pd: InstanceType<typeof MQPD>,
+      name: string,
+      _valueBuffer: Buffer,
+      cb: (
+        err: MQErrorLike | null,
+        returnedName?: string,
+        value?: string,
+        propsLen?: number,
+        type?: number
+      ) => void
+    ) {
+      const value = msgHandleProperties.get(hMsg)?.[name];
+      if (value === undefined) {
+        cb(
+          Object.assign(new Error('MQRC_PROPERTY_NOT_AVAILABLE'), {
+            mqcc: 2,
+            mqrc: 2471,
+            verb: 'MQINQMP',
+          })
+        );
+        return;
+      }
+      cb(null, name, value, value.length, 0);
     },
 
     Conn(qMgrName: string, cb: (err: null, hConn: unknown) => void) {
@@ -564,5 +670,162 @@ describe('ibmmq instrumentation', () => {
     );
     invalidateOnReconnect(hConn, connectionBroken);
     assert.strictEqual(connectionMetaMap.has(hConn), false);
+  });
+
+  it('parents the async process span on the traceparent carried by the message handle', () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    mq.Get(hObj, {}, {}, () => {
+      /* app's async delivery callback; not asserted on here */
+    });
+
+    // IBM's own mqiotel.js hook runs one line before our wrapped callback,
+    // so by the time this instrumentation could add a link, there is no
+    // span to add it to - `messageParentContext` reads the same property
+    // off the same MsgHandle instead, and uses it as the span's parent.
+    const traceId = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const spanId = 'bbbbbbbbbbbbbbbb';
+    const gmo = mq.__createMessageHandle({
+      traceparent: `00-${traceId}-${spanId}-01`,
+    });
+
+    mq.__triggerGet(null, hObj, gmo, {}, Buffer.alloc(0), hConn);
+
+    const [span] = getTestSpans();
+    assert.strictEqual(span.name, 'process TEST.QUEUE');
+    assert.strictEqual(span.parentSpanContext?.traceId, traceId);
+    assert.strictEqual(span.parentSpanContext?.spanId, spanId);
+    assert.strictEqual(span.spanContext().traceId, traceId);
+  });
+
+  it('parents the async process span on a traceparent carried inline in an RFH2 body when no message handle was created', () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    mq.Get(hObj, {}, {}, () => {
+      /* app's async delivery callback; not asserted on here */
+    });
+
+    // The common default case per mqiotel.js's getTraceBefore: the app did
+    // not ask for MQGMO_NO_PROPERTIES (or PROPCTL NONE), so IBM never
+    // created a message handle for this delivery at all - MsgHandle comes
+    // back as MQHM_NONE, and the properties travel inline in the RFH2 body
+    // instead, in a <usr> folder.
+    const traceId = 'cccccccccccccccccccccccccccccccc';
+    const spanId = 'dddddddddddddddd';
+    const gmo = { MsgHandle: BigInt(mq.MQC.MQHM_NONE), Options: 0 };
+    const md = { Format: mq.MQC.MQFMT_RF_HEADER_2 };
+    const buf = encodeRfh2Folders([
+      `<usr><traceparent>00-${traceId}-${spanId}-01</traceparent></usr>`,
+    ]);
+
+    mq.__triggerGet(null, hObj, gmo, md, buf, hConn);
+
+    const [span] = getTestSpans();
+    assert.strictEqual(span.name, 'process TEST.QUEUE');
+    assert.strictEqual(span.parentSpanContext?.traceId, traceId);
+    assert.strictEqual(span.parentSpanContext?.spanId, spanId);
+    assert.strictEqual(span.spanContext().traceId, traceId);
+  });
+
+  it('leaves the async process span rootless on a non-RFH2 format with no message handle, without throwing', () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    mq.Get(hObj, {}, {}, () => {
+      /* app's async delivery callback; not asserted on here */
+    });
+
+    const gmo = { MsgHandle: BigInt(mq.MQC.MQHM_NONE), Options: 0 };
+    const md = { Format: 'MQSTR' };
+    const buf = Buffer.from('plain text body, not RFH2');
+
+    assert.doesNotThrow(() => {
+      mq.__triggerGet(null, hObj, gmo, md, buf, hConn);
+    });
+
+    const [span] = getTestSpans();
+    assert.strictEqual(span.name, 'process TEST.QUEUE');
+    assert.strictEqual(span.parentSpanContext, undefined);
+  });
+
+  it('leaves the async process span rootless on a malformed RFH2 buffer, without throwing', () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    mq.Get(hObj, {}, {}, () => {
+      /* app's async delivery callback; not asserted on here */
+    });
+
+    const gmo = { MsgHandle: BigInt(mq.MQC.MQHM_NONE), Options: 0 };
+    const md = { Format: mq.MQC.MQFMT_RF_HEADER_2 };
+    // Too short to even hold one length-prefixed folder's 4-byte length -
+    // the fake's (and the real parser's) length read runs past the end of
+    // the buffer, the same shape of failure a corrupted or truncated RFH2
+    // body would produce against the real `MQRFH2.getAllProperties`.
+    const buf = Buffer.alloc(2);
+
+    assert.doesNotThrow(() => {
+      mq.__triggerGet(null, hObj, gmo, md, buf, hConn);
+    });
+
+    const [span] = getTestSpans();
+    assert.strictEqual(span.name, 'process TEST.QUEUE');
+    assert.strictEqual(span.parentSpanContext, undefined);
+  });
+
+  it('leaves the async process span rootless when the message carries no traceparent, ignoring any ambient span', () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    mq.Get(hObj, {}, {}, () => {
+      /* app's async delivery callback; not asserted on here */
+    });
+
+    // A message with no properties at all - the ordinary case for a message
+    // whose producer never propagated a context.
+    const gmo = mq.__createMessageHandle();
+
+    // Whatever is ambient when the listener fires must be ignored: inheriting
+    // it is exactly what produced the unbounded receive-span chain fixed
+    // alongside this (see the GetSync caller-context test below).
+    const ambientSpan = trace.getTracer('test-ambient').startSpan('ambient');
+    context.with(trace.setSpan(context.active(), ambientSpan), () => {
+      mq.__triggerGet(null, hObj, gmo, {}, Buffer.alloc(0), hConn);
+    });
+    ambientSpan.end();
+
+    const processSpan = getTestSpans().find(
+      span => span.name === 'process TEST.QUEUE'
+    );
+    assert.ok(processSpan);
+    assert.strictEqual(processSpan!.parentSpanContext, undefined);
+    assert.notStrictEqual(
+      processSpan!.spanContext().traceId,
+      ambientSpan.spanContext().traceId
+    );
+  });
+
+  it("runs the GetSync application callback in the caller's context, not the receive span's", () => {
+    const hConn = mq.ConnSync('TESTQM');
+    const hObj = { _mqQueueManager: hConn, _name: 'TEST.QUEUE' };
+
+    const callerSpan = trace.getTracer('test-caller').startSpan('caller');
+    let spanSeenByCallback: ReturnType<typeof trace.getSpan>;
+
+    context.with(trace.setSpan(context.active(), callerSpan), () => {
+      mq.GetSync(hObj, {}, {}, Buffer.alloc(0), () => {
+        spanSeenByCallback = trace.getSpan(context.active());
+      });
+    });
+    callerSpan.end();
+
+    // Not the receive span - binding the app's callback to `context.active()`
+    // at the point `callAndEndSpan` runs (inside our own
+    // `context.with(trace.setSpan(...), ...)`) is what previously leaked our
+    // span into anything the app schedules from its callback, e.g. a
+    // `setImmediate` poll loop, chaining the next span onto this one.
+    assert.strictEqual(spanSeenByCallback, callerSpan);
   });
 });

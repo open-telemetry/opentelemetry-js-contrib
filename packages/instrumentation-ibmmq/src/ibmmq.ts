@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Span, SpanKind, SpanStatusCode, context, trace } from '@opentelemetry/api';
+import {
+  Context,
+  Span,
+  SpanKind,
+  SpanStatusCode,
+  context,
+  trace,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -11,6 +18,8 @@ import {
 } from '@opentelemetry/instrumentation';
 import {
   IbmMqModuleExports,
+  MQGMOLike,
+  MQMDLike,
   MQObjectLike,
   MQODLike,
   MQQueueManagerLike,
@@ -30,6 +39,7 @@ import {
   ensureQueueManagerId,
   invalidateOnReconnect,
   isRoutineNoMessage,
+  messageParentContext,
   recordResolvedName,
   resolveConnectionOnConnect,
 } from './utils';
@@ -294,6 +304,7 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
         config.emitQueueManagerId
       );
 
+      const callerContext = context.active();
       const span = self.tracer.startSpan(`${operationName} ${destination}`, {
         kind: spanKind,
         attributes: buildMessagingAttributes(
@@ -304,8 +315,8 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
         ),
       });
 
-      return context.with(trace.setSpan(context.active(), span), () =>
-        self.callAndEndSpan(span, hConn, original, this, args)
+      return context.with(trace.setSpan(callerContext, span), () =>
+        self.callAndEndSpan(span, hConn, original, this, args, callerContext)
       );
     };
   }
@@ -336,6 +347,7 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
         config.emitQueueManagerId
       );
 
+      const callerContext = context.active();
       const span = self.tracer.startSpan(`send ${requested}`, {
         kind: SpanKind.PRODUCER,
         attributes: buildMessagingAttributes(
@@ -354,8 +366,16 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
         }
       };
 
-      return context.with(trace.setSpan(context.active(), span), () =>
-        self.callAndEndSpan(span, hConn, original, this, args, resolveDestination)
+      return context.with(trace.setSpan(callerContext, span), () =>
+        self.callAndEndSpan(
+          span,
+          hConn,
+          original,
+          this,
+          args,
+          callerContext,
+          resolveDestination
+        )
       );
     };
   }
@@ -370,6 +390,19 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
    * invocation returns. MQRC_NO_MSG_AVAILABLE (2033) arrives here on a wait
    * timeout exactly as it does on `GetSync`; `endSpan`/`markError` is the
    * shared choke point that leaves that one UNSET instead of ERROR.
+   *
+   * IBM's own trace-propagation hook (`mqiotel.js`'s `getTraceAfter`) runs
+   * inside `mqigeta.js`'s `preJsAppCB`, immediately before this callback -
+   * before this instrumentation's `process` span exists to add a link to.
+   * `moduleExports` is passed through here (not just at construction time)
+   * so `messageParentContext` can extract the inbound
+   * `traceparent`/`tracestate` itself, to use as this span's parent instead
+   * of a discarded link. `preJsAppCB` calls back as
+   * `appCB(err, hObj, jsgmo, jsmd, buf, hConn)`, so the MD and the message
+   * buffer are both passed through alongside the GMO: whichever of the two
+   * carriers IBM actually populated for this delivery - the GMO's message
+   * handle, or an inline RFH2 header in the buffer - `messageParentContext`
+   * tries both.
    */
   private getGetPatch(
     moduleExports: IbmMqModuleExports,
@@ -392,16 +425,37 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
             hConn,
             config.emitQueueManagerId
           );
+          // `preJsAppCB` (mqigeta.js) calls back as
+          // `appCB(err, hObj, jsgmo, jsmd, buf, hConn)`, so `rest[0]` is the
+          // GMO carrying the `MsgHandle`, `rest[1]` is the MD carrying
+          // `Format`, and `rest[2]` is the message buffer - the three things
+          // `messageParentContext` needs to try both propagation carriers.
+          const [gmo, md, buf] = rest as [
+            MQGMOLike | undefined,
+            MQMDLike | undefined,
+            Buffer | undefined
+          ];
+          const parentCtx = messageParentContext(
+            moduleExports,
+            hConn,
+            gmo,
+            md,
+            buf
+          );
 
-          const span = self.tracer.startSpan(`process ${destination}`, {
-            kind: SpanKind.CONSUMER,
-            attributes: buildMessagingAttributes(
-              destination,
-              MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
-              'process',
-              qmid
-            ),
-          });
+          const span = self.tracer.startSpan(
+            `process ${destination}`,
+            {
+              kind: SpanKind.CONSUMER,
+              attributes: buildMessagingAttributes(
+                destination,
+                MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
+                'process',
+                qmid
+              ),
+            },
+            parentCtx
+          );
 
           if (err) {
             self.endSpan(span, hConn, err);
@@ -412,7 +466,7 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
             );
           }
 
-          return context.with(trace.setSpan(context.active(), span), () => {
+          return context.with(trace.setSpan(parentCtx, span), () => {
             try {
               return (originalCb as (...a: unknown[]) => unknown)(
                 err,
@@ -484,11 +538,23 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
   /**
    * Shared tail for `Put`/`PutSync`/`Put1`/`Put1Sync`/`GetSync`: they all take
    * a variable-length argument list ending *optionally* (Sync variants) in an
-   * `(err, ...) => void` callback. If one was supplied, bind it to the calling
-   * context (a native addon calling back into JS may lose the active context,
-   * see the session handoff section 7) and end the span from inside it. If
-   * none was supplied, the verb is being used in its throw-or-return-directly
-   * form, so end the span synchronously around the call instead.
+   * `(err, ...) => void` callback. If one was supplied, bind it (a native
+   * addon calling back into JS may lose the active context, see the session
+   * handoff section 7) and end the span from inside it. If none was
+   * supplied, the verb is being used in its throw-or-return-directly form,
+   * so end the span synchronously around the call instead.
+   *
+   * `callerContext` is the context that was active in the application before
+   * this patch opened its span - captured by the caller, before
+   * `context.with(trace.setSpan(...), ...)` made the span current. The
+   * application's own callback is bound to THAT context, not to
+   * `context.active()` (which at this point is our span's context), because
+   * otherwise anything the application schedules from inside its own
+   * callback - a `setImmediate` poll loop being the common shape for a
+   * `GetSync` consumer - would capture our already-ended span as ambient,
+   * and the next operation's span would parent to it. That was the shape of
+   * the unbounded receive-span chain this fixes: 80 levels deep, each
+   * `receive` span parented to the previous poll's already-ended span.
    *
    * `onSettled`, if given, runs once the real call has settled (success or
    * error) but strictly before the span ends - the one hook `Put1`/`Put1Sync`
@@ -501,6 +567,7 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
     original: (...args: unknown[]) => unknown,
     thisArg: unknown,
     args: unknown[],
+    callerContext: Context,
     onSettled?: () => void
   ): unknown {
     const lastIndex = args.length - 1;
@@ -510,7 +577,7 @@ export class IbmMqInstrumentation extends InstrumentationBase<IbmMqInstrumentati
     if (typeof maybeCb === 'function') {
       const originalCb = maybeCb as MqCallback<unknown>;
       const boundCb = context.bind(
-        context.active(),
+        callerContext,
         (err: unknown, ...rest: unknown[]) => {
           onSettled?.();
           self.endSpan(span, hConn, err);

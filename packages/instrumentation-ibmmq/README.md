@@ -51,9 +51,16 @@ This instrumentation supports zero-code setup via `--require @opentelemetry/auto
 
 ### Propagation
 
-Trace context propagation across a queue is handled entirely by the `ibmmq` package's own `lib/mqiotel.js`, which injects `traceparent`/`tracestate` message properties on publish and adds a link to the active span when a message carrying them is consumed. This instrumentation writes no propagation code of its own and exposes no option to configure it.
+`ibmmq`'s own `lib/mqiotel.js` injects `traceparent`/`tracestate` message properties on publish; this instrumentation does not duplicate that.
 
-Parent-child linkage (rather than a link) between a producer's send span and a consumer's process span is a possible future option, but it would require disabling `ibmmq`'s built-in propagation (`MQIJS_NOOTEL=1`) and implementing our own `propagation.extract`/inject in its place.
+On the consuming side, the two `ibmmq` verbs that read a message differ in how (and when) IBM's hook runs relative to this instrumentation's own span:
+
+- On the synchronous `GetSync` path, IBM's hook runs while this instrumentation's `receive` span is current, so it adds a link from that span to the message's inbound context.
+- On the asynchronous `Get` path, IBM's hook runs inside `ibmmq`'s own delivery callback, before this instrumentation's `process` span exists, so any link it tried to add would have nothing to attach to. This instrumentation instead extracts the inbound context itself, from the same message handle, and uses it directly as the `process` span's parent rather than a link.
+
+The OpenTelemetry messaging semantic conventions treat links as the default correlation mechanism between a producer and a consumer, but explicitly permit using the message's creation context as the parent of a single-message process span - that is the option taken here for the asynchronous path.
+
+Setting `MQIJS_NOOTEL=1` disables `ibmmq`'s own OpenTelemetry hook entirely, including the producer-side property injection this instrumentation relies on; there is no reason to set it when using this instrumentation.
 
 ## Semantic Conventions
 
