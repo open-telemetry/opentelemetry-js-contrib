@@ -396,9 +396,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const { span, attributes } = record;
+    const isError = response.statusCode >= 400;
     const spanAttributes: Attributes = {
       [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
+
+    if (isError) {
+      spanAttributes[ATTR_ERROR_TYPE] = String(response.statusCode);
+    }
 
     const config = this.getConfig();
 
@@ -432,10 +437,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     span.setAttributes(spanAttributes);
     span.setStatus({
-      code:
-        response.statusCode >= 400
-          ? SpanStatusCode.ERROR
-          : SpanStatusCode.UNSET,
+      code: isError ? SpanStatusCode.ERROR : SpanStatusCode.UNSET,
     });
     record.attributes = Object.assign(attributes, spanAttributes);
   }
@@ -485,18 +487,20 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (isAbort) {
       span.end();
     } else {
+      // error.type must be a low-cardinality class of error per semconv, and an
+      // empty value collapses into a duplicate series on Prometheus-based
+      // exporters. Use the error code/name, never the free-form, possibly empty
+      // message.
+      const errorType = error.code || error.name || 'Error';
+      attributes[ATTR_ERROR_TYPE] = errorType;
+      span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
       span.recordException(error);
       span.setStatus({
         code: SpanStatusCode.ERROR,
         message: error.message,
       });
       span.end();
-
-      // error.type must be a low-cardinality class of error per semconv, and an
-      // empty value collapses into a duplicate series on Prometheus-based
-      // exporters. Use the error code/name, never the free-form, possibly empty
-      // message.
-      attributes[ATTR_ERROR_TYPE] = error.code || error.name || 'Error';
     }
 
     this._recordFromReq.delete(request);

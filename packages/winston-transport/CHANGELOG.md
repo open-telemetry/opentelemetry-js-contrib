@@ -1,6 +1,19 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.31.0...winston-transport-v0.32.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-winston:** preserve log trace context ([#3682](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3682)) ([e1d4daa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1d4daa2423e708fab7c95671728a8e80223fbea))
+* **winston-transport:** serialize Error attributes ([#3672](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3672)) ([82a5bc2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/82a5bc2b90d6c84f93069e928bb0213e5a27e33f))
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.30.0...winston-transport-v0.31.0) (2026-07-23)
 
 

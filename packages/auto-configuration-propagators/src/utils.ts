@@ -10,7 +10,6 @@ import {
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
 import { B3InjectEncoding, B3Propagator } from '@opentelemetry/propagator-b3';
-import { JaegerPropagator } from '@opentelemetry/propagator-jaeger';
 import { OTTracePropagator } from '@opentelemetry/propagator-ot-trace';
 import { AWSXRayPropagator } from '@opentelemetry/propagator-aws-xray';
 import { AWSXRayLambdaPropagator } from '@opentelemetry/propagator-aws-xray-lambda';
@@ -28,7 +27,6 @@ const propagatorMap = new Map<string, PropagatorFactoryFunction>([
     'b3multi',
     () => new B3Propagator({ injectEncoding: B3InjectEncoding.MULTI_HEADER }),
   ],
-  ['jaeger', () => new JaegerPropagator()],
   ['xray', () => new AWSXRayPropagator()],
   ['xray-lambda', () => new AWSXRayLambdaPropagator()],
   ['ottrace', () => new OTTracePropagator()],

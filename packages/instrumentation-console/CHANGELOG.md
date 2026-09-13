@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-console-v0.3.0...instrumentation-console-v0.4.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-console:** restore console methods on disable when constructed with { enabled: true } ([#3641](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3641)) ([97c7f21](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97c7f216886d331473dda34496b4be66e5ba2e52))
+
 ## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-console-v0.2.0...instrumentation-console-v0.3.0) (2026-07-23)
 
 
