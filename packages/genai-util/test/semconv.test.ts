@@ -30,6 +30,8 @@ import {
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,
 } from '../src/semconv';
@@ -99,6 +101,14 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(
       METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
       'gen_ai.client.token.usage'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+      'gen_ai.client.operation.time_to_first_chunk'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
+      'gen_ai.client.operation.time_per_output_chunk'
     );
     assert.strictEqual(
       EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
