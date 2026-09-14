@@ -13,7 +13,7 @@
   },
   "scripts": {
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-long-task",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",

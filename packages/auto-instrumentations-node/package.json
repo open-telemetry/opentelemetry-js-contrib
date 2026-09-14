@@ -24,7 +24,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-instrumentations-node",
     "prepublishOnly": "npm run compile",
     "tdd": "yarn test -- --watch-extensions ts --watch",

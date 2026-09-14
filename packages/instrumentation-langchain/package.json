@@ -12,7 +12,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",

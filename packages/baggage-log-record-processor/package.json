@@ -11,7 +11,7 @@
   },
   "scripts": {
     "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-log-record-processor",
     "prewatch": "npm run precompile",
     "prepublishOnly": "npm run compile",

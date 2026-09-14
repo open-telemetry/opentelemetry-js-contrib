@@ -8,7 +8,7 @@
     "access": "public"
   },
   "scripts": {
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/contrib-test-utils",
     "prepublishOnly": "npm run compile",
     "watch": "tsc -w"

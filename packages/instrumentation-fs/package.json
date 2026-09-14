@@ -17,7 +17,7 @@
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-fs",
-    "compile": "tsc -p ."
+    "compile": "tsdown"
   },
   "keywords": [
     "fs",

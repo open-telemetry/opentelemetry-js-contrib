@@ -16,7 +16,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-net"
   },
   "keywords": [

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sql-common",
-    "compile": "tsc --build tsconfig.json",
+    "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "watch": "tsc -w"

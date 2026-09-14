@@ -11,7 +11,7 @@
     "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
     "prewatch": "npm run version:update",
     "version:update": "node ../../scripts/version-update.js",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "tdd": "wtr --watch",
     "test:browser": "wtr --coverage",

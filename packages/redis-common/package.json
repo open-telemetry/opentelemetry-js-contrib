@@ -8,7 +8,7 @@
     "access": "public"
   },
   "scripts": {
-    "compile": "tsc --build tsconfig.json",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/redis-common",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
