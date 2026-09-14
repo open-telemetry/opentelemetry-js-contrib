@@ -11,7 +11,7 @@
     "directory": "packages/resource-detector-gcp"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/resource-detector-gcp",
     "prepublishOnly": "npm run compile",

@@ -12,7 +12,7 @@
     "directory": "packages/instrumentation-user-interaction"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-user-interaction",
     "lint:readme": "node ../../scripts/lint-readme.js",

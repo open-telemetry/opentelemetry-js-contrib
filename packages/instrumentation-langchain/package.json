@@ -11,7 +11,7 @@
     "directory": "packages/instrumentation-langchain"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",

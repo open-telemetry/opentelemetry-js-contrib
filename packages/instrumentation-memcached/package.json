@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-memcached"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-memcached",
     "prepublishOnly": "npm run compile",

@@ -23,7 +23,7 @@
     "directory": "packages/auto-instrumentations-node"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-instrumentations-node",
     "prepublishOnly": "npm run compile",

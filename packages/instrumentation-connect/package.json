@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-connect"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-connect",
     "compile": "tsdown",
     "lint:readme": "node ../../scripts/lint-readme.js",

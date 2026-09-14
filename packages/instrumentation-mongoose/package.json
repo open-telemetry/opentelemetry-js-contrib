@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-mongoose"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-mongoose",
     "lint:readme": "node ../../scripts/lint-readme.js",

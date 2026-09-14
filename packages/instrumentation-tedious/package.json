@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-tedious"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-tedious",
     "prepublishOnly": "npm run compile",

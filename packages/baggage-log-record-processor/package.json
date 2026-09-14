@@ -10,7 +10,7 @@
     "directory": "packages/baggage-log-record-processor"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/baggage-log-record-processor",
     "prewatch": "npm run precompile",

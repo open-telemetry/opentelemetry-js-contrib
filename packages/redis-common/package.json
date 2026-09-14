@@ -8,6 +8,7 @@
     "access": "public"
   },
   "scripts": {
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/redis-common",
     "prepublishOnly": "npm run compile",

@@ -11,7 +11,7 @@
     "directory": "packages/propagator-ot-trace"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-ot-trace",
     "prepublishOnly": "npm run compile",

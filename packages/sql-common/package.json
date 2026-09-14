@@ -8,6 +8,7 @@
     "access": "public"
   },
   "scripts": {
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sql-common",
     "compile": "tsdown",
     "prepublishOnly": "npm run compile",

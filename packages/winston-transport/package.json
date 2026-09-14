@@ -10,7 +10,7 @@
     "directory": "packages/winston-transport"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/winston-transport",
     "prepublishOnly": "npm run compile",

@@ -10,7 +10,7 @@
     "directory": "packages/instrumentation-dns"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-dns",
     "lint:readme": "node ../../scripts/lint-readme",

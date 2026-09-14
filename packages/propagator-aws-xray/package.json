@@ -11,7 +11,7 @@
     "directory": "packages/propagator-aws-xray"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/propagator-aws-xray",
     "compile": "tsdown",
     "prepublishOnly": "npm run compile",
