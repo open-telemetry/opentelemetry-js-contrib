@@ -44,8 +44,8 @@
     "@opentelemetry/propagator-ot-trace": "^0.29.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ]
 }

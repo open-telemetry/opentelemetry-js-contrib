@@ -19,14 +19,9 @@
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esm/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
+    "README.md",
     "LICENSE",
-    "README.md"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

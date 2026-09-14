@@ -26,9 +26,9 @@
     "sql"
   ],
   "files": [
-    "build/**/*.js",
-    "build/**/*.js.map",
-    "build/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

@@ -46,14 +46,8 @@
     "@opentelemetry/instrumentation-xml-http-request": "^0.222.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esm/**/*.d.ts",
-    "build/esnext/**/*.js",
-    "build/esnext/**/*.js.map",
-    "build/esnext/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ]
 }
