@@ -124,9 +124,21 @@ This package intentionally does not instrument:
   applicable.
 - Realtime/voice tracing APIs exposed outside the core `Runner` and trace
   lifecycle covered above.
-- Guaranteed parentage between model-call spans from separate client
-  instrumentations and agent spans. SDK callbacks do not keep an async
-  OpenTelemetry context active between span start and end.
+- Parentage between agent spans and spans produced by other instrumentations,
+  such as the model-call spans from
+  [`@opentelemetry/instrumentation-openai`](https://www.npmjs.com/package/@opentelemetry/instrumentation-openai).
+  Those spans are still recorded, but they begin a **separate trace** rather
+  than nesting under `invoke_agent`.
+
+  The SDK invokes processor callbacks synchronously on the task that starts and
+  ends each span, so the callback pairing that context propagation needs does
+  exist. What is missing is a detachable context primitive in OpenTelemetry
+  JavaScript: its context API offers `context.with(fn)`, which needs a function
+  to wrap, and no `attach`/`detach` pair of the kind the Python GenAI
+  instrumentation uses to make the same callbacks nest. Making the callback's
+  context active for the remainder of the surrounding asynchronous scope is
+  possible, but it cannot be undone when the span ends, which leaks the context
+  into unrelated work.
 
 ### Options
 
