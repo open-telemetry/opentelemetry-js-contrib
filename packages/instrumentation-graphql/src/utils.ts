@@ -334,10 +334,7 @@ export function wrapFields(
     // frameworks) adds wrappers to resolvers after the initial schema
     // creation, so a type-level "already patched" flag would cause those
     // late-added resolvers to be missed on subsequent execute calls.
-    if (
-      field.resolve &&
-      !(field.resolve as OtelPatched)[OTEL_PATCHED_SYMBOL]
-    ) {
+    if (field.resolve && !(field.resolve as OtelPatched)[OTEL_PATCHED_SYMBOL]) {
       field.resolve = wrapFieldResolver(tracer, getConfig, field.resolve);
     }
 
