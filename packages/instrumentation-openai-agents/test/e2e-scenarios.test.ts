@@ -494,18 +494,23 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // of nesting under invoke_agent. See the README's "What is not
       // instrumented" section. If context propagation is ever implemented,
       // this test should fail and be replaced by one asserting the nesting.
-      assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
-        '  invoke_agent helper',
-        '    execute_tool record_note',
-        'unrelated.work',
-      ]);
-
       const spans = exporter.getFinishedSpans();
       const runSpan = spans.find(span => span.name === 'openai.agents.run');
       const unrelated = spans.find(span => span.name === 'unrelated.work');
       assert.ok(runSpan);
       assert.ok(unrelated);
+
+      // The two trees are compared separately: they are independent roots, so
+      // any ordering between them would just be a timestamp tie-break.
+      assert.deepStrictEqual(
+        spanTree(spans.filter(span => span !== unrelated)),
+        [
+          'openai.agents.run',
+          '  invoke_agent helper',
+          '    execute_tool record_note',
+        ]
+      );
+      assert.deepStrictEqual(spanTree([unrelated]), ['unrelated.work']);
       assert.notStrictEqual(
         unrelated.spanContext().traceId,
         runSpan.spanContext().traceId,
