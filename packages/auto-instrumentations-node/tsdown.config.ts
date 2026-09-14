@@ -7,5 +7,6 @@ export default defineConfig({
   ...baseConfig,
   entry: [
     'src/index.ts',
+    'src/register.ts',
   ],
 });

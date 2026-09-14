@@ -15,8 +15,26 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.cts",
   "exports": {
-    ".": "./build/src/index.js",
-    "./register": "./build/src/register.js"
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./register": {
+      "import": {
+        "types": "./dist/register.d.mts",
+        "default": "./dist/register.mjs"
+      },
+      "require": {
+        "types": "./dist/register.d.cts",
+        "default": "./dist/register.cjs"
+      }
+    }
   },
   "repository": {
     "type": "git",
