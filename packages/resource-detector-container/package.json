@@ -2,9 +2,9 @@
   "name": "@opentelemetry/resource-detector-container",
   "version": "0.8.13",
   "description": "Opentelemetry resource detector to get container resource attributes",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

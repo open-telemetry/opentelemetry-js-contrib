@@ -2,17 +2,17 @@
   "name": "@opentelemetry/id-generator-aws-xray",
   "version": "2.1.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
-  "main": "build/src/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "publishConfig": {
     "access": "public"
   },
-  "module": "build/esm/index.js",
   "browser": {
     "./src/platform/index.ts": "./src/platform/browser/index.ts",
     "./build/esm/platform/index.js": "./build/esm/platform/browser/index.js",
     "./build/src/platform/index.js": "./build/src/platform/browser/index.js"
   },
-  "types": "build/src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

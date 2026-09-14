@@ -2,8 +2,9 @@
   "name": "@opentelemetry/instrumentation-mongoose",
   "version": "0.68.0",
   "description": "OpenTelemetry instrumentation for `mongoose` database object data modeling (ODM) library for MongoDB",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

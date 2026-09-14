@@ -2,8 +2,9 @@
   "name": "@opentelemetry/contrib-test-utils",
   "version": "0.69.0",
   "description": "Test utilities for opentelemetry components",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "publishConfig": {
     "access": "public"
   },

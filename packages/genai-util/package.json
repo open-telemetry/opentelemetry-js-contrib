@@ -2,8 +2,9 @@
   "name": "@opentelemetry/genai-util",
   "version": "0.1.0",
   "description": "Utilities for OpenTelemetry Generative AI instrumentations",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "publishConfig": {
     "access": "public"
   },

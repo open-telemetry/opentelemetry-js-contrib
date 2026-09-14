@@ -2,8 +2,9 @@
   "name": "@opentelemetry/instrumentation-cassandra-driver",
   "version": "0.67.0",
   "description": "OpenTelemetry instrumentation for `cassandra-driver` database client library for Apache Cassandra",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

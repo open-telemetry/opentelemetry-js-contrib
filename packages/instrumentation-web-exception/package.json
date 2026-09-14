@@ -2,10 +2,10 @@
   "name": "@opentelemetry/instrumentation-web-exception",
   "version": "0.15.0",
   "description": "OpenTelemetry instrumentation for web exceptions",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "esnext": "build/esnext/index.js",
-  "types": "build/src/index.d.ts",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf dist build",

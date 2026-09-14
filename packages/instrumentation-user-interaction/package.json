@@ -2,10 +2,10 @@
   "name": "@opentelemetry/instrumentation-user-interaction",
   "version": "0.66.0",
   "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "esnext": "build/esnext/index.js",
-  "types": "build/src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

@@ -2,8 +2,9 @@
   "name": "@opentelemetry/baggage-log-record-processor",
   "version": "0.23.0",
   "description": "OpenTelemetry Baggage Log Record Processor",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

@@ -2,8 +2,9 @@
   "name": "@opentelemetry/instrumentation-host-metrics",
   "version": "0.5.0",
   "description": "OpenTelemetry Host Metrics instrumentation for Node.js",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",

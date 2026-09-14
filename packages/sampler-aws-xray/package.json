@@ -16,8 +16,9 @@
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "files": [
     "README.md",
     "LICENSE",

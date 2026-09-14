@@ -2,8 +2,9 @@
   "name": "@opentelemetry/redis-common",
   "version": "0.38.3",
   "description": "Redis utilities for redis instrumentations",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "publishConfig": {
     "access": "public"
   },

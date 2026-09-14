@@ -11,8 +11,9 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "exports": {
     ".": "./build/src/index.js",
     "./register": "./build/src/register.js"
