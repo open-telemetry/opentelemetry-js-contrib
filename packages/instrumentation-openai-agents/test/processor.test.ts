@@ -460,6 +460,90 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.strictEqual(outerSpan.status.code, SpanStatusCode.ERROR);
   });
 
+  it('keeps the owning run mapping when nested traces end out of order', async () => {
+    const token = {};
+    const outer: OpenAIAgentsTrace = { traceId: 'outer-trace' };
+    const nestedA: OpenAIAgentsTrace = { traceId: 'nested-a' };
+    const nestedB: OpenAIAgentsTrace = { traceId: 'nested-b' };
+    const runContext = context
+      .active()
+      .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, token);
+
+    await context.with(runContext, async () => {
+      await processor.onTraceStart(outer);
+      await processor.onTraceStart(nestedA);
+      await processor.onTraceStart(nestedB);
+      // A finishes before B, so the stack is not unwound in LIFO order.
+      await processor.onTraceEnd(nestedA);
+      await processor.onTraceEnd(nestedB);
+      processor.onRunError(token, new Error('tool failed'));
+    });
+
+    const failed = exporter
+      .getFinishedSpans()
+      .filter(span => span.status.code === SpanStatusCode.ERROR);
+    assert.strictEqual(failed.length, 1);
+    assert.strictEqual(exporter.getFinishedSpans().length, 3);
+  });
+
+  it('ends a run that fails after its stream started', async () => {
+    const token = {};
+    const sdkTrace: OpenAIAgentsTrace = { traceId: 'streamed-trace' };
+    const runContext = context
+      .active()
+      .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, token);
+
+    await context.with(runContext, () => processor.onTraceStart(sdkTrace));
+    processor.onRunStreamStart(token, sdkTrace.traceId);
+    // The SDK ends the trace as soon as the run promise resolves.
+    await processor.onTraceEnd(sdkTrace);
+    assert.strictEqual(exporter.getFinishedSpans().length, 0);
+
+    processor.onRunStreamSettled(token, new Error('stream failed'));
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(runSpan.attributes['error.type'], 'Error');
+  });
+
+  it('ends a caller-managed trace when its stream fails', async () => {
+    const token = {};
+    const sdkTrace: OpenAIAgentsTrace = { traceId: 'caller-trace' };
+
+    // The trace exists before the run token does, as with
+    // withTrace(() => runner.run(..., { stream: true })).
+    await processor.onTraceStart(sdkTrace);
+    processor.onRunStreamStart(token, sdkTrace.traceId);
+    await processor.onTraceEnd(sdkTrace);
+    processor.onRunStreamSettled(token, new Error('stream failed'));
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(runSpan.attributes['error.type'], 'Error');
+  });
+
+  it('leaves a successful stream unaffected', async () => {
+    const token = {};
+    const sdkTrace: OpenAIAgentsTrace = { traceId: 'ok-trace' };
+
+    await processor.onTraceStart(sdkTrace);
+    processor.onRunStreamStart(token, sdkTrace.traceId);
+    await processor.onTraceEnd(sdkTrace);
+    processor.onRunStreamSettled(token);
+
+    const runSpan = exporter
+      .getFinishedSpans()
+      .find(span => span.name === 'openai.agents.run');
+    assert.ok(runSpan);
+    assert.strictEqual(runSpan.status.code, SpanStatusCode.UNSET);
+  });
+
   it('does not end a shared trace when one runner invocation fails', async () => {
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',

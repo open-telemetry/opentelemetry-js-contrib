@@ -48,7 +48,13 @@ interface SpanRecord {
 interface TraceRecord extends SpanRecord {
   span: Span;
   trace: OpenAIAgentsTrace;
-  previousRunRecord?: TraceRecord;
+  /** Set once the OTel span has been ended, so it is never ended twice. */
+  ended?: boolean;
+  /** Set while a streamed run owned by this trace has not settled yet. */
+  pendingStream?: boolean;
+  /** Recorded when the SDK ends the trace before its stream settles. */
+  endRequested?: boolean;
+  pendingEndTime?: TimeInput;
 }
 
 export const OPENAI_AGENTS_RUN_CONTEXT_KEY = createContextKey(
@@ -64,7 +70,8 @@ export class OpenAIAgentsTracingProcessor
   private _spanRecordsById = new Map<string, SpanRecord>();
   private _traceRecords = new WeakMap<object, TraceRecord>();
   private _traceRecordsById = new Map<string, TraceRecord>();
-  private _traceRecordsByRun = new WeakMap<object, TraceRecord>();
+  private _traceRecordsByRun = new WeakMap<object, TraceRecord[]>();
+  private _pendingStreamRecords = new WeakMap<object, TraceRecord[]>();
   private _failedSpans = new WeakSet<Span>();
   private readonly _openSpans = new Set<Span>();
 
@@ -92,9 +99,6 @@ export class OpenAIAgentsTracingProcessor
 
       const parentContext = context.active();
       const runToken = this._activeRunToken();
-      const previousRunRecord = runToken
-        ? this._traceRecordsByRun.get(runToken)
-        : undefined;
       const span = this._getTracer().startSpan(
         'openai.agents.run',
         {
@@ -109,12 +113,18 @@ export class OpenAIAgentsTracingProcessor
         errorTarget: span,
         trace,
         runToken,
-        previousRunRecord,
       };
       this._traceRecords.set(trace, record);
       this._traceRecordsById.set(trace.traceId, record);
       if (runToken) {
-        this._traceRecordsByRun.set(runToken, record);
+        // Nested traces stack rather than replace, so a nested trace neither
+        // hides nor evicts the mapping of the run that owns the outer trace.
+        const stack = this._traceRecordsByRun.get(runToken);
+        if (stack) {
+          stack.push(record);
+        } else {
+          this._traceRecordsByRun.set(runToken, [record]);
+        }
       }
       this._openSpans.add(span);
     });
@@ -218,7 +228,8 @@ export class OpenAIAgentsTracingProcessor
     this._spanRecordsById.clear();
     this._traceRecords = new WeakMap<object, TraceRecord>();
     this._traceRecordsById.clear();
-    this._traceRecordsByRun = new WeakMap<object, TraceRecord>();
+    this._traceRecordsByRun = new WeakMap<object, TraceRecord[]>();
+    this._pendingStreamRecords = new WeakMap<object, TraceRecord[]>();
     this._failedSpans = new WeakSet<Span>();
     return Promise.resolve();
   }
@@ -229,22 +240,68 @@ export class OpenAIAgentsTracingProcessor
 
   onRunError(runToken: object, error: unknown): void {
     this._safely('ending failed run trace', () => {
-      const record = this._traceRecordsByRun.get(runToken);
-      if (!record) {
+      // Only traces this run created are cleaned up here. Traces the caller
+      // owns (withTrace/getOrCreateTrace) stay under their owner's lifecycle.
+      const stack = this._traceRecordsByRun.get(runToken);
+      if (!stack?.length) {
         return;
       }
-      this._recordRunError(record, error, 'OpenAI Agents run failed');
-      this._endTrace(record);
+      for (const record of [...stack].reverse()) {
+        this._recordRunError(record, error, 'OpenAI Agents run failed');
+        this._endTrace(record);
+      }
     });
   }
 
-  onRunStreamError(runToken: object, error: unknown): void {
-    this._safely('recording failed streamed run', () => {
-      const record = this._traceRecordsByRun.get(runToken);
-      if (record) {
-        this._recordRunError(record, error, 'OpenAI Agents stream failed');
+  /**
+   * Marks the run's trace as awaiting stream completion. A streamed run
+   * resolves before its stream does, so the trace span must stay open until
+   * the stream settles, otherwise a late failure has nowhere to be recorded.
+   */
+  onRunStreamStart(runToken: object, traceId?: string): void {
+    this._safely('tracking streamed run', () => {
+      const records = this._runTraceRecords(runToken, traceId);
+      if (!records.length) {
+        return;
+      }
+      for (const record of records) {
+        record.pendingStream = true;
+      }
+      this._pendingStreamRecords.set(runToken, records);
+    });
+  }
+
+  onRunStreamSettled(runToken: object, error?: unknown): void {
+    this._safely('completing streamed run', () => {
+      const records = this._pendingStreamRecords.get(runToken);
+      this._pendingStreamRecords.delete(runToken);
+      if (!records?.length) {
+        return;
+      }
+      for (const record of [...records].reverse()) {
+        record.pendingStream = false;
+        if (error !== undefined) {
+          this._recordRunError(record, error, 'OpenAI Agents stream failed');
+        }
+        if (record.endRequested) {
+          this._finishTraceSpan(record, record.pendingEndTime);
+        }
       }
     });
+  }
+
+  /**
+   * Resolves the trace records a run owns. Falls back to the trace active when
+   * the run started, which covers `withTrace(() => runner.run(...))` where the
+   * trace exists before the run token does.
+   */
+  private _runTraceRecords(runToken: object, traceId?: string): TraceRecord[] {
+    const stack = this._traceRecordsByRun.get(runToken);
+    if (stack?.length) {
+      return [...stack];
+    }
+    const record = traceId ? this._traceRecordsById.get(traceId) : undefined;
+    return record ? [record] : [];
   }
 
   onTraceError(trace: OpenAIAgentsTrace, error: unknown): void {
@@ -255,7 +312,7 @@ export class OpenAIAgentsTracingProcessor
       if (!record) {
         return;
       }
-      if (!this._failedSpans.has(record.span)) {
+      if (!record.ended && !this._failedSpans.has(record.span)) {
         const errorType = this._errorType(error);
         const errorDetail = this._errorDetail(
           error,
@@ -278,7 +335,7 @@ export class OpenAIAgentsTracingProcessor
     error: unknown,
     fallbackDetail: string
   ): void {
-    if (this._failedSpans.has(record.span)) {
+    if (record.ended || this._failedSpans.has(record.span)) {
       return;
     }
     const errorType = this._errorType(error);
@@ -361,21 +418,41 @@ export class OpenAIAgentsTracingProcessor
   }
 
   private _endTrace(record: TraceRecord, endTime?: TimeInput): void {
-    this._openSpans.delete(record.span);
+    if (record.ended) {
+      return;
+    }
     this._traceRecords.delete(record.trace);
-    this._traceRecordsById.delete(record.trace.traceId);
+    if (this._traceRecordsById.get(record.trace.traceId) === record) {
+      this._traceRecordsById.delete(record.trace.traceId);
+    }
     if (record.runToken) {
-      if (this._traceRecordsByRun.get(record.runToken) === record) {
-        if (record.previousRunRecord) {
-          this._traceRecordsByRun.set(
-            record.runToken,
-            record.previousRunRecord
-          );
-        } else {
+      // Remove this record by identity: nested traces can finish out of order,
+      // so the entry being removed is not necessarily the top of the stack.
+      const stack = this._traceRecordsByRun.get(record.runToken);
+      const index = stack ? stack.indexOf(record) : -1;
+      if (stack && index !== -1) {
+        stack.splice(index, 1);
+        if (!stack.length) {
           this._traceRecordsByRun.delete(record.runToken);
         }
       }
     }
+    if (record.pendingStream) {
+      // The SDK ended the trace while its stream is still running. Keep the
+      // span open so a late stream failure can still be recorded on it.
+      record.endRequested = true;
+      record.pendingEndTime = endTime;
+      return;
+    }
+    this._finishTraceSpan(record, endTime);
+  }
+
+  private _finishTraceSpan(record: TraceRecord, endTime?: TimeInput): void {
+    if (record.ended) {
+      return;
+    }
+    record.ended = true;
+    this._openSpans.delete(record.span);
     record.span.end(endTime);
   }
 

@@ -170,9 +170,12 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
         return context.with(runContext, async () => {
           try {
             const result = await original.apply(this, args);
-            OpenAIAgentsInstrumentation._watchStreamFailure(
+            OpenAIAgentsInstrumentation._watchStreamCompletion(
               result,
               runToken,
+              // A caller-managed trace exists before the run token does, so
+              // the active trace id is the only way to find its record.
+              agents.getCurrentTrace()?.traceId,
               processor
             );
             return result;
@@ -185,9 +188,10 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     });
   }
 
-  private static _watchStreamFailure(
+  private static _watchStreamCompletion(
     result: unknown,
     runToken: object,
+    traceId: string | undefined,
     processor: OpenAIAgentsTracingProcessor
   ): void {
     if (!result || typeof result !== 'object') {
@@ -201,9 +205,20 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     ) {
       return;
     }
-    void Promise.resolve(completed).catch(error => {
-      processor.onRunStreamError(runToken, error);
-    });
+    // A streamed run resolves before its stream finishes, so the run trace has
+    // to stay open until the stream settles for a late failure to land on it.
+    processor.onRunStreamStart(runToken, traceId);
+    void Promise.resolve(completed).then(
+      () => {
+        processor.onRunStreamSettled(runToken);
+      },
+      error => {
+        processor.onRunStreamSettled(
+          runToken,
+          error ?? new Error('stream failed')
+        );
+      }
+    );
   }
 
   private _patchWithTrace(agents: OpenAIAgentsModule): void {
@@ -244,12 +259,16 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
         if (typeof callback !== 'function') {
           return original.apply(this, args as Parameters<typeof original>);
         }
+        // A reused outer trace stays under its owner's lifecycle: the caller
+        // may catch this rejection and keep the trace going, so only a trace
+        // this call creates is ended here.
+        const outerTrace = agents.getCurrentTrace();
         args[0] = async () => {
           try {
             return await callback();
           } catch (error) {
             const trace = agents.getCurrentTrace();
-            if (trace) {
+            if (trace && trace !== outerTrace) {
               processor.onTraceError(trace, error);
             }
             throw error;

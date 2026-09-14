@@ -160,13 +160,14 @@ describe('OpenAIAgentsInstrumentation', () => {
     definition.patch!(module, '0.14.0');
 
     const processor = module.processors[0] as OpenAIAgentsTracingProcessor & {
-      onRunStreamError(runToken: object, error: unknown): void;
+      onRunStreamSettled(runToken: object, error?: unknown): void;
     };
-    const originalOnRunStreamError = processor.onRunStreamError.bind(processor);
+    const originalOnRunStreamSettled =
+      processor.onRunStreamSettled.bind(processor);
     let reportedError: unknown;
-    processor.onRunStreamError = (runToken, error) => {
+    processor.onRunStreamSettled = (runToken, error) => {
       reportedError = error;
-      originalOnRunStreamError(runToken, error);
+      originalOnRunStreamSettled(runToken, error);
     };
 
     await module.Runner.prototype.run();
