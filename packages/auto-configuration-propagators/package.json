@@ -38,7 +38,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha 'test/**/*.ts'",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"

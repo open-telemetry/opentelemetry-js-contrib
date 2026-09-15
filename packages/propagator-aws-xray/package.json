@@ -33,7 +33,7 @@
     "tdd:node": "npm run test -- --watch-extensions ts --watch",
     "tdd:browser": "karma start",
     "version": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "opentelemetry",

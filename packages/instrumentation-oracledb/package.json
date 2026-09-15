@@ -39,7 +39,7 @@
     "test-services:start": "cd ../.. && npm run test-services:start oracledb",
     "test-services:stop": "cd ../.. && npm run test-services:stop oracledb",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "instrumentation",

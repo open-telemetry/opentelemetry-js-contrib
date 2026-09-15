@@ -26,7 +26,7 @@
     "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "watch": "tsc -w",
+    "watch": "tsdown --watch --no-clean",
     "version:update": "node ../../scripts/version-update.js",
     "lint:readme": "node ../../scripts/lint-readme.js"
   },

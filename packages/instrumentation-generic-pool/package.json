@@ -31,7 +31,7 @@
     "tdd": "yarn test -- --watch-extensions ts --watch",
     "test": "nyc --no-clean mocha 'test/**/*.ts'",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "generic-pool",

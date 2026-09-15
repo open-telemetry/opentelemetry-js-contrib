@@ -42,7 +42,7 @@
     "test-services:ls": "echo mongodb",
     "test-services:start": "cd ../.. && npm run test-services:start mongodb",
     "test-services:stop": "cd ../.. && npm run test-services:stop mongodb",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "mongodb",

@@ -30,7 +30,7 @@
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "test": "nyc mocha test/**/*.test.ts",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "opentelemetry",

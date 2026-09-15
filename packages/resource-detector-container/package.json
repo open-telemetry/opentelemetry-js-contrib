@@ -30,7 +30,7 @@
     "test": "nyc mocha 'test/**/*.test.ts'",
     "tdd": "npm run test -- --watch-extensions ts --watch",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

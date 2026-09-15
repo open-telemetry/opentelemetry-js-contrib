@@ -37,7 +37,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-instrumentations-web",
     "prepublishOnly": "npm run compile",
     "test:browser": "nyc karma start --single-run",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"

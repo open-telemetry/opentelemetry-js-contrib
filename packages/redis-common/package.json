@@ -26,7 +26,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/redis-common",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "repository": {
     "type": "git",

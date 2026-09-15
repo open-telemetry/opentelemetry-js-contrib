@@ -38,7 +38,7 @@
     "test-services:start": "cd ../.. && npm run test-services:start postgres",
     "test-services:stop": "cd ../.. && npm run test-services:stop postgres",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "instrumentation",

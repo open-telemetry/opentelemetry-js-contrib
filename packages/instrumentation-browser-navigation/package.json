@@ -26,7 +26,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "wtr --watch",
     "test:browser": "wtr --coverage",
-    "watch": "tsc --build -watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "opentelemetry",

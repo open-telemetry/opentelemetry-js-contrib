@@ -52,7 +52,7 @@
     "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"

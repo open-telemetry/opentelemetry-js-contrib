@@ -32,7 +32,7 @@
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "graphql",

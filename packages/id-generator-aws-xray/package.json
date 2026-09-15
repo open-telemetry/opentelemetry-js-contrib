@@ -54,7 +54,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
+    "watch": "tsdown --watch --no-clean",
     "prepublishOnly": "npm run compile"
   },
   "keywords": [
