@@ -5,7 +5,5 @@ import baseConfig from '../../tsdown.config.ts';
 // letting package.json#browser path-swap node->browser for bundlers.
 export default defineConfig({
   ...baseConfig,
-  entry: [
-    'src/index.ts',
-  ],
+  entry: ['src/index.ts'],
 });

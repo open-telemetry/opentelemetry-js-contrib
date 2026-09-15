@@ -36,7 +36,7 @@ describe('[Integration] AzureVmServiceDetector', () => {
     // scenario.
     const {
       azureVmDetector,
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
     } = require('../../dist/detectors/AzureVmDetector.cjs');
     const resource = azureVmDetector.detect();
     await resource.waitForAsyncAttributes?.();

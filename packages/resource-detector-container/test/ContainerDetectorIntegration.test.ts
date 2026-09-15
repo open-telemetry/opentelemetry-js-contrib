@@ -36,7 +36,7 @@ describe('[Integration] ContainerDetector', () => {
     // scenario.
     const {
       containerDetector,
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
     } = require('../dist/detectors/ContainerDetector.cjs');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.

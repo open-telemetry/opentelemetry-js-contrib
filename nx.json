@@ -4,7 +4,7 @@
     "compile": {
       "dependsOn": ["version:update", "^compile"],
       "inputs": ["{projectRoot}/src/**/*.ts", "{projectRoot}/test/**/*.ts"],
-      "outputs": ["{projectRoot}/build"],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
     "watch": {

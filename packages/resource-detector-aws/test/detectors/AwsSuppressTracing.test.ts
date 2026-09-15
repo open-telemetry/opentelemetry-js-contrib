@@ -44,7 +44,7 @@ describe('[Integration] Internal tracing', () => {
       awsEcsDetector,
       awsEksDetector,
       awsLambdaDetector,
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
     } = require('../../dist/index.cjs');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.

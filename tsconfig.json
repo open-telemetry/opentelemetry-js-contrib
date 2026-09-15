@@ -23,5 +23,10 @@
     "strict": true,
     "strictNullChecks": true,
     "target": "es2022"
-  }
+  },
+  "include": [
+    "tsdown.config.ts",
+    "**/tsdown.config.ts",
+    "**/tsdown.*.config.ts"
+  ],
 }
