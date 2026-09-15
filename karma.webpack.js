@@ -45,7 +45,7 @@ module.exports = {
         if (rewritten === original) {
           throw new Error(
             `karma platform-swap: outer regex matched ${JSON.stringify(original)} ` +
-            'but inner replace did not rewrite it. The two regexes have drifted out of sync.'
+              'but inner replace did not rewrite it. The two regexes have drifted out of sync.'
           );
         }
         resource.request = rewritten;
