@@ -101,11 +101,14 @@ jobs:
             echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
             echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
           fi
+      - name: Compile (Delta)
+        run: npm run compile:ci:affected
+      # The compile above runs on the repo's pinned build Node (^26.3.0).
+      # Switch to the matrix Node version so tests exercise every supported
+      # runtime.
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: ${{ matrix.node }}
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
       - name: Unit tests (Browser - Delta)
         if: ${{ matrix.node == '22' }}
         run: npm run test:browser:ci:affected
@@ -128,6 +131,7 @@ jobs:
           - "20"
           - "22"
           - "24"
+          - "24"
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -135,7 +139,10 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: ${{ matrix.node }}
+          cache: 'npm'
+          cache-dependency-path: |
+            package-lock.json
+          node-version: ^26.3.0
       - run: npm ci
         timeout-minutes: 10
       - name: Download Build Artifacts
@@ -155,6 +162,12 @@ jobs:
           fi
       - name: Compile (Delta)
         run: npm run compile:ci:affected
+      # The compile above runs on the repo's pinned build Node (^26.3.0).
+      # Switch to the matrix Node version so tests exercise every supported
+      # runtime.
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node }}
       - name: Start Test Services (Delta)
         run: npm run test-services:start:affected
       - name: Test All Versions (Delta)
