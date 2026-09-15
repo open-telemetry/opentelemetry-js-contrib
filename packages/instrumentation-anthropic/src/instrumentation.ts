@@ -26,6 +26,7 @@ interface SpanState {
 
 interface AnthropicStream extends AsyncIterable<unknown> {
   iterator(): AsyncIterator<unknown>;
+  controller?: AbortController;
 }
 
 /**
@@ -42,10 +43,40 @@ function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
   return module.Anthropic ?? module.default ?? module;
 }
 
+function isMessageCreateParams(
+  value: unknown
+): value is Anthropic.Messages.MessageCreateParams {
+  return typeof value === 'object' && value !== null;
+}
+
 function isStreamRequest(
   params: Anthropic.Messages.MessageCreateParams | undefined
 ): boolean {
   return params?.stream === true;
+}
+
+/**
+ * `AnthropicBedrock` and `AnthropicVertex` extend `BaseAnthropic` and reuse the
+ * core `Messages` resource, so the same patch serves all three. Derive the
+ * provider from the client's base URL rather than assuming the first-party API.
+ */
+function getProviderName(client: unknown): string {
+  const baseURL = (client as { baseURL?: unknown })?.baseURL;
+  if (typeof baseURL === 'string') {
+    let host: string;
+    try {
+      host = new URL(baseURL).host;
+    } catch {
+      return 'anthropic';
+    }
+    if (/\.amazonaws\.com$/.test(host) && host.includes('bedrock')) {
+      return 'aws.bedrock';
+    }
+    if (/(^|\.)aiplatform\.googleapis\.com$/.test(host)) {
+      return 'gcp.vertex_ai';
+    }
+  }
+  return 'anthropic';
 }
 
 function isAPIPromise<T>(value: Promise<T>): value is AnthropicAPIPromise<T> {
@@ -108,15 +139,26 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           return original.apply(this, args);
         }
 
-        const params = args[0] as Anthropic.Messages.MessageCreateParams;
-        const span = instrumentation.tracer.startSpan(`chat ${params.model}`, {
-          kind: SpanKind.CLIENT,
-          attributes: {
-            'gen_ai.operation.name': 'chat',
-            'gen_ai.provider.name': 'anthropic',
-            'gen_ai.request.model': params.model,
-          },
-        });
+        // Let the SDK raise its own error for a malformed call rather than
+        // failing inside the patch before `original` is ever reached.
+        if (!isMessageCreateParams(args[0])) {
+          return original.apply(this, args);
+        }
+
+        const params = args[0];
+        const model =
+          typeof params.model === 'string' ? params.model : undefined;
+        const span = instrumentation.tracer.startSpan(
+          model ? `chat ${model}` : 'chat',
+          {
+            kind: SpanKind.CLIENT,
+            attributes: {
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.provider.name': getProviderName(this?._client),
+              ...(model ? { 'gen_ai.request.model': model } : {}),
+            },
+          }
+        );
         const state: SpanState = { span, ended: false };
         const ctx = trace.setSpan(context.active(), span);
 
@@ -158,9 +200,19 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
    *
    * Subscribing with `then()` would call `APIPromise#parse()`, reading the body
    * before a caller could reach it via `asResponse()`/`withResponse()`. Instead
-   * we wrap `parse()` so that the span covers the body read and records body
-   * level failures, and fall back to `asResponse()` for callers that only ever
-   * want the raw `Response` (they own the body from that point on).
+   * both consumption paths are wrapped and the span ends with whichever the
+   * caller actually uses:
+   *
+   * - `parse()` backs `then`/`catch`/`finally`/`await`/`withResponse()`, so the
+   *   span covers the body read and records body-level failures.
+   * - `asResponse()` hands the caller an unread `Response`; the caller owns the
+   *   body from that point, so the span ends when the response settles.
+   *
+   * Nothing is subscribed eagerly: a caller may not consume the promise until
+   * long after the response arrives, and ending the span at that point would
+   * both truncate its duration and swallow a later parse failure. A promise
+   * that is never consumed produces no span, and is collected along with these
+   * wrappers once the caller drops it.
    */
   private _observeAPIPromise(
     apiPromise: AnthropicAPIPromise<unknown>,
@@ -178,26 +230,49 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       };
     });
 
-    // `parse()` is invoked synchronously by `then()`/`await`, so by the time the
-    // response settles we know whether the caller ever intends to parse.
-    apiPromise.asResponse().then(() => {
-      if (!parsed) {
-        this._endSpan(state);
-      }
-    }, onError);
+    this._wrap(apiPromise, 'asResponse', originalAsResponse => {
+      return () => {
+        const responsePromise = originalAsResponse.call(apiPromise);
+        responsePromise.then(() => {
+          // `withResponse()` calls `parse()` and `asResponse()` together; let
+          // the parse result end the span so the body read is included.
+          if (!parsed) {
+            this._endSpan(state);
+          }
+        }, onError);
+        return responsePromise;
+      };
+    });
   }
 
   private _wrapStream(stream: AnthropicStream, state: SpanState): void {
     // `Stream.tee()` calls `iterator()` directly, bypassing
     // `Symbol.asyncIterator`, so wrap the internal iterator method.
     this._wrap(stream, 'iterator', originalIterator => {
-      return () => this._streamIterator(originalIterator(), state);
+      // Call with the stream as receiver: `iterator` is an own-property closure
+      // in current SDK versions, but the supported range is `>=0.65.0 <1`.
+      return () =>
+        this._streamIterator(originalIterator.call(stream), state, stream);
     });
+
+    // A stream that is abandoned without ever being iterated would otherwise
+    // leave the span open forever, since it is only ended from the iterator.
+    const signal = stream.controller?.signal;
+    if (signal) {
+      if (signal.aborted) {
+        this._endSpanWithAbort(state);
+        return;
+      }
+      signal.addEventListener('abort', () => this._endSpanWithAbort(state), {
+        once: true,
+      });
+    }
   }
 
   private async *_streamIterator(
     iterator: AsyncIterator<unknown>,
-    state: SpanState
+    state: SpanState,
+    stream?: AnthropicStream
   ): AsyncGenerator<unknown> {
     let exhausted = false;
     try {
@@ -209,7 +284,14 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         }
         yield next.value;
       }
-      this._endSpan(state);
+      // `Stream.fromSSEResponse` swallows abort errors and simply stops
+      // yielding, so an aborted generation is indistinguishable from a
+      // completed one without checking the signal.
+      if (stream?.controller?.signal.aborted) {
+        this._endSpanWithAbort(state);
+      } else {
+        this._endSpan(state);
+      }
     } catch (error) {
       this._endSpanWithError(state, error);
       throw error;
@@ -223,6 +305,16 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         this._endSpan(state);
       }
     }
+  }
+
+  private _endSpanWithAbort(state: SpanState): void {
+    if (state.ended) return;
+    state.span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: 'stream aborted',
+    });
+    state.span.setAttribute('error.type', 'APIUserAbortError');
+    this._endSpan(state);
   }
 
   private _endSpan(state: SpanState): void {

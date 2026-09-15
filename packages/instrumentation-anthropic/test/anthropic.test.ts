@@ -33,6 +33,9 @@ function sanitizeRecordings(scopes: Definition[]): Definition[] {
     if (responseHeaders) {
       delete responseHeaders['set-cookie'];
       delete responseHeaders['anthropic-organization-id'];
+      delete responseHeaders['anthropic-workspace-id'];
+      delete responseHeaders['cf-ray'];
+      delete responseHeaders.traceresponse;
       delete responseHeaders['request-id'];
       delete responseHeaders['x-request-id'];
     }
@@ -42,9 +45,9 @@ function sanitizeRecordings(scopes: Definition[]): Definition[] {
 
 function createRecordingClient(): Anthropic {
   const apiKey =
-    nockBack.currentMode === 'dryrun'
-      ? 'testing'
-      : process.env.ANTHROPIC_API_KEY;
+    nockBack.currentMode === 'record'
+      ? process.env.ANTHROPIC_API_KEY
+      : 'testing';
   if (!apiKey) {
     throw new Error(
       'ANTHROPIC_API_KEY is required when recording Anthropic fixtures'
@@ -58,6 +61,9 @@ const mockClient = new Anthropic({ apiKey: 'testing', maxRetries: 0 });
 describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
+  // `dryrun` (the default) calls `enableNetConnect()`, so a fixture that stops
+  // matching would silently reach the real API. `lockdown` fails instead.
+  nockBack.setMode(process.env.ANTHROPIC_API_KEY ? 'record' : 'lockdown');
 
   beforeEach(() => {
     resetMemoryExporter();
@@ -262,6 +268,122 @@ describe('Anthropic instrumentation', function () {
     const durationMs = seconds * 1000 + nanos / 1e6;
     // The span must cover the body read, not just time-to-headers.
     expect(durationMs).toBeGreaterThanOrEqual(bodyDelayMs * 0.8);
+  });
+
+  it('records body errors when the caller consumes the promise late', async () => {
+    nock('https://api.anthropic.com')
+      .post('/v1/messages')
+      .reply(200, '{"id": "msg_01234', {
+        'content-type': 'application/json',
+      });
+
+    const pending = mockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+    });
+    // The response (and its headers) arrive before the caller subscribes.
+    await new Promise(resolve => setTimeout(resolve, 150));
+    await expect(pending).rejects.toThrow();
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBeDefined();
+  });
+
+  it('ends the span when a stream is abandoned without iterating', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      expect(getTestSpans()).toHaveLength(0);
+      stream.controller.abort();
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
+  it('records an aborted stream as an error', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      for await (const event of stream) {
+        if (event) stream.controller.abort();
+      }
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
+  it('defers to the SDK when called without params', () => {
+    // The SDK raises its own error; the patch must not fail ahead of it or
+    // leave a span behind.
+    let error: Error | undefined;
+    try {
+      (mockClient.messages.create as unknown as () => Promise<unknown>)();
+    } catch (err) {
+      error = err as Error;
+    }
+    expect(error).toBeDefined();
+    expect(error?.stack).toContain('@anthropic-ai/sdk');
+    expect(getTestSpans()).toHaveLength(0);
+  });
+
+  it('derives gen_ai.provider.name from the client base URL', async () => {
+    nock('https://bedrock-runtime.us-east-1.amazonaws.com')
+      .post(/.*/)
+      .reply(200, {
+        id: 'msg_01234567890',
+        type: 'message',
+        role: 'assistant',
+        model,
+        content: [{ type: 'text', text: 'Hello telemetry' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 3 },
+      });
+
+    const bedrockClient = new Anthropic({
+      apiKey: 'testing',
+      maxRetries: 0,
+      baseURL: 'https://bedrock-runtime.us-east-1.amazonaws.com',
+    });
+    await bedrockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].attributes['gen_ai.provider.name']).toBe('aws.bedrock');
   });
 
   it('records messages.create errors', async () => {
