@@ -184,6 +184,86 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].kind).toBe(SpanKind.CLIENT);
   });
 
+  it('leaves the response body readable for asResponse', async () => {
+    const body = {
+      id: 'msg_01234567890',
+      type: 'message',
+      role: 'assistant',
+      model,
+      content: [{ type: 'text', text: 'Hello telemetry' }],
+      stop_reason: 'end_turn',
+      usage: { input_tokens: 10, output_tokens: 3 },
+    };
+    nock('https://api.anthropic.com').post('/v1/messages').reply(200, body);
+
+    const response = await mockClient.messages
+      .create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+      })
+      .asResponse();
+
+    // The instrumentation must not have consumed the body already.
+    expect(response.bodyUsed).toBe(false);
+    expect(await response.json()).toEqual(body);
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].name).toBe(`chat ${model}`);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+  });
+
+  it('records errors raised while reading the response body', async () => {
+    nock('https://api.anthropic.com')
+      .post('/v1/messages')
+      .reply(200, '{"id": "msg_01234', {
+        'content-type': 'application/json',
+      });
+
+    await expect(
+      mockClient.messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+      })
+    ).rejects.toThrow();
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBeDefined();
+  });
+
+  it('keeps the span open until the response body has been read', async () => {
+    const bodyDelayMs = 200;
+    nock('https://api.anthropic.com')
+      .post('/v1/messages')
+      .delayBody(bodyDelayMs)
+      .reply(200, {
+        id: 'msg_01234567890',
+        type: 'message',
+        role: 'assistant',
+        model,
+        content: [{ type: 'text', text: 'Hello telemetry' }],
+        stop_reason: 'end_turn',
+        usage: { input_tokens: 10, output_tokens: 3 },
+      });
+
+    await mockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    const [seconds, nanos] = spans[0].duration;
+    const durationMs = seconds * 1000 + nanos / 1e6;
+    // The span must cover the body read, not just time-to-headers.
+    expect(durationMs).toBeGreaterThanOrEqual(bodyDelayMs * 0.8);
+  });
+
   it('records messages.create errors', async () => {
     nock('https://api.anthropic.com')
       .post('/v1/messages')

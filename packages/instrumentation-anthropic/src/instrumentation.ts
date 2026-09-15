@@ -28,8 +28,32 @@ interface AnthropicStream extends AsyncIterable<unknown> {
   iterator(): AsyncIterator<unknown>;
 }
 
+/**
+ * The subset of the SDK's `APIPromise` that this instrumentation relies on.
+ * `asResponse()` settles with the raw `Response` without parsing its body;
+ * `parse()` memoizes the parsed body and backs `then`/`catch`/`finally`.
+ */
+interface AnthropicAPIPromise<T> extends Promise<T> {
+  asResponse(): Promise<unknown>;
+  parse(): Promise<T>;
+}
+
 function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
   return module.Anthropic ?? module.default ?? module;
+}
+
+function isStreamRequest(
+  params: Anthropic.Messages.MessageCreateParams | undefined
+): boolean {
+  return params?.stream === true;
+}
+
+function isAPIPromise<T>(value: Promise<T>): value is AnthropicAPIPromise<T> {
+  const candidate = value as AnthropicAPIPromise<T>;
+  return (
+    typeof candidate?.asResponse === 'function' &&
+    typeof candidate?.parse === 'function'
+  );
 }
 
 function isAnthropicStream(value: unknown): value is AnthropicStream {
@@ -104,21 +128,63 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           throw error;
         }
 
-        result.then(
-          value => {
+        const onError = (error: unknown) =>
+          instrumentation._endSpanWithError(state, error);
+
+        if (isStreamRequest(params) || !isAPIPromise(result)) {
+          // Streaming responses must be unwrapped so that the stream's iterator
+          // can be wrapped. Parsing an SSE response does not consume a JSON
+          // body, so awaiting the promise here is safe.
+          result.then(value => {
             if (isAnthropicStream(value)) {
               instrumentation._wrapStream(value, state);
             } else {
               instrumentation._endSpan(state);
             }
-          },
-          error => instrumentation._endSpanWithError(state, error)
-        );
+          }, onError);
+        } else {
+          instrumentation._observeAPIPromise(result, state);
+        }
 
         // Preserve the Anthropic SDK's customized APIPromise instance.
         return result;
       };
     };
+  }
+
+  /**
+   * End the span when the caller consumes the response, without consuming it
+   * ourselves.
+   *
+   * Subscribing with `then()` would call `APIPromise#parse()`, reading the body
+   * before a caller could reach it via `asResponse()`/`withResponse()`. Instead
+   * we wrap `parse()` so that the span covers the body read and records body
+   * level failures, and fall back to `asResponse()` for callers that only ever
+   * want the raw `Response` (they own the body from that point on).
+   */
+  private _observeAPIPromise(
+    apiPromise: AnthropicAPIPromise<unknown>,
+    state: SpanState
+  ): void {
+    const onError = (error: unknown) => this._endSpanWithError(state, error);
+    let parsed = false;
+
+    this._wrap(apiPromise, 'parse', originalParse => {
+      return () => {
+        parsed = true;
+        const parsePromise = originalParse.call(apiPromise);
+        parsePromise.then(() => this._endSpan(state), onError);
+        return parsePromise;
+      };
+    });
+
+    // `parse()` is invoked synchronously by `then()`/`await`, so by the time the
+    // response settles we know whether the caller ever intends to parse.
+    apiPromise.asResponse().then(() => {
+      if (!parsed) {
+        this._endSpan(state);
+      }
+    }, onError);
   }
 
   private _wrapStream(stream: AnthropicStream, state: SpanState): void {
