@@ -17,7 +17,6 @@
       }
     }
   },
-  "esnext": "build/esnext/index.js",
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
     "clean": "rimraf dist build",
