@@ -13,7 +13,7 @@ sdk.start();
 
 // Defer import until after instrumentation is added
 const { gcpDetector } = await import(
-  '../../../build/src/detectors/GcpDetector.js'
+  '../../../dist/detectors/GcpDetector.cjs'
 );
 const resource = detectResources({ detectors: [gcpDetector] });
 await resource.waitForAsyncAttributes?.();

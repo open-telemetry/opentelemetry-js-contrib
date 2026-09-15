@@ -6,7 +6,7 @@
 const { createTestNodeSdk } = require('@opentelemetry/contrib-test-utils');
 
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
-const { HapiInstrumentation } = require('../../build/src/index.js');
+const { HapiInstrumentation } = require('../../dist/index.mjs');
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-hapi',

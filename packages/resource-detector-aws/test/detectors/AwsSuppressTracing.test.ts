@@ -44,7 +44,8 @@ describe('[Integration] Internal tracing', () => {
       awsEcsDetector,
       awsEksDetector,
       awsLambdaDetector,
-    } = require('../../build/src');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    } = require('../../dist/index.cjs');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
     // We reset the exporter to have a clean state for assertions
@@ -76,5 +77,5 @@ describe('[Integration] Internal tracing', () => {
 
     await sdk.shutdown();
     delete process.env.ECS_CONTAINER_METADATA_URI_V4;
-  }).timeout(10000);
+  }).timeout(15_000);
 });

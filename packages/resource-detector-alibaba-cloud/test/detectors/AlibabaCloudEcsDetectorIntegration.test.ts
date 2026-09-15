@@ -37,7 +37,8 @@ describe('[Integration] AlibabaCloudEcsDetector', () => {
     // scenario.
     const {
       alibabaCloudEcsDetector,
-    } = require('../../build/src/detectors/AlibabaCloudEcsDetector');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    } = require('../../dist/detectors/AlibabaCloudEcsDetector.cjs');
     const resource = detectResources({ detectors: [alibabaCloudEcsDetector] });
     await resource.waitForAsyncAttributes?.();
 
