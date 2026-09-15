@@ -14,6 +14,7 @@ import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
 import { SpanStatusCode } from '@opentelemetry/api';
+import { promisify } from 'util';
 
 const memoryExporter = new InMemorySpanExporter();
 const provider = new TracerProvider({
@@ -73,6 +74,19 @@ describe('dns.lookup()', () => {
   });
 
   describe('with no options param', () => {
+    it('should preserve the result shape when promisified', async () => {
+      const hostname = 'google.com';
+      const { address, family } = await promisify(dns.lookup)(hostname);
+
+      assert.ok(address);
+      assert.ok(family);
+
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, { addresses: [{ address, family }], hostname });
+    });
+
     it('should export a valid span', done => {
       const hostname = 'google.com';
       dns.lookup(hostname, (err, address, family) => {

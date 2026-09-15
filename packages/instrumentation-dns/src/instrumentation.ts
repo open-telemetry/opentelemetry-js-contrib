@@ -83,7 +83,19 @@ export class DnsInstrumentation extends InstrumentationBase<DnsInstrumentationCo
    */
   private _getLookup() {
     return (original: (hostname: string, ...args: unknown[]) => void) => {
-      return this._getPatchLookupFunction(original);
+      const patchedLookup = this._getPatchLookupFunction(original);
+
+      // Preserve symbols such as Node.js' internal customPromisifyArgs.
+      // util.promisify() relies on it to combine address and family into an
+      // object instead of resolving with only the address string.
+      for (const symbol of Object.getOwnPropertySymbols(original)) {
+        const descriptor = Object.getOwnPropertyDescriptor(original, symbol);
+        if (descriptor !== undefined) {
+          Object.defineProperty(patchedLookup, symbol, descriptor);
+        }
+      }
+
+      return patchedLookup;
     };
   }
 
