@@ -5,3 +5,4 @@
 
 export { NetInstrumentation } from './instrumentation';
 export { TLSAttributes } from './types';
+export type { NetInstrumentationConfig } from './types';
