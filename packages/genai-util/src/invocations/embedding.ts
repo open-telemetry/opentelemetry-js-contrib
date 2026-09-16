@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Attributes, Span, TimeInput } from '@opentelemetry/api';
-import { hrTime } from '@opentelemetry/core';
+import { SpanKind, type Attributes } from '@opentelemetry/api';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -19,9 +18,36 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
 import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
-import { getErrorType } from '../utils';
+import { getErrorType, getSpanName } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
+
+/**
+ * Build the span attributes that are known when the embedding span is started.
+ *
+ * These are passed to the span at creation time so that they are visible to samplers.
+ */
+function buildInitialAttributes(
+  options: EmbeddingInvocationOptions
+): Attributes {
+  const attrs: Attributes = {
+    [ATTR_GEN_AI_PROVIDER_NAME]: options.providerName,
+    [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+    ...options.attributes,
+  };
+
+  if (options.requestModel) {
+    attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
+  }
+  if (options.serverAddress) {
+    attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
+  }
+  if (options.serverPort !== undefined) {
+    attrs[ATTR_SERVER_PORT] = options.serverPort;
+  }
+
+  return attrs;
+}
 
 /**
  * Manages the lifecycle and telemetry of an Embedding operation.
@@ -36,35 +62,28 @@ export class EmbeddingInvocation extends BaseInvocation {
   private _responseModel?: string;
   private _usage?: TokenUsage;
 
-  constructor(
-    span: Span,
-    handler: TelemetryHandler,
-    options: EmbeddingInvocationOptions,
-    startTime: TimeInput = hrTime()
-  ) {
-    super(span, handler, startTime);
+  /**
+   * Start an embedding invocation, creating and starting the underlying span.
+   *
+   * @param handler Handler providing the tracer, meter, and completion hooks.
+   * @param options Request details, parent context, and initial attributes.
+   */
+  constructor(handler: TelemetryHandler, options: EmbeddingInvocationOptions) {
+    super(
+      getSpanName(GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS, options.requestModel),
+      handler,
+      {
+        kind: SpanKind.CLIENT,
+        attributes: buildInitialAttributes(options),
+        context: options.parentContext,
+        startTime: options.startTime,
+      }
+    );
+
     this._providerName = options.providerName;
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-
-    const attrs: Attributes = {
-      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-      ...options.attributes,
-    };
-
-    if (this._requestModel) {
-      attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-    }
-    if (this._serverAddress) {
-      attrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-    }
-    if (this._serverPort !== undefined) {
-      attrs[ATTR_SERVER_PORT] = this._serverPort;
-    }
-
-    this._span.setAttributes(attrs);
   }
 
   public setResponseModel(model: string): this {
@@ -92,9 +111,6 @@ export class EmbeddingInvocation extends BaseInvocation {
     durationSec: number,
     error?: unknown
   ): void {
-    if (!this._handler) {
-      return;
-    }
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
@@ -115,9 +131,16 @@ export class EmbeddingInvocation extends BaseInvocation {
       metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
 
-    this._handler.recordOperationDuration(durationSec, metricAttrs);
+    // The invocation context is passed explicitly: metrics are recorded while the
+    // invocation's context may no longer be active, and exemplars must still point
+    // at the invocation span.
+    this._handler.recordOperationDuration(
+      durationSec,
+      metricAttrs,
+      this._context
+    );
     if (this._usage && !error) {
-      this._handler.recordTokenUsage(this._usage, metricAttrs);
+      this._handler.recordTokenUsage(this._usage, metricAttrs, this._context);
     }
   }
 }

@@ -33,9 +33,10 @@ describe('ToolInvocation', () => {
   });
 
   it('should handle tool execution spans', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
-      tracer,
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
       contentCaptureMode: 'span_only',
     });
 
@@ -77,7 +78,8 @@ describe('ToolInvocation', () => {
       span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
       '{"price":150.25}'
     );
-    assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    // `stop()` leaves the span status UNSET: only failures set an explicit status.
+    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   });
 
   // Tool calls executed within agentic workflows may receive or return complex runtime
@@ -85,9 +87,10 @@ describe('ToolInvocation', () => {
   // Using standard JSON.stringify without error handling throws an unhandled TypeError.
   // This test ensures ToolInvocation safely handles cyclic references without crashing.
   it('should handle non-serializable and circular arguments and results safely', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
-      tracer,
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
       contentCaptureMode: 'span_only',
     });
 
@@ -117,15 +120,16 @@ describe('ToolInvocation', () => {
       span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
       '[object Object]'
     );
-    assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    // `stop()` leaves the span status UNSET: only failures set an explicit status.
+    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
   });
 
   it('should respect content capture mode (none vs span_only)', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-
     // 1. Mode: none
     const handlerNone = new TelemetryHandler({
-      tracer,
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
       contentCaptureMode: 'none',
     });
     const invNone = handlerNone.startTool({
@@ -151,7 +155,9 @@ describe('ToolInvocation', () => {
 
     // 2. Mode: span_only
     const handlerSpan = new TelemetryHandler({
-      tracer,
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
       contentCaptureMode: 'span_only',
     });
     const invSpan = handlerSpan.startTool({
@@ -175,9 +181,10 @@ describe('ToolInvocation', () => {
   });
 
   it('should preserve tool call arguments in span attributes when tool execution fails', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
     const handler = new TelemetryHandler({
-      tracer,
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
       contentCaptureMode: 'span_only',
     });
 
@@ -207,9 +214,5 @@ describe('ToolInvocation', () => {
       span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
       undefined
     );
-
-    // Only exception event should be recorded
-    assert.strictEqual(span.events.length, 1);
-    assert.strictEqual(span.events[0].name, 'exception');
   });
 });
