@@ -4,9 +4,9 @@
  */
 
 import * as assert from 'assert';
-import { diag, type DiagLogger } from '@opentelemetry/api';
 import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
-import { SpanKind } from '@opentelemetry/api';
+import { SpanKind, context, diag, type DiagLogger } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
 import {
   createTestTelemetryContext,
@@ -52,11 +52,11 @@ describe('TelemetryHandler', () => {
 
   it('should initialize with custom options', () => {
     const customDiag: DiagLogger = {
-      verbose: () => { },
-      debug: () => { },
-      info: () => { },
-      warn: () => { },
-      error: () => { },
+      verbose: () => {},
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: () => {},
     };
 
     const handler = createHandler({
@@ -178,8 +178,11 @@ describe('TelemetryHandler', () => {
   });
 
   it('should start inference, embedding, and tool invocations with appropriate span kinds', () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const handler = new TelemetryHandler({ tracer });
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
 
     const inference = handler.startInference({
       providerName: 'openai',
@@ -211,5 +214,62 @@ describe('TelemetryHandler', () => {
 
     assert.strictEqual(toolSpan.name, 'execute_tool calculator');
     assert.strictEqual(toolSpan.kind, SpanKind.INTERNAL);
+  });
+
+  it('should nest invocations started inside another invocation context', () => {
+    const contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    try {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test',
+        instrumentationVersion: '1.2.3',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const inference = handler.startInference({
+        providerName: 'openai',
+        requestModel: 'gpt-4o',
+      });
+
+      // Started without an explicit parentContext: it must pick up the active
+      // invocation context.
+      inference.withContext(() => {
+        handler.startTool({ toolName: 'calculator' }).stop();
+        // Explicit parentContext must work outside of withContext() as well.
+        handler
+          .startEmbedding({
+            providerName: 'openai',
+            requestModel: 'text-embedding-3-small',
+            parentContext: context.active(),
+          })
+          .stop();
+      });
+
+      inference.stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+
+      // The invocation's span is encapsulated, but it is exported like any other
+      // span once the invocation is stopped.
+      const inferenceSpan = spans.find(s => s.name === 'chat gpt-4o');
+      assert.ok(inferenceSpan);
+      const inferenceSpanId = inferenceSpan.spanContext().spanId;
+
+      const toolSpan = spans.find(s => s.name === 'execute_tool calculator');
+      assert.ok(toolSpan);
+      assert.strictEqual(toolSpan.parentSpanContext?.spanId, inferenceSpanId);
+
+      const embeddingSpan = spans.find(
+        s => s.name === 'embeddings text-embedding-3-small'
+      );
+      assert.ok(embeddingSpan);
+      assert.strictEqual(
+        embeddingSpan.parentSpanContext?.spanId,
+        inferenceSpanId
+      );
+    } finally {
+      context.disable();
+    }
   });
 });

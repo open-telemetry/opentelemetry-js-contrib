@@ -10,7 +10,7 @@
  * @experimental
  */
 
-import type { Attributes, Context } from '@opentelemetry/api';
+import type { Attributes, Context, TimeInput } from '@opentelemetry/api';
 
 /**
  * Mode of capturing message content (prompts, completions, tool calls).
@@ -383,6 +383,8 @@ export interface InferenceInvocationOptions {
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
+  /** Start time of the invocation. Defaults to the time the invocation is created. */
+  startTime?: TimeInput;
 }
 
 /**
@@ -403,6 +405,8 @@ export interface EmbeddingInvocationOptions {
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
+  /** Start time of the invocation. Defaults to the time the invocation is created. */
+  startTime?: TimeInput;
 }
 
 /**
@@ -425,6 +429,8 @@ export interface ToolInvocationOptions {
   agentName?: string;
   /** Custom initial span attributes. */
   attributes?: Attributes;
+  /** Start time of the invocation. Defaults to the time the invocation is created. */
+  startTime?: TimeInput;
 }
 
 /**

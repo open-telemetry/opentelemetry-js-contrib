@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Attributes, HrTime, Span, TimeInput } from '@opentelemetry/api';
+import { SpanKind, type Attributes, type HrTime } from '@opentelemetry/api';
 import { hrTime, hrTimeDuration, hrTimeToSeconds } from '@opentelemetry/core';
 import {
   ATTR_ERROR_TYPE,
@@ -31,7 +31,6 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from '../semconv';
 import type {
-  CompletionResult,
   ContentCaptureMode,
   InferenceInvocationOptions,
   InputMessages,
@@ -45,9 +44,62 @@ import {
   formatSystemInstructions,
   getErrorType,
   getRequestOptionsAttributes,
+  getSpanName,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
+
+/**
+ * Build the span attributes that are known when the inference span is started.
+ *
+ * These are passed to the span at creation time so that they are visible to samplers.
+ */
+function buildInitialAttributes(
+  options: InferenceInvocationOptions,
+  operationName: string,
+  contentCaptureMode: ContentCaptureMode
+): Attributes {
+  const attrs: Attributes = {
+    [ATTR_GEN_AI_PROVIDER_NAME]: options.providerName,
+    [ATTR_GEN_AI_OPERATION_NAME]: operationName,
+    ...options.attributes,
+  };
+
+  if (options.requestModel) {
+    attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
+  }
+
+  if (options.conversationId) {
+    attrs[ATTR_GEN_AI_CONVERSATION_ID] = options.conversationId;
+  }
+
+  if (options.serverAddress) {
+    attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
+  }
+  if (options.serverPort !== undefined) {
+    attrs[ATTR_SERVER_PORT] = options.serverPort;
+  }
+
+  Object.assign(attrs, getRequestOptionsAttributes(options.requestOptions));
+
+  if (contentCaptureMode === 'span_only') {
+    if (options.systemInstructions) {
+      const formatted = formatSystemInstructions(options.systemInstructions);
+      if (formatted) {
+        attrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = formatted;
+      }
+    }
+
+    if (options.inputMessages && options.inputMessages.length > 0) {
+      const formatted = formatInputMessages(options.inputMessages);
+      if (formatted) {
+        attrs[ATTR_GEN_AI_INPUT_MESSAGES] = formatted;
+      }
+    }
+  }
+
+  return attrs;
+}
 
 /**
  * Manages the lifecycle and telemetry of an LLM / GenAI inference operation.
@@ -62,65 +114,43 @@ export class InferenceInvocation extends BaseInvocation {
   private readonly _serverPort?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
   private _responseModel?: string;
-  private _responseId?: string;
-  private _finishReasons: string[] = [];
   private _usage?: TokenUsage;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
-  private _systemInstructions?: SystemInstructions;
   private _firstChunkTime?: HrTime;
 
-  constructor(
-    span: Span,
-    handler: TelemetryHandler,
-    options: InferenceInvocationOptions,
-    startTime: TimeInput = hrTime()
-  ) {
-    super(span, handler, startTime);
-    this._providerName = options.providerName;
-    this._operationName =
+  /**
+   * Start an inference invocation, creating and starting the underlying span.
+   *
+   * @param handler Handler providing the tracer, meter, and completion hooks.
+   * @param options Request details, parent context, and initial attributes.
+   */
+  constructor(handler: TelemetryHandler, options: InferenceInvocationOptions) {
+    const operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
+    const contentCaptureMode = handler.getContentCaptureMode();
+
+    super(getSpanName(operationName, options.requestModel), handler, {
+      kind: SpanKind.CLIENT,
+      attributes: buildInitialAttributes(
+        options,
+        operationName,
+        contentCaptureMode
+      ),
+      context: options.parentContext,
+      startTime: options.startTime,
+    });
+
+    this._providerName = options.providerName;
+    this._operationName = operationName;
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-    this._contentCaptureMode = handler.getContentCaptureMode();
-
-    this._initAttributes(options);
-  }
-
-  private _initAttributes(options: InferenceInvocationOptions): void {
-    const attrs: Attributes = {
-      [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
-      ...options.attributes,
-    };
-
-    if (this._requestModel) {
-      attrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-    }
-
-    if (options.conversationId) {
-      attrs[ATTR_GEN_AI_CONVERSATION_ID] = options.conversationId;
-    }
-
-    if (options.serverAddress) {
-      attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
-    }
-    if (options.serverPort) {
-      attrs[ATTR_SERVER_PORT] = options.serverPort;
-    }
-
-    Object.assign(attrs, getRequestOptionsAttributes(options.requestOptions));
-
-    if (options.systemInstructions) {
-      this.setSystemInstructions(options.systemInstructions);
-    }
-
-    if (options.inputMessages && options.inputMessages.length > 0) {
-      this.addInputMessages(options.inputMessages);
-    }
-
-    this._span.setAttributes(attrs);
+    this._contentCaptureMode = contentCaptureMode;
+    this._inputMessages =
+      options.inputMessages && options.inputMessages.length > 0
+        ? [...options.inputMessages]
+        : undefined;
   }
 
   /**
@@ -136,7 +166,6 @@ export class InferenceInvocation extends BaseInvocation {
    * Set the response identifier.
    */
   public setResponseId(id: string): this {
-    this._responseId = id;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
     return this;
   }
@@ -146,7 +175,6 @@ export class InferenceInvocation extends BaseInvocation {
    */
   public setFinishReasons(reasons: string[] | string): this {
     const arr = Array.isArray(reasons) ? reasons : [reasons];
-    this._finishReasons = arr;
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
     return this;
   }
@@ -225,7 +253,6 @@ export class InferenceInvocation extends BaseInvocation {
    * Set system instructions.
    */
   public setSystemInstructions(instructions: SystemInstructions): this {
-    this._systemInstructions = instructions;
     if (this._contentCaptureMode === 'span_only') {
       const formatted = formatSystemInstructions(instructions);
       if (formatted) {
@@ -258,37 +285,19 @@ export class InferenceInvocation extends BaseInvocation {
         ttftSec
       );
 
-      if (this._handler) {
-        const metricAttrs: Attributes = {
-          [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-          [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
-        };
-        if (this._requestModel) {
-          metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-        }
-        if (this._responseModel) {
-          metricAttrs[ATTR_GEN_AI_RESPONSE_MODEL] = this._responseModel;
-        }
-        if (this._serverAddress) {
-          metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-        }
-        if (this._serverPort !== undefined) {
-          metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
-        }
-
-        this._handler.recordTimeToFirstChunk(ttftSec, metricAttrs);
-      }
+      this._handler.recordTimeToFirstChunk(
+        ttftSec,
+        this._getMetricAttributes(),
+        this._context
+      );
     }
     return this;
   }
 
-  protected override _recordMetrics(
-    durationSec: number,
-    error?: unknown
-  ): void {
-    if (!this._handler) {
-      return;
-    }
+  /**
+   * Build the metric attributes shared by all metrics recorded for this invocation.
+   */
+  private _getMetricAttributes(error?: unknown): Attributes {
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
@@ -308,10 +317,25 @@ export class InferenceInvocation extends BaseInvocation {
     if (error) {
       metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
     }
+    return metricAttrs;
+  }
 
-    this._handler.recordOperationDuration(durationSec, metricAttrs);
+  protected override _recordMetrics(
+    durationSec: number,
+    error?: unknown
+  ): void {
+    const metricAttrs = this._getMetricAttributes(error);
+
+    // The invocation context is passed explicitly: metrics are recorded while the
+    // invocation's context may no longer be active, and exemplars must still point
+    // at the invocation span.
+    this._handler.recordOperationDuration(
+      durationSec,
+      metricAttrs,
+      this._context
+    );
     if (this._usage) {
-      this._handler.recordTokenUsage(this._usage, metricAttrs);
+      this._handler.recordTokenUsage(this._usage, metricAttrs, this._context);
     }
   }
 
@@ -321,37 +345,34 @@ export class InferenceInvocation extends BaseInvocation {
    * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
    * once the Logs & Events API is stable in OpenTelemetry JavaScript.
    */
-  protected override _emitContentEvents(_endTime?: HrTime): void {
+  protected override _emitContentEvent(_endTime?: HrTime): void {
     // No-op until Logs/Events API is stable in JS.
   }
 
-  protected override _runCompletionHook(
-    durationSec: number,
-    error?: Error
-  ): void {
-    if (!this._handler) {
-      return;
-    }
-    const result: CompletionResult = {
-      span: this._span,
-      providerName: this._providerName,
-      operationName: this._operationName,
-      requestModel: this._requestModel,
-      responseModel: this._responseModel,
-      responseId: this._responseId,
-      finishReasons: this._finishReasons,
-      usage: this._usage,
-      durationSeconds: durationSec,
-      inputMessages: this._inputMessages,
-      outputMessages: this._outputMessages,
-      systemInstructions: this._systemInstructions,
-      error,
-      attributes: this._customAttributes,
-    };
+  // protected override _runCompletionHook(
+  //   durationSec: number,
+  //   error?: Error
+  // ): void {
+  //   const result: CompletionResult = {
+  //     span: this._span,
+  //     providerName: this._providerName,
+  //     operationName: this._operationName,
+  //     requestModel: this._requestModel,
+  //     responseModel: this._responseModel,
+  //     responseId: this._responseId,
+  //     finishReasons: this._finishReasons,
+  //     usage: this._usage,
+  //     durationSeconds: durationSec,
+  //     inputMessages: this._inputMessages,
+  //     outputMessages: this._outputMessages,
+  //     systemInstructions: this._systemInstructions,
+  //     error,
+  //     attributes: this._customAttributes,
+  //   };
 
-    // Execute asynchronously in background
-    void this._handler
-      .getCompletionHookManager()
-      .execute(result, this._handler.getDiag());
-  }
+  //   // Execute asynchronously in background
+  //   void this._handler
+  //     .getCompletionHookManager()
+  //     .execute(result, this._handler.getDiag());
+  // }
 }
