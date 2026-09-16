@@ -43,7 +43,10 @@ const baseConfig = tseslint.config(
       'yet-another-license-header': yalhPlugin,
       n: nodePlugin,
     },
-    extends: [eslint.configs.recommended],
+    extends: [
+      eslint.configs.recommended,
+      nodePlugin.configs['flat/recommended'],
+    ],
     languageOptions: {
       ecmaVersion: 2022,
       globals: {
@@ -90,7 +93,9 @@ const baseConfig = tseslint.config(
       },
     },
     rules: {
-      // 'n/no-missing-import': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-unsupported-features/es-syntax': 'off',
+      'n/no-unsupported-features/node-builtins': 'off',
 
       // things that should be repaired
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -146,6 +151,17 @@ const baseConfig = tseslint.config(
 
   // Test files have relaxed rules
   {
+    files: ['**/test/**/*', '**/*.test.*'],
+    rules: {
+      'n/no-extraneous-import': 'off',
+      'n/no-extraneous-require': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-missing-require': 'off',
+      'n/no-unpublished-import': 'off',
+      'n/no-unpublished-require': 'off',
+    },
+  },
+  {
     files: ['**/test/**/*.ts', '**/*.test.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
@@ -174,6 +190,29 @@ const baseConfig = tseslint.config(
     },
   },
 
+  // Scripts, examples, and root config files
+  {
+    files: [
+      '*.{js,mjs,cjs}',
+      'scripts/**/*',
+      'examples/**/*',
+      '**/karma*.js',
+      '**/*.conf.js',
+    ],
+    rules: {
+      'n/no-extraneous-import': 'off',
+      'n/no-extraneous-require': 'off',
+      'n/no-missing-import': 'off',
+      'n/no-missing-require': 'off',
+      'n/no-unpublished-import': 'off',
+      'n/no-unpublished-require': 'off',
+      'n/no-process-exit': 'off',
+      'n/hashbang': 'off',
+      'n/no-unsupported-features/node-builtins': 'off',
+      'n/no-unsupported-features/es-syntax': 'off',
+    },
+  },
+
   // ESM files
   {
     files: ['**/*.mjs'],
@@ -186,6 +225,7 @@ const baseConfig = tseslint.config(
   {
     files: [
       '**/examples/web/**/*',
+      '**/examples/react-load/**/*',
       '**/packages/**/browser/**/*',
       '**/packages/auto-instrumentations-web/**/*',
       '**/packages/instrumentation-document-load/**/*',
@@ -202,11 +242,18 @@ const baseConfig = tseslint.config(
       }),
     ],
     languageOptions: {
+      sourceType: 'module',
       globals: {
         ...globals.browser,
         Zone: 'readonly',
         Task: 'readonly',
       },
+    },
+    rules: {
+      'n/no-unsupported-features/es-syntax': 'off',
+      'n/no-unsupported-features/es-builtins': 'off',
+      'n/no-unsupported-features/node-builtins': 'off',
+      'n/no-missing-import': 'off',
     },
   },
 
