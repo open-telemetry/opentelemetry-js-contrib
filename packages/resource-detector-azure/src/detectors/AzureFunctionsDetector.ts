@@ -8,6 +8,7 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_FAAS_MAX_MEMORY,
   ATTR_FAAS_INSTANCE,
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_PROVIDER,
   CLOUD_PROVIDER_VALUE_AZURE,
   ATTR_CLOUD_PLATFORM,
@@ -16,15 +17,22 @@ import {
   ATTR_PROCESS_PID,
 } from '../semconv';
 import {
+  AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE,
   WEBSITE_SITE_NAME,
   WEBSITE_INSTANCE_ID,
   FUNCTIONS_MEM_LIMIT,
   REGION_NAME,
+  WEBSITE_RESOURCE_GROUP,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
-import { getAzureResourceUri, isAzureFunction } from '../utils';
+import {
+  getAzureResourceUri,
+  getAzureSubscriptionId,
+  isAzureFunction,
+} from '../utils';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
+  [AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE]: WEBSITE_RESOURCE_GROUP,
   [ATTR_SERVICE_NAME]: WEBSITE_SITE_NAME,
   [ATTR_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
   [ATTR_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
@@ -78,6 +86,14 @@ class AzureFunctionsDetector implements ResourceDetector {
         attributes = {
           ...attributes,
           ...{ [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: azureResourceUri },
+        };
+      }
+
+      const subscriptionId = getAzureSubscriptionId();
+      if (subscriptionId) {
+        attributes = {
+          ...attributes,
+          [ATTR_CLOUD_ACCOUNT_ID]: subscriptionId,
         };
       }
 
