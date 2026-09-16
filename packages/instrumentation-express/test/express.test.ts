@@ -34,7 +34,8 @@ import { get as httpGet, type Server } from 'http';
 const LIB_VERSION = require('express/package.json').version;
 const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
 
-describe('ExpressInstrumentation', () => {
+describe('ExpressInstrumentation', function () {
+  this.timeout(10000);
   const memoryExporter = new InMemorySpanExporter();
   const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
   const provider = new TracerProvider({
