@@ -37,9 +37,12 @@ describe('EmbeddingInvocation', () => {
   });
 
   it('should handle embedding spans and record success metrics', async () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const meter = ctx.meterProvider.getMeter('test-meter');
-    const handler = new TelemetryHandler({ tracer, meter });
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
 
     const invocation = handler.startEmbedding({
       providerName: 'openai',
@@ -65,7 +68,8 @@ describe('EmbeddingInvocation', () => {
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
     assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
     assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
-    assert.strictEqual(span.status.code, SpanStatusCode.OK);
+    // `stop()` leaves the span status UNSET: only failures set an explicit status.
+    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
 
     assert.strictEqual(invocation.getResponseModel(), 'text-embedding-3-small');
 
@@ -82,9 +86,12 @@ describe('EmbeddingInvocation', () => {
   });
 
   it('should record operation duration with error type and suppress token metrics on failure', async () => {
-    const tracer = ctx.tracerProvider.getTracer('test-tracer');
-    const meter = ctx.meterProvider.getMeter('test-meter');
-    const handler = new TelemetryHandler({ tracer, meter });
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
 
     const embInv = handler.startEmbedding({
       providerName: 'openai',
@@ -127,7 +134,7 @@ describe('EmbeddingInvocation', () => {
       dataPoint.attributes[ATTR_GEN_AI_REQUEST_MODEL],
       'text-embedding-3-small'
     );
-    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '_OTHER');
 
     assert.strictEqual(tokenMetric, undefined);
   });
