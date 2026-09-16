@@ -83,6 +83,7 @@ import {
 import type { OpenAIInstrumentationConfig } from './types';
 import type {
   APIPromise,
+  OpenAIAPIPromiseInternals,
   GenAIMessage,
   GenAIChoiceEventBody,
   GenAISystemMessageEventBody,
@@ -92,6 +93,18 @@ import type {
   GenAIToolCall,
   InputMessages,
 } from './internal-types';
+
+const MAX_RAW_RESPONSE_BODY_SIZE_BYTES = 1 * 1024 * 1024;
+
+type OpenAIRawResponse = {
+  status: number;
+  headers: {
+    get(name: string): string | null;
+  };
+  clone(): {
+    json(): unknown | PromiseLike<unknown>;
+  };
+};
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
   private _genaiClientOperationDuration!: Histogram;
@@ -266,24 +279,315 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
 
         // Non-streaming.
-        apiPromise
-          .then(result => {
-            self._onChatCompletionsCreateResult(
-              span,
-              startNow,
-              commonAttrs,
-              result as ChatCompletion,
-              config,
-              ctx
-            );
-          })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
+        const onResult = (result: ChatCompletion) => {
+          self._onChatCompletionsCreateResult(
+            span,
+            startNow,
+            commonAttrs,
+            result,
+            config,
+            ctx
           );
+        };
+        const onError = self._createAPIPromiseRejectionHandler(
+          startNow,
+          span,
+          commonAttrs
+        );
+        const onResponse = () => {
+          try {
+            self._genaiClientOperationDuration.record(
+              (performance.now() - startNow) / 1000,
+              commonAttrs
+            );
+          } finally {
+            span.end();
+          }
+        };
+
+        self._observeAPIPromise(
+          apiPromise as unknown as OpenAIAPIPromiseInternals<ChatCompletion>,
+          onResult,
+          onError,
+          onResponse
+        );
 
         return apiPromise;
       };
     };
+  }
+
+  /**
+   * Observe an APIPromise without starting its lazy parser. Normal parsed calls
+   * reuse the SDK parser. Only an explicit raw-response call parses a clone for
+   * telemetry, leaving the original response exclusively owned by the caller.
+   */
+  private _observeAPIPromise<T>(
+    apiPromise: OpenAIAPIPromiseInternals<T>,
+    onResult: (result: T) => void,
+    onError: (error: Error) => void,
+    onResponse: () => void
+  ): void {
+    const safeWarn = (message: string, err?: unknown) => {
+      try {
+        this._diag.warn(message, err);
+      } catch {
+        // Diagnostics must not affect the caller.
+      }
+    };
+    const safeError = (message: string, err: unknown) => {
+      try {
+        this._diag.error(message, err);
+      } catch {
+        // Diagnostics must not affect the caller.
+      }
+    };
+    // APIPromise internals have changed across SDK versions. Unlike shimmer,
+    // this also handles accessors and verifies that the replacement stuck.
+    const replaceProperty = (name: string, replacement: unknown): boolean => {
+      let descriptor: PropertyDescriptor | undefined;
+      try {
+        descriptor = Reflect.getOwnPropertyDescriptor(apiPromise, name);
+      } catch (err) {
+        safeWarn(`unable to inspect OpenAI APIPromise ${name}`, err);
+        return false;
+      }
+
+      try {
+        const assigned =
+          descriptor == null ||
+          Object.prototype.hasOwnProperty.call(descriptor, 'value')
+            ? Reflect.defineProperty(apiPromise, name, {
+                ...(descriptor ?? {
+                  configurable: true,
+                  enumerable: false,
+                  writable: true,
+                }),
+                value: replacement,
+              })
+            : Reflect.set(apiPromise, name, replacement);
+        if (!assigned) {
+          return false;
+        }
+        try {
+          return Reflect.get(apiPromise, name) === replacement;
+        } catch (err) {
+          safeWarn(`unable to verify OpenAI APIPromise ${name}`, err);
+          return false;
+        }
+      } catch (err) {
+        safeWarn(`unable to patch OpenAI APIPromise ${name}`, err);
+        return false;
+      }
+    };
+
+    let parseStarted = false;
+    let finished = false;
+    const finish = (callback: () => void) => {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      try {
+        callback();
+      } catch (err) {
+        safeError('unexpected error recording OpenAI telemetry:', err);
+      }
+    };
+    const finishWithError = (err: unknown) => {
+      finish(() => onError(err as Error));
+    };
+
+    let originalParseResponse: unknown;
+    // Reading an SDK or user-defined accessor can throw; instrumentation must
+    // remain fail-open even in that case.
+    try {
+      originalParseResponse = apiPromise.parseResponse;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise parseResponse', err);
+    }
+
+    if (typeof originalParseResponse === 'function') {
+      const parseResponse = originalParseResponse as (
+        ...args: unknown[]
+      ) => T | PromiseLike<T>;
+      let parsedPromise: Promise<T> | undefined;
+      const wrappedParseResponse = function (
+        this: unknown,
+        ...args: unknown[]
+      ): Promise<T> {
+        parseStarted = true;
+        if (parsedPromise == null) {
+          try {
+            parsedPromise = Promise.resolve(
+              Reflect.apply(parseResponse, this, args)
+            ).then(
+              result => {
+                finish(() => onResult(result));
+                return result;
+              },
+              err => {
+                finishWithError(err);
+                throw err;
+              }
+            );
+          } catch (err) {
+            finishWithError(err);
+            throw err;
+          }
+        }
+        return parsedPromise!;
+      };
+
+      if (!replaceProperty('parseResponse', wrappedParseResponse)) {
+        safeWarn('unable to patch OpenAI APIPromise parseResponse');
+      }
+    } else {
+      safeWarn('OpenAI APIPromise parseResponse is unavailable');
+    }
+
+    const onRawResponse = async (
+      response: OpenAIRawResponse | undefined
+    ): Promise<void> => {
+      if (response == null) {
+        safeWarn(
+          'unable to classify raw OpenAI response',
+          new Error('OpenAI response is unavailable')
+        );
+        finish(onResponse);
+        return;
+      }
+
+      try {
+        if (response.status === 204) {
+          finish(onResponse);
+          return;
+        }
+
+        const contentType = response.headers.get('content-type');
+        const mediaType =
+          typeof contentType === 'string'
+            ? contentType.split(';')[0]?.trim()
+            : undefined;
+        const isJSON =
+          mediaType?.includes('application/json') ||
+          mediaType?.endsWith('+json');
+        if (!isJSON) {
+          finish(onResponse);
+          return;
+        }
+
+        const contentLength = response.headers.get('content-length');
+        const normalizedContentLength =
+          typeof contentLength === 'string' ? contentLength.trim() : '';
+        if (!/^\d+$/.test(normalizedContentLength)) {
+          finish(onResponse);
+          return;
+        }
+        const contentLengthBytes = Number(normalizedContentLength);
+        if (
+          !Number.isSafeInteger(contentLengthBytes) ||
+          contentLengthBytes === 0 ||
+          contentLengthBytes > MAX_RAW_RESPONSE_BODY_SIZE_BYTES
+        ) {
+          finish(onResponse);
+          return;
+        }
+      } catch (err) {
+        safeWarn('unable to classify raw OpenAI response', err);
+        finish(onResponse);
+        return;
+      }
+
+      let clonedResponse: ReturnType<OpenAIRawResponse['clone']>;
+      try {
+        clonedResponse = response.clone();
+      } catch (err) {
+        safeWarn('unable to clone raw OpenAI response for telemetry', err);
+        finish(onResponse);
+        return;
+      }
+
+      let parsedResponse: unknown | PromiseLike<unknown>;
+      try {
+        parsedResponse = clonedResponse.json();
+      } catch (err) {
+        safeWarn(
+          'unable to read cloned OpenAI response body for telemetry',
+          err
+        );
+        finish(onResponse);
+        return;
+      }
+
+      try {
+        const result = (await parsedResponse) as T;
+        finish(() => onResult(result));
+      } catch (err) {
+        safeError('unable to parse raw OpenAI response for telemetry:', err);
+        finishWithError(err);
+      }
+    };
+
+    let responsePromise: unknown;
+    try {
+      responsePromise = apiPromise.responsePromise;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise responsePromise', err);
+      finish(onResponse);
+      return;
+    }
+
+    let responseThen: unknown;
+    try {
+      responseThen = (responsePromise as { then?: unknown } | null)?.then;
+    } catch (err) {
+      safeWarn('unable to read OpenAI APIPromise responsePromise.then', err);
+      finish(onResponse);
+      return;
+    }
+    if (typeof responseThen !== 'function') {
+      safeWarn('OpenAI APIPromise responsePromise is unavailable');
+      finish(onResponse);
+      return;
+    }
+
+    // The private response promise owns errors and unparsed success. Deferring
+    // one microtask lets an already-registered SDK parser claim ordinary await
+    // and withResponse calls first. Otherwise a size-bounded clone supplies
+    // full telemetry without consuming the caller-owned response body.
+    let callbackStarted = false;
+    try {
+      Reflect.apply(responseThen, responsePromise, [
+        (props: unknown) => {
+          callbackStarted = true;
+          queueMicrotask(() => {
+            if (parseStarted || finished) {
+              return;
+            }
+            let response: OpenAIRawResponse | undefined;
+            try {
+              response = (props as { response?: OpenAIRawResponse } | null)
+                ?.response;
+            } catch (err) {
+              safeWarn('unable to read raw OpenAI response', err);
+              finish(onResponse);
+              return;
+            }
+            void onRawResponse(response);
+          });
+        },
+        (err: unknown) => {
+          callbackStarted = true;
+          finishWithError(err);
+        },
+      ]);
+    } catch (err) {
+      safeWarn('unable to observe OpenAI APIPromise responsePromise', err);
+      if (!callbackStarted) {
+        finish(onResponse);
+      }
+    }
   }
 
   /**
