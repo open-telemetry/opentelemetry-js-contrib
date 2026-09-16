@@ -133,15 +133,6 @@ export abstract class BaseInvocation {
   }
 
   /**
-   * Return the underlying OpenTelemetry Span.
-   *
-   * The span is owned by this invocation: use {@link stop} or {@link fail} to end it.
-   */
-  public getSpan(): Span {
-    return this._span;
-  }
-
-  /**
    * Return the OpenTelemetry Context holding this invocation's span.
    *
    * Pass it to `context.with()` or `context.bind()` to make the invocation the parent

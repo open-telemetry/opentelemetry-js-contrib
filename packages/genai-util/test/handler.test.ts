@@ -4,7 +4,7 @@
  */
 
 import * as assert from 'assert';
-import { SpanKind, diag, type DiagLogger } from '@opentelemetry/api';
+import { SpanKind, diag, type DiagLogger, type Span } from '@opentelemetry/api';
 import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
 import { BaseInvocation } from '../src/invocations/base';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
@@ -17,6 +17,11 @@ import {
 class TestInvocation extends BaseInvocation {
   constructor(spanName: string, handler: TelemetryHandler) {
     super(spanName, handler, { kind: SpanKind.CLIENT });
+  }
+
+  /** Test-only accessor: the production class deliberately does not expose its span. */
+  public getSpan(): Span {
+    return this._span;
   }
 
   protected override _runCompletionHook(

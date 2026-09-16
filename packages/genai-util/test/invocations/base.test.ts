@@ -10,6 +10,7 @@ import {
   context,
   trace,
   type HrTime,
+  type Span,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -64,6 +65,11 @@ describe('BaseInvocation', () => {
         ...options,
         kind: options.kind ?? SpanKind.CLIENT,
       });
+    }
+
+    /** Test-only accessor: the production class deliberately does not expose its span. */
+    public getSpan(): Span {
+      return this._span;
     }
 
     public recordMetricsCalls: Array<{ durationSec: number; error?: unknown }> =
