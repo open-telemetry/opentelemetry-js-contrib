@@ -61,6 +61,43 @@ describe('ExpressInstrumentation', () => {
       server?.close();
     });
 
+    it('should not overwrite route metadata with middleware after request handler', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.get('/users/:id', (req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+
+          assert.strictEqual(rpcMetadata?.route, '/users/:id');
+
+          next();
+        });
+
+        app.use('/users', (req, res) => {
+          res.status(200).end('done');
+        });
+      });
+
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/users/123`
+          );
+
+          assert.strictEqual(response, 'done');
+
+          rootSpan.end();
+
+          assert.strictEqual(rpcMetadata?.route, '/users/:id');
+        }
+      );
+    });
+
     it('does not attach semantic route attribute for 404 page', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
