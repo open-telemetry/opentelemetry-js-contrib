@@ -4,7 +4,6 @@
  */
 
 import {
-  SpanKind,
   SpanStatusCode,
   context,
   trace,
@@ -13,6 +12,7 @@ import {
   type Context,
   type HrTime,
   type Span,
+  type SpanKind,
   type TimeInput,
 } from '@opentelemetry/api';
 import {
@@ -34,11 +34,12 @@ export interface BaseInvocationOptions {
   /**
    * Kind of the span created for this invocation.
    *
-   * Defaults to {@link SpanKind.CLIENT}, which is the kind used by GenAI operations
-   * that call out to a model provider. Subclasses representing in-process operations
-   * (e.g. tool or workflow execution) should pass {@link SpanKind.INTERNAL}.
+   * Chosen by the concrete invocation rather than by the caller: use
+   * {@link SpanKind.CLIENT} for operations that call out to a model provider, and
+   * {@link SpanKind.INTERNAL} for in-process operations (e.g. tool or workflow
+   * execution).
    */
-  kind?: SpanKind;
+  kind: SpanKind;
   /**
    * Initial span attributes.
    *
@@ -113,7 +114,7 @@ export abstract class BaseInvocation {
   constructor(
     spanName: string,
     handler: TelemetryHandler,
-    options: BaseInvocationOptions = {}
+    options: BaseInvocationOptions
   ) {
     this._handler = handler;
     this._startTime = timeInputToHrTime(options.startTime ?? hrTime());
@@ -122,7 +123,7 @@ export abstract class BaseInvocation {
     this._span = handler.getTracer().startSpan(
       spanName,
       {
-        kind: options.kind ?? SpanKind.CLIENT,
+        kind: options.kind,
         attributes: options.attributes,
         startTime: this._startTime,
       },

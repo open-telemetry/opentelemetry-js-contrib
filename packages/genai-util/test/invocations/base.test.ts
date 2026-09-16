@@ -18,7 +18,10 @@ import {
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { TelemetryHandler } from '../../src/handler';
-import { BaseInvocation } from '../../src/invocations/base';
+import {
+  BaseInvocation,
+  type BaseInvocationOptions,
+} from '../../src/invocations/base';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
@@ -50,6 +53,17 @@ describe('BaseInvocation', () => {
   });
 
   class CustomInvocation extends BaseInvocation {
+    constructor(
+      spanName: string,
+      handler: TelemetryHandler,
+      options: Partial<BaseInvocationOptions> = {}
+    ) {
+      super(spanName, handler, {
+        ...options,
+        kind: options.kind ?? SpanKind.CLIENT,
+      });
+    }
+
     public recordMetricsCalls: Array<{ durationSec: number; error?: unknown }> =
       [];
     public emitContentEventsCalls: Array<{ endTime?: HrTime }> = [];
@@ -107,8 +121,8 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.isEnded(), true);
   });
 
-  it('should default the span kind to CLIENT', () => {
-    new CustomInvocation('default-kind-span', handler).stop();
+  it('should use the span kind supplied by the concrete invocation', () => {
+    new CustomInvocation('subclass-kind-span', handler).stop();
 
     const [span] = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(span.kind, SpanKind.CLIENT);
@@ -276,7 +290,9 @@ describe('BaseInvocation', () => {
       }
     }
 
-    const inv = new EnrichingInvocation('enriching-span', handler);
+    const inv = new EnrichingInvocation('enriching-span', handler, {
+      kind: SpanKind.CLIENT,
+    });
     inv.stop();
 
     const [finishedSpan] = ctx.memoryExporter.getFinishedSpans();
@@ -293,11 +309,15 @@ describe('BaseInvocation', () => {
     }
 
     // Test stop() with throwing hook
-    const stopInv = new ThrowingInvocation('throwing-stop-span', handler);
+    const stopInv = new ThrowingInvocation('throwing-stop-span', handler, {
+      kind: SpanKind.CLIENT,
+    });
     assert.throws(() => stopInv.stop(), /Hook failure/);
 
     // Test fail() with throwing hook
-    const failInv = new ThrowingInvocation('throwing-fail-span', handler);
+    const failInv = new ThrowingInvocation('throwing-fail-span', handler, {
+      kind: SpanKind.CLIENT,
+    });
     assert.throws(
       () => failInv.fail(new Error('Original failure')),
       /Hook failure/

@@ -4,7 +4,7 @@
  */
 
 import * as assert from 'assert';
-import { diag, type DiagLogger } from '@opentelemetry/api';
+import { SpanKind, diag, type DiagLogger } from '@opentelemetry/api';
 import { TelemetryHandler } from '../src/handler';
 import { BaseInvocation } from '../src/invocations/base';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
@@ -16,6 +16,10 @@ import {
 } from './helpers/test-setup';
 
 class TestInvocation extends BaseInvocation {
+  constructor(spanName: string, handler: TelemetryHandler) {
+    super(spanName, handler, { kind: SpanKind.CLIENT });
+  }
+
   protected override _runCompletionHook(
     durationSec: number,
     error?: Error
