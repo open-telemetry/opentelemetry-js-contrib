@@ -84,10 +84,10 @@ export class TelemetryHandler {
   private _diag: DiagLogger;
   private _contentCaptureMode: ContentCaptureMode;
   private readonly _hookManager: CompletionHookManager;
-  private _operationDurationHistogram?: Histogram;
-  private _tokenUsageHistogram?: Histogram;
-  private _timeToFirstChunkHistogram?: Histogram;
-  private _timePerOutputChunkHistogram?: Histogram;
+  private readonly _operationDurationHistogram: Histogram;
+  private readonly _tokenUsageHistogram: Histogram;
+  private readonly _timeToFirstChunkHistogram: Histogram;
+  private readonly _timePerOutputChunkHistogram: Histogram;
 
   constructor(options: TelemetryHandlerOptions) {
     const { instrumentationName, instrumentationVersion } = options;
@@ -121,15 +121,14 @@ export class TelemetryHandler {
       );
     }
 
-    this._initMetrics(this._meter);
-  }
-
-  private _initMetrics(meter: Meter): void {
-    this._operationDurationHistogram = createDurationHistogram(meter);
-    this._tokenUsageHistogram = createTokenUsageHistogram(meter);
-    this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(meter);
-    this._timePerOutputChunkHistogram =
-      createTimePerOutputChunkHistogram(meter);
+    this._operationDurationHistogram = createDurationHistogram(this._meter);
+    this._tokenUsageHistogram = createTokenUsageHistogram(this._meter);
+    this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(
+      this._meter
+    );
+    this._timePerOutputChunkHistogram = createTimePerOutputChunkHistogram(
+      this._meter
+    );
   }
 
   /**
@@ -203,11 +202,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (
-      !this._operationDurationHistogram ||
-      durationSeconds < 0 ||
-      !isFinite(durationSeconds)
-    ) {
+    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
       return;
     }
     this._operationDurationHistogram.record(
@@ -230,7 +225,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (!this._tokenUsageHistogram || !usage) {
+    if (!usage) {
       return;
     }
 
@@ -278,11 +273,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (
-      !this._timeToFirstChunkHistogram ||
-      durationSeconds < 0 ||
-      !isFinite(durationSeconds)
-    ) {
+    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
       return;
     }
     this._timeToFirstChunkHistogram.record(
@@ -305,11 +296,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (
-      !this._timePerOutputChunkHistogram ||
-      durationSeconds < 0 ||
-      !isFinite(durationSeconds)
-    ) {
+    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
       return;
     }
     this._timePerOutputChunkHistogram.record(

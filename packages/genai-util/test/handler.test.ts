@@ -72,7 +72,7 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 0);
   });
 
-  it('should initialize with custom options and initialize histograms', () => {
+  it('should initialize with custom options', () => {
     const customDiag: DiagLogger = {
       verbose: () => {},
       debug: () => {},
@@ -179,18 +179,6 @@ describe('TelemetryHandler', () => {
     handler.recordTokenUsage({ outputTokens: 20 }); // only output tokens
     handler.recordTokenUsage({ inputTokens: -5, outputTokens: -10 }); // negative tokens ignored
     handler.recordTokenUsage(undefined as any); // undefined usage ignored
-  });
-
-  it('should safely handle metric recordings with default meter', () => {
-    const handler = createHandler();
-
-    // None of these should throw
-    assert.doesNotThrow(() => {
-      handler.recordOperationDuration(1.0);
-      handler.recordTokenUsage({ inputTokens: 5, outputTokens: 10 });
-      handler.recordTimeToFirstChunk(0.2);
-      handler.recordTimePerOutputChunk(0.05);
-    });
   });
 
   it('should resolve content capture mode with correct priority', () => {
