@@ -1,0 +1,6 @@
+ibmmq:
+  versions:
+    include: ">=2.0.0 <3"
+    mode: latest-minors
+  commands:
+    - npm test
