@@ -43,6 +43,8 @@ describe('BaseInvocation', () => {
   beforeEach(() => {
     ctx = createTestTelemetryContext();
     handler = new TelemetryHandler({
+      instrumentationName: '@opentelemetry/instrumentation-test-genai',
+      instrumentationVersion: '9.9.9',
       tracerProvider: ctx.tracerProvider,
       meterProvider: ctx.meterProvider,
     });

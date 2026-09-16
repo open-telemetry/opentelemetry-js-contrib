@@ -5,11 +5,10 @@
 
 import * as assert from 'assert';
 import { SpanKind, diag, type DiagLogger } from '@opentelemetry/api';
-import { TelemetryHandler } from '../src/handler';
+import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
 import { BaseInvocation } from '../src/invocations/base';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
 import type { CompletionResult } from '../src/types';
-import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
@@ -35,6 +34,23 @@ class TestInvocation extends BaseInvocation {
   }
 }
 
+const TEST_INSTRUMENTATION_NAME = '@opentelemetry/instrumentation-test-genai';
+const TEST_INSTRUMENTATION_VERSION = '9.9.9';
+
+/**
+ * Create a handler with the required instrumentation scope pre-filled, so that
+ * individual tests only specify the options they actually exercise.
+ */
+function createHandler(
+  options: Partial<TelemetryHandlerOptions> = {}
+): TelemetryHandler {
+  return new TelemetryHandler({
+    instrumentationName: TEST_INSTRUMENTATION_NAME,
+    instrumentationVersion: TEST_INSTRUMENTATION_VERSION,
+    ...options,
+  });
+}
+
 describe('TelemetryHandler', () => {
   let ctx: TestTelemetryContext;
 
@@ -47,7 +63,7 @@ describe('TelemetryHandler', () => {
   });
 
   it('should initialize with default options', () => {
-    const handler = new TelemetryHandler();
+    const handler = createHandler();
 
     assert.ok(handler.getTracer());
     assert.ok(handler.getMeter());
@@ -65,7 +81,7 @@ describe('TelemetryHandler', () => {
       error: () => {},
     };
 
-    const handler = new TelemetryHandler({
+    const handler = createHandler({
       tracerProvider: ctx.tracerProvider,
       meterProvider: ctx.meterProvider,
       diag: customDiag,
@@ -84,23 +100,32 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
   });
 
-  it('should initialize tracer and meter with package version and SemConv schema URL', async () => {
-    const handler = new TelemetryHandler({
+  it('should use the instrumentation name and version supplied by the caller', async () => {
+    const instrumentationName = '@opentelemetry/instrumentation-explicit-scope';
+    const instrumentationVersion = '1.2.3';
+    const handler = createHandler({
+      instrumentationName,
+      instrumentationVersion,
       tracerProvider: ctx.tracerProvider,
       meterProvider: ctx.meterProvider,
     });
 
-    const span = handler.getTracer().startSpan('test-schema-span');
+    const span = handler.getTracer().startSpan('test-scope-span');
     span.end();
 
-    const finishedSpans = ctx.memoryExporter.getFinishedSpans();
-    const spanRecord = finishedSpans.find(s => s.name === 'test-schema-span');
+    const spanRecord = ctx.memoryExporter
+      .getFinishedSpans()
+      .find(s => s.name === 'test-scope-span');
     assert.ok(spanRecord);
-    assert.strictEqual(spanRecord.instrumentationScope.name, PACKAGE_NAME);
+    assert.strictEqual(
+      spanRecord.instrumentationScope.name,
+      instrumentationName
+    );
     assert.strictEqual(
       spanRecord.instrumentationScope.version,
-      PACKAGE_VERSION
+      instrumentationVersion
     );
+    // The schema URL stays owned by genai-util, not the caller.
     assert.strictEqual(
       spanRecord.instrumentationScope.schemaUrl,
       GEN_AI_SCHEMA_URL
@@ -109,16 +134,15 @@ describe('TelemetryHandler', () => {
     handler.recordOperationDuration(0.5);
     const metricCollection = await ctx.metricReader.collect();
     const scopeMetric = metricCollection.resourceMetrics.scopeMetrics.find(
-      sm => sm.scope.name === PACKAGE_NAME
+      sm => sm.scope.name === instrumentationName
     );
     assert.ok(scopeMetric);
-    assert.strictEqual(scopeMetric.scope.name, PACKAGE_NAME);
-    assert.strictEqual(scopeMetric.scope.version, PACKAGE_VERSION);
+    assert.strictEqual(scopeMetric.scope.version, instrumentationVersion);
     assert.strictEqual(scopeMetric.scope.schemaUrl, GEN_AI_SCHEMA_URL);
   });
 
   it('should add completion hooks via addCompletionHook', () => {
-    const handler = new TelemetryHandler();
+    const handler = createHandler();
     const hook = {
       onCompletion: () => {},
     };
@@ -128,7 +152,7 @@ describe('TelemetryHandler', () => {
   });
 
   it('should record metrics and handle boundary values when meterProvider is configured', () => {
-    const handler = new TelemetryHandler({ meterProvider: ctx.meterProvider });
+    const handler = createHandler({ meterProvider: ctx.meterProvider });
 
     // Valid recordings
     handler.recordOperationDuration(1.23, { 'gen_ai.system': 'openai' });
@@ -158,7 +182,7 @@ describe('TelemetryHandler', () => {
   });
 
   it('should safely handle metric recordings with default meter', () => {
-    const handler = new TelemetryHandler();
+    const handler = createHandler();
 
     // None of these should throw
     assert.doesNotThrow(() => {
@@ -171,14 +195,14 @@ describe('TelemetryHandler', () => {
 
   it('should resolve content capture mode with correct priority', () => {
     // 1. Explicit contentCaptureMode in options
-    const handlerExplicit = new TelemetryHandler({
+    const handlerExplicit = createHandler({
       contentCaptureMode: 'span_only',
       config: { captureMessageContent: 'none' },
     });
     assert.strictEqual(handlerExplicit.getContentCaptureMode(), 'span_only');
 
     // 2. Config captureMessageContent fallback
-    const handlerConfig = new TelemetryHandler({
+    const handlerConfig = createHandler({
       config: { captureMessageContent: 'span_only' },
     });
     assert.strictEqual(handlerConfig.getContentCaptureMode(), 'span_only');
@@ -186,31 +210,31 @@ describe('TelemetryHandler', () => {
     // 3. Environment variable fallback
     process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT =
       'span_only';
-    const handlerEnv = new TelemetryHandler();
+    const handlerEnv = createHandler();
     assert.strictEqual(handlerEnv.getContentCaptureMode(), 'span_only');
     delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
   });
 
   it('should determine whether to capture content based on mode or completion hooks', () => {
     // 1. Defaults to false when mode is none and no hooks
-    const handlerDefault = new TelemetryHandler();
+    const handlerDefault = createHandler();
     assert.strictEqual(handlerDefault.shouldCaptureContent(), false);
 
     // 2. True when capture mode is span_only
-    const handlerSpanOnly = new TelemetryHandler({
+    const handlerSpanOnly = createHandler({
       contentCaptureMode: 'span_only',
     });
     assert.strictEqual(handlerSpanOnly.shouldCaptureContent(), true);
 
     // 3. True when mode is none but completion hook is present
-    const handlerWithHook = new TelemetryHandler({
+    const handlerWithHook = createHandler({
       contentCaptureMode: 'none',
       completionHooks: [{ onCompletion: () => {} }],
     });
     assert.strictEqual(handlerWithHook.shouldCaptureContent(), true);
 
     // 4. Becomes true when hook is added dynamically
-    const handlerDynamic = new TelemetryHandler();
+    const handlerDynamic = createHandler();
     assert.strictEqual(handlerDynamic.shouldCaptureContent(), false);
     handlerDynamic.addCompletionHook({ onCompletion: () => {} });
     assert.strictEqual(handlerDynamic.shouldCaptureContent(), true);
@@ -219,7 +243,7 @@ describe('TelemetryHandler', () => {
   it('should integrate with BaseInvocation and execute completion hooks on stop', async () => {
     let hookResult: CompletionResult | undefined;
 
-    const handler = new TelemetryHandler({
+    const handler = createHandler({
       tracerProvider: ctx.tracerProvider,
       completionHooks: [
         {
@@ -245,7 +269,7 @@ describe('TelemetryHandler', () => {
   it('should integrate with BaseInvocation and execute completion hooks on fail', async () => {
     let hookResult: CompletionResult | undefined;
 
-    const handler = new TelemetryHandler({
+    const handler = createHandler({
       tracerProvider: ctx.tracerProvider,
       completionHooks: [
         {

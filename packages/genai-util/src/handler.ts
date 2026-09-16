@@ -39,7 +39,6 @@ import type {
   GenAIInstrumentationConfig,
   TokenUsage,
 } from './types';
-import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -47,6 +46,19 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
  * @experimental This interface is experimental and subject to change.
  */
 export interface TelemetryHandlerOptions {
+  /**
+   * Name of the instrumentation emitting the telemetry, used as the OpenTelemetry
+   * instrumentation scope name (e.g. `'@opentelemetry/instrumentation-openai'`).
+   *
+   * Required so that telemetry is always attributable to the instrumentation that
+   * produced it rather than to this shared utility package.
+   */
+  instrumentationName: string;
+  /**
+   * Version of the instrumentation emitting the telemetry, used as the OpenTelemetry
+   * instrumentation scope version.
+   */
+  instrumentationVersion: string;
   /** TracerProvider instance used to create the tracer. If not provided, standard global tracer provider is used. */
   tracerProvider?: TracerProvider;
   /** MeterProvider instance used to create the meter. If not provided, standard global meter provider is used. */
@@ -77,16 +89,22 @@ export class TelemetryHandler {
   private _timeToFirstChunkHistogram?: Histogram;
   private _timePerOutputChunkHistogram?: Histogram;
 
-  constructor(options: TelemetryHandlerOptions = {}) {
+  constructor(options: TelemetryHandlerOptions) {
+    const { instrumentationName, instrumentationVersion } = options;
+
     const tracerProvider = options.tracerProvider ?? trace.getTracerProvider();
-    this._tracer = tracerProvider.getTracer(PACKAGE_NAME, PACKAGE_VERSION, {
-      schemaUrl: GEN_AI_SCHEMA_URL,
-    });
+    this._tracer = tracerProvider.getTracer(
+      instrumentationName,
+      instrumentationVersion,
+      { schemaUrl: GEN_AI_SCHEMA_URL }
+    );
 
     const meterProvider = options.meterProvider ?? metrics.getMeterProvider();
-    this._meter = meterProvider.getMeter(PACKAGE_NAME, PACKAGE_VERSION, {
-      schemaUrl: GEN_AI_SCHEMA_URL,
-    });
+    this._meter = meterProvider.getMeter(
+      instrumentationName,
+      instrumentationVersion,
+      { schemaUrl: GEN_AI_SCHEMA_URL }
+    );
 
     this._diag = options.diag ?? diag;
     this._hookManager = new CompletionHookManager(
