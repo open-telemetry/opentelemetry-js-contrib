@@ -45,8 +45,11 @@ function hasValidSqlComment(query: string): boolean {
     return false;
   }
 
-  const indexClosingSlashComment = query.indexOf('*/');
-  return indexOpeningDashDashComment < indexClosingSlashComment;
+  // The closing delimiter has to come after the opening one. Searching from
+  // the start would also match a `*/` that appears before the `/*`.
+  return (
+    query.indexOf('*/', indexOpeningSlashComment) > indexOpeningSlashComment
+  );
 }
 
 // sqlcommenter specification (https://google.github.io/sqlcommenter/spec/#value-serialization)
