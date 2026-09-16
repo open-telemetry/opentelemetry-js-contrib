@@ -159,6 +159,18 @@ export abstract class BaseInvocation {
   }
 
   /**
+   * Return whether message content (prompts, completions, tool calls) should be
+   * captured for this invocation.
+   *
+   * Delegates to the handler, which enables capture when the content capture mode is
+   * not `'none'` or when at least one completion hook is registered. Subclasses should
+   * gate the recording of any sensitive content on this value.
+   */
+  public shouldCaptureContent(): boolean {
+    return this._handler.shouldCaptureContent();
+  }
+
+  /**
    * Set a custom span attribute.
    */
   public setAttribute(key: string, value: AttributeValue): this {
