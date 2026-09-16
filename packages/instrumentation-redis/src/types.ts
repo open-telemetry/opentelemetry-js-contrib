@@ -45,4 +45,12 @@ export interface RedisInstrumentationConfig extends InstrumentationConfig {
 
   /** Require parent to create redis span, default when unset is false */
   requireParentSpan?: boolean;
+
+  /**
+   * Emit one span for a MULTI transaction or pipeline instead of one span per
+   * queued command. The aggregate span includes db.operation.batch.size.
+   *
+   * @default false
+   */
+  aggregateMultiCommandSpans?: boolean;
 }

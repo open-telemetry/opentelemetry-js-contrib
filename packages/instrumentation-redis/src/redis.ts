@@ -16,6 +16,7 @@ import { RedisInstrumentationV4_V5 } from './v4-v5/instrumentation';
 
 const DEFAULT_CONFIG: RedisInstrumentationConfig = {
   requireParentSpan: false,
+  aggregateMultiCommandSpans: false,
 };
 
 // Wrapper RedisInstrumentation that address all supported versions
