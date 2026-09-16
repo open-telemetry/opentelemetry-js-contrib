@@ -632,6 +632,33 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
     });
+
+    it('does not throw when body is a Uint8Array AWS SDK v3 serialization', async () => {
+      const modelId = 'amazon.titan-embed-text-v2:0';
+      const nativeRequest = {
+        inputText: 'hello world',
+        dimensions: 1024,
+        normalize: true,
+      };
+      // AWS SDK v3 >= ~3.600 serializes the body to Uint8Array before instrumentation
+      // hooks run. Passing it directly reproduces the real-world shape.
+      const command = new InvokeModelCommand({
+        modelId,
+        body: new TextEncoder().encode(JSON.stringify(nativeRequest)),
+      });
+      // Must not throw SyntaxError from JSON.parse(Uint8Array)
+      await client.send(command);
+
+      const testSpans: ReadableSpan[] = getTestSpans();
+      const invokeModelSpans: ReadableSpan[] = testSpans.filter(
+        (s: ReadableSpan) => s.name === 'BedrockRuntime.InvokeModel'
+      );
+      expect(invokeModelSpans.length).toBe(1);
+      expect(invokeModelSpans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_SYSTEM]: GEN_AI_SYSTEM_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+      });
+    });
   });
 
   describe('InvokeModelWithStreams', () => {
