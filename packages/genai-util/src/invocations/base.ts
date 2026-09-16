@@ -52,7 +52,7 @@ export interface BaseInvocationOptions {
    * {@link BaseInvocation.withContext} of another invocation is automatically nested
    * under it.
    */
-  parentContext?: Context;
+  context?: Context;
   /** Start time of the invocation. Defaults to the time the invocation is created. */
   startTime?: TimeInput;
 }
@@ -118,7 +118,7 @@ export abstract class BaseInvocation {
     this._handler = handler;
     this._startTime = timeInputToHrTime(options.startTime ?? hrTime());
 
-    const parentContext = options.parentContext ?? context.active();
+    const parentContext = options.context ?? context.active();
     this._span = handler.getTracer().startSpan(
       spanName,
       {
@@ -227,7 +227,7 @@ export abstract class BaseInvocation {
    *
    * Ending an already ended invocation is a no-op.
    */
-  public fail(error: Error | string | unknown, endTime?: TimeInput): void {
+  public fail(error: unknown, endTime?: TimeInput): void {
     if (this._isEnded) {
       return;
     }
@@ -238,20 +238,18 @@ export abstract class BaseInvocation {
 
     this._recordMetrics(durationSec, error);
 
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : String(error);
+    const isError = error instanceof Error;
+    const errorMessage = isError
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : String(error);
+    const errorObj = isError ? error : new Error(errorMessage);
 
-    const errorType = getErrorType(error);
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+    this._span.setAttribute(ATTR_ERROR_TYPE, getErrorType(error));
 
-    const errorObj = error instanceof Error ? error : new Error(errorMessage);
-
-    if (error instanceof Error) {
-      this._span.recordException(error);
+    if (isError) {
+      this._span.recordException(errorObj);
     }
 
     this._emitContentEvents(endHr);

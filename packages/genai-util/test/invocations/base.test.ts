@@ -346,7 +346,7 @@ describe('BaseInvocation', () => {
       const parentContext = trace.setSpan(context.active(), parentSpan);
 
       new CustomInvocation('explicit-child-invocation', handler, {
-        parentContext,
+        context: parentContext,
       }).stop();
       parentSpan.end();
 
