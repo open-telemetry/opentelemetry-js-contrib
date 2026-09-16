@@ -28,7 +28,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-restify",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "SKIP_TEST_IF_NODE_NEWER_THAN=23 nyc --no-clean mocha --require '../../scripts/skip-test-if.js' 'test/**/*.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",

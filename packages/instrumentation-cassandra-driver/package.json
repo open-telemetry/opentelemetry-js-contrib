@@ -29,7 +29,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "setup:dev": "nx run-many -t compile -p @opentelemetry/instrumentation-cassandra-driver",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "//todo": "echo \"add test-all-versions\"",

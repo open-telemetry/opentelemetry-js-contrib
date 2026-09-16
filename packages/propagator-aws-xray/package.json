@@ -30,7 +30,7 @@
     "test": "nyc mocha test/**/*.test.ts",
     "test:browser": "nyc karma start --single-run",
     "tdd": "npm run tdd:node",
-    "tdd:node": "npm run test -- --watch-extensions ts --watch",
+    "tdd:node": "npm run test -- --watch --watch-files \"**/*.ts\"",
     "tdd:browser": "karma start",
     "version": "node ../../scripts/version-update.js",
     "watch": "tsdown --watch --no-clean"

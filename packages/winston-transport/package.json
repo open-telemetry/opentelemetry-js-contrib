@@ -27,7 +27,7 @@
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/winston-transport",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js"
   },

@@ -48,7 +48,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-amqplib",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean  mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions": "tav",

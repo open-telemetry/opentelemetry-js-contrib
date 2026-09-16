@@ -25,7 +25,7 @@
   "scripts": {
     "test": "SKIP_TEST_IF_NODE_OLDER_THAN=20 nyc mocha --require '../../scripts/skip-test-if.js' nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "clean": "rimraf dist build",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",

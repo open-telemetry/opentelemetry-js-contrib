@@ -36,7 +36,7 @@
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-configuration-propagators",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc mocha 'test/**/*.ts'",
     "watch": "tsdown --watch --no-clean"
   },

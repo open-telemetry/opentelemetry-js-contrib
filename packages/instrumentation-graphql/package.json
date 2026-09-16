@@ -28,7 +28,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-graphql",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
