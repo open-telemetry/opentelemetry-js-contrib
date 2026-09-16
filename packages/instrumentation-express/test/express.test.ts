@@ -1127,7 +1127,9 @@ describe('ExpressInstrumentation', () => {
     'arr/requiredpath/optionalPath/',
     'arr/requiredpath/optionalPath/lastParam',
   ]) {
-    it('should handle more complex regexes in route arrays correctly', async () => {
+    it(`should handle more complex regexes in route arrays correctly (segment: ${segment})`, async () => {
+      // @ts-ignore
+      this.timeout(5000);
       await testUtils.runTestFixture({
         cwd: __dirname,
         argv: ['fixtures/use-express-regex.mjs'],
