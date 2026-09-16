@@ -2,22 +2,32 @@
   "name": "@opentelemetry/instrumentation-web-exception",
   "version": "0.15.0",
   "description": "OpenTelemetry instrumentation for web exceptions",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
-  "esnext": "build/esnext/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-web-exception",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "prewatch": "npm run precompile",
     "tdd": "wtr --watch",
-    "test": "npm run test:browser",
     "test:browser": "wtr --coverage",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc --build -watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "opentelemetry",
@@ -34,15 +44,9 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.map",
-    "build/esm/**/*.d.ts",
-    "build/esnext/**/*.js",
-    "build/esnext/**/*.map",
-    "build/esnext/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

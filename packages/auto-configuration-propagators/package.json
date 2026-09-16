@@ -11,21 +11,34 @@
   "publishConfig": {
     "access": "public"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
     "directory": "packages/auto-configuration-propagators"
   },
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "clean": "rimraf dist build",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-configuration-propagators",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc mocha 'test/**/*.ts'",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
@@ -44,8 +57,8 @@
     "@opentelemetry/propagator-ot-trace": "^0.29.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ]
 }

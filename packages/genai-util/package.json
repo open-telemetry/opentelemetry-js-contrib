@@ -2,18 +2,31 @@
   "name": "@opentelemetry/genai-util",
   "version": "0.1.0",
   "description": "Utilities for OpenTelemetry Generative AI instrumentations",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/genai-util",
-    "compile": "tsc --build tsconfig.json",
+    "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "test": "nyc mocha 'test/**/*.test.ts'",
-    "watch": "tsc -w",
+    "watch": "tsdown --watch --no-clean",
     "version:update": "node ../../scripts/version-update.js",
     "lint:readme": "node ../../scripts/lint-readme.js"
   },
@@ -31,9 +44,9 @@
     "instrumentation"
   ],
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",

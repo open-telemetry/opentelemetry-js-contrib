@@ -2,20 +2,33 @@
   "name": "@opentelemetry/instrumentation-pg",
   "version": "0.74.0",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
     "directory": "packages/instrumentation-pg"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-pg",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test:debug": "mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
@@ -25,7 +38,7 @@
     "test-services:start": "cd ../.. && npm run test-services:start postgres",
     "test-services:stop": "cd ../.. && npm run test-services:stop postgres",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "instrumentation",
@@ -44,9 +57,9 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

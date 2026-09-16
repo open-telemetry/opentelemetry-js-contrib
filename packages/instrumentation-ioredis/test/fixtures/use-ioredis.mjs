@@ -9,7 +9,7 @@
 import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
-import { IORedisInstrumentation } from '../../build/src/index.js';
+import { IORedisInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-ioredis',
