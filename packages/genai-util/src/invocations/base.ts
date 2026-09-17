@@ -256,7 +256,7 @@ export abstract class BaseInvocation {
     const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
 
     this._recordMetrics(durationSec);
-    this._emitContentEvents(endHr);
+    this._emitContentEvent(endHr);
 
     this._span.end(endHr);
   }
@@ -275,13 +275,12 @@ export abstract class BaseInvocation {
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
 
-    const isError = error instanceof Error;
-    const errorMessage = isError
-      ? error.message
-      : typeof error === 'string'
-        ? error
-        : String(error);
-    const errorObj = isError ? error : new Error(errorMessage);
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : String(error);
 
     // Resolved once here so that the span and the metrics always agree on `error.type`,
     // and so that subclasses do not each have to derive it from the raw error.
@@ -292,11 +291,7 @@ export abstract class BaseInvocation {
     // Recorded after `error.type` is in place so that it is part of the metric attributes.
     this._recordMetrics(durationSec, error);
 
-    if (isError) {
-      this._span.recordException(errorObj);
-    }
-
-    this._emitContentEvents(endHr);
+    this._emitContentEvent(endHr);
 
     this._span.setStatus({
       code: SpanStatusCode.ERROR,
@@ -318,10 +313,17 @@ export abstract class BaseInvocation {
   protected _recordMetrics(_durationSec: number, _error?: unknown): void {}
 
   /**
-   * Hook for subclasses to emit log-based GenAI events (e.g. `gen_ai.client.inference.operation.details`).
+   * Hook for subclasses to emit the invocation's log-based GenAI content event.
+   *
+   * Per the GenAI semantic conventions an invocation emits at most one such event:
+   * inference operations emit a single `gen_ai.client.inference.operation.details`
+   * carrying the whole exchange in its `gen_ai.input.messages` and
+   * `gen_ai.output.messages` fields, so neither a multi-turn history nor a
+   * multi-candidate response produces additional events. Operations with no content
+   * event defined (embeddings, tool and agent operations) emit nothing.
    *
    * NOTE: Currently a no-op placeholder. Will be implemented with the OpenTelemetry Logs & Events API
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
-  protected _emitContentEvents(_endTime?: HrTime): void {}
+  protected _emitContentEvent(_endTime?: HrTime): void {}
 }

@@ -83,7 +83,7 @@ describe('BaseInvocation', () => {
       error?: unknown;
       metricAttributes: Attributes;
     }> = [];
-    public emitContentEventsCalls: Array<{ endTime?: HrTime }> = [];
+    public emitContentEventCalls: Array<{ endTime?: HrTime }> = [];
 
     protected override _recordMetrics(
       durationSec: number,
@@ -97,8 +97,8 @@ describe('BaseInvocation', () => {
       });
     }
 
-    protected override _emitContentEvents(endTime?: HrTime): void {
-      this.emitContentEventsCalls.push({ endTime });
+    protected override _emitContentEvent(endTime?: HrTime): void {
+      this.emitContentEventCalls.push({ endTime });
     }
   }
 
@@ -130,7 +130,7 @@ describe('BaseInvocation', () => {
   });
 
   it('should complete normally when the subclass overrides no extension point', () => {
-    // _recordMetrics and _emitContentEvents are optional: the base defaults are no-ops.
+    // _recordMetrics and _emitContentEvent are optional: the base defaults are no-ops.
     class MinimalInvocation extends BaseInvocation {}
 
     const inv = new MinimalInvocation('minimal-span', handler, {
@@ -160,9 +160,9 @@ describe('BaseInvocation', () => {
     assert.ok(inv.recordMetricsCalls[0].durationSec >= 0);
     assert.strictEqual(inv.recordMetricsCalls[0].error, undefined);
 
-    assert.strictEqual(inv.emitContentEventsCalls.length, 1);
-    assert.ok(Array.isArray(inv.emitContentEventsCalls[0].endTime));
-    assert.strictEqual(inv.emitContentEventsCalls[0].endTime?.length, 2);
+    assert.strictEqual(inv.emitContentEventCalls.length, 1);
+    assert.ok(Array.isArray(inv.emitContentEventCalls[0].endTime));
+    assert.strictEqual(inv.emitContentEventCalls[0].endTime?.length, 2);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -185,9 +185,9 @@ describe('BaseInvocation', () => {
     assert.strictEqual(typeof inv.recordMetricsCalls[0].durationSec, 'number');
     assert.ok(inv.recordMetricsCalls[0].durationSec >= 0);
 
-    assert.strictEqual(inv.emitContentEventsCalls.length, 1);
-    assert.ok(Array.isArray(inv.emitContentEventsCalls[0].endTime));
-    assert.strictEqual(inv.emitContentEventsCalls[0].endTime?.length, 2);
+    assert.strictEqual(inv.emitContentEventCalls.length, 1);
+    assert.ok(Array.isArray(inv.emitContentEventCalls[0].endTime));
+    assert.strictEqual(inv.emitContentEventCalls[0].endTime?.length, 2);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -205,11 +205,8 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(inv.recordMetricsCalls[0].error, 'String error message');
 
-    assert.strictEqual(inv.emitContentEventsCalls.length, 1);
-    assert.deepStrictEqual(
-      inv.emitContentEventsCalls[0].endTime,
-      customEndTime
-    );
+    assert.strictEqual(inv.emitContentEventCalls.length, 1);
+    assert.deepStrictEqual(inv.emitContentEventCalls[0].endTime, customEndTime);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
