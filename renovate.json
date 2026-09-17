@@ -24,11 +24,15 @@
       "schedule": ["before 3am on Monday"]
     },
     {
+      "matchCategories": ["docker"],
+      "separateMajorMinor": true,
+      "separateMultipleMajor": true
+    },
+    {
       "description": "Wait 3 years for automated major docker updates",
       "dependencyDashboardCategory": "Testing Docker service",
       "matchUpdateTypes": ["major"],
       "matchCategories": ["docker"],
-      "separateMultipleMajor": true,
       "minimumReleaseAge": "1095 days",
     },
     {
