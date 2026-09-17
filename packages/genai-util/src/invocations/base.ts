@@ -44,8 +44,25 @@ export interface BaseInvocationOptions {
    * Initial span attributes.
    *
    * These are set at span creation time so that they are visible to samplers.
+   *
+   * These are NOT recorded on metrics: use {@link metricAttributes} for dimensions that
+   * must appear on metrics.
    */
   attributes?: Attributes;
+  /**
+   * Initial metric attributes.
+   *
+   * These are recorded on the metrics emitted for this invocation and are NOT set on the
+   * span. Each distinct combination of values creates a new time series, so they must be
+   * low cardinality: never put message content, user identifiers, request identifiers, or
+   * other unbounded values here.
+   *
+   * Concrete invocations seed this with their operation's semantic convention dimensions,
+   * spreading the caller's own metric attributes last so that explicit caller values win.
+   * Dimensions that are only known later (e.g. `gen_ai.response.model`) are added to
+   * `_metricAttributes` as they arrive.
+   */
+  metricAttributes?: Attributes;
   /**
    * Context used as the parent of this invocation.
    *
@@ -103,6 +120,7 @@ export abstract class BaseInvocation {
   protected readonly _startTime: HrTime;
   protected _isEnded = false;
   protected _customAttributes: Attributes = {};
+  protected _metricAttributes: Attributes;
 
   /**
    * Start the invocation by creating and starting the underlying span.
@@ -118,6 +136,7 @@ export abstract class BaseInvocation {
   ) {
     this._handler = handler;
     this._startTime = timeInputToHrTime(options.startTime ?? hrTime());
+    this._metricAttributes = { ...options.metricAttributes };
 
     const parentContext = options.context ?? context.active();
     this._span = handler.getTracer().startSpan(
@@ -163,6 +182,9 @@ export abstract class BaseInvocation {
 
   /**
    * Set a custom span attribute.
+   *
+   * Span attributes are per-invocation and may be high cardinality. They are NOT
+   * recorded on metrics: use {@link setMetricAttribute} for that.
    */
   public setAttribute(key: string, value: AttributeValue): this {
     this._customAttributes[key] = value;
@@ -172,10 +194,37 @@ export abstract class BaseInvocation {
 
   /**
    * Set multiple custom span attributes.
+   *
+   * Span attributes are per-invocation and may be high cardinality. They are NOT
+   * recorded on metrics: use {@link setMetricAttributes} for that.
    */
   public setAttributes(attributes: Attributes): this {
     Object.assign(this._customAttributes, attributes);
     this._span.setAttributes(attributes);
+    return this;
+  }
+
+  /**
+   * Set a custom metric attribute.
+   *
+   * The attribute is recorded on the metrics emitted for this invocation and is NOT set
+   * on the span. Every distinct value creates a new time series, so the value must be low
+   * cardinality: never pass message content, user identifiers, request identifiers, or
+   * other unbounded values.
+   */
+  public setMetricAttribute(key: string, value: AttributeValue): this {
+    this._metricAttributes[key] = value;
+    return this;
+  }
+
+  /**
+   * Set multiple custom metric attributes.
+   *
+   * The attributes are recorded on the metrics emitted for this invocation and are NOT set
+   * on the span. They must be low cardinality; see {@link setMetricAttribute}.
+   */
+  public setMetricAttributes(attributes: Attributes): this {
+    Object.assign(this._metricAttributes, attributes);
     return this;
   }
 
@@ -240,8 +289,6 @@ export abstract class BaseInvocation {
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
 
-    this._recordMetrics(durationSec, error);
-
     const isError = error instanceof Error;
     const errorMessage = isError
       ? error.message
@@ -250,7 +297,14 @@ export abstract class BaseInvocation {
         : String(error);
     const errorObj = isError ? error : new Error(errorMessage);
 
-    this._span.setAttribute(ATTR_ERROR_TYPE, getErrorType(error));
+    // Resolved once here so that the span and the metrics always agree on `error.type`,
+    // and so that subclasses do not each have to derive it from the raw error.
+    const errorType = getErrorType(error);
+    this._metricAttributes[ATTR_ERROR_TYPE] = errorType;
+    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+    // Recorded after `error.type` is in place so that it is part of the metric attributes.
+    this._recordMetrics(durationSec, error);
 
     if (isError) {
       this._span.recordException(errorObj);
@@ -272,6 +326,12 @@ export abstract class BaseInvocation {
 
   /**
    * Hook for subclasses to emit operation-specific metrics on stop/fail.
+   *
+   * Record with {@link _metricAttributes}, spreading it when a measurement needs an extra
+   * dimension of its own (e.g. `{ ...this._metricAttributes, [ATTR_GEN_AI_TOKEN_TYPE]:
+   * 'input' }`) so that the dimension does not leak into the invocation's other
+   * measurements. Pass `this._context` to the recording call so that exemplars are
+   * associated with the invocation span.
    */
   protected _recordMetrics(_durationSec: number, _error?: unknown): void {}
 

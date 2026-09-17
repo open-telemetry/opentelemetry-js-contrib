@@ -9,6 +9,7 @@ import {
   SpanStatusCode,
   context,
   trace,
+  type Attributes,
   type HrTime,
   type Span,
 } from '@opentelemetry/api';
@@ -23,6 +24,11 @@ import {
   BaseInvocation,
   type BaseInvocationOptions,
 } from '../../src/invocations/base';
+import {
+  ATTR_GEN_AI_TOKEN_TYPE,
+  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+} from '../../src/semconv';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
@@ -72,8 +78,11 @@ describe('BaseInvocation', () => {
       return this._span;
     }
 
-    public recordMetricsCalls: Array<{ durationSec: number; error?: unknown }> =
-      [];
+    public recordMetricsCalls: Array<{
+      durationSec: number;
+      error?: unknown;
+      metricAttributes: Attributes;
+    }> = [];
     public emitContentEventsCalls: Array<{ endTime?: HrTime }> = [];
     public runCompletionHookCalls: Array<{
       durationSec: number;
@@ -85,7 +94,12 @@ describe('BaseInvocation', () => {
       durationSec: number,
       error?: unknown
     ): void {
-      this.recordMetricsCalls.push({ durationSec, error });
+      // Snapshot the attributes as they stand when metrics are recorded.
+      this.recordMetricsCalls.push({
+        durationSec,
+        error,
+        metricAttributes: { ...this._metricAttributes },
+      });
     }
 
     protected override _emitContentEvents(endTime?: HrTime): void {
@@ -342,6 +356,169 @@ describe('BaseInvocation', () => {
     assert.ok(finishedFailSpan);
     assert.strictEqual(finishedFailSpan.status.code, SpanStatusCode.ERROR);
     assert.strictEqual(finishedFailSpan.status.message, 'Original failure');
+  });
+
+  describe('metric attributes', () => {
+    it('should keep span attributes and metric attributes in separate bags', () => {
+      const inv = new CustomInvocation('split-attrs-span', handler, {
+        attributes: { 'gen_ai.operation.name': 'chat' },
+        metricAttributes: { 'gen_ai.provider.name': 'openai' },
+      });
+
+      inv.setAttribute('custom.span.attr', 'span-value');
+      inv.setMetricAttribute('custom.metric.attr', 'metric-value');
+      inv.stop();
+
+      // Metric attributes must not leak onto the span.
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes['gen_ai.operation.name'], 'chat');
+      assert.strictEqual(span.attributes['custom.span.attr'], 'span-value');
+      assert.strictEqual(span.attributes['gen_ai.provider.name'], undefined);
+      assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
+
+      // Span attributes, which may be high cardinality, must not leak onto metrics.
+      assert.strictEqual(inv.recordMetricsCalls.length, 1);
+      assert.deepStrictEqual(inv.recordMetricsCalls[0].metricAttributes, {
+        'gen_ai.provider.name': 'openai',
+        'custom.metric.attr': 'metric-value',
+      });
+    });
+
+    it('should support setMetricAttributes and let later values win', () => {
+      const inv = new CustomInvocation('merge-metric-attrs-span', handler, {
+        metricAttributes: { 'gen_ai.provider.name': 'openai', keep: 'me' },
+      });
+
+      inv.setMetricAttributes({
+        'gen_ai.provider.name': 'azure.ai.openai',
+        'gen_ai.request.model': 'gpt-4',
+      });
+      inv.stop();
+
+      assert.deepStrictEqual(inv.recordMetricsCalls[0].metricAttributes, {
+        'gen_ai.provider.name': 'azure.ai.openai',
+        'gen_ai.request.model': 'gpt-4',
+        keep: 'me',
+      });
+    });
+
+    it('should not mutate the caller-supplied metricAttributes option object', () => {
+      const callerAttributes: Attributes = { 'gen_ai.provider.name': 'openai' };
+      const inv = new CustomInvocation('no-mutation-span', handler, {
+        metricAttributes: callerAttributes,
+      });
+
+      inv.setMetricAttribute('added.later', 'value');
+      inv.fail(new Error('boom'));
+
+      assert.deepStrictEqual(callerAttributes, {
+        'gen_ai.provider.name': 'openai',
+      });
+    });
+
+    it('should record error.type on metric attributes before _recordMetrics runs', () => {
+      const inv = new CustomInvocation('metric-error-type-span', handler, {
+        metricAttributes: { 'gen_ai.provider.name': 'openai' },
+      });
+
+      inv.fail(new Error('Test failure'));
+
+      // error.type must already be present in the snapshot taken inside _recordMetrics,
+      // so subclasses do not have to derive it from the raw error themselves.
+      assert.deepStrictEqual(inv.recordMetricsCalls[0].metricAttributes, {
+        'gen_ai.provider.name': 'openai',
+        [ATTR_ERROR_TYPE]: 'Error',
+      });
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    });
+
+    it('should not set error.type on metric attributes on the success path', () => {
+      const inv = new CustomInvocation('metric-no-error-span', handler);
+
+      inv.stop();
+
+      assert.strictEqual(
+        ATTR_ERROR_TYPE in inv.recordMetricsCalls[0].metricAttributes,
+        false
+      );
+    });
+
+    it('should let subclasses seed metric attributes and emit them on metrics', async () => {
+      class MetricRecordingInvocation extends BaseInvocation {
+        constructor(
+          handlerArg: TelemetryHandler,
+          options: Partial<BaseInvocationOptions> = {}
+        ) {
+          super('metric-recording-span', handlerArg, {
+            kind: SpanKind.CLIENT,
+            metricAttributes: {
+              // The concrete invocation contributes its semantic convention dimensions;
+              // caller-supplied values are merged last so that they win.
+              'gen_ai.operation.name': 'chat',
+              'gen_ai.request.model': 'default-model',
+              ...options.metricAttributes,
+            },
+          });
+        }
+
+        public setResponseModel(model: string): void {
+          this._metricAttributes['gen_ai.response.model'] = model;
+        }
+
+        protected override _recordMetrics(durationSec: number): void {
+          this._handler.recordOperationDuration(
+            durationSec,
+            this._metricAttributes,
+            this._context
+          );
+          this._handler.recordTokenUsage(
+            { inputTokens: 10, outputTokens: 5 },
+            this._metricAttributes,
+            this._context
+          );
+        }
+      }
+
+      const inv = new MetricRecordingInvocation(handler, {
+        metricAttributes: { 'gen_ai.request.model': 'gpt-4' },
+      });
+      inv.setResponseModel('gpt-4-0613');
+      inv.stop();
+
+      const expectedAttributes = {
+        'gen_ai.operation.name': 'chat',
+        'gen_ai.request.model': 'gpt-4',
+        'gen_ai.response.model': 'gpt-4-0613',
+      };
+
+      const metrics = (
+        await ctx.metricReader.collect()
+      ).resourceMetrics.scopeMetrics.flatMap(sm => sm.metrics);
+
+      const duration = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
+      );
+      assert.ok(duration);
+      assert.strictEqual(duration.dataPoints.length, 1);
+      assert.deepStrictEqual(duration.dataPoints[0].attributes, {
+        ...expectedAttributes,
+      });
+
+      // The per-measurement token type must not leak back onto the other measurements.
+      const tokenUsage = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
+      );
+      assert.ok(tokenUsage);
+      assert.deepStrictEqual(
+        tokenUsage.dataPoints.map(dp => dp.attributes),
+        [
+          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'input' },
+          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'output' },
+        ]
+      );
+    });
   });
 
   describe('context management', () => {
