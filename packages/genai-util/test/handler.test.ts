@@ -4,40 +4,13 @@
  */
 
 import * as assert from 'assert';
-import { SpanKind, diag, type DiagLogger, type Span } from '@opentelemetry/api';
+import { diag, type DiagLogger } from '@opentelemetry/api';
 import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
-import { BaseInvocation } from '../src/invocations/base';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
-import type { CompletionResult } from '../src/types';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
 } from './helpers/test-setup';
-
-class TestInvocation extends BaseInvocation {
-  constructor(spanName: string, handler: TelemetryHandler) {
-    super(spanName, handler, { kind: SpanKind.CLIENT });
-  }
-
-  /** Test-only accessor: the production class deliberately does not expose its span. */
-  public getSpan(): Span {
-    return this._span;
-  }
-
-  protected override _runCompletionHook(
-    durationSec: number,
-    error?: Error
-  ): void {
-    void this._handler.getCompletionHookManager().execute(
-      {
-        span: this._span,
-        durationSeconds: durationSec,
-        error,
-      },
-      this._handler.getDiag()
-    );
-  }
-}
 
 const TEST_INSTRUMENTATION_NAME = '@opentelemetry/instrumentation-test-genai';
 const TEST_INSTRUMENTATION_VERSION = '9.9.9';
@@ -74,7 +47,6 @@ describe('TelemetryHandler', () => {
     assert.ok(handler.getMeter());
     assert.strictEqual(handler.getDiag(), diag);
     assert.strictEqual(handler.getContentCaptureMode(), 'none');
-    assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 0);
   });
 
   it('should initialize with custom options', () => {
@@ -91,18 +63,12 @@ describe('TelemetryHandler', () => {
       meterProvider: ctx.meterProvider,
       diag: customDiag,
       contentCaptureMode: 'span_only',
-      completionHooks: [
-        {
-          onCompletion: () => {},
-        },
-      ],
     });
 
     assert.ok(handler.getTracer());
     assert.ok(handler.getMeter());
     assert.strictEqual(handler.getDiag(), customDiag);
     assert.strictEqual(handler.getContentCaptureMode(), 'span_only');
-    assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
   });
 
   it('should use the instrumentation name and version supplied by the caller', async () => {
@@ -144,16 +110,6 @@ describe('TelemetryHandler', () => {
     assert.ok(scopeMetric);
     assert.strictEqual(scopeMetric.scope.version, instrumentationVersion);
     assert.strictEqual(scopeMetric.scope.schemaUrl, GEN_AI_SCHEMA_URL);
-  });
-
-  it('should add completion hooks via addCompletionHook', () => {
-    const handler = createHandler();
-    const hook = {
-      onCompletion: () => {},
-    };
-
-    handler.addCompletionHook(hook);
-    assert.strictEqual(handler.getCompletionHookManager().getHooks().length, 1);
   });
 
   it('should record metrics and handle boundary values when meterProvider is configured', () => {
@@ -208,8 +164,8 @@ describe('TelemetryHandler', () => {
     delete process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
   });
 
-  it('should determine whether to capture content based on mode or completion hooks', () => {
-    // 1. Defaults to false when mode is none and no hooks
+  it('should determine whether to capture content based on mode', () => {
+    // 1. Defaults to false when mode is none
     const handlerDefault = createHandler();
     assert.strictEqual(handlerDefault.shouldCaptureContent(), false);
 
@@ -218,70 +174,5 @@ describe('TelemetryHandler', () => {
       contentCaptureMode: 'span_only',
     });
     assert.strictEqual(handlerSpanOnly.shouldCaptureContent(), true);
-
-    // 3. True when mode is none but completion hook is present
-    const handlerWithHook = createHandler({
-      contentCaptureMode: 'none',
-      completionHooks: [{ onCompletion: () => {} }],
-    });
-    assert.strictEqual(handlerWithHook.shouldCaptureContent(), true);
-
-    // 4. Becomes true when hook is added dynamically
-    const handlerDynamic = createHandler();
-    assert.strictEqual(handlerDynamic.shouldCaptureContent(), false);
-    handlerDynamic.addCompletionHook({ onCompletion: () => {} });
-    assert.strictEqual(handlerDynamic.shouldCaptureContent(), true);
-  });
-
-  it('should integrate with BaseInvocation and execute completion hooks on stop', async () => {
-    let hookResult: CompletionResult | undefined;
-
-    const handler = createHandler({
-      tracerProvider: ctx.tracerProvider,
-      completionHooks: [
-        {
-          onCompletion(result: CompletionResult) {
-            hookResult = result;
-          },
-        },
-      ],
-    });
-
-    const invocation = new TestInvocation('test-span', handler);
-    invocation.stop();
-
-    // Wait for async execution of completion hook
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    assert.ok(hookResult);
-    assert.strictEqual(hookResult.span, invocation.getSpan());
-    assert.ok(typeof hookResult.durationSeconds === 'number');
-    assert.strictEqual(hookResult.error, undefined);
-  });
-
-  it('should integrate with BaseInvocation and execute completion hooks on fail', async () => {
-    let hookResult: CompletionResult | undefined;
-
-    const handler = createHandler({
-      tracerProvider: ctx.tracerProvider,
-      completionHooks: [
-        {
-          onCompletion(result: CompletionResult) {
-            hookResult = result;
-          },
-        },
-      ],
-    });
-
-    const invocation = new TestInvocation('test-span-error', handler);
-    const testError = new Error('Test failure');
-    invocation.fail(testError);
-
-    // Wait for async execution of completion hook
-    await new Promise(resolve => setTimeout(resolve, 50));
-
-    assert.ok(hookResult);
-    assert.strictEqual(hookResult.span, invocation.getSpan());
-    assert.strictEqual(hookResult.error, testError);
   });
 });

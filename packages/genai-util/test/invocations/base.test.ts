@@ -84,11 +84,6 @@ describe('BaseInvocation', () => {
       metricAttributes: Attributes;
     }> = [];
     public emitContentEventsCalls: Array<{ endTime?: HrTime }> = [];
-    public runCompletionHookCalls: Array<{
-      durationSec: number;
-      error?: Error;
-      spanIsRecording?: boolean;
-    }> = [];
 
     protected override _recordMetrics(
       durationSec: number,
@@ -104,17 +99,6 @@ describe('BaseInvocation', () => {
 
     protected override _emitContentEvents(endTime?: HrTime): void {
       this.emitContentEventsCalls.push({ endTime });
-    }
-
-    protected override _runCompletionHook(
-      durationSec: number,
-      error?: Error
-    ): void {
-      this.runCompletionHookCalls.push({
-        durationSec,
-        error,
-        spanIsRecording: this._span.isRecording(),
-      });
     }
   }
 
@@ -145,7 +129,22 @@ describe('BaseInvocation', () => {
     assert.strictEqual(span.kind, SpanKind.CLIENT);
   });
 
-  it('should manage lifecycle and attributes correctly and execute all hooks on stop', () => {
+  it('should complete normally when the subclass overrides no extension point', () => {
+    // _recordMetrics and _emitContentEvents are optional: the base defaults are no-ops.
+    class MinimalInvocation extends BaseInvocation {}
+
+    const inv = new MinimalInvocation('minimal-span', handler, {
+      kind: SpanKind.CLIENT,
+    });
+    inv.stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.name, 'minimal-span');
+    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(inv.isEnded(), true);
+  });
+
+  it('should manage lifecycle and attributes correctly on stop', () => {
     const inv = new CustomInvocation('custom-span', handler);
 
     inv.setAttribute('custom.attr', 'value1');
@@ -155,7 +154,7 @@ describe('BaseInvocation', () => {
     // Double stop should be a no-op
     inv.stop();
 
-    // Verify hooks called once with correct parameters
+    // Verify the extension points ran exactly once with correct parameters
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(typeof inv.recordMetricsCalls[0].durationSec, 'number');
     assert.ok(inv.recordMetricsCalls[0].durationSec >= 0);
@@ -165,15 +164,6 @@ describe('BaseInvocation', () => {
     assert.ok(Array.isArray(inv.emitContentEventsCalls[0].endTime));
     assert.strictEqual(inv.emitContentEventsCalls[0].endTime?.length, 2);
 
-    assert.strictEqual(inv.runCompletionHookCalls.length, 1);
-    assert.strictEqual(
-      typeof inv.runCompletionHookCalls[0].durationSec,
-      'number'
-    );
-    assert.ok(inv.runCompletionHookCalls[0].durationSec >= 0);
-    assert.strictEqual(inv.runCompletionHookCalls[0].error, undefined);
-    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
-
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
@@ -181,7 +171,7 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].attributes['custom.attr2'], 'value2');
   });
 
-  it('should handle fail lifecycle with error and execute all hooks on fail with double fail protection', () => {
+  it('should handle fail lifecycle with error and double fail protection', () => {
     const inv = new CustomInvocation('custom-fail-span', handler);
 
     const testError = new Error('Test failure');
@@ -189,7 +179,7 @@ describe('BaseInvocation', () => {
     // Double fail should be a no-op
     inv.fail(new Error('Second failure'));
 
-    // Verify hooks called once with error and duration
+    // Verify the extension points ran exactly once with error and duration
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(inv.recordMetricsCalls[0].error, testError);
     assert.strictEqual(typeof inv.recordMetricsCalls[0].durationSec, 'number');
@@ -198,15 +188,6 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.emitContentEventsCalls.length, 1);
     assert.ok(Array.isArray(inv.emitContentEventsCalls[0].endTime));
     assert.strictEqual(inv.emitContentEventsCalls[0].endTime?.length, 2);
-
-    assert.strictEqual(inv.runCompletionHookCalls.length, 1);
-    assert.strictEqual(inv.runCompletionHookCalls[0].error, testError);
-    assert.strictEqual(
-      typeof inv.runCompletionHookCalls[0].durationSec,
-      'number'
-    );
-    assert.ok(inv.runCompletionHookCalls[0].durationSec >= 0);
-    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -229,14 +210,6 @@ describe('BaseInvocation', () => {
       inv.emitContentEventsCalls[0].endTime,
       customEndTime
     );
-
-    assert.strictEqual(inv.runCompletionHookCalls.length, 1);
-    assert.strictEqual(
-      inv.runCompletionHookCalls[0].error?.message,
-      'String error message'
-    );
-    assert.ok(inv.runCompletionHookCalls[0].error instanceof Error);
-    assert.strictEqual(inv.runCompletionHookCalls[0].spanIsRecording, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -300,57 +273,29 @@ describe('BaseInvocation', () => {
     assert.ok(durationMs > 0, `Expected durationMs (${durationMs}) to be > 0`);
   });
 
-  it('should allow modifying span attributes inside completion hook before span ends', () => {
-    class EnrichingInvocation extends BaseInvocation {
-      protected override _runCompletionHook(): void {
-        this._span.setAttribute('hook.enriched', 'true');
-      }
-    }
+  describe('shouldCaptureContent', () => {
+    it('should be false when the handler captures nothing', () => {
+      const inv = new CustomInvocation('no-capture-span', handler);
 
-    const inv = new EnrichingInvocation('enriching-span', handler, {
-      kind: SpanKind.CLIENT,
+      assert.strictEqual(inv.shouldCaptureContent(), false);
+
+      inv.stop();
     });
-    inv.stop();
 
-    const [finishedSpan] = ctx.memoryExporter.getFinishedSpans();
-    assert.ok(finishedSpan);
-    assert.strictEqual(finishedSpan.attributes['hook.enriched'], 'true');
-    assert.strictEqual(finishedSpan.status.code, SpanStatusCode.UNSET);
-  });
+    it('should be true when the handler enables content capture', () => {
+      const capturingHandler = new TelemetryHandler({
+        instrumentationName: '@opentelemetry/instrumentation-test-genai',
+        instrumentationVersion: '9.9.9',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+        contentCaptureMode: 'span_only',
+      });
+      const inv = new CustomInvocation('capture-span', capturingHandler);
 
-  it('should guarantee span is ended even if completion hook throws on stop or fail', () => {
-    class ThrowingInvocation extends BaseInvocation {
-      protected override _runCompletionHook(): void {
-        throw new Error('Hook failure');
-      }
-    }
+      assert.strictEqual(inv.shouldCaptureContent(), true);
 
-    // Test stop() with throwing hook
-    const stopInv = new ThrowingInvocation('throwing-stop-span', handler, {
-      kind: SpanKind.CLIENT,
+      inv.stop();
     });
-    assert.throws(() => stopInv.stop(), /Hook failure/);
-
-    // Test fail() with throwing hook
-    const failInv = new ThrowingInvocation('throwing-fail-span', handler, {
-      kind: SpanKind.CLIENT,
-    });
-    assert.throws(
-      () => failInv.fail(new Error('Original failure')),
-      /Hook failure/
-    );
-
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 2);
-
-    const finishedStopSpan = spans.find(s => s.name === 'throwing-stop-span');
-    assert.ok(finishedStopSpan);
-    assert.strictEqual(finishedStopSpan.status.code, SpanStatusCode.UNSET);
-
-    const finishedFailSpan = spans.find(s => s.name === 'throwing-fail-span');
-    assert.ok(finishedFailSpan);
-    assert.strictEqual(finishedFailSpan.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(finishedFailSpan.status.message, 'Original failure');
   });
 
   describe('metric attributes', () => {

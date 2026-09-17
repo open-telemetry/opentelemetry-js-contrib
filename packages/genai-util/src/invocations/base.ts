@@ -126,7 +126,7 @@ export abstract class BaseInvocation {
    * Start the invocation by creating and starting the underlying span.
    *
    * @param spanName Name of the span, per GenAI semantic conventions.
-   * @param handler Handler providing the tracer, meter, and completion hooks.
+   * @param handler Handler providing the tracer and meter.
    * @param options Span kind, initial attributes, parent context, and start time.
    */
   constructor(
@@ -163,8 +163,8 @@ export abstract class BaseInvocation {
    * captured for this invocation.
    *
    * Delegates to the handler, which enables capture when the content capture mode is
-   * not `'none'` or when at least one completion hook is registered. Subclasses should
-   * gate the recording of any sensitive content on this value.
+   * not `'none'`. Subclasses should gate the recording of any sensitive content on this
+   * value.
    */
   public shouldCaptureContent(): boolean {
     return this._handler.shouldCaptureContent();
@@ -258,11 +258,7 @@ export abstract class BaseInvocation {
     this._recordMetrics(durationSec);
     this._emitContentEvents(endHr);
 
-    try {
-      this._runCompletionHook(durationSec);
-    } finally {
-      this._span.end(endHr);
-    }
+    this._span.end(endHr);
   }
 
   /**
@@ -307,11 +303,7 @@ export abstract class BaseInvocation {
       message: errorMessage,
     });
 
-    try {
-      this._runCompletionHook(durationSec, errorObj);
-    } finally {
-      this._span.end(endHr);
-    }
+    this._span.end(endHr);
   }
 
   /**
@@ -332,9 +324,4 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvents(_endTime?: HrTime): void {}
-
-  /**
-   * Hook for subclasses to execute registered completion hooks on stop/fail.
-   */
-  protected _runCompletionHook(_durationSec: number, _error?: Error): void {}
 }

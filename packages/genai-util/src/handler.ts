@@ -16,7 +16,6 @@ import {
   type Tracer,
   type TracerProvider,
 } from '@opentelemetry/api';
-import { CompletionHookManager } from './completion-hook';
 import {
   getContentCaptureMode,
   parseContentCaptureMode,
@@ -34,7 +33,6 @@ import {
   GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
 } from './semconv';
 import type {
-  CompletionHook,
   ContentCaptureMode,
   GenAIInstrumentationConfig,
   TokenUsage,
@@ -69,8 +67,6 @@ export interface TelemetryHandlerOptions {
   config?: GenAIInstrumentationConfig;
   /** Explicit content capture mode override. */
   contentCaptureMode?: ContentCaptureMode;
-  /** Registered completion hooks. */
-  completionHooks?: CompletionHook[];
 }
 
 /**
@@ -83,7 +79,6 @@ export class TelemetryHandler {
   private _meter: Meter;
   private _diag: DiagLogger;
   private _contentCaptureMode: ContentCaptureMode;
-  private readonly _hookManager: CompletionHookManager;
   private readonly _operationDurationHistogram: Histogram;
   private readonly _tokenUsageHistogram: Histogram;
   private readonly _timeToFirstChunkHistogram: Histogram;
@@ -107,9 +102,6 @@ export class TelemetryHandler {
     );
 
     this._diag = options.diag ?? diag;
-    this._hookManager = new CompletionHookManager(
-      options.completionHooks ?? options.config?.completionHooks ?? []
-    );
 
     if (options.contentCaptureMode) {
       this._contentCaptureMode = parseContentCaptureMode(
@@ -146,14 +138,6 @@ export class TelemetryHandler {
   }
 
   /**
-   * Register a completion hook.
-   */
-  public addCompletionHook(hook: CompletionHook): this {
-    this._hookManager.addHook(hook);
-    return this;
-  }
-
-  /**
    * Return the DiagLogger instance.
    */
   public getDiag(): DiagLogger {
@@ -169,22 +153,9 @@ export class TelemetryHandler {
 
   /**
    * Return whether message content (prompts, completions, tool calls) should be captured.
-   *
-   * Content should be captured when the content capture mode is enabled (e.g. `'span_only'`)
-   * or when at least one completion hook is registered.
    */
   public shouldCaptureContent(): boolean {
-    return (
-      this._contentCaptureMode !== 'none' ||
-      this._hookManager.getHooks().length > 0
-    );
-  }
-
-  /**
-   * Return the CompletionHookManager.
-   */
-  public getCompletionHookManager(): CompletionHookManager {
-    return this._hookManager;
+    return this._contentCaptureMode !== 'none';
   }
 
   /**
