@@ -299,7 +299,11 @@ export abstract class BaseInvocation {
   }
 
   /**
-   * Hook for subclasses to emit operation-specific metrics on stop/fail.
+   * Emit the operation-specific metrics for this invocation on stop/fail.
+   *
+   * Every concrete invocation must implement this: each GenAI operation has at least an
+   * operation duration metric defined by the semantic conventions. A subclass with
+   * nothing to record must say so explicitly with an empty body.
    *
    * Record with {@link _metricAttributes}, spreading it when a measurement needs an extra
    * dimension of its own (e.g. `{ ...this._metricAttributes, [ATTR_GEN_AI_TOKEN_TYPE]:
@@ -307,7 +311,7 @@ export abstract class BaseInvocation {
    * measurements. Pass `this._context` to the recording call so that exemplars are
    * associated with the invocation span.
    */
-  protected _recordMetrics(_durationSec: number, _error?: unknown): void {}
+  protected abstract _recordMetrics(durationSec: number, error?: unknown): void;
 
   /**
    * Hook for subclasses to emit the invocation's log-based GenAI content event.

@@ -129,9 +129,12 @@ describe('BaseInvocation', () => {
     assert.strictEqual(span.kind, SpanKind.CLIENT);
   });
 
-  it('should complete normally when the subclass overrides no extension point', () => {
-    // _recordMetrics and _emitContentEvent are optional: the base defaults are no-ops.
-    class MinimalInvocation extends BaseInvocation {}
+  it('should complete normally when the subclass overrides no optional extension point', () => {
+    // _recordMetrics is required, but a subclass may implement it as a no-op;
+    // _emitContentEvent is optional and defaults to a no-op.
+    class MinimalInvocation extends BaseInvocation {
+      protected override _recordMetrics(): void {}
+    }
 
     const inv = new MinimalInvocation('minimal-span', handler, {
       kind: SpanKind.CLIENT,
