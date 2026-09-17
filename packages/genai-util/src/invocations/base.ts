@@ -119,7 +119,6 @@ export abstract class BaseInvocation {
   protected readonly _handler: TelemetryHandler;
   protected readonly _startTime: HrTime;
   protected _isEnded = false;
-  protected _customAttributes: Attributes = {};
   protected _metricAttributes: Attributes;
 
   /**
@@ -177,7 +176,6 @@ export abstract class BaseInvocation {
    * recorded on metrics: use {@link setMetricAttribute} for that.
    */
   public setAttribute(key: string, value: AttributeValue): this {
-    this._customAttributes[key] = value;
     this._span.setAttribute(key, value);
     return this;
   }
@@ -189,7 +187,6 @@ export abstract class BaseInvocation {
    * recorded on metrics: use {@link setMetricAttributes} for that.
    */
   public setAttributes(attributes: Attributes): this {
-    Object.assign(this._customAttributes, attributes);
     this._span.setAttributes(attributes);
     return this;
   }
