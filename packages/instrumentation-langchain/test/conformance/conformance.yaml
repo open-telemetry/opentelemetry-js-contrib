@@ -1,0 +1,218 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+runner: genai-conformance
+instrumented_library: langchain
+instrumentation_library: "@opentelemetry/instrumentation-langchain"
+
+scenarios:
+  workflow_content_off:
+    run: node scenario.cjs workflow_content_off
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: greeting
+            gen_ai.input.messages: { present: false }
+            gen_ai.output.messages: { present: false }
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  workflow_content_on:
+    run: node scenario.cjs workflow_content_on
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: greeting
+            gen_ai.conversation.id: thread-workflow
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"HELLO!"}]}]'
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  workflow_stream:
+    run: node scenario.cjs workflow_stream
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: greeting
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"HELLO!"}]}]'
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  runnable_map:
+    run: node scenario.cjs runnable_map
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: RunnableMap
+            gen_ai.input.messages: { present: false }
+            gen_ai.output.messages: { present: false }
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  tool_content_off:
+    run: node scenario.cjs tool_content_off
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: echo
+            gen_ai.tool.type: function
+            gen_ai.tool.call.id: { present: false }
+            gen_ai.tool.description: { present: false }
+            gen_ai.tool.call.arguments: { present: false }
+            gen_ai.tool.call.result: { present: false }
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  tool_content_on:
+    run: node scenario.cjs tool_content_on
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: echo
+            gen_ai.tool.type: function
+            gen_ai.tool.call.id: tool-call-1
+            gen_ai.tool.description: Echo deterministic test input.
+            gen_ai.tool.call.arguments: '{"text":"hello"}'
+            gen_ai.tool.call.result: '{"content":"hello"}'
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  tool_error:
+    run: node scenario.cjs tool_error
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: broken
+            gen_ai.tool.type: function
+            error.type: TypeError
+            gen_ai.tool.call.arguments: { present: false }
+            gen_ai.tool.call.result: { present: false }
+    metrics: []
+    events: []
+
+  invoke_agent:
+    run: node scenario.cjs invoke_agent
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test-agent
+            gen_ai.request.model: deterministic-langchain-test-model
+            gen_ai.response.finish_reasons: { present: true }
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
+            gen_ai.input.messages: { present: false }
+            gen_ai.output.messages: { present: false }
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  invoke_agent_stream:
+    run: node scenario.cjs invoke_agent_stream
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test-agent
+            gen_ai.request.model: deterministic-langchain-test-model
+            gen_ai.response.finish_reasons: { present: true }
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
+            gen_ai.input.messages: { present: false }
+            gen_ai.output.messages: { present: false }
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  invoke_agent_content_on:
+    run: node scenario.cjs invoke_agent_content_on
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test-agent
+            gen_ai.request.model: deterministic-langchain-test-model
+            gen_ai.response.finish_reasons: { present: true }
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"generated answer"}]}]'
+            error.type: { present: false }
+    metrics: []
+    events: []
+
+  invoke_agent_stream_content_on:
+    run: node scenario.cjs invoke_agent_stream_content_on
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test-agent
+            gen_ai.request.model: deterministic-langchain-test-model
+            gen_ai.response.finish_reasons: { present: true }
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"generated answer"}]}]'
+            error.type: { present: false }
+    metrics: []
+    events: []

@@ -1,5 +1,12 @@
 langchain:
   versions:
-    include: '>=1.0.0'
+    include: '>=1.0.0 <2'
     mode: max-5
   commands: npm test
+
+'@langchain/core':
+  versions:
+    include: '>=1.0.0 <2'
+    mode: max-5
+  commands: node test/fixtures/scenario.cjs
+  env: LANGCHAIN_TEST_CORE_ONLY=true

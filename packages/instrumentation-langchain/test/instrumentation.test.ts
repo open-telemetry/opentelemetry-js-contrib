@@ -43,5 +43,37 @@ describe('LangChainInstrumentation', () => {
       const config = instrumentation.getConfig();
       expect(config.captureMessageContent).toBe(false);
     });
+
+    describe('content capture environment', () => {
+      const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
+      let previous: string | undefined;
+      beforeEach(() => {
+        previous = process.env[key];
+      });
+      afterEach(() => {
+        if (previous === undefined) delete process.env[key];
+        else process.env[key] = previous;
+      });
+
+      for (const [value, expected] of [
+        ['TRUE', true],
+        ['false', false],
+      ] as const) {
+        it(`honors ${value} over the constructor setting`, () => {
+          process.env[key] = value;
+          const instance = new LangChainInstrumentation({
+            enabled: false,
+            captureMessageContent: !expected,
+          });
+          expect(instance.getConfig().captureMessageContent).toBe(expected);
+        });
+      }
+
+      it('ignores invalid values rather than enabling content capture', () => {
+        process.env[key] = 'invalid';
+        const instance = new LangChainInstrumentation({ enabled: false });
+        expect(instance.getConfig().captureMessageContent).toBe(false);
+      });
+    });
   });
 });
