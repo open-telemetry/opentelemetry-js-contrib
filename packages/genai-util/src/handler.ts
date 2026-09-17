@@ -200,11 +200,7 @@ export class TelemetryHandler {
       return;
     }
 
-    if (
-      typeof usage.inputTokens === 'number' &&
-      Number.isFinite(usage.inputTokens) &&
-      usage.inputTokens >= 0
-    ) {
+    if (usage.inputTokens !== undefined && usage.inputTokens >= 0) {
       this._tokenUsageHistogram.record(
         usage.inputTokens,
         {
@@ -215,11 +211,7 @@ export class TelemetryHandler {
       );
     }
 
-    if (
-      typeof usage.outputTokens === 'number' &&
-      Number.isFinite(usage.outputTokens) &&
-      usage.outputTokens >= 0
-    ) {
+    if (usage.outputTokens !== undefined && usage.outputTokens >= 0) {
       this._tokenUsageHistogram.record(
         usage.outputTokens,
         {
@@ -244,7 +236,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
+    if (durationSeconds < 0) {
       return;
     }
     this._timeToFirstChunkHistogram.record(
@@ -267,7 +259,7 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
+    if (durationSeconds < 0) {
       return;
     }
     this._timePerOutputChunkHistogram.record(
