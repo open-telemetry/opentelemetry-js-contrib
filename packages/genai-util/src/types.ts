@@ -290,11 +290,26 @@ export type SystemInstructions = SystemInstructionPart[];
 
 /**
  * Token usage counts for a request per OpenTelemetry SemConv.
+ *
+ * All fields are optional and MUST be left `undefined` when the provider did
+ * not return usage data (for example, when a request fails before any tokens
+ * are billed). Do not substitute `0` for missing values: the
+ * `gen_ai.client.token.usage` histogram uses explicit bucket boundaries that
+ * start at 1, so recording `0` on failed requests adds data points that skew
+ * the distribution and its computed averages.
  */
 export interface TokenUsage {
-  /** Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`). */
+  /**
+   * Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`).
+   * Leave `undefined` when the provider did not report input token usage;
+   * do not default to `0`.
+   */
   inputTokens?: number;
-  /** Number of tokens in the completion / output (`gen_ai.usage.output_tokens`). */
+  /**
+   * Number of tokens in the completion / output (`gen_ai.usage.output_tokens`).
+   * Leave `undefined` when the provider did not report output token usage;
+   * do not default to `0`.
+   */
   outputTokens?: number;
   /** Number of tokens used for model reasoning / thinking (`gen_ai.usage.reasoning.output_tokens`). */
   reasoningTokens?: number;
