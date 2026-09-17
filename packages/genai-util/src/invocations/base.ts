@@ -88,8 +88,8 @@ export interface BaseInvocationOptions {
  * its span unfinished, so it is never exported.
  *
  * {@link withContext} activates the invocation's context for the duration of a callback.
- * The invocation may outlive the callback, for example until a returned stream is drained,
- * and {@link getContext} covers downstream work that cannot be wrapped in a callback at all.
+ * The invocation may outlive the callback, for example until a returned stream is drained;
+ * work that happens after the callback returns is not parented to the invocation.
  *
  * @example
  * ```typescript
@@ -149,16 +149,6 @@ export abstract class BaseInvocation {
       parentContext
     );
     this._context = trace.setSpan(parentContext, this._span);
-  }
-
-  /**
-   * Return the OpenTelemetry Context holding this invocation's span.
-   *
-   * Pass it to `context.with()` or `context.bind()` to make the invocation the parent
-   * of downstream work that cannot be wrapped by {@link withContext}.
-   */
-  public getContext(): Context {
-    return this._context;
   }
 
   /**

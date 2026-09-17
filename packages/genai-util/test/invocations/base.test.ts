@@ -128,11 +128,6 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.isEnded(), false);
     assert.ok(inv.getSpan().isRecording());
     assert.strictEqual(ctx.memoryExporter.getFinishedSpans().length, 0);
-    assert.strictEqual(
-      trace.getSpan(inv.getContext()),
-      inv.getSpan(),
-      'getContext() should contain the invocation span'
-    );
 
     inv.stop();
 
