@@ -10,7 +10,7 @@
  * @experimental
  */
 
-import type { Attributes, Span, Context } from '@opentelemetry/api';
+import type { Attributes, Context } from '@opentelemetry/api';
 
 /**
  * Mode of capturing message content (prompts, completions, tool calls).
@@ -290,11 +290,26 @@ export type SystemInstructions = SystemInstructionPart[];
 
 /**
  * Token usage counts for a request per OpenTelemetry SemConv.
+ *
+ * All fields are optional and MUST be left `undefined` when the provider did
+ * not return usage data (for example, when a request fails before any tokens
+ * are billed). Do not substitute `0` for missing values: the
+ * `gen_ai.client.token.usage` histogram uses explicit bucket boundaries that
+ * start at 1, so recording `0` on failed requests adds data points that skew
+ * the distribution and its computed averages.
  */
 export interface TokenUsage {
-  /** Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`). */
+  /**
+   * Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`).
+   * Leave `undefined` when the provider did not report input token usage;
+   * do not default to `0`.
+   */
   inputTokens?: number;
-  /** Number of tokens in the completion / output (`gen_ai.usage.output_tokens`). */
+  /**
+   * Number of tokens in the completion / output (`gen_ai.usage.output_tokens`).
+   * Leave `undefined` when the provider did not report output token usage;
+   * do not default to `0`.
+   */
   outputTokens?: number;
   /** Number of tokens used for model reasoning / thinking (`gen_ai.usage.reasoning.output_tokens`). */
   reasoningTokens?: number;
@@ -392,57 +407,6 @@ export interface ToolInvocationOptions {
   attributes?: Attributes;
 }
 
-// ============================================================================
-// Hook and Result Types
-// ============================================================================
-
-/**
- * Summary result passed to CompletionHook upon invocation finish.
- */
-export interface CompletionResult {
-  /** The OpenTelemetry span for this invocation. */
-  span: Span;
-  /** Provider name (`gen_ai.provider.name`). */
-  providerName?: string;
-  /** Operation name (`gen_ai.operation.name`). */
-  operationName?: string;
-  /** Requested model name (`gen_ai.request.model`). */
-  requestModel?: string;
-  /** Response model name (`gen_ai.response.model`). */
-  responseModel?: string;
-  /** Response ID (`gen_ai.response.id`). */
-  responseId?: string;
-  /** Lifecycle response status (`gen_ai.response.status`). */
-  responseStatus?: ResponseStatus;
-  /** Finish reasons (`gen_ai.response.finish_reasons`). */
-  finishReasons?: string[];
-  /** Token usage. */
-  usage?: TokenUsage;
-  /** Duration of the operation in seconds. */
-  durationSeconds?: number;
-  /** Input messages if captured (`gen_ai.input.messages`). */
-  inputMessages?: InputMessages;
-  /** Output messages if captured (`gen_ai.output.messages`). */
-  outputMessages?: OutputMessages;
-  /** System instructions if captured (`gen_ai.system_instructions`). */
-  systemInstructions?: SystemInstructions;
-  /** Error if the invocation failed. */
-  error?: Error;
-  /** Custom attributes. */
-  attributes?: Attributes;
-}
-
-/**
- * Hook executed when a GenAI operation finishes (success or failure).
- */
-export interface CompletionHook {
-  /**
-   * Callback invoked when a GenAI operation completes.
-   * If an exception is thrown, it will be safely caught and logged without affecting user flow.
-   */
-  onCompletion(result: CompletionResult): void | Promise<void>;
-}
-
 /**
  * Base configuration interface for GenAI instrumentations.
  */
@@ -453,9 +417,4 @@ export interface GenAIInstrumentationConfig {
    * - `'span_only'`: content captured on span attributes.
    */
   captureMessageContent?: ContentCaptureMode;
-
-  /**
-   * Optional custom completion hooks.
-   */
-  completionHooks?: CompletionHook[];
 }
