@@ -23,6 +23,8 @@ type AnthropicModule = typeof Anthropic & {
 interface SpanState {
   span: Span;
   ended: boolean;
+  /** Set while the wrapped iterator is running, so it owns the outcome. */
+  iterating: boolean;
 }
 
 interface AnthropicStream extends AsyncIterable<unknown> {
@@ -157,7 +159,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             },
           }
         );
-        const state: SpanState = { span, ended: false };
+        const state: SpanState = { span, ended: false, iterating: false };
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -266,13 +268,23 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // leave the span open forever, since it is only ended from the iterator.
     const signal = stream.controller?.signal;
     if (signal) {
-      if (signal.aborted) {
+      if (signal.aborted && !state.iterating) {
         this._endSpanWithAbort(state);
         return;
       }
-      signal.addEventListener('abort', () => this._endSpanWithAbort(state), {
-        once: true,
-      });
+      signal.addEventListener(
+        'abort',
+        () => {
+          // The SDK aborts its own controller when an SSE `error` event ends
+          // iteration, before rejecting `next()`. Classifying that as a user
+          // abort here would discard the real API error, so while iteration is
+          // running the iterator owns the outcome.
+          if (!state.iterating) {
+            this._endSpanWithAbort(state);
+          }
+        },
+        { once: true }
+      );
     }
   }
 
@@ -281,7 +293,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     state: SpanState,
     stream?: AnthropicStream
   ): AsyncGenerator<unknown> {
+    const signal = stream?.controller?.signal;
     let exhausted = false;
+    state.iterating = true;
     try {
       while (true) {
         const next = await iterator.next();
@@ -294,7 +308,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       // `Stream.fromSSEResponse` swallows abort errors and simply stops
       // yielding, so an aborted generation is indistinguishable from a
       // completed one without checking the signal.
-      if (stream?.controller?.signal.aborted) {
+      if (signal?.aborted) {
         this._endSpanWithAbort(state);
       } else {
         this._endSpan(state);
@@ -303,14 +317,25 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       this._endSpanWithError(state, error);
       throw error;
     } finally {
-      if (!exhausted && !state.ended) {
+      // Whether the span has already ended is irrelevant to SDK cleanup: the
+      // response body still has to be released and cancelled, exactly as it
+      // would be without instrumentation.
+      if (!exhausted) {
+        // Sampled before `return()`, which aborts the controller itself when
+        // the caller breaks out of the loop.
+        const abortedByCaller = signal?.aborted ?? false;
         try {
           await iterator.return?.();
         } catch (error) {
           this._diag.debug('error closing Anthropic stream iterator:', error);
         }
-        this._endSpan(state);
+        if (abortedByCaller) {
+          this._endSpanWithAbort(state);
+        } else {
+          this._endSpan(state);
+        }
       }
+      state.iterating = false;
     }
   }
 

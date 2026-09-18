@@ -448,6 +448,48 @@ describe('Anthropic instrumentation', function () {
     expect(getTestSpans()).toHaveLength(0);
   });
 
+  it('records an SSE error rather than the abort the SDK raises for it', async () => {
+    const sse = [
+      'event: message_start',
+      'data: {"type":"message_start","message":{"id":"msg_01234567890","type":"message","role":"assistant","model":"' +
+        model +
+        '","content":[],"stop_reason":null,"usage":{"input_tokens":10,"output_tokens":0}}}',
+      '',
+      'event: error',
+      'data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}',
+      '',
+      '',
+    ].join('\n');
+    nock('https://api.anthropic.com').post('/v1/messages').reply(200, sse, {
+      'content-type': 'text/event-stream',
+    });
+
+    const stream = await mockClient.messages.create({
+      model,
+      max_tokens: 16,
+      messages: [{ role: 'user', content: input }],
+      stream: true,
+    });
+
+    let caught: Error | undefined;
+    try {
+      for await (const event of stream) {
+        void event;
+      }
+    } catch (err) {
+      caught = err as Error;
+    }
+
+    // The SDK aborts its own controller before rejecting, which must not be
+    // mistaken for a user abort.
+    expect(caught).toBeDefined();
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).not.toBe('APIUserAbortError');
+    expect(spans[0].events.map(event => event.name)).toContain('exception');
+  });
+
   it('records messages.create errors', async () => {
     nock('https://api.anthropic.com')
       .post('/v1/messages')
