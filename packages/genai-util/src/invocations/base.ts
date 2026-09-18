@@ -290,15 +290,13 @@ export abstract class BaseInvocation {
       const durationSec = hrTimeToSeconds(
         hrTimeDuration(this._startTime, endHr)
       );
+      let errorType: string | undefined;
 
       if (failure) {
         // The span's error state is recorded before the subclass hooks run so that a hook
         // that throws cannot leave a failed invocation reported as a span without an error
-        // status. `error.type` is resolved once here so that the span and the metrics
-        // always agree on it, and so that subclasses do not each have to derive it from
-        // the raw error.
-        const errorType = getErrorType(failure.error);
-        this._metricAttributes[ATTR_ERROR_TYPE] = errorType;
+        // status.
+        errorType = getErrorType(failure.error);
         this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
         this._span.setStatus({ code: SpanStatusCode.ERROR });
 
@@ -314,8 +312,7 @@ export abstract class BaseInvocation {
         }
       }
 
-      // Recorded after `error.type` is in place so that it is part of the metric attributes.
-      this._recordMetrics(durationSec, failure?.error);
+      this._recordMetrics(durationSec, errorType);
 
       this._emitContentEvent(endHr);
     } catch (err) {
@@ -342,8 +339,15 @@ export abstract class BaseInvocation {
    * 'input' }`) so that the dimension does not leak into the invocation's other
    * measurements. Pass `this._context` to the recording call so that exemplars are
    * associated with the invocation span.
+   *
+   * @param durationSec Duration of the invocation in seconds.
+   * @param errorType The resolved `error.type` value, or `undefined` if the invocation
+   *   succeeded.
    */
-  protected abstract _recordMetrics(durationSec: number, error?: unknown): void;
+  protected abstract _recordMetrics(
+    durationSec: number,
+    errorType?: string
+  ): void;
 
   /**
    * Hook for subclasses to emit the invocation's log-based GenAI content event.

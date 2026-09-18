@@ -82,19 +82,19 @@ describe('BaseInvocation', () => {
 
     public recordMetricsCalls: Array<{
       durationSec: number;
-      error?: unknown;
+      errorType?: string;
       metricAttributes: Attributes;
     }> = [];
     public emitContentEventCalls: Array<{ endTime?: HrTime }> = [];
 
     protected override _recordMetrics(
       durationSec: number,
-      error?: unknown
+      errorType?: string
     ): void {
       // Snapshot the attributes as they stand when metrics are recorded.
       this.recordMetricsCalls.push({
         durationSec,
-        error,
+        errorType,
         metricAttributes: { ...this._metricAttributes },
       });
     }
@@ -163,7 +163,7 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(typeof inv.recordMetricsCalls[0].durationSec, 'number');
     assert.ok(inv.recordMetricsCalls[0].durationSec >= 0);
-    assert.strictEqual(inv.recordMetricsCalls[0].error, undefined);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, undefined);
 
     assert.strictEqual(inv.emitContentEventCalls.length, 1);
     assert.ok(Array.isArray(inv.emitContentEventCalls[0].endTime));
@@ -186,7 +186,7 @@ describe('BaseInvocation', () => {
 
     // Verify the extension points ran exactly once with error and duration
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
-    assert.strictEqual(inv.recordMetricsCalls[0].error, testError);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
     assert.strictEqual(typeof inv.recordMetricsCalls[0].durationSec, 'number');
     assert.ok(inv.recordMetricsCalls[0].durationSec >= 0);
 
@@ -209,7 +209,7 @@ describe('BaseInvocation', () => {
     inv.fail('String error message', customEndTime);
 
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
-    assert.strictEqual(inv.recordMetricsCalls[0].error, 'String error message');
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, '_OTHER');
 
     assert.strictEqual(inv.emitContentEventCalls.length, 1);
     assert.deepStrictEqual(inv.emitContentEventCalls[0].endTime, customEndTime);
@@ -359,33 +359,26 @@ describe('BaseInvocation', () => {
       });
     });
 
-    it('should record error.type on metric attributes before _recordMetrics runs', () => {
+    it('should pass error.type to _recordMetrics instead of merging it into the metric attributes', () => {
       const inv = new CustomInvocation('metric-error-type-span', handler, {
         metricAttributes: { 'gen_ai.provider.name': 'openai' },
       });
 
       inv.fail(new Error('Test failure'));
 
-      // error.type must already be present in the snapshot taken inside _recordMetrics,
-      // so subclasses do not have to derive it from the raw error themselves.
+      // The conventions define `error.type` on some metrics only, so it must not be in
+      // the shared bag: a subclass that spreads the bag into every measurement would
+      // otherwise report the dimension on metrics that do not declare it.
       assert.deepStrictEqual(inv.recordMetricsCalls[0].metricAttributes, {
         'gen_ai.provider.name': 'openai',
-        [ATTR_ERROR_TYPE]: 'Error',
       });
+      // It is resolved once by the base class and handed to the subclass, which decides
+      // where it belongs.
+      assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
 
+      // The span, unlike the metrics, always carries it.
       const [span] = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
-    });
-
-    it('should not set error.type on metric attributes on the success path', () => {
-      const inv = new CustomInvocation('metric-no-error-span', handler);
-
-      inv.stop();
-
-      assert.strictEqual(
-        ATTR_ERROR_TYPE in inv.recordMetricsCalls[0].metricAttributes,
-        false
-      );
     });
 
     it('should let subclasses seed metric attributes and emit them on metrics', async () => {
