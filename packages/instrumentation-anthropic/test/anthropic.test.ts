@@ -490,6 +490,34 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].events.map(event => event.name)).toContain('exception');
   });
 
+  it('ends the span when a suspended iterator is cancelled', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      // Read one event and abandon the iterator while it is parked at `yield`,
+      // without resuming it or letting `for await` close it.
+      const iterator = stream[Symbol.asyncIterator]();
+      await iterator.next();
+      stream.controller.abort();
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
   it('records messages.create errors', async () => {
     nock('https://api.anthropic.com')
       .post('/v1/messages')

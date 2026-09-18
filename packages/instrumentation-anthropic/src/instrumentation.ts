@@ -23,8 +23,14 @@ type AnthropicModule = typeof Anthropic & {
 interface SpanState {
   span: Span;
   ended: boolean;
-  /** Set while the wrapped iterator is running, so it owns the outcome. */
-  iterating: boolean;
+  /**
+   * Set only while an `iterator.next()` call is outstanding. The SDK aborts
+   * its own controller from inside that call when an SSE `error` event ends
+   * iteration, so an abort observed in this window belongs to the iterator.
+   * A suspended iterator (parked at `yield`) is caller-controlled time and is
+   * deliberately excluded, so cancelling there still ends the span.
+   */
+  awaitingNext: boolean;
 }
 
 interface AnthropicStream extends AsyncIterable<unknown> {
@@ -159,7 +165,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             },
           }
         );
-        const state: SpanState = { span, ended: false, iterating: false };
+        const state: SpanState = { span, ended: false, awaitingNext: false };
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -268,7 +274,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // leave the span open forever, since it is only ended from the iterator.
     const signal = stream.controller?.signal;
     if (signal) {
-      if (signal.aborted && !state.iterating) {
+      if (signal.aborted && !state.awaitingNext) {
         this._endSpanWithAbort(state);
         return;
       }
@@ -277,9 +283,11 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         () => {
           // The SDK aborts its own controller when an SSE `error` event ends
           // iteration, before rejecting `next()`. Classifying that as a user
-          // abort here would discard the real API error, so while iteration is
-          // running the iterator owns the outcome.
-          if (!state.iterating) {
+          // abort here would discard the real API error, so an abort raised
+          // while `next()` is outstanding is left to the iterator. An abort
+          // while the iterator is suspended is the caller cancelling, and may
+          // be the last thing that ever happens to this stream.
+          if (!state.awaitingNext) {
             this._endSpanWithAbort(state);
           }
         },
@@ -295,10 +303,15 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   ): AsyncGenerator<unknown> {
     const signal = stream?.controller?.signal;
     let exhausted = false;
-    state.iterating = true;
     try {
       while (true) {
-        const next = await iterator.next();
+        state.awaitingNext = true;
+        let next;
+        try {
+          next = await iterator.next();
+        } finally {
+          state.awaitingNext = false;
+        }
         if (next.done) {
           exhausted = true;
           break;
@@ -335,7 +348,6 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           this._endSpan(state);
         }
       }
-      state.iterating = false;
     }
   }
 
