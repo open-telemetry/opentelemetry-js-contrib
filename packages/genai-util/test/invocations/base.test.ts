@@ -197,8 +197,7 @@ describe('BaseInvocation', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    // The status description is opt-in: the base class leaves it unset.
-    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].status.message, 'Test failure');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
   });
 
@@ -217,7 +216,7 @@ describe('BaseInvocation', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].status.message, 'String error message');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
   });
 
@@ -712,6 +711,7 @@ describe('BaseInvocation', () => {
       const spans = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].status.message, 'upstream failure');
       assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
       assert.strictEqual(errors.length, 1);
     });
@@ -737,7 +737,7 @@ describe('BaseInvocation', () => {
       );
     });
 
-    it('should describe the span fully for a value that cannot be stringified', () => {
+    it('should end the span when the thrown value cannot be stringified', () => {
       const { logger, errors } = createRecordingDiag();
       const inv = new CustomInvocation(
         'unstringifiable-error-span',
@@ -745,18 +745,18 @@ describe('BaseInvocation', () => {
       );
 
       // `fail` accepts `unknown`, and a null-prototype object cannot be converted to a
-      // string at all. The completion path must therefore never stringify the value it
-      // is given: describing an error is the subclass's job, not the base class's.
+      // string at all, so deriving the status description throws.
       const hostileError = Object.create(null);
       assert.doesNotThrow(() => inv.fail(hostileError));
 
+      // The span is still ended and the caller is still shielded, but the failure is
+      // only visible in the diagnostics: the status and the metrics are lost because
+      // the description is derived before either is recorded.
       const spans = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 1);
-      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
-      // Nothing threw, so the completion path never entered its catch block.
-      assert.strictEqual(errors.length, 0);
-      assert.strictEqual(inv.recordMetricsCalls.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+      assert.strictEqual(inv.recordMetricsCalls.length, 0);
+      assert.strictEqual(errors.length, 1);
     });
 
     it('should not consume the invocation when the end time is invalid', () => {
@@ -779,82 +779,6 @@ describe('BaseInvocation', () => {
       assert.strictEqual(spans.length, 1);
       assert.strictEqual(spans[0].name, 'invalid-endtime-span');
       assert.strictEqual(inv.isEnded(), true);
-    });
-  });
-
-  describe('error description', () => {
-    /** Subclass that knows how to describe the errors of the SDK it instruments. */
-    class DescribingInvocation extends BaseInvocation {
-      public describeCalls: unknown[] = [];
-
-      constructor(
-        spanName: string,
-        handlerArg: TelemetryHandler,
-        private readonly _describe: (error: unknown) => string | undefined
-      ) {
-        super(spanName, handlerArg, { kind: SpanKind.CLIENT });
-      }
-
-      protected override _recordMetrics(): void {}
-
-      protected override _getErrorDescription(
-        error: unknown
-      ): string | undefined {
-        this.describeCalls.push(error);
-        return this._describe(error);
-      }
-    }
-
-    it('should set the description supplied by the subclass', () => {
-      const testError = new Error('rate limit exceeded');
-      const inv = new DescribingInvocation(
-        'described-error-span',
-        handler,
-        error => (error as Error).message
-      );
-
-      inv.fail(testError);
-
-      assert.deepStrictEqual(inv.describeCalls, [testError]);
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.status.message, 'rate limit exceeded');
-      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
-    });
-
-    it('should treat an empty description as no description', () => {
-      // The `undefined` case is covered wherever the default hook is used; an empty
-      // string is the one result a subclass can return that must not reach the span.
-      const inv = new DescribingInvocation(
-        'empty-description-span',
-        handler,
-        () => ''
-      );
-
-      inv.fail(new Error('boom'));
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.status.message, undefined);
-    });
-
-    it('should keep the error status when the description hook throws', () => {
-      const inv = new DescribingInvocation(
-        'throwing-description-span',
-        handler,
-        () => {
-          throw new Error('description hook exploded');
-        }
-      );
-
-      assert.doesNotThrow(() => inv.fail(new TypeError('upstream failure')));
-
-      // The status code is set before the description is derived, so an optional and
-      // broken description cannot cost the span its error status.
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
-      assert.strictEqual(span.status.message, undefined);
-      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'TypeError');
     });
   });
 });

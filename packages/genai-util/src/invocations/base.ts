@@ -297,19 +297,18 @@ export abstract class BaseInvocation {
         // that throws cannot leave a failed invocation reported as a span without an error
         // status.
         errorType = getErrorType(failure.error);
-        this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-        this._span.setStatus({ code: SpanStatusCode.ERROR });
+        const errorMessage =
+          failure.error instanceof Error
+            ? failure.error.message
+            : typeof failure.error === 'string'
+              ? failure.error
+              : String(failure.error);
 
-        // The status description is optional, so it is layered on top of a status that is
-        // already complete without it: an invocation that cannot describe its error, or
-        // whose description hook throws, still reports the failure.
-        const description = this._getErrorDescription(failure.error);
-        if (description) {
-          this._span.setStatus({
-            code: SpanStatusCode.ERROR,
-            message: description,
-          });
-        }
+        this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+        this._span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: errorMessage,
+        });
       }
 
       this._recordMetrics(durationSec, errorType);
@@ -363,26 +362,4 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
-
-  /**
-   * Hook for subclasses to describe a failure as the span status description.
-   *
-   * The description is optional in the OpenTelemetry specification, and it is only ever
-   * read by a human, so the default is to set no description at all: the failure is
-   * already carried by the error status and by the `error.type` attribute, which is the
-   * value tooling actually queries. A subclass overrides this only when it can turn the
-   * raw value into something predictable and useful, typically because it knows the error
-   * shape of the SDK it instruments (e.g. a provider's message field).
-   *
-   * Keep the result short, human readable and free of sensitive data, and do not simply
-   * repeat `error.type`, which is already on the span. An empty or `undefined` result
-   * leaves the status without a description.
-   *
-   * @param _error The value passed to {@link fail}, which may be anything a library
-   *   throws or rejects with, not necessarily an `Error`.
-   * @returns The status description, or `undefined` to leave it unset.
-   */
-  protected _getErrorDescription(_error: unknown): string | undefined {
-    return undefined;
-  }
 }
