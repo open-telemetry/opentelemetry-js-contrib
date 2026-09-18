@@ -56,6 +56,8 @@ components:
     - hectorhdzg
   packages/instrumentation-amqplib:
     - blumamir
+  packages/instrumentation-anthropic:
+    - eternalcuriouslearner
   packages/instrumentation-cucumber:
     - Ugzuzg
   packages/instrumentation-dataloader:
