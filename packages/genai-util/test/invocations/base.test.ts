@@ -10,8 +10,10 @@ import {
   context,
   trace,
   type Attributes,
+  type DiagLogger,
   type HrTime,
   type Span,
+  type TimeInput,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -195,7 +197,8 @@ describe('BaseInvocation', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].status.message, 'Test failure');
+    // The status description is opt-in: the base class leaves it unset.
+    assert.strictEqual(spans[0].status.message, undefined);
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
   });
 
@@ -214,7 +217,7 @@ describe('BaseInvocation', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].status.message, 'String error message');
+    assert.strictEqual(spans[0].status.message, undefined);
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
   });
 
@@ -613,6 +616,252 @@ describe('BaseInvocation', () => {
         inv.getSpan().spanContext().spanId
       );
       assert.strictEqual(spans.length, 2);
+    });
+  });
+
+  describe('completion path resilience', () => {
+    /** Collects everything reported through `DiagLogger.error`. */
+    function createRecordingDiag(): {
+      logger: DiagLogger;
+      errors: Array<{ message: string; args: unknown[] }>;
+    } {
+      const errors: Array<{ message: string; args: unknown[] }> = [];
+      const noop = () => {};
+      return {
+        errors,
+        logger: {
+          verbose: noop,
+          debug: noop,
+          info: noop,
+          warn: noop,
+          error: (message: string, ...args: unknown[]) => {
+            errors.push({ message, args });
+          },
+        },
+      };
+    }
+
+    function createHandlerWithDiag(logger: DiagLogger): TelemetryHandler {
+      return new TelemetryHandler({
+        instrumentationName: '@opentelemetry/instrumentation-test-genai',
+        instrumentationVersion: '9.9.9',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+        diag: logger,
+      });
+    }
+
+    /** Subclass whose extension points throw, standing in for a buggy instrumentation. */
+    class HookFailureInvocation extends BaseInvocation {
+      public static readonly METRICS_ERROR = new Error('metrics hook exploded');
+      public static readonly CONTENT_ERROR = new Error('content hook exploded');
+
+      public emitContentEventCalled = false;
+
+      constructor(
+        spanName: string,
+        handlerArg: TelemetryHandler,
+        private readonly _failIn: 'metrics' | 'content'
+      ) {
+        super(spanName, handlerArg, { kind: SpanKind.CLIENT });
+      }
+
+      protected override _recordMetrics(): void {
+        if (this._failIn === 'metrics') {
+          throw HookFailureInvocation.METRICS_ERROR;
+        }
+      }
+
+      protected override _emitContentEvent(): void {
+        this.emitContentEventCalled = true;
+        if (this._failIn === 'content') {
+          throw HookFailureInvocation.CONTENT_ERROR;
+        }
+      }
+    }
+
+    it('should end the span and report the bug when _recordMetrics throws on stop', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'metrics-throw-stop-span',
+        createHandlerWithDiag(logger),
+        'metrics'
+      );
+
+      // A broken hook must not surface as an exception in the instrumented application.
+      assert.doesNotThrow(() => inv.stop());
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'metrics-throw-stop-span');
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+      assert.strictEqual(inv.isEnded(), true);
+
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(
+        errors[0].args[0],
+        HookFailureInvocation.METRICS_ERROR
+      );
+    });
+
+    it('should keep the span error status when _recordMetrics throws on fail', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'metrics-throw-fail-span',
+        createHandlerWithDiag(logger),
+        'metrics'
+      );
+
+      assert.doesNotThrow(() => inv.fail(new RangeError('upstream failure')));
+
+      // The span's error state is recorded before the hooks run, so a hook that throws
+      // cannot downgrade a failed invocation to a span without an error status.
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
+      assert.strictEqual(errors.length, 1);
+    });
+
+    it('should end the span when _emitContentEvent throws', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'content-throw-span',
+        createHandlerWithDiag(logger),
+        'content'
+      );
+
+      assert.doesNotThrow(() => inv.stop());
+
+      assert.strictEqual(inv.emitContentEventCalled, true);
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'content-throw-span');
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(
+        errors[0].args[0],
+        HookFailureInvocation.CONTENT_ERROR
+      );
+    });
+
+    it('should describe the span fully for a value that cannot be stringified', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new CustomInvocation(
+        'unstringifiable-error-span',
+        createHandlerWithDiag(logger)
+      );
+
+      // `fail` accepts `unknown`, and a null-prototype object cannot be converted to a
+      // string at all. The completion path must therefore never stringify the value it
+      // is given: describing an error is the subclass's job, not the base class's.
+      const hostileError = Object.create(null);
+      assert.doesNotThrow(() => inv.fail(hostileError));
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
+      // Nothing threw, so the completion path never entered its catch block.
+      assert.strictEqual(errors.length, 0);
+      assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    });
+
+    it('should not consume the invocation when the end time is invalid', () => {
+      const inv = new CustomInvocation('invalid-endtime-span', handler);
+
+      // An unusable `TimeInput` is a caller bug, so it is surfaced rather than swallowed.
+      assert.throws(
+        () => inv.stop('not-a-time' as unknown as TimeInput),
+        TypeError
+      );
+
+      // Crucially, the invocation is left untouched: it can still be completed, instead
+      // of being marked as ended with a span that would never be exported.
+      assert.strictEqual(inv.isEnded(), false);
+      assert.strictEqual(ctx.memoryExporter.getFinishedSpans().length, 0);
+
+      inv.stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'invalid-endtime-span');
+      assert.strictEqual(inv.isEnded(), true);
+    });
+  });
+
+  describe('error description', () => {
+    /** Subclass that knows how to describe the errors of the SDK it instruments. */
+    class DescribingInvocation extends BaseInvocation {
+      public describeCalls: unknown[] = [];
+
+      constructor(
+        spanName: string,
+        handlerArg: TelemetryHandler,
+        private readonly _describe: (error: unknown) => string | undefined
+      ) {
+        super(spanName, handlerArg, { kind: SpanKind.CLIENT });
+      }
+
+      protected override _recordMetrics(): void {}
+
+      protected override _getErrorDescription(
+        error: unknown
+      ): string | undefined {
+        this.describeCalls.push(error);
+        return this._describe(error);
+      }
+    }
+
+    it('should set the description supplied by the subclass', () => {
+      const testError = new Error('rate limit exceeded');
+      const inv = new DescribingInvocation(
+        'described-error-span',
+        handler,
+        error => (error as Error).message
+      );
+
+      inv.fail(testError);
+
+      assert.deepStrictEqual(inv.describeCalls, [testError]);
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.status.message, 'rate limit exceeded');
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    });
+
+    it('should treat an empty description as no description', () => {
+      // The `undefined` case is covered wherever the default hook is used; an empty
+      // string is the one result a subclass can return that must not reach the span.
+      const inv = new DescribingInvocation(
+        'empty-description-span',
+        handler,
+        () => ''
+      );
+
+      inv.fail(new Error('boom'));
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.status.message, undefined);
+    });
+
+    it('should keep the error status when the description hook throws', () => {
+      const inv = new DescribingInvocation(
+        'throwing-description-span',
+        handler,
+        () => {
+          throw new Error('description hook exploded');
+        }
+      );
+
+      assert.doesNotThrow(() => inv.fail(new TypeError('upstream failure')));
+
+      // The status code is set before the description is derived, so an optional and
+      // broken description cannot cost the span its error status.
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.status.message, undefined);
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'TypeError');
     });
   });
 });

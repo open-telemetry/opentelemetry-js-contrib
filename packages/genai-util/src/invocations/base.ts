@@ -241,61 +241,93 @@ export abstract class BaseInvocation {
   /**
    * Complete the invocation successfully and end the underlying span.
    *
-   * Ending an already ended invocation is a no-op.
+   * Ending an already ended invocation is a no-op. Failures while emitting the
+   * invocation's telemetry are logged through the handler's diagnostic logger and are
+   * never thrown at the caller; the span is ended either way.
    */
   public stop(endTime?: TimeInput): void {
-    if (this._isEnded) {
-      return;
-    }
-    this._isEnded = true;
-
-    const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
-    const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
-
-    this._recordMetrics(durationSec);
-    this._emitContentEvent(endHr);
-
-    this._span.end(endHr);
+    this._end(endTime);
   }
 
   /**
    * Complete the invocation with an error and end the underlying span.
    *
-   * Ending an already ended invocation is a no-op.
+   * Ending an already ended invocation is a no-op. Failures while emitting the
+   * invocation's telemetry are logged through the handler's diagnostic logger and are
+   * never thrown at the caller, so calling this from a `catch` block cannot replace the
+   * application's own error; the span is ended either way.
    */
   public fail(error: unknown, endTime?: TimeInput): void {
+    this._end(endTime, { error });
+  }
+
+  /**
+   * Shared completion path for {@link stop} and {@link fail}.
+   *
+   * The span is always ended once this method has taken ownership of the invocation:
+   * emitting telemetry must never leave an unfinished span behind, and must never
+   * surface a new exception to the instrumented application, which typically calls
+   * {@link fail} from its own error path.
+   *
+   * @param endTime End time of the invocation, or `undefined` to use the current time.
+   * @param failure The failure to record, or `undefined` for a successful invocation.
+   *   Boxed because `error` is `unknown` and may legitimately be `undefined`, so a bare
+   *   optional parameter could not distinguish success from a failure with no value.
+   */
+  private _end(endTime?: TimeInput, failure?: { error: unknown }): void {
     if (this._isEnded) {
       return;
     }
+
+    // Resolved before the invocation is marked as ended: `timeInputToHrTime` throws on an
+    // invalid `TimeInput`, and that is a caller bug worth surfacing rather than absorbing
+    // into an invocation that can never be completed again. It also guarantees that the
+    // `finally` below always has a valid timestamp to end the span with.
+    const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     this._isEnded = true;
 
-    const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
-    const durationSec = hrTimeToSeconds(hrTimeDuration(this._startTime, endHr));
+    try {
+      const durationSec = hrTimeToSeconds(
+        hrTimeDuration(this._startTime, endHr)
+      );
 
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : typeof error === 'string'
-          ? error
-          : String(error);
+      if (failure) {
+        // The span's error state is recorded before the subclass hooks run so that a hook
+        // that throws cannot leave a failed invocation reported as a span without an error
+        // status. `error.type` is resolved once here so that the span and the metrics
+        // always agree on it, and so that subclasses do not each have to derive it from
+        // the raw error.
+        const errorType = getErrorType(failure.error);
+        this._metricAttributes[ATTR_ERROR_TYPE] = errorType;
+        this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+        this._span.setStatus({ code: SpanStatusCode.ERROR });
 
-    // Resolved once here so that the span and the metrics always agree on `error.type`,
-    // and so that subclasses do not each have to derive it from the raw error.
-    const errorType = getErrorType(error);
-    this._metricAttributes[ATTR_ERROR_TYPE] = errorType;
-    this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
+        // The status description is optional, so it is layered on top of a status that is
+        // already complete without it: an invocation that cannot describe its error, or
+        // whose description hook throws, still reports the failure.
+        const description = this._getErrorDescription(failure.error);
+        if (description) {
+          this._span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: description,
+          });
+        }
+      }
 
-    // Recorded after `error.type` is in place so that it is part of the metric attributes.
-    this._recordMetrics(durationSec, error);
+      // Recorded after `error.type` is in place so that it is part of the metric attributes.
+      this._recordMetrics(durationSec, failure?.error);
 
-    this._emitContentEvent(endHr);
-
-    this._span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: errorMessage,
-    });
-
-    this._span.end(endHr);
+      this._emitContentEvent(endHr);
+    } catch (err) {
+      // Reached when a subclass hook or error introspection throws. Telemetry is
+      // best-effort: report the bug through diagnostics and keep the failure away from
+      // the caller's own control flow.
+      this._handler
+        .getDiag()
+        .error('Error while ending GenAI invocation telemetry', err);
+    } finally {
+      this._span.end(endHr);
+    }
   }
 
   /**
@@ -327,4 +359,26 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
+
+  /**
+   * Hook for subclasses to describe a failure as the span status description.
+   *
+   * The description is optional in the OpenTelemetry specification, and it is only ever
+   * read by a human, so the default is to set no description at all: the failure is
+   * already carried by the error status and by the `error.type` attribute, which is the
+   * value tooling actually queries. A subclass overrides this only when it can turn the
+   * raw value into something predictable and useful, typically because it knows the error
+   * shape of the SDK it instruments (e.g. a provider's message field).
+   *
+   * Keep the result short, human readable and free of sensitive data, and do not simply
+   * repeat `error.type`, which is already on the span. An empty or `undefined` result
+   * leaves the status without a description.
+   *
+   * @param _error The value passed to {@link fail}, which may be anything a library
+   *   throws or rejects with, not necessarily an `Error`.
+   * @returns The status description, or `undefined` to leave it unset.
+   */
+  protected _getErrorDescription(_error: unknown): string | undefined {
+    return undefined;
+  }
 }
