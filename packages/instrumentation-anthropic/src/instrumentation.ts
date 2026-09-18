@@ -31,6 +31,11 @@ interface SpanState {
    * deliberately excluded, so cancelling there still ends the span.
    */
   awaitingNext: boolean;
+  /**
+   * Set while the wrapped iterator closes the SDK iterator. `return()` aborts
+   * the controller as ordinary cleanup, which must not read as a cancellation.
+   */
+  closing: boolean;
 }
 
 interface AnthropicStream extends AsyncIterable<unknown> {
@@ -165,7 +170,12 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             },
           }
         );
-        const state: SpanState = { span, ended: false, awaitingNext: false };
+        const state: SpanState = {
+          span,
+          ended: false,
+          awaitingNext: false,
+          closing: false,
+        };
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -274,7 +284,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // leave the span open forever, since it is only ended from the iterator.
     const signal = stream.controller?.signal;
     if (signal) {
-      if (signal.aborted && !state.awaitingNext) {
+      if (signal.aborted && !state.awaitingNext && !state.closing) {
         this._endSpanWithAbort(state);
         return;
       }
@@ -287,7 +297,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // while `next()` is outstanding is left to the iterator. An abort
           // while the iterator is suspended is the caller cancelling, and may
           // be the last thing that ever happens to this stream.
-          if (!state.awaitingNext) {
+          if (!state.awaitingNext && !state.closing) {
             this._endSpanWithAbort(state);
           }
         },
@@ -337,10 +347,13 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         // Sampled before `return()`, which aborts the controller itself when
         // the caller breaks out of the loop.
         const abortedByCaller = signal?.aborted ?? false;
+        state.closing = true;
         try {
           await iterator.return?.();
         } catch (error) {
           this._diag.debug('error closing Anthropic stream iterator:', error);
+        } finally {
+          state.closing = false;
         }
         if (abortedByCaller) {
           this._endSpanWithAbort(state);

@@ -46,7 +46,7 @@ function sanitizeRecordings(scopes: Definition[]): Definition[] {
 
 function createRecordingClient(): Anthropic {
   const apiKey =
-    nockBack.currentMode === 'record'
+    nockBack.currentMode === 'record' || nockBack.currentMode === 'update'
       ? process.env.ANTHROPIC_API_KEY
       : 'testing';
   if (!apiKey) {
@@ -62,9 +62,17 @@ const mockClient = new Anthropic({ apiKey: 'testing', maxRetries: 0 });
 describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
-  // `dryrun` (the default) calls `enableNetConnect()`, so a fixture that stops
-  // matching would silently reach the real API. `lockdown` fails instead.
-  nockBack.setMode(process.env.ANTHROPIC_API_KEY ? 'record' : 'lockdown');
+  // An explicitly requested mode wins, so `NOCK_BACK_MODE=update` can refresh
+  // existing recordings. Otherwise: `record` to capture missing ones when an
+  // API key is available, and `lockdown` in CI, since the default `dryrun`
+  // calls `enableNetConnect()` and would let a stale fixture silently reach
+  // the real API.
+  const requestedMode = process.env.NOCK_BACK_MODE as
+    | Parameters<typeof nockBack.setMode>[0]
+    | undefined;
+  nockBack.setMode(
+    requestedMode ?? (process.env.ANTHROPIC_API_KEY ? 'record' : 'lockdown')
+  );
 
   beforeEach(() => {
     resetMemoryExporter();
@@ -516,6 +524,33 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
     expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
+  it('does not mark an early break as an error', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      for await (const event of stream) {
+        void event;
+        break;
+      }
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBeUndefined();
   });
 
   it('records messages.create errors', async () => {
