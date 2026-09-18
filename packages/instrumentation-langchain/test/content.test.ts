@@ -275,6 +275,50 @@ describe('LangChain content mapping', () => {
     expect(messages(undefined, diag)).toBeUndefined();
     expect(messages({ arbitrary: 'state' }, diag)).toBeUndefined();
     expect(messages([null, {}, 1], diag)).toBeUndefined();
+    expect(messages([], diag)).toBeUndefined();
+    expect(messages({ messages: [] }, diag)).toBeUndefined();
+  });
+
+  it('preserves valid messages among malformed input and output entries', () => {
+    const valid = new AIMessage('answer');
+    for (const role of ['user', 'assistant']) {
+      expect(
+        JSON.parse(messages([null, 1, {}, valid, false], diag, role)!)
+      ).toEqual([
+        { role: 'assistant', parts: [{ type: 'text', content: 'answer' }] },
+      ]);
+    }
+  });
+
+  it('supports legacy function args and ignores malformed call envelopes', () => {
+    expect(
+      convert([
+        {
+          role: 'assistant',
+          content: '',
+          additional_kwargs: {
+            function_call: { name: 'echo', args: '{"text":"test"}' },
+          },
+        },
+      ])[0].parts[1]
+    ).toEqual({
+      type: 'tool_call',
+      name: 'echo',
+      arguments: { text: 'test' },
+    });
+    for (const additional_kwargs of [
+      undefined,
+      null,
+      1,
+      { function_call: null },
+      { function_call: 'invalid' },
+    ]) {
+      expect(
+        convert([
+          { role: 'assistant', content: 'answer', additional_kwargs },
+        ])[0].parts
+      ).toEqual([{ type: 'text', content: 'answer' }]);
+    }
   });
 
   it('extracts final agent output without recapturing input history', () => {

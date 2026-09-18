@@ -16,7 +16,12 @@ exercise({
   ...sdkRequire('@langchain/core/utils/testing'),
   ...(process.env.LANGCHAIN_TEST_CORE_ONLY === 'true'
     ? {}
-    : sdkRequire('langchain')),
+    : {
+        ...sdkRequire('langchain'),
+        ...sdkRequire('@langchain/langgraph'),
+        ...sdkRequire('@langchain/classic/vectorstores/memory'),
+        ...sdkRequire('@langchain/core/embeddings'),
+      }),
 }).catch(error => {
   console.error(error);
   process.exitCode = 1;

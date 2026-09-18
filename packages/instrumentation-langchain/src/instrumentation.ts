@@ -21,6 +21,8 @@ import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import type { StructuredTool } from '@langchain/core/tools';
 import type { createAgent } from 'langchain';
+import type { Pregel } from '@langchain/langgraph/pregel';
+import type { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import type * as Runnables from '@langchain/core/runnables';
 import type * as Tools from '@langchain/core/tools';
 import type * as Streams from '@langchain/core/utils/stream';
@@ -38,14 +40,21 @@ import {
 } from './content';
 import { createAgentUsageHandler } from './agent-usage';
 import { createAgentStreamAccumulator } from './agent-stream';
+import { createGraphStreamAccumulator } from './graph-stream';
 import { observeStream } from './stream-lifecycle';
+import { retrievalDocuments } from './retrieval';
 import {
   ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
+  ATTR_GEN_AI_OUTPUT_TYPE,
   ATTR_GEN_AI_REQUEST_MODEL,
+  ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
+  ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT,
+  ATTR_GEN_AI_RETRIEVAL_TOP_K,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_ID,
@@ -57,13 +66,24 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
 } from './semconv';
 
 type Agent = ReturnType<typeof createAgent>;
-type Operation = 'invoke_workflow' | 'invoke_agent' | 'execute_tool';
+type Operation =
+  | 'invoke_workflow'
+  | 'invoke_agent'
+  | 'execute_tool'
+  | 'retrieval';
 const ACTIVE_OPERATION = createContextKey('opentelemetry.langchain.operation');
 const ACTIVE_AGENT = createContextKey('opentelemetry.langchain.agent');
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
+const MEMORY_SEARCH_METHODS = [
+  'similaritySearch',
+  'similaritySearchWithScore',
+  'similaritySearchVectorWithScore',
+  'maxMarginalRelevanceSearch',
+] as const;
 interface OperationState {
   target: object;
   span: Span;
@@ -74,6 +94,7 @@ interface OperationState {
   streaming: boolean;
   outputValid: boolean;
   agentStream?: ReturnType<typeof createAgentStreamAccumulator>;
+  graphStream?: ReturnType<typeof createGraphStreamAccumulator>;
   usageHandler?: BaseCallbackHandler;
   agentName?: string;
   output?: unknown;
@@ -172,7 +193,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                   const state = context.active().getValue(ACTIVE_AGENT) as
                     | OperationState
                     | undefined;
-                  if (!state || state.ended) return manager;
+                  if (
+                    !state ||
+                    state.ended ||
+                    isTracingSuppressed(context.active())
+                  )
+                    return manager;
                   try {
                     const handler = (state.usageHandler ??=
                       createAgentUsageHandler(state.span, self._diag, this));
@@ -205,6 +231,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                   cls.prototype,
                   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW
                 );
+                this._wrap(
+                  cls.prototype,
+                  'transform',
+                  this._wrapper(
+                    GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+                    true
+                  )
+                );
               }
               this._wrap(
                 module.RunnableSequence.prototype,
@@ -223,6 +257,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                   module.RunnableMap,
                 ]) {
                   this._unpatchBoundary(cls.prototype);
+                  this._unwrap(cls.prototype, 'transform');
                 }
                 this._unwrap(module.RunnableSequence.prototype, 'batch');
               }
@@ -266,7 +301,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                       .getValue(ACTIVE_OPERATION) as OperationState | undefined;
                     const completion =
                       state?.streaming && !state.ended
-                        ? self._bindIterator(generator, state.ctx)
+                        ? self._bindIterator(generator, context.active())
                         : undefined;
                     const stream = (original<T>).call(this, generator);
                     if (completion) {
@@ -289,11 +324,50 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         ])
       ),
       new InstrumentationNodeModuleDefinition(
-        '@langchain/langgraph',
+        '@langchain/classic',
         SUPPORTED_VERSIONS,
         undefined,
         undefined,
         ['cjs', 'js'].map(extension =>
+          instrumentModuleInstances(
+            `@langchain/classic/dist/vectorstores/memory.${extension}`,
+            (module: { MemoryVectorStore: typeof MemoryVectorStore }) => {
+              const target = module.MemoryVectorStore.prototype;
+              const wrapper = this._wrapper(
+                GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+                false
+              );
+              this._wrap(target, 'similaritySearch', wrapper);
+              this._wrap(target, 'similaritySearchWithScore', wrapper);
+              this._wrap(target, 'similaritySearchVectorWithScore', wrapper);
+              this._wrap(target, 'maxMarginalRelevanceSearch', wrapper);
+            },
+            (module: { MemoryVectorStore: typeof MemoryVectorStore }) => {
+              for (const method of MEMORY_SEARCH_METHODS)
+                this._unwrap(module.MemoryVectorStore.prototype, method);
+            }
+          )
+        )
+      ),
+      new InstrumentationNodeModuleDefinition(
+        '@langchain/langgraph',
+        SUPPORTED_VERSIONS,
+        undefined,
+        undefined,
+        ['cjs', 'js'].flatMap(extension => [
+          instrumentModuleInstances(
+            `@langchain/langgraph/dist/pregel/index.${extension}`,
+            (module: { Pregel: typeof Pregel }) => {
+              this._patchBoundary(
+                module.Pregel.prototype,
+                GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+                true
+              );
+            },
+            (module: { Pregel: typeof Pregel }) => {
+              this._unpatchBoundary(module.Pregel.prototype);
+            }
+          ),
           instrumentModuleInstances(
             `@langchain/langgraph/dist/pregel/stream.${extension}`,
             (module: EventStreamModule) => {
@@ -310,8 +384,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             (module: EventStreamModule) => {
               this._unwrap(module, 'toEventStream');
             }
-          )
-        )
+          ),
+        ])
       ),
       new InstrumentationNodeModuleDefinition(
         'langchain',
@@ -337,9 +411,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     ];
   }
 
-  private _patchBoundary(target: Runnable | Agent, operation: Operation) {
-    this._wrap(target, 'invoke', this._wrapper(operation, false));
-    this._wrap(target, 'stream', this._wrapper(operation, true));
+  private _patchBoundary(
+    target: Runnable | Agent,
+    operation: Operation,
+    graph = false
+  ) {
+    this._wrap(target, 'invoke', this._wrapper(operation, false, graph));
+    this._wrap(target, 'stream', this._wrapper(operation, true, graph));
   }
 
   private _unpatchBoundary(target: Runnable | Agent) {
@@ -347,7 +425,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unwrap(target, 'stream');
   }
 
-  private _wrapper(operation: Operation, streaming: boolean) {
+  private _wrapper(operation: Operation, streaming: boolean, graph = false) {
     const self = this;
     return <T extends object, A extends unknown[], R>(
       original: (this: T, ...args: A) => R
@@ -357,6 +435,32 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         const active = parent.getValue(ACTIVE_OPERATION) as
           | OperationState
           | undefined;
+        if (
+          graph &&
+          active?.operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT &&
+          'graph' in active.target &&
+          active.target.graph === this
+        ) {
+          // ReactAgent has already merged its private withConfig defaults here.
+          // Observe the effective config without changing SDK callback semantics.
+          if (self.isEnabled() && !isTracingSuppressed(parent)) {
+            try {
+              const conversation = self._conversation(args[1]);
+              if (conversation !== undefined)
+                active.span.setAttribute(
+                  ATTR_GEN_AI_CONVERSATION_ID,
+                  conversation
+                );
+              if (streaming && active.streaming && active.capture)
+                active.agentStream = createAgentStreamAccumulator(args[1]);
+            } catch {
+              self._diag.warn(
+                'LangChain: could not observe effective agent configuration'
+              );
+            }
+          }
+          return original.apply(this, args);
+        }
         // LangGraph marks its internal node/channel sequences with this flag.
         // They are implementation details, not application-defined workflows.
         const internalSequence =
@@ -392,11 +496,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         let state: OperationState;
         try {
           const capture = !!self.getConfig().captureMessageContent;
+          const options = graph ? self._graphConfig(this, args[1]) : args[1];
           const attributes = self._attributes(
             this,
             operation,
             args[0],
-            args[1],
+            options,
             capture
           );
           const name =
@@ -406,7 +511,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           const span = self.tracer.startSpan(
             name ? `${operation} ${name}` : operation,
             {
-              kind: SpanKind.INTERNAL,
+              kind:
+                operation === GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL
+                  ? SpanKind.CLIENT
+                  : SpanKind.INTERNAL,
               attributes,
             },
             parent
@@ -425,6 +533,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               streaming &&
               operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
                 ? createAgentStreamAccumulator(args[1])
+                : undefined,
+            graphStream:
+              capture && streaming && graph
+                ? createGraphStreamAccumulator(
+                    options,
+                    'streamMode' in this ? this.streamMode : undefined
+                  )
                 : undefined,
             agentName:
               typeof attributes[ATTR_GEN_AI_AGENT_NAME] === 'string'
@@ -495,18 +610,24 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   ): Attributes {
     const attributes: Attributes = { [ATTR_GEN_AI_OPERATION_NAME]: operation };
     const config = isRecord(options) ? (options as RunnableConfig) : undefined;
-    const conversation = [
-      config?.configurable?.thread_id,
-      config?.configurable?.session_id,
-      config?.configurable?.conversation_id,
-      config?.metadata?.session_id,
-      config?.metadata?.thread_id,
-      config?.metadata?.conversation_id,
-    ].find(
-      (value): value is string => typeof value === 'string' && value.length > 0
-    );
+    const conversation = this._conversation(options);
     if (conversation !== undefined)
       attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
+    if (operation === GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL) {
+      const count = isRecord(options) ? options.k : options;
+      if (count === undefined) {
+        attributes[ATTR_GEN_AI_RETRIEVAL_TOP_K] = 4;
+      } else if (
+        typeof count === 'number' &&
+        Number.isInteger(count) &&
+        count >= 0
+      ) {
+        attributes[ATTR_GEN_AI_RETRIEVAL_TOP_K] = count;
+      }
+      if (capture && typeof input === 'string')
+        attributes[ATTR_GEN_AI_RETRIEVAL_QUERY_TEXT] = input;
+      return attributes;
+    }
     if (operation === GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL) {
       const tool = target as StructuredTool;
       const active = context.active().getValue(ACTIVE_OPERATION) as
@@ -535,11 +656,19 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       if (operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT) {
         const agent = target as Agent;
         attributes[ATTR_GEN_AI_AGENT_NAME] = agent.options.name;
+        attributes[ATTR_GEN_AI_AGENT_DESCRIPTION] = agent.options.description;
+        if (agent.options.responseFormat !== undefined)
+          attributes[ATTR_GEN_AI_OUTPUT_TYPE] = 'json';
+        const dynamic = agent.options.middleware?.some(
+          middleware => typeof middleware.wrapModelCall === 'function'
+        );
         const model = agent.options.model;
-        if (typeof model === 'string')
-          attributes[ATTR_GEN_AI_REQUEST_MODEL] = model;
-        else if ('model' in model && typeof model.model === 'string')
-          attributes[ATTR_GEN_AI_REQUEST_MODEL] = model.model;
+        if (!dynamic) {
+          if (typeof model === 'string')
+            attributes[ATTR_GEN_AI_REQUEST_MODEL] = model;
+          else if ('model' in model && typeof model.model === 'string')
+            attributes[ATTR_GEN_AI_REQUEST_MODEL] = model.model;
+        }
         if (capture) {
           attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = systemInstructions(
             agent.options.systemPrompt,
@@ -551,10 +680,40 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         attributes[ATTR_GEN_AI_WORKFLOW_NAME] =
           config?.runName ?? runnable.name ?? runnable.getName();
       }
-      if (capture)
+      if (capture && !isIterator(input))
         attributes[ATTR_GEN_AI_INPUT_MESSAGES] = messages(input, this._diag);
     }
     return attributes;
+  }
+
+  private _conversation(options: unknown): string | undefined {
+    const config = isRecord(options) ? (options as RunnableConfig) : undefined;
+    return [
+      config?.configurable?.thread_id,
+      config?.configurable?.session_id,
+      config?.configurable?.conversation_id,
+      config?.metadata?.session_id,
+      config?.metadata?.thread_id,
+      config?.metadata?.conversation_id,
+    ].find(
+      (value): value is string => typeof value === 'string' && value.length > 0
+    );
+  }
+
+  private _graphConfig(target: object, options: unknown): RunnableConfig {
+    const defaults =
+      'config' in target && isRecord(target.config)
+        ? (target.config as RunnableConfig)
+        : {};
+    const supplied = isRecord(options) ? (options as RunnableConfig) : {};
+    return {
+      ...defaults,
+      ...Object.fromEntries(
+        Object.entries(supplied).filter(([, value]) => value != null)
+      ),
+      metadata: { ...defaults.metadata, ...supplied.metadata },
+      configurable: { ...defaults.configurable, ...supplied.configurable },
+    };
   }
 
   private _bindIterator(
@@ -631,6 +790,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       if (state.agentStream) {
         state.agentStream.add(chunk);
         state.output = state.agentStream.output();
+      } else if (state.graphStream) {
+        state.graphStream.add(chunk);
+        state.output = state.graphStream.output();
       } else if (state.output === undefined) {
         state.output = chunk;
       } else if (
@@ -664,6 +826,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         state.span.setAttribute(
           ATTR_ERROR_TYPE,
           error instanceof Error ? error.name : '_OTHER'
+        );
+      } else if (
+        state.capture &&
+        state.operation === GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL
+      ) {
+        state.span.setAttribute(
+          ATTR_GEN_AI_RETRIEVAL_DOCUMENTS,
+          retrievalDocuments(output)
         );
       } else if (state.capture) {
         const tool =

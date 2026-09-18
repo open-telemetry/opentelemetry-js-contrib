@@ -241,7 +241,118 @@ describe('agent usage callbacks', () => {
     expect(exporter.getFinishedSpans()[0].attributes).toEqual({
       'gen_ai.usage.input_tokens': 6,
       'gen_ai.usage.output_tokens': 10,
-      'gen_ai.response.finish_reasons': ['stop'],
+      'gen_ai.response.finish_reasons': ['stop', 'stop'],
+    });
+  });
+
+  it('preserves repeated finish reasons in generation and run order', async () => {
+    const observer = createAgentUsageHandler(span, diag, CallbackManager);
+    const multiple: LLMResult = {
+      generations: [
+        [
+          { text: 'first', generationInfo: { finish_reason: 'stop' } },
+          { text: 'second', generationInfo: { finish_reason: 'length' } },
+        ],
+        [{ text: 'third', generationInfo: { finish_reason: 'stop' } }],
+      ],
+    };
+    await observer.handleLLMEnd!(multiple, 'first-run');
+    await observer.copy().handleLLMEnd!(multiple, 'first-run');
+    await observer.handleLLMEnd!(result, 'second-run');
+    span.end();
+    expect(
+      exporter.getFinishedSpans()[0].attributes[
+        'gen_ai.response.finish_reasons'
+      ]
+    ).toEqual(['stop', 'length', 'stop', 'stop']);
+  });
+
+  for (const source of ['tokenUsage', 'usage', 'estimatedTokenUsage']) {
+    it(`preserves the donated ${source} input/output usage shape`, async () => {
+      const observer = createAgentUsageHandler(span, diag, CallbackManager);
+      const counts =
+        source === 'usage'
+          ? { input_tokens: 2, output_tokens: 4, total_tokens: 99 }
+          : { promptTokens: 2, completionTokens: 4, totalTokens: 99 };
+      await observer.handleLLMEnd!(
+        { generations: [], llmOutput: { [source]: counts } },
+        'usage-run'
+      );
+      span.end();
+      expect(exporter.getFinishedSpans()[0].attributes).toEqual({
+        'gen_ai.usage.input_tokens': 2,
+        'gen_ai.usage.output_tokens': 4,
+      });
+    });
+  }
+
+  it('prefers actual usage over SDK estimates and accepts missing totals', async () => {
+    const observer = createAgentUsageHandler(span, diag, CallbackManager);
+    await observer.handleLLMEnd!(
+      {
+        generations: [],
+        llmOutput: {
+          usage: { input_tokens: 2, output_tokens: 4 },
+          estimatedTokenUsage: { promptTokens: 50, completionTokens: 60 },
+        },
+      },
+      'actual-run'
+    );
+    span.end();
+    expect(exporter.getFinishedSpans()[0].attributes).toEqual({
+      'gen_ai.usage.input_tokens': 2,
+      'gen_ai.usage.output_tokens': 4,
+    });
+  });
+
+  it('omits missing or malformed usage without changing callback behavior', async () => {
+    const observer = createAgentUsageHandler(span, diag, CallbackManager);
+    for (const [index, output] of [
+      undefined,
+      { generations: [] },
+      { generations: [], llmOutput: null },
+      { generations: [], llmOutput: { tokenUsage: 'invalid' } },
+      { generations: [], llmOutput: { tokenUsage: null } },
+      { generations: [], llmOutput: {} },
+      { generations: [null] },
+    ].entries()) {
+      await expect(
+        Promise.resolve(
+          Reflect.apply(observer.handleLLMEnd!, observer, [
+            output,
+            `malformed-${index}`,
+          ])
+        )
+      ).resolves.toBeUndefined();
+    }
+    span.end();
+    expect(exporter.getFinishedSpans()[0].attributes).toEqual({});
+  });
+
+  it('records only finite nonnegative integral token counts', async () => {
+    const observer = createAgentUsageHandler(span, diag, CallbackManager);
+    for (const [index, value] of ['2', NaN, Infinity, -1, 1.5].entries()) {
+      await observer.handleLLMEnd!(
+        {
+          generations: [],
+          llmOutput: {
+            tokenUsage: { promptTokens: value, completionTokens: value },
+          },
+        },
+        `invalid-${index}`
+      );
+    }
+    await observer.handleLLMEnd!(
+      {
+        generations: [],
+        llmOutput: { usage: { input_tokens: 0, output_tokens: 3 } },
+      },
+      'valid'
+    );
+    span.end();
+    expect(exporter.getFinishedSpans()[0].attributes).toEqual({
+      'gen_ai.usage.input_tokens': 0,
+      'gen_ai.usage.output_tokens': 3,
     });
   });
 });

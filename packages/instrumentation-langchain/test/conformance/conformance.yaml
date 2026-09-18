@@ -216,3 +216,219 @@ scenarios:
             error.type: { present: false }
     metrics: []
     events: []
+
+  retrieval_content_off:
+    run: node framework-scenario.cjs retrieval_content_off
+    expected_violations: &in_memory_retrieval_endpoint
+      - id: genai_expected_attribute_missing
+        context:
+          operation: retrieval
+          missing_attribute: server.address
+        reason: >-
+          MemoryVectorStore retrieves entirely in-process and has no server
+          address. The retrieval client policy requires a network endpoint even
+          for framework-owned in-memory retrieval; emitting one would be false.
+    spans:
+      - match:
+          kind: CLIENT
+          attributes: { gen_ai.operation.name: retrieval }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.retrieval.top_k: 1
+            gen_ai.retrieval.query.text: { present: false }
+            gen_ai.retrieval.documents: { present: false }
+    metrics: []
+    events: []
+
+  retrieval_content_on:
+    run: node framework-scenario.cjs retrieval_content_on
+    expected_violations: *in_memory_retrieval_endpoint
+    spans:
+      - match:
+          kind: CLIENT
+          attributes: { gen_ai.operation.name: retrieval }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.retrieval.top_k: 1
+            gen_ai.retrieval.query.text: query
+            gen_ai.retrieval.documents: '[{"id":"doc-1","score":1}]'
+    metrics: []
+    events: []
+
+  retrieval_mmr:
+    run: node framework-scenario.cjs retrieval_mmr
+    expected_violations: *in_memory_retrieval_endpoint
+    spans:
+      - match:
+          kind: CLIENT
+          attributes: { gen_ai.operation.name: retrieval }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.retrieval.top_k: 1
+            gen_ai.retrieval.query.text: query
+            gen_ai.retrieval.documents: '[{"id":"doc-1"}]'
+    metrics: []
+    events: []
+
+  retrieval_error:
+    run: node framework-scenario.cjs retrieval_error
+    expected_violations: *in_memory_retrieval_endpoint
+    spans:
+      - match:
+          kind: CLIENT
+          attributes: { gen_ai.operation.name: retrieval }
+        expect:
+          count: 1
+          attributes:
+            error.type: TypeError
+            gen_ai.retrieval.documents: { present: false }
+    metrics: []
+    events: []
+
+  graph_workflow:
+    run: node framework-scenario.cjs graph_workflow
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_workflow }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: conformance-graph
+            gen_ai.conversation.id: graph-thread
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"answer"}]}]'
+    metrics: []
+    events: []
+
+  graph_stream:
+    run: node framework-scenario.cjs graph_stream
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_workflow }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: conformance-graph
+            gen_ai.conversation.id: graph-thread
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"answer"}]}]'
+    metrics: []
+    events: []
+
+  graph_updates:
+    run: node framework-scenario.cjs graph_updates
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_workflow }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: conformance-graph
+            gen_ai.output.messages: { present: false }
+    metrics: []
+    events: []
+
+  graph_error:
+    run: node framework-scenario.cjs graph_error
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_workflow }
+        expect:
+          count: 1
+          attributes:
+            error.type: TypeError
+            gen_ai.output.messages: { present: false }
+    metrics: []
+    events: []
+
+  nested_workflow_stream:
+    run: node framework-scenario.cjs nested_workflow_stream
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.workflow.name: inner }
+        expect: { count: 1 }
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.workflow.name: outer }
+        expect: { count: 1 }
+    metrics: []
+    events: []
+
+  scoped_suppression:
+    run: node framework-scenario.cjs scoped_suppression
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_workflow }
+        expect:
+          count: 1
+          attributes: { gen_ai.workflow.name: scoped-suppression }
+      - match:
+          attributes: { gen_ai.operation.name: execute_tool }
+        expect: { count: 0 }
+    metrics: []
+    events: []
+
+  agent_configured:
+    run: node framework-scenario.cjs agent_configured
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_agent }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.conversation.id: configured-thread
+            gen_ai.agent.description: Synthetic conformance agent.
+            gen_ai.request.model: initial-model
+    metrics: []
+    events: []
+
+  agent_dynamic_model:
+    run: node framework-scenario.cjs agent_dynamic_model
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_agent }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.conversation.id: configured-thread
+            gen_ai.request.model: { present: false }
+    metrics: []
+    events: []
+
+  agent_structured_output:
+    run: node framework-scenario.cjs agent_structured_output
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_agent }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: structured-agent
+            gen_ai.output.type: json
+    metrics: []
+    events: []
+
+  agent_estimated_usage:
+    run: node framework-scenario.cjs agent_estimated_usage
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.operation.name: invoke_agent }
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: estimated-agent
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
+    metrics: []
+    events: []

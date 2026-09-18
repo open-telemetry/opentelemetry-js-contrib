@@ -5,7 +5,9 @@
 
 This module provides automatic instrumentation for framework-owned operations in
 [`langchain`](https://www.npmjs.com/package/langchain) and
-[`@langchain/core`](https://www.npmjs.com/package/@langchain/core).
+[`@langchain/core`](https://www.npmjs.com/package/@langchain/core), with graph
+workflows in `@langchain/langgraph` and in-memory retrieval in
+`@langchain/classic`.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -19,6 +21,8 @@ npm install --save @opentelemetry/instrumentation-langchain
 
 - [`langchain`](https://www.npmjs.com/package/langchain) versions >= `1.0.0` and < `2`
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions >= `1.0.0` and < `2`
+- [`@langchain/langgraph`](https://www.npmjs.com/package/@langchain/langgraph) versions >= `1.0.0` and < `2`
+- [`@langchain/classic`](https://www.npmjs.com/package/@langchain/classic) versions >= `1.0.0` and < `2`
 
 The instrumented SDK must also support the application's Node.js version.
 LangChain 1.x requires Node.js 20 or later; the SDK integration tests and
@@ -59,12 +63,15 @@ not included in `getNodeAutoInstrumentations()`.
 
 ## Instrumented operations
 
-| Public boundary                                                                             | Operation         | Span kind  |
-| ------------------------------------------------------------------------------------------- | ----------------- | ---------- |
-| `RunnableSequence.invoke`, `RunnableSequence.batch`, `RunnableSequence.stream`              | `invoke_workflow` | `INTERNAL` |
-| `RunnableMap.invoke`, `RunnableMap.stream`                                                  | `invoke_workflow` | `INTERNAL` |
-| `createAgent(...).invoke`, `createAgent(...).stream`                                        | `invoke_agent`    | `INTERNAL` |
-| `StructuredTool.invoke`, legacy `StructuredTool.call`, including `tool()` and dynamic tools | `execute_tool`    | `INTERNAL` |
+| Public boundary                                                                                                                       | Operation         | Span kind  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ----------------- | ---------- |
+| `RunnableSequence.invoke`, `RunnableSequence.batch`, `RunnableSequence.stream`                                                        | `invoke_workflow` | `INTERNAL` |
+| `RunnableMap.invoke`, `RunnableMap.stream`                                                                                            | `invoke_workflow` | `INTERNAL` |
+| `createAgent(...).invoke`, `createAgent(...).stream`                                                                                  | `invoke_agent`    | `INTERNAL` |
+| `StructuredTool.invoke`, legacy `StructuredTool.call`, including `tool()` and dynamic tools                                           | `execute_tool`    | `INTERNAL` |
+| `RunnableSequence.transform`, `RunnableMap.transform` (including nested streaming steps)                                              | `invoke_workflow` | `INTERNAL` |
+| Compiled LangGraph / `Pregel.invoke`, `Pregel.stream`                                                                                 | `invoke_workflow` | `INTERNAL` |
+| `MemoryVectorStore.similaritySearch`, `.similaritySearchWithScore`, `.similaritySearchVectorWithScore`, `.maxMarginalRelevanceSearch` | `retrieval`       | `CLIENT`   |
 
 A sequence batch is one workflow invocation spanning the SDK's optimized batch,
 not a replacement loop over `invoke`. Workflow names come from `runName`, the
@@ -74,18 +81,33 @@ so is the early 1.x agent's `model_request` adapter beginning with its
 `prompt`-configured runnable. Application-defined nested sequences are retained.
 
 Standalone lambdas, prompt templates and output parsers are not workflows.
-Direct LangGraph graph entry points are outside this package's module scope.
 Model inference, embeddings and provider-backed retrieval belong to the
 underlying SDK instrumentations: this package deliberately does not duplicate
 their spans, token attributes or client metrics.
 
+Compiled graph entry points are workflows, including nested application graphs.
+The graph implementing a `createAgent` invocation does not create a second span.
+Memory vector store retrieval includes `asRetriever().invoke/stream` and retrieval
+chains, but only the in-memory implementation is patched, not generic provider
+vector stores. Retrieval uses the official `CLIENT` convention even when the
+framework executes it in-process. No provider or server address is invented.
+
 Agent spans do summarize the actual model calls made during that invocation:
 available input/output token counts are summed and finish reasons are collected
-through the public callback API. Previously checkpointed message history is not
+in generation order, including repeated reasons, through the public callback API.
+Previously checkpointed message history is not
 counted. User callback arrays/managers are copied rather than mutated, and no
 additional inference spans or metrics are emitted. Callbacks inherited from
 enclosing runnables are preserved. Usage collection completes before the span
 ends without changing background scheduling for user callbacks.
+Agent descriptions are recorded when available, and structured response formats
+set `gen_ai.output.type` to `json`. Agents with model-call middleware omit
+`gen_ai.request.model`, since middleware can select or fall back to a different
+model than the configured initial model.
+When no actual usage object is available, explicit SDK `estimatedTokenUsage`
+counts are used as a fallback; the instrumentation does not calculate estimates.
+Only nonnegative integral input/output counts are recorded. Total-token and
+provider-specific usage-detail fields are not invented on the agent span.
 
 Operations run with their span active, so application callbacks and underlying
 SDK spans retain parentage. Enabling or disabling the instrumentation reapplies
@@ -105,7 +127,15 @@ may transform or discard data. Direct iterator and reader consumption captures
 output using the runnable's aggregation semantics.
 SSE-encoded agent streams also retain lifecycle tracing, but omit encoded output
 content. The internal LangGraph encoding adapter is observed only to preserve
-the source association; standalone LangGraph operations are not traced.
+the source association.
+For graph workflows, `values` stream snapshots expose the final state and are
+captured without concatenating successive snapshots. Update-only, custom, debug,
+and encoded streams do not expose a complete reduced state, so their output
+content is omitted rather than re-executing application reducers. Arbitrary
+graph state is not relabelled as a message: capture recognizes strings, messages,
+and the `input`, `output`, or `messages` fields. Public transform inputs are
+iterators rather than messages and are not serialized; their output is captured
+normally. Scoped suppression and child contexts are preserved inside producers.
 
 ## Configuration Options
 
@@ -124,6 +154,8 @@ attributes are never copied. Application-supplied conversation identifiers map
 to `gen_ai.conversation.id`: configurable `thread_id`, `session_id`, then
 `conversation_id` take precedence over metadata `session_id`, `thread_id`, then
 `conversation_id`. Only these explicitly recognized metadata values are read.
+Agent and graph defaults supplied with `withConfig` are honored, with
+invocation-time configuration taking precedence according to the SDK.
 
 Captured messages use the official JSON message schema. Unmapped provider-specific
 parts retain their original type and structure instead of being silently dropped.
@@ -131,6 +163,9 @@ Inline base64 image data URLs are represented as blob parts with their MIME type
 external image URLs remain URI parts.
 Tool arguments/results are JSON objects; scalar or array values are represented
 as `{ "content": value }` to satisfy the official tool content schemas.
+Retrieval query text and document identifiers/scores are also opt-in. Retrieved
+document bodies and arbitrary metadata are not copied into invented attributes.
+Direct vector queries never export embedding vectors.
 
 ## Semantic Conventions
 
@@ -141,6 +176,12 @@ copied locally; runtime code does not import incubating semantic conventions.
 
 See [conformance scenarios](test/conformance/README.md) for deterministic
 public-SDK checks using the upstream Weaver conformance runner.
+
+This migration emits spans, matching the donated signal coverage. It does not
+yet emit the separately recommended workflow/agent/tool duration and call-count
+metrics, or an owned-retrieval duration metric. Those are additional metric
+features, not delegated provider metrics; provider inference metrics remain the
+responsibility of the underlying SDK instrumentation.
 
 ## Useful links
 

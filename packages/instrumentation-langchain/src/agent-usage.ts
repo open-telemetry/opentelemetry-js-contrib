@@ -30,7 +30,7 @@ export function createAgentUsageHandler(
   callbackManager: Pick<typeof CallbackManager, 'fromHandlers'>
 ): BaseCallbackHandler {
   const runs = new Set<string>();
-  const reasons = new Set<string>();
+  const reasons: string[] = [];
   let inputTokens = 0;
   let outputTokens = 0;
   const methods: CallbackHandlerMethods & {
@@ -60,16 +60,23 @@ export function createAgentUsageHandler(
           (isRecord(llmOutput?.tokenUsage)
             ? llmOutput?.tokenUsage
             : undefined) ??
-          (isRecord(llmOutput?.usage) ? llmOutput?.usage : undefined);
+          (isRecord(llmOutput?.usage) ? llmOutput?.usage : undefined) ??
+          (isRecord(llmOutput?.estimatedTokenUsage)
+            ? llmOutput?.estimatedTokenUsage
+            : undefined);
         const input = usage?.input_tokens ?? usage?.promptTokens;
         const completion = usage?.output_tokens ?? usage?.completionTokens;
-        if (typeof input === 'number' && Number.isFinite(input) && input >= 0) {
+        if (
+          typeof input === 'number' &&
+          Number.isInteger(input) &&
+          input >= 0
+        ) {
           inputTokens += input;
           span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, inputTokens);
         }
         if (
           typeof completion === 'number' &&
-          Number.isFinite(completion) &&
+          Number.isInteger(completion) &&
           completion >= 0
         ) {
           outputTokens += completion;
@@ -89,10 +96,10 @@ export function createAgentUsageHandler(
               info?.finish_reason ??
               metadata?.finish_reason ??
               metadata?.stop_reason;
-            if (typeof reason === 'string') reasons.add(reason);
+            if (typeof reason === 'string') reasons.push(reason);
           }
         }
-        if (reasons.size)
+        if (reasons.length)
           span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [...reasons]);
       } catch {
         diag.warn('LangChain: could not summarize agent model usage');
