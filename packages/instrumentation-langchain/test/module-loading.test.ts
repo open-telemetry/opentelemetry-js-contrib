@@ -10,6 +10,11 @@ import { expect } from 'expect';
 
 describe('LangChain module loading', function () {
   this.timeout(30000);
+  before(function () {
+    // LangChain 1.x requires Node.js 20 or later.
+    if (Number(process.versions.node.split('.')[0]) < 20) this.skip();
+  });
+
   for (const extension of ['cjs', 'mjs']) {
     it(`automatically instruments ${extension} entry points`, async () => {
       const args =

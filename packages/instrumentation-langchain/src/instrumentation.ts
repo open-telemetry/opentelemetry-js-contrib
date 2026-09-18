@@ -79,6 +79,27 @@ function isIterator(
   return isRecord(value) && typeof value.next === 'function';
 }
 
+function instrumentModuleInstances<T extends object>(
+  name: string,
+  patch: (module: T) => void,
+  unpatch: (module: T) => void
+): InstrumentationNodeModuleFile {
+  // InstrumentationBase retains only the last loaded copy of each module file.
+  const instances = new Set<T>();
+  return new InstrumentationNodeModuleFile(
+    name,
+    SUPPORTED_VERSIONS,
+    (module: T) => {
+      instances.add(module);
+      for (const instance of instances) patch(instance);
+      return module;
+    },
+    () => {
+      for (const instance of instances) unpatch(instance);
+    }
+  );
+}
+
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _concat?: typeof Streams.concat;
 
@@ -115,9 +136,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         undefined,
         undefined,
         ['cjs', 'js'].flatMap(extension => [
-          new InstrumentationNodeModuleFile(
+          instrumentModuleInstances(
             `@langchain/core/dist/runnables/base.${extension}`,
-            SUPPORTED_VERSIONS,
             (module: typeof Runnables) => {
               for (const cls of [module.RunnableSequence, module.RunnableMap]) {
                 this._patchBoundary(
@@ -147,9 +167,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               }
             }
           ),
-          new InstrumentationNodeModuleFile(
+          instrumentModuleInstances(
             `@langchain/core/dist/tools/index.${extension}`,
-            SUPPORTED_VERSIONS,
             (module: typeof Tools) => {
               this._patchBoundary(
                 module.StructuredTool.prototype,
@@ -169,9 +188,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               }
             }
           ),
-          new InstrumentationNodeModuleFile(
+          instrumentModuleInstances(
             `@langchain/core/dist/utils/stream.${extension}`,
-            SUPPORTED_VERSIONS,
             (module: typeof Streams) => {
               this._concat = module.concat;
               const self = this;
@@ -214,22 +232,20 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         SUPPORTED_VERSIONS,
         undefined,
         undefined,
-        ['cjs', 'js'].map(
-          extension =>
-            new InstrumentationNodeModuleFile(
-              `langchain/dist/agents/ReactAgent.${extension}`,
-              SUPPORTED_VERSIONS,
-              (module: { ReactAgent: { prototype: Agent } }) => {
-                this._patchBoundary(
-                  module.ReactAgent.prototype,
-                  GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
-                );
-                return module;
-              },
-              (module: { ReactAgent: { prototype: Agent } } | undefined) => {
-                if (module) this._unpatchBoundary(module.ReactAgent.prototype);
-              }
-            )
+        ['cjs', 'js'].map(extension =>
+          instrumentModuleInstances(
+            `langchain/dist/agents/ReactAgent.${extension}`,
+            (module: { ReactAgent: { prototype: Agent } }) => {
+              this._patchBoundary(
+                module.ReactAgent.prototype,
+                GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+              );
+              return module;
+            },
+            (module: { ReactAgent: { prototype: Agent } } | undefined) => {
+              if (module) this._unpatchBoundary(module.ReactAgent.prototype);
+            }
+          )
         )
       ),
     ];

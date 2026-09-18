@@ -51,6 +51,11 @@ function workflow() {
 }
 
 describe('LangChain public operations', () => {
+  before(function () {
+    // LangChain 1.x requires Node.js 20 or later.
+    if (Number(process.versions.node.split('.')[0]) < 20) this.skip();
+  });
+
   beforeEach(() => {
     instrumentation.setConfig({ captureMessageContent: false });
     instrumentation.enable();
@@ -459,29 +464,35 @@ describe('LangChain public operations', () => {
     expect(getTestSpans()[0].name).toBe('invoke_agent test-agent');
   });
 
-  it('captures final agent streaming output without copying the input history', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
-    const agent = createAgent({
-      name: 'streaming-agent',
-      model: new LocalChatModel({ responses: ['generated answer'] }),
-      tools: [],
-    }).withConfig({ tags: ['user-hook-tag'] });
-    const stream = await agent.stream({
-      messages: [new HumanMessage('generated prompt')],
+  for (const withConfig of [false, true]) {
+    it(`captures final agent streaming output without copying the input history (withConfig=${withConfig})`, async function () {
+      instrumentation.setConfig({ captureMessageContent: true });
+      let agent = createAgent({
+        name: 'streaming-agent',
+        model: new LocalChatModel({ responses: ['generated answer'] }),
+        tools: [],
+      });
+      if (withConfig) {
+        if (typeof agent.withConfig !== 'function') this.skip();
+        agent = agent.withConfig({ tags: ['user-hook-tag'] });
+      }
+      const stream = await agent.stream({
+        messages: [new HumanMessage('generated prompt')],
+      });
+      expect(stream).toBeInstanceOf(ReadableStream);
+      for await (const chunk of stream) expect(chunk).toBeDefined();
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(
+        JSON.parse(String(spans[0].attributes['gen_ai.output.messages']))
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'generated answer' }],
+        },
+      ]);
     });
-    expect(stream).toBeInstanceOf(ReadableStream);
-    for await (const chunk of stream) expect(chunk).toBeDefined();
-    const spans = getTestSpans();
-    expect(spans).toHaveLength(1);
-    expect(
-      JSON.parse(String(spans[0].attributes['gen_ai.output.messages']))
-    ).toEqual([
-      {
-        role: 'assistant',
-        parts: [{ type: 'text', content: 'generated answer' }],
-      },
-    ]);
-  });
+  }
 
   it('parents real agent tool execution without duplicating inference', async () => {
     class ToolModel extends LocalChatModel {

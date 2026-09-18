@@ -21,6 +21,8 @@ npm install --save @opentelemetry/instrumentation-langchain
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions >= `1.0.0` and < `2`
 
 The instrumented SDK must also support the application's Node.js version.
+LangChain 1.x requires Node.js 20 or later; the SDK integration tests and
+version matrix run only on those runtimes.
 
 ## Usage
 
@@ -84,7 +86,10 @@ counted. User callback arrays/managers are copied rather than mutated, and no
 additional inference spans or metrics are emitted.
 
 Operations run with their span active, so application callbacks and underlying
-SDK spans retain parentage. Streams retain the SDK's `ReadableStream` and async
+SDK spans retain parentage. Enabling or disabling the instrumentation reapplies
+or removes patches from every previously instrumented module copy, including
+nested dependencies.
+Streams retain the SDK's `ReadableStream` and async
 iterator interfaces. Spans end on completion, failure or consumer cancellation;
 partial/cancelled streams do not claim a complete output. Exceptions are
 preserved, with `error.type` set to the exception name (or `_OTHER` for non-Error
