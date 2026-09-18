@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
+import type {
+  BaseCallbackHandler,
+  CallbackHandlerMethods,
+} from '@langchain/core/callbacks/base';
 import type {
   CallbackManager,
   Callbacks,
@@ -19,17 +22,25 @@ import {
 /**
  * Observe model callbacks only to summarize this agent invocation. Output
  * histories may contain checkpointed messages, so summing them would overcount.
+ * The manager factory must come from the instrumented SDK's module hook.
  */
-export function agentUsageCallbacks(
-  callbacks: Callbacks | undefined,
+export function createAgentUsageHandler(
   span: Span,
-  diag: DiagLogger
-): Callbacks {
+  diag: DiagLogger,
+  callbackManager: Pick<typeof CallbackManager, 'fromHandlers'>
+): BaseCallbackHandler {
   const runs = new Set<string>();
   const reasons = new Set<string>();
   let inputTokens = 0;
   let outputTokens = 0;
-  const observer: CallbackHandlerMethods = {
+  const methods: CallbackHandlerMethods & {
+    name: string;
+    awaitHandlers: true;
+  } = {
+    name: `opentelemetry-langchain-agent-usage-${span.spanContext().spanId}`,
+    // Keep this synchronous observer out of the SDK's serial background queue,
+    // including when the SDK copies the handler created from these methods.
+    awaitHandlers: true,
     handleLLMEnd(output, runId) {
       if (runs.has(runId) || !span.isRecording()) return;
       runs.add(runId);
@@ -88,10 +99,19 @@ export function agentUsageCallbacks(
       }
     },
   };
+  return callbackManager.fromHandlers(methods).handlers[0];
+}
+
+export function agentUsageCallbacks(
+  callbacks: Callbacks | undefined,
+  span: Span,
+  diag: DiagLogger,
+  callbackManager: Pick<typeof CallbackManager, 'fromHandlers'>
+): Callbacks {
+  const observer = createAgentUsageHandler(span, diag, callbackManager);
   if (!callbacks || Array.isArray(callbacks))
     return [...(callbacks ?? []), observer];
   const copy = callbacks.copy();
-  const managerClass = callbacks.constructor as typeof CallbackManager;
-  copy.addHandler(managerClass.fromHandlers(observer).handlers[0], true);
+  copy.addHandler(observer, true);
   return copy;
 }

@@ -9,6 +9,7 @@ import {
   AIMessage,
   HumanMessage,
   SystemMessage,
+  ToolMessage,
 } from '@langchain/core/messages';
 import {
   agentOutput,
@@ -83,6 +84,90 @@ describe('LangChain content mapping', () => {
       { type: 'custom_provider_part', data: 'generated data' },
     ];
     expect(convert([{ role: 'assistant', content }])[0].parts).toEqual(content);
+  });
+
+  it('maps inline image URLs to blobs in every supported image shape', () => {
+    for (const [url, content] of [
+      ['data:image/png;base64,aGVsbG8=', 'aGVsbG8='],
+      ['data:IMAGE/PNG;BASE64,aGVsbG8', 'aGVsbG8'],
+      ['data:image/png;charset=utf-8;base64,%2B%2F8%3D', '+/8='],
+      ['data:image/png;base64,', ''],
+    ]) {
+      for (const image of [
+        { type: 'image_url', image_url: url },
+        { type: 'image_url', image_url: { url, detail: 'low' } },
+        { type: 'image', url },
+      ]) {
+        expect(
+          convert([new HumanMessage({ content: [image] })])[0].parts
+        ).toEqual([
+          { type: 'blob', modality: 'image', mime_type: 'image/png', content },
+        ]);
+      }
+    }
+  });
+
+  it('preserves unknown or malformed inline image URLs without discarding them', () => {
+    for (const url of [
+      'data:image/png,not-base64',
+      'data:text/plain;base64,aGVsbG8=',
+      'data:image/png;base64,not base64',
+      'data:image/png;base64,A',
+      'data:image/png;base64,AA=',
+      'data:image/png;base64,AAAA====',
+      'data:image/png;base64,%ZZ',
+      'data:image/png;name=%ZZ;base64,AAAA',
+      'data:image/png;base64,AAAA\n',
+      'data:image/png;base64,AAAA%0A',
+      'data:image/png;unknown;base64,AAAA',
+      'data:image/png;base64;extra=1,AAAA',
+      undefined,
+      42,
+    ]) {
+      const content = [
+        { type: 'image_url', image_url: url },
+        { type: 'image_url', image_url: { url } },
+        { type: 'image', url },
+      ];
+      expect(convert([{ role: 'user', content }])[0].parts).toEqual(
+        JSON.parse(JSON.stringify(content))
+      );
+    }
+  });
+
+  it('keeps the MIME type of non-PNG inline images', () => {
+    expect(
+      convert([
+        {
+          role: 'user',
+          content: [{ type: 'image', url: 'data:image/svg+xml;base64,AAAA' }],
+        },
+      ])[0].parts
+    ).toEqual([
+      {
+        type: 'blob',
+        modality: 'image',
+        mime_type: 'image/svg+xml',
+        content: 'AAAA',
+      },
+    ]);
+  });
+
+  it('keeps genuine image URL strings as URIs', () => {
+    expect(
+      convert([
+        new HumanMessage({
+          content: [
+            {
+              type: 'image_url',
+              image_url: 'https://example.test/image.png',
+            },
+          ],
+        }),
+      ])[0].parts
+    ).toEqual([
+      { type: 'uri', modality: 'image', uri: 'https://example.test/image.png' },
+    ]);
   });
 
   it('distinguishes server-hosted tools from client tool calls', () => {
@@ -199,6 +284,22 @@ describe('LangChain content mapping', () => {
     ).toEqual([answer]);
     expect(agentOutput({ model: { messages: [answer] } })).toEqual([answer]);
     expect(agentOutput({ unrelated: true })).toBeUndefined();
+  });
+
+  it('extracts the last relevant node update for returnDirect tools', () => {
+    const request = new AIMessage({
+      content: '',
+      tool_calls: [{ id: 'call', name: 'echo', args: { text: 'answer' } }],
+    });
+    const answer = new ToolMessage({ content: 'answer', tool_call_id: 'call' });
+    expect(
+      agentOutput({
+        model: { messages: [request] },
+        tools: { messages: [answer] },
+        middleware: { messages: [] },
+        unrelated: { state: true },
+      })
+    ).toEqual([answer]);
   });
 
   it('maps string and SDK system-message instruction shapes', () => {

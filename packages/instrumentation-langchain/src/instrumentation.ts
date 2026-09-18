@@ -24,6 +24,8 @@ import type { createAgent } from 'langchain';
 import type * as Runnables from '@langchain/core/runnables';
 import type * as Tools from '@langchain/core/tools';
 import type * as Streams from '@langchain/core/utils/stream';
+import type { CallbackManager } from '@langchain/core/callbacks/manager';
+import type { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
@@ -34,7 +36,9 @@ import {
   systemInstructions,
   toolContent,
 } from './content';
-import { agentUsageCallbacks } from './agent-usage';
+import { createAgentUsageHandler } from './agent-usage';
+import { createAgentStreamAccumulator } from './agent-stream';
+import { observeStream } from './stream-lifecycle';
 import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
@@ -58,6 +62,7 @@ import {
 type Agent = ReturnType<typeof createAgent>;
 type Operation = 'invoke_workflow' | 'invoke_agent' | 'execute_tool';
 const ACTIVE_OPERATION = createContextKey('opentelemetry.langchain.operation');
+const ACTIVE_AGENT = createContextKey('opentelemetry.langchain.agent');
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 interface OperationState {
   target: object;
@@ -66,11 +71,22 @@ interface OperationState {
   capture: boolean;
   operation: Operation;
   ended: boolean;
-  observingStream: boolean;
   streaming: boolean;
   outputValid: boolean;
+  agentStream?: ReturnType<typeof createAgentStreamAccumulator>;
+  usageHandler?: BaseCallbackHandler;
   agentName?: string;
   output?: unknown;
+}
+
+interface SourceCompletion {
+  completed: boolean;
+  failed: boolean;
+  error?: unknown;
+}
+
+interface EventStreamModule {
+  toEventStream(stream: object): ReadableStream<Uint8Array>;
 }
 
 function isIterator(
@@ -84,9 +100,9 @@ function instrumentModuleInstances<T extends object>(
   patch: (module: T) => void,
   unpatch: (module: T) => void
 ): InstrumentationNodeModuleFile {
-  // InstrumentationBase retains only the last loaded copy of each module file.
+  // Keep every loaded copy, including imports made while patching is disabled.
   const instances = new Set<T>();
-  return new InstrumentationNodeModuleFile(
+  const file = new InstrumentationNodeModuleFile(
     name,
     SUPPORTED_VERSIONS,
     (module: T) => {
@@ -98,10 +114,20 @@ function instrumentModuleInstances<T extends object>(
       for (const instance of instances) unpatch(instance);
     }
   );
+  let exports: T | undefined;
+  Object.defineProperty(file, 'moduleExports', {
+    get: () => exports,
+    set: (module: T) => {
+      exports = module;
+      instances.add(module);
+    },
+  });
+  return file;
 }
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
-  declare private _concat?: typeof Streams.concat;
+  declare private _streamSources?: WeakMap<object, Promise<SourceCompletion>>;
+  declare private _readerSources?: WeakMap<object, Promise<SourceCompletion>>;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -136,6 +162,41 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         undefined,
         undefined,
         ['cjs', 'js'].flatMap(extension => [
+          instrumentModuleInstances(
+            `@langchain/core/dist/callbacks/manager.${extension}`,
+            (module: { CallbackManager: typeof CallbackManager }) => {
+              const self = this;
+              this._wrap(module.CallbackManager, '_configureSync', original => {
+                return function (this: typeof CallbackManager, ...args) {
+                  const manager = original.apply(this, args);
+                  const state = context.active().getValue(ACTIVE_AGENT) as
+                    | OperationState
+                    | undefined;
+                  if (!state || state.ended) return manager;
+                  try {
+                    const handler = (state.usageHandler ??=
+                      createAgentUsageHandler(state.span, self._diag, this));
+                    if (
+                      manager?.handlers.some(item => item.name === handler.name)
+                    ) {
+                      return manager;
+                    }
+                    const copy = manager ? manager.copy() : new this();
+                    copy.addHandler(handler, true);
+                    return copy;
+                  } catch {
+                    self._diag.warn(
+                      'LangChain: could not observe agent usage callbacks'
+                    );
+                    return manager;
+                  }
+                };
+              });
+            },
+            (module: { CallbackManager: typeof CallbackManager }) => {
+              this._unwrap(module.CallbackManager, '_configureSync');
+            }
+          ),
           instrumentModuleInstances(
             `@langchain/core/dist/runnables/base.${extension}`,
             (module: typeof Runnables) => {
@@ -191,7 +252,6 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           instrumentModuleInstances(
             `@langchain/core/dist/utils/stream.${extension}`,
             (module: typeof Streams) => {
-              this._concat = module.concat;
               const self = this;
               this._wrap(
                 module.IterableReadableStream,
@@ -204,14 +264,15 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                     const state = context
                       .active()
                       .getValue(ACTIVE_OPERATION) as OperationState | undefined;
-                    if (
-                      state?.streaming &&
-                      !state.observingStream &&
-                      !state.ended
-                    ) {
-                      self._observeIterator(generator, state);
+                    const completion =
+                      state?.streaming && !state.ended
+                        ? self._bindIterator(generator, state.ctx)
+                        : undefined;
+                    const stream = (original<T>).call(this, generator);
+                    if (completion) {
+                      self._trackStreamSource(stream, completion);
                     }
-                    return (original<T>).call(this, generator);
+                    return stream;
                   };
                 }
               );
@@ -226,6 +287,31 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             }
           ),
         ])
+      ),
+      new InstrumentationNodeModuleDefinition(
+        '@langchain/langgraph',
+        SUPPORTED_VERSIONS,
+        undefined,
+        undefined,
+        ['cjs', 'js'].map(extension =>
+          instrumentModuleInstances(
+            `@langchain/langgraph/dist/pregel/stream.${extension}`,
+            (module: EventStreamModule) => {
+              const self = this;
+              this._wrap(module, 'toEventStream', original => {
+                return function (this: EventStreamModule, stream: object) {
+                  const encoded = original.call(this, stream);
+                  const source = self._streamSource(stream);
+                  if (source) self._trackStreamSource(encoded, source);
+                  return encoded;
+                };
+              });
+            },
+            (module: EventStreamModule) => {
+              this._unwrap(module, 'toEventStream');
+            }
+          )
+        )
       ),
       new InstrumentationNodeModuleDefinition(
         'langchain',
@@ -332,9 +418,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             capture,
             operation,
             ended: false,
-            observingStream: false,
             streaming,
             outputValid: true,
+            agentStream:
+              capture &&
+              streaming &&
+              operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+                ? createAgentStreamAccumulator(args[1])
+                : undefined,
             agentName:
               typeof attributes[ATTR_GEN_AI_AGENT_NAME] === 'string'
                 ? attributes[ATTR_GEN_AI_AGENT_NAME]
@@ -343,42 +434,45 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           state.ctx = trace
             .setSpan(parent, span)
             .setValue(ACTIVE_OPERATION, state);
+          if (operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT) {
+            state.ctx = state.ctx.setValue(ACTIVE_AGENT, state);
+          }
         } catch {
           self._diag.warn('LangChain: could not start operation telemetry');
           return original.apply(this, args);
         }
-        const callArgs = [...args] as A;
-        if (operation === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT) {
-          try {
-            const options = (args[1] ?? {}) as RunnableConfig;
-            callArgs[1] = {
-              ...options,
-              callbacks: agentUsageCallbacks(
-                options.callbacks,
-                state.span,
-                self._diag
-              ),
-            };
-          } catch {
-            self._diag.warn(
-              'LangChain: could not observe agent usage callbacks'
-            );
-          }
-        }
         let result: R;
         try {
-          result = context.with(state.ctx, () =>
-            original.apply(this, callArgs)
-          );
+          result = context.with(state.ctx, () => original.apply(this, args));
         } catch (error) {
           self._end(state, undefined, error, true);
           throw error;
         }
         const completed = (value: unknown) => {
-          if (streaming && isIterator(value)) {
-            if (!state.observingStream) self._observeIterator(value, state);
-          } else {
-            self._end(state, value);
+          try {
+            if (
+              streaming &&
+              (isIterator(value) || value instanceof ReadableStream)
+            ) {
+              observeStream(value, {
+                context: state.ctx,
+                diag: self._diag,
+                sourceCompletion: self._streamSource(value),
+                onChunk: chunk => self._recordChunk(state, chunk),
+                onEnd: (consumed, error, failed) =>
+                  self._end(
+                    state,
+                    consumed && state.outputValid ? state.output : undefined,
+                    error,
+                    failed
+                  ),
+              });
+            } else {
+              self._end(state, value);
+            }
+          } catch {
+            self._diag.warn('LangChain: could not observe operation result');
+            self._end(state);
           }
         };
         if (result instanceof Promise) {
@@ -463,12 +557,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return attributes;
   }
 
-  private _observeIterator(
+  private _bindIterator(
     iterator: AsyncIterator<unknown, unknown, unknown>,
-    state: OperationState
-  ) {
-    state.observingStream = true;
-    const self = this;
+    ctx: Context
+  ): Promise<SourceCompletion> {
+    let complete!: (result: SourceCompletion) => void;
+    const completion = new Promise<SourceCompletion>(resolve => {
+      complete = resolve;
+    });
     for (const method of ['next', 'return', 'throw'] as const) {
       const original = iterator[method];
       if (!original) continue;
@@ -479,49 +575,78 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           function (...args: [] | [unknown]) {
             let result: Promise<IteratorResult<unknown>>;
             try {
-              result = context.with(state.ctx, () =>
-                original.apply(iterator, args)
-              );
+              result = context.with(ctx, () => original.apply(iterator, args));
             } catch (error) {
-              self._end(state, undefined, error, true);
+              complete({ completed: false, failed: true, error });
               throw error;
             }
             void result.then(
-              chunk => {
-                if (method !== 'next' || chunk.done) {
-                  self._end(
-                    state,
-                    method === 'next' && state.outputValid
-                      ? state.output
-                      : undefined
-                  );
-                } else if (state.capture && state.outputValid) {
-                  try {
-                    if (state.output === undefined) {
-                      state.output = chunk.value;
-                    } else if (self._concat) {
-                      state.output = self._concat(state.output, chunk.value);
-                    } else {
-                      self._diag.debug(
-                        'LangChain: stream concatenation is unavailable; omitting content'
-                      );
-                      state.outputValid = false;
-                      state.output = undefined;
-                    }
-                  } catch {
-                    self._diag.debug(
-                      'LangChain: streamed output cannot be combined; omitting content'
-                    );
-                    state.outputValid = false;
-                    state.output = undefined;
-                  }
+              value => {
+                if (method !== 'next' || value.done) {
+                  complete({ completed: method === 'next', failed: false });
                 }
               },
-              error => self._end(state, undefined, error, true)
+              error => complete({ completed: false, failed: true, error })
             );
             return result;
           }
       );
+    }
+    return completion;
+  }
+
+  private _trackStreamSource<T>(
+    stream: ReadableStream<T>,
+    completion: Promise<SourceCompletion>
+  ) {
+    (this._streamSources ??= new WeakMap()).set(stream, completion);
+    const readers = (this._readerSources ??= new WeakMap());
+    this._wrap(
+      stream,
+      'getReader',
+      original =>
+        new Proxy(original.bind(stream), {
+          apply(_target, receiver, args) {
+            const reader: object = Reflect.apply(original, receiver, args);
+            if (receiver === stream) readers.set(reader, completion);
+            return reader;
+          },
+        })
+    );
+  }
+
+  private _streamSource(stream: object): Promise<SourceCompletion> | undefined {
+    const source = this._streamSources?.get(stream);
+    if (source) return source;
+    // LangGraph's abortable public stream pumps from this SDK source reader.
+    if ('_innerReader' in stream && isRecord(stream._innerReader)) {
+      return this._readerSources?.get(stream._innerReader);
+    }
+    return undefined;
+  }
+
+  private _recordChunk(state: OperationState, chunk: unknown) {
+    if (!state.capture || !state.outputValid) return;
+    try {
+      if (state.agentStream) {
+        state.agentStream.add(chunk);
+        state.output = state.agentStream.output();
+      } else if (state.output === undefined) {
+        state.output = chunk;
+      } else if (
+        '_concatOutputChunks' in state.target &&
+        typeof state.target._concatOutputChunks === 'function'
+      ) {
+        state.output = state.target._concatOutputChunks(state.output, chunk);
+      } else {
+        throw new Error('LangChain stream concatenation is unavailable');
+      }
+    } catch {
+      this._diag.debug(
+        'LangChain: streamed output cannot be combined; omitting content'
+      );
+      state.outputValid = false;
+      state.output = undefined;
     }
   }
 
@@ -561,7 +686,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     } catch {
       this._diag.warn('LangChain: could not extract operation telemetry');
     } finally {
-      state.span.end();
+      try {
+        state.span.end();
+      } catch {
+        this._diag.warn('LangChain: could not end operation span');
+      }
     }
   }
 }

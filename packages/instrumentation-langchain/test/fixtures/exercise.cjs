@@ -46,12 +46,47 @@ module.exports = async function exercise({
       messages: [{ role: 'user', content: 'generated prompt' }],
     });
     assert.equal(result.messages.at(-1).content, 'generated answer');
+    const [first, sibling] = (
+      await agent.stream({
+        messages: [{ role: 'user', content: 'generated prompt' }],
+      })
+    ).tee();
+    const reader = first.pipeThrough(new TransformStream()).getReader();
+    while (!(await reader.read()).done) {}
+    await provider.forceFlush();
+    const agentSpans = exporter
+      .getFinishedSpans()
+      .filter(span => span.name === 'invoke_agent fixture-agent');
+    await sibling.cancel();
+    assert.equal(agentSpans.length, 2);
+    const [encoded, encodedSibling] = (
+      await agent.stream(
+        { messages: [{ role: 'user', content: 'generated prompt' }] },
+        { encoding: 'text/event-stream' }
+      )
+    ).tee();
+    const encodedReader = encoded
+      .pipeThrough(new TransformStream())
+      .getReader();
+    while (!(await encodedReader.read()).done) {}
+    await provider.forceFlush();
+    const encodedAgentSpans = exporter
+      .getFinishedSpans()
+      .filter(span => span.name === 'invoke_agent fixture-agent');
+    await encodedSibling.cancel();
+    assert.equal(encodedAgentSpans.length, 3);
   }
   await provider.forceFlush();
   const spans = exporter.getFinishedSpans();
   assert.deepEqual(spans.map(span => span.name).sort(), [
     'execute_tool fixture-tool',
-    ...(createAgent ? ['invoke_agent fixture-agent'] : []),
+    ...(createAgent
+      ? [
+          'invoke_agent fixture-agent',
+          'invoke_agent fixture-agent',
+          'invoke_agent fixture-agent',
+        ]
+      : []),
     'invoke_workflow fixture-workflow',
     'invoke_workflow fixture-workflow',
   ]);

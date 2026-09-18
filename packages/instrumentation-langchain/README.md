@@ -83,17 +83,29 @@ Agent spans do summarize the actual model calls made during that invocation:
 available input/output token counts are summed and finish reasons are collected
 through the public callback API. Previously checkpointed message history is not
 counted. User callback arrays/managers are copied rather than mutated, and no
-additional inference spans or metrics are emitted.
+additional inference spans or metrics are emitted. Callbacks inherited from
+enclosing runnables are preserved. Usage collection completes before the span
+ends without changing background scheduling for user callbacks.
 
 Operations run with their span active, so application callbacks and underlying
 SDK spans retain parentage. Enabling or disabling the instrumentation reapplies
-or removes patches from every previously instrumented module copy, including
-nested dependencies.
+or removes patches from every observed module copy, including nested dependencies
+loaded while instrumentation was disabled.
 Streams retain the SDK's `ReadableStream` and async
 iterator interfaces. Spans end on completion, failure or consumer cancellation;
 partial/cancelled streams do not claim a complete output. Exceptions are
 preserved, with `error.type` set to the exception name (or `_OTHER` for non-Error
 throws). Exception messages and stack traces are not captured.
+Internal model streams do not finish the enclosing operation span. Agent output
+capture understands `updates`, `values`, `messages`, and combined stream modes,
+including final responses from `returnDirect` tools.
+Native `pipeTo`, `pipeThrough`, and `tee` consumption retains lifecycle tracing,
+but omits output content because native pipelines bypass public chunk reads and
+may transform or discard data. Direct iterator and reader consumption captures
+output using the runnable's aggregation semantics.
+SSE-encoded agent streams also retain lifecycle tracing, but omit encoded output
+content. The internal LangGraph encoding adapter is observed only to preserve
+the source association; standalone LangGraph operations are not traced.
 
 ## Configuration Options
 
@@ -115,6 +127,8 @@ to `gen_ai.conversation.id`: configurable `thread_id`, `session_id`, then
 
 Captured messages use the official JSON message schema. Unmapped provider-specific
 parts retain their original type and structure instead of being silently dropped.
+Inline base64 image data URLs are represented as blob parts with their MIME type;
+external image URLs remain URI parts.
 Tool arguments/results are JSON objects; scalar or array values are represented
 as `{ "content": value }` to satisfy the official tool content schemas.
 

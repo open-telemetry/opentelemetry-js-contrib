@@ -47,6 +47,22 @@ describe('LangChainInstrumentation', () => {
         file.moduleExports = module;
         file.patch(module);
       }
+      instance.disable();
+      for (let index = 0; index < 2; index++) {
+        const module = {
+          ReactAgent: class {
+            invoke() {}
+            stream() {}
+          },
+        };
+        modules.push(module);
+        originals.push({
+          invoke: module.ReactAgent.prototype.invoke,
+          stream: module.ReactAgent.prototype.stream,
+        });
+        file.moduleExports = module;
+      }
+      instance.enable();
       for (let cycle = 0; cycle < 2; cycle++) {
         for (const [index, module] of modules.entries()) {
           expect(module.ReactAgent.prototype.invoke).not.toBe(

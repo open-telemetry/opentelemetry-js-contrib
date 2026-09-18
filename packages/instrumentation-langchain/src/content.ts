@@ -30,6 +30,38 @@ export function toolContent(value: unknown): string | undefined {
   return JSON.stringify(isRecord(value) ? value : { content: value });
 }
 
+function imagePart(url: unknown): Record<string, unknown> | undefined {
+  if (typeof url !== 'string') return undefined;
+  if (!/^data:/i.test(url)) {
+    return { type: 'uri', modality: 'image', uri: url };
+  }
+  const match =
+    /^data:(image\/[a-z0-9!#$&^_.+-]+)(?:;[a-z0-9!#$%&'*+.^_`|~-]+=[a-z0-9!#$%&'*+.^_`|~-]+)*;base64,(.*)$/i.exec(
+      url
+    );
+  if (!match || match[0] !== url || /%(?![a-f0-9]{2})/i.test(url))
+    return undefined;
+  let content: string;
+  try {
+    content = decodeURIComponent(match[2]);
+  } catch {
+    return undefined;
+  }
+  if (
+    content.trim() !== content ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/.test(
+      content
+    )
+  )
+    return undefined;
+  return {
+    type: 'blob',
+    modality: 'image',
+    mime_type: match[1].toLowerCase(),
+    content,
+  };
+}
+
 function part(value: unknown, diag: DiagLogger): Record<string, unknown> {
   if (!isRecord(value)) {
     return { type: 'text', content: String(value) };
@@ -43,12 +75,13 @@ function part(value: unknown, diag: DiagLogger): Record<string, unknown> {
         type: 'reasoning',
         content: value.reasoning ?? value.thinking,
       };
-    case 'image_url':
-      return {
-        type: 'uri',
-        modality: 'image',
-        uri: isRecord(value.image_url) ? value.image_url.url : value.image_url,
-      };
+    case 'image_url': {
+      const image = imagePart(
+        isRecord(value.image_url) ? value.image_url.url : value.image_url
+      );
+      if (image) return image;
+      break;
+    }
     case 'image':
     case 'audio':
     case 'video':
@@ -65,6 +98,11 @@ function part(value: unknown, diag: DiagLogger): Record<string, unknown> {
         };
       }
       if (typeof value.url === 'string') {
+        if (value.type === 'image') {
+          const image = imagePart(value.url);
+          if (image) return image;
+          break;
+        }
         return {
           type: 'uri',
           modality: value.type === 'file' ? 'document' : value.type,
@@ -223,12 +261,17 @@ export function agentOutput(value: unknown): unknown {
   if (!isRecord(value)) return value;
   if (Array.isArray(value.messages)) return value.messages.slice(-1);
   // Agent streaming defaults to graph updates, keyed by the node name.
+  let output: unknown;
   for (const update of Object.values(value)) {
-    if (isRecord(update) && Array.isArray(update.messages)) {
-      return update.messages.slice(-1);
+    if (
+      isRecord(update) &&
+      Array.isArray(update.messages) &&
+      update.messages.length > 0
+    ) {
+      output = update.messages.slice(-1);
     }
   }
-  return undefined;
+  return output;
 }
 
 export function systemInstructions(
