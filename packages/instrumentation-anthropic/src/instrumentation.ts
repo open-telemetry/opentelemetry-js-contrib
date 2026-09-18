@@ -10,6 +10,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+import { isTracingSuppressed } from '@opentelemetry/core';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -47,12 +48,6 @@ function isMessageCreateParams(
   value: unknown
 ): value is Anthropic.Messages.MessageCreateParams {
   return typeof value === 'object' && value !== null;
-}
-
-function isStreamRequest(
-  params: Anthropic.Messages.MessageCreateParams | undefined
-): boolean {
-  return params?.stream === true;
 }
 
 /**
@@ -135,7 +130,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         this: any,
         ...args: unknown[]
       ) {
-        if (!instrumentation.isEnabled()) {
+        if (
+          !instrumentation.isEnabled() ||
+          isTracingSuppressed(context.active())
+        ) {
           return original.apply(this, args);
         }
 
@@ -173,10 +171,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         const onError = (error: unknown) =>
           instrumentation._endSpanWithError(state, error);
 
-        if (isStreamRequest(params) || !isAPIPromise(result)) {
-          // Streaming responses must be unwrapped so that the stream's iterator
-          // can be wrapped. Parsing an SSE response does not consume a JSON
-          // body, so awaiting the promise here is safe.
+        if (isAPIPromise(result)) {
+          instrumentation._observeAPIPromise(result, state);
+        } else {
+          // Not an `APIPromise`: fall back to observing the plain promise.
           result.then(value => {
             if (isAnthropicStream(value)) {
               instrumentation._wrapStream(value, state);
@@ -184,8 +182,6 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
               instrumentation._endSpan(state);
             }
           }, onError);
-        } else {
-          instrumentation._observeAPIPromise(result, state);
         }
 
         // Preserve the Anthropic SDK's customized APIPromise instance.
@@ -203,10 +199,14 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
    * both consumption paths are wrapped and the span ends with whichever the
    * caller actually uses:
    *
-   * - `parse()` backs `then`/`catch`/`finally`/`await`/`withResponse()`, so the
-   *   span covers the body read and records body-level failures.
+   * - `parse()` backs `then`/`catch`/`finally`/`await`/`withResponse()`. For a
+   *   non-streaming call the span covers the body read and records body-level
+   *   failures; for a streaming call it yields the `Stream`, whose iterator is
+   *   wrapped so the span ends with the stream.
    * - `asResponse()` hands the caller an unread `Response`; the caller owns the
-   *   body from that point, so the span ends when the response settles.
+   *   body from that point, so the span ends when the response settles. This
+   *   applies to streaming calls too, where the raw response is consumed
+   *   directly and the stream iterator never runs.
    *
    * Nothing is subscribed eagerly: a caller may not consume the promise until
    * long after the response arrives, and ending the span at that point would
@@ -225,7 +225,14 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       return () => {
         parsed = true;
         const parsePromise = originalParse.call(apiPromise);
-        parsePromise.then(() => this._endSpan(state), onError);
+        parsePromise.then(value => {
+          if (isAnthropicStream(value)) {
+            // The span now belongs to the stream's lifetime.
+            this._wrapStream(value, state);
+          } else {
+            this._endSpan(state);
+          }
+        }, onError);
         return parsePromise;
       };
     });

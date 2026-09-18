@@ -9,7 +9,8 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 import Anthropic from '@anthropic-ai/sdk';
-import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
@@ -384,6 +385,67 @@ describe('Anthropic instrumentation', function () {
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
     expect(spans[0].attributes['gen_ai.provider.name']).toBe('aws.bedrock');
+  });
+
+  it('ends the span when a streaming response is read via asResponse', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const response = await createRecordingClient()
+        .messages.create({
+          model,
+          max_tokens: 16,
+          messages: [{ role: 'user', content: input }],
+          stream: true,
+        })
+        .asResponse();
+
+      // The caller consumes the raw response, so the stream iterator that
+      // normally ends the span never runs.
+      expect(response.bodyUsed).toBe(false);
+      expect(await response.text()).toContain('event:');
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].name).toBe(`chat ${model}`);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+  });
+
+  it('leaves the SDK untouched when tracing is suppressed', async () => {
+    const { nockDone } = await nockBack('anthropic-messages-create.json', {
+      afterRecord: sanitizeRecordings,
+    });
+    try {
+      const client = createRecordingClient();
+      const pending = context.with(suppressTracing(context.active()), () =>
+        client.messages.create({
+          model,
+          max_tokens: 16,
+          messages: [{ role: 'user', content: input }],
+        })
+      );
+
+      // The promise must be handed back exactly as the SDK built it, with no
+      // observers installed on its consumption methods.
+      const wrapped = pending as unknown as Record<
+        string,
+        { __wrapped?: true }
+      >;
+      expect(wrapped.parse.__wrapped).toBeUndefined();
+      expect(wrapped.asResponse.__wrapped).toBeUndefined();
+
+      const response = await pending;
+      expect(response.id).toMatch(/^msg_/);
+    } finally {
+      nockDone();
+    }
+
+    expect(getTestSpans()).toHaveLength(0);
   });
 
   it('records messages.create errors', async () => {
