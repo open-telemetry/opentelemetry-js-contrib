@@ -10,7 +10,7 @@ import * as api from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { Resource } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
@@ -19,8 +19,8 @@ const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
   let exporter;
-  if (EXPORTER === 'jaeger') {
-    exporter = new JaegerExporter();
+  if (EXPORTER === 'jaeger' || EXPORTER === 'otlp') {
+    exporter = new OTLPTraceExporter();
   } else {
     exporter = new ZipkinExporter();
   }
