@@ -49,16 +49,21 @@ export function createAgentStreamAccumulator(
   let snapshot: unknown[] | undefined;
   let rootSnapshot: unknown[] | undefined;
 
-  function addSnapshot(value: unknown, namespace: string[]): void {
+  function addSnapshot(
+    value: unknown,
+    namespace: string[],
+    complete = false
+  ): void {
     if (
       !isRecord(value) ||
       !Array.isArray(value.messages) ||
-      value.messages.length === 0
+      (!complete && value.messages.length === 0)
     )
       return;
     const message = value.messages[value.messages.length - 1];
-    if (!isOutputMessage(message)) return;
-    snapshot = [message];
+    if (!complete && !isOutputMessage(message)) return;
+    // An empty complete snapshot must also supersede earlier token deltas.
+    snapshot = isOutputMessage(message) ? [message] : [];
     if (namespace.length === 0) rootSnapshot = snapshot;
   }
 
@@ -148,7 +153,7 @@ export function createAgentStreamAccumulator(
       if (mode === 'messages') {
         addMessage(payload, namespace);
       } else if (mode === 'values') {
-        addSnapshot(payload, namespace);
+        addSnapshot(payload, namespace, true);
       } else if (mode === 'updates' && isRecord(payload)) {
         for (const update of Object.values(payload)) {
           addSnapshot(update, namespace);
@@ -156,9 +161,9 @@ export function createAgentStreamAccumulator(
       }
     },
     output(): unknown {
-      return (
-        rootSnapshot ?? snapshot ?? (latest ? [latest.message] : undefined)
-      );
+      const result =
+        rootSnapshot ?? snapshot ?? (latest ? [latest.message] : undefined);
+      return result?.length ? result : undefined;
     },
   };
 }

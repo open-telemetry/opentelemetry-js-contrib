@@ -21,6 +21,11 @@ export function createGraphStreamAccumulator(
       : Array.isArray(modes) && modes.length === 1
         ? modes[0]
         : undefined;
+  const checkpointNamespace = config.configurable?.checkpoint_ns;
+  let namespace =
+    typeof checkpointNamespace === 'string'
+      ? checkpointNamespace.split('|').filter(Boolean)
+      : undefined;
   let output: unknown;
   return {
     add(chunk: unknown) {
@@ -28,9 +33,28 @@ export function createGraphStreamAccumulator(
       let payload = chunk;
       let chunkMode = mode;
       if (config.subgraphs) {
-        if (!Array.isArray(payload) || !Array.isArray(payload[0])) return;
-        if (payload[0].length !== 0) return;
-        payload = multiple ? payload.slice(1) : payload[1];
+        if (
+          !Array.isArray(payload) ||
+          !Array.isArray(payload[0]) ||
+          !payload[0].every(item => typeof item === 'string')
+        )
+          return;
+        const chunkNamespace: string[] = payload[0].filter(Boolean);
+        // The SDK can inherit or reset the supplied namespace. A later
+        // ancestor replaces tentative descendant output, even for updates.
+        if (
+          namespace === undefined ||
+          chunkNamespace.length < namespace.length
+        ) {
+          namespace = chunkNamespace;
+          output = undefined;
+        }
+        if (
+          chunkNamespace.length !== namespace.length ||
+          namespace.some((item, index) => item !== chunkNamespace[index])
+        )
+          return;
+        payload = multiple ? payload.slice(1, 3) : payload[1];
       }
       if (multiple) {
         if (!Array.isArray(payload) || payload.length !== 2) return;

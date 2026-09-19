@@ -207,6 +207,29 @@ describe('LangChain agent stream accumulation', () => {
     }
   });
 
+  it('lets empty and non-output values replace snapshots and token deltas', () => {
+    for (const retained of [[], [new HumanMessage('question')]]) {
+      const accumulator = createAgentStreamAccumulator({
+        streamMode: ['messages', 'updates', 'values'],
+        subgraphs: true,
+      });
+      accumulator.add([[], 'updates', { model: { messages: [answer] } }]);
+      accumulator.add([[], 'values', { messages: retained }]);
+      accumulator.add([['child:task'], 'values', { messages: [answer] }]);
+      accumulator.add([
+        [],
+        'messages',
+        [new AIMessageChunk({ id: 'answer', content: 'answer' }), metadata],
+      ]);
+      accumulator.add([[], 'updates', { middleware: { messages: [] } }]);
+      expect(accumulator.output()).toBeUndefined();
+
+      accumulator.add([[], 'values', { messages: [answer] }]);
+      accumulator.add([['child:task'], 'values', { messages: [] }]);
+      expect(accumulator.output()).toEqual([answer]);
+    }
+  });
+
   it('keeps returnDirect output with simultaneous messages and updates', () => {
     const accumulator = createAgentStreamAccumulator({
       streamMode: ['updates', 'messages'],

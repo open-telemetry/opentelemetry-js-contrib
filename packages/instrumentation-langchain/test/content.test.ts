@@ -12,6 +12,10 @@ import {
   ToolMessage,
 } from '@langchain/core/messages';
 import {
+  ChatPromptValue,
+  StringPromptValue,
+} from '@langchain/core/prompt_values';
+import {
   agentOutput,
   messages,
   systemInstructions,
@@ -31,6 +35,44 @@ describe('LangChain content mapping', () => {
         { role: 'custom', content: 'custom' },
       ]).map((message: { role: string }) => message.role)
     ).toEqual(['system', 'developer', 'user', 'assistant', 'custom']);
+  });
+
+  it('normalizes SDK prompt values through their chat-message contract', () => {
+    for (const prompt of [
+      new StringPromptValue('question'),
+      new ChatPromptValue([new HumanMessage('question')]),
+    ]) {
+      for (const value of [prompt, { input: prompt }, { output: prompt }]) {
+        expect(convert(value)).toEqual([
+          { role: 'user', parts: [{ type: 'text', content: 'question' }] },
+        ]);
+      }
+    }
+  });
+
+  it('treats strings in message arrays as human messages, not outer tuples', () => {
+    for (const defaultRole of ['user', 'assistant']) {
+      expect(
+        JSON.parse(messages(['human', 'question'], diag, defaultRole)!)
+      ).toEqual(
+        ['human', 'question'].map(content => ({
+          role: 'user',
+          parts: [{ type: 'text', content }],
+        }))
+      );
+      expect(
+        JSON.parse(
+          messages(
+            ['question', ['ai', 'answer'], new SystemMessage('instructions')],
+            diag,
+            defaultRole
+          )!
+        ).map((message: { role: string }) => message.role)
+      ).toEqual(['user', 'assistant', 'system']);
+    }
+    expect(convert([['human', 'question']])).toEqual([
+      { role: 'user', parts: [{ type: 'text', content: 'question' }] },
+    ]);
   });
 
   it('maps text, reasoning, URIs, inline data and uploaded files', () => {
@@ -199,6 +241,34 @@ describe('LangChain content mapping', () => {
     ]);
   });
 
+  it('prefers standard camelCase server tool result IDs over legacy aliases', () => {
+    const content = [
+      {
+        type: 'server_tool_call' as const,
+        id: 'server-call',
+        name: 'search',
+        args: { query: 'test' },
+      },
+      {
+        type: 'server_tool_call_result' as const,
+        toolCallId: 'server-call',
+        tool_call_id: 'legacy-call',
+        status: 'success' as const,
+        output: { answer: 'test result' },
+      },
+    ];
+    // The content fallback also exercises SDK versions before contentBlocks.
+    const fields = { content, contentBlocks: content };
+    for (const value of [
+      new AIMessage(fields),
+      [{ role: 'assistant', content }],
+    ]) {
+      expect(
+        convert(value)[0].parts.map((part: { id: string }) => part.id)
+      ).toEqual(['server-call', 'server-call']);
+    }
+  });
+
   it('rewrites legacy function.arguments and additional_kwargs tool calls', () => {
     for (const additional_kwargs of [
       { function_call: { name: 'echo', arguments: '{"text":"test"}' } },
@@ -274,6 +344,7 @@ describe('LangChain content mapping', () => {
   it('does not fabricate messages from arbitrary chain state', () => {
     expect(messages(undefined, diag)).toBeUndefined();
     expect(messages({ arbitrary: 'state' }, diag)).toBeUndefined();
+    expect(messages({ value: 'not a prompt value' }, diag)).toBeUndefined();
     expect(messages([null, {}, 1], diag)).toBeUndefined();
     expect(messages([], diag)).toBeUndefined();
     expect(messages({ messages: [] }, diag)).toBeUndefined();

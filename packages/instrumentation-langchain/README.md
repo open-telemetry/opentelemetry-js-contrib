@@ -79,6 +79,8 @@ runnable's configured name, or its SDK name. Agent names come from `createAgent`
 options. LangGraph's internal sequences marked `omitSequenceTags` are excluded;
 so is the early 1.x agent's `model_request` adapter beginning with its
 `prompt`-configured runnable. Application-defined nested sequences are retained.
+Configured streaming stages remain siblings, and explicit recursive invocations
+receive separate spans even when they reuse the same runnable instance.
 
 Standalone lambdas, prompt templates and output parsers are not workflows.
 Model inference, embeddings and provider-backed retrieval belong to the
@@ -108,6 +110,8 @@ When no actual usage object is available, explicit SDK `estimatedTokenUsage`
 counts are used as a fallback; the instrumentation does not calculate estimates.
 Only nonnegative integral input/output counts are recorded. Total-token and
 provider-specific usage-detail fields are not invented on the agent span.
+Suppressed model runs do not contribute usage or finish reasons through inherited
+callbacks; application callbacks still run normally.
 
 Operations run with their span active, so application callbacks and underlying
 SDK spans retain parentage. Enabling or disabling the instrumentation reapplies
@@ -121,6 +125,8 @@ throws). Exception messages and stack traces are not captured.
 Internal model streams do not finish the enclosing operation span. Agent output
 capture understands `updates`, `values`, `messages`, and combined stream modes,
 including final responses from `returnDirect` tools.
+Complete empty agent snapshots clear earlier responses instead of exporting
+content removed from the final result.
 Native `pipeTo`, `pipeThrough`, and `tee` consumption retains lifecycle tracing,
 but omits output content because native pipelines bypass public chunk reads and
 may transform or discard data. Direct iterator and reader consumption captures
@@ -136,6 +142,7 @@ graph state is not relabelled as a message: capture recognizes strings, messages
 and the `input`, `output`, or `messages` fields. Public transform inputs are
 iterators rather than messages and are not serialized; their output is captured
 normally. Scoped suppression and child contexts are preserved inside producers.
+Nested graphs capture their own namespaced snapshots, excluding deeper children.
 
 ## Configuration Options
 
@@ -159,6 +166,8 @@ invocation-time configuration taking precedence according to the SDK.
 
 Captured messages use the official JSON message schema. Unmapped provider-specific
 parts retain their original type and structure instead of being silently dropped.
+SDK prompt values and string message shorthand are normalized to their SDK roles.
+Standard server-tool results retain their call correlation IDs.
 Inline base64 image data URLs are represented as blob parts with their MIME type;
 external image URLs remain URI parts.
 Tool arguments/results are JSON objects; scalar or array values are represented

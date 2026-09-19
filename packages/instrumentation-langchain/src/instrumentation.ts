@@ -84,6 +84,13 @@ const MEMORY_SEARCH_METHODS = [
   'similaritySearchVectorWithScore',
   'maxMarginalRelevanceSearch',
 ] as const;
+type OperationMethod =
+  | 'invoke'
+  | 'stream'
+  | 'transform'
+  | 'batch'
+  | 'call'
+  | (typeof MEMORY_SEARCH_METHODS)[number];
 interface OperationState {
   target: object;
   span: Span;
@@ -93,6 +100,7 @@ interface OperationState {
   ended: boolean;
   streaming: boolean;
   outputValid: boolean;
+  handoffs: Set<OperationMethod>;
   agentStream?: ReturnType<typeof createAgentStreamAccumulator>;
   graphStream?: ReturnType<typeof createGraphStreamAccumulator>;
   usageHandler?: BaseCallbackHandler;
@@ -149,6 +157,7 @@ function instrumentModuleInstances<T extends object>(
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _streamSources?: WeakMap<object, Promise<SourceCompletion>>;
   declare private _readerSources?: WeakMap<object, Promise<SourceCompletion>>;
+  declare private _iteratorSources?: WeakMap<object, Promise<SourceCompletion>>;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -229,14 +238,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               for (const cls of [module.RunnableSequence, module.RunnableMap]) {
                 this._patchBoundary(
                   cls.prototype,
-                  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW
+                  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+                  false,
+                  cls === module.RunnableMap ? ['transform'] : []
                 );
                 this._wrap(
                   cls.prototype,
                   'transform',
                   this._wrapper(
                     GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-                    true
+                    true,
+                    false,
+                    'transform'
                   )
                 );
               }
@@ -245,7 +258,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 'batch',
                 this._wrapper(
                   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-                  false
+                  false,
+                  false,
+                  'batch'
                 )
               );
               return module;
@@ -268,12 +283,19 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             (module: typeof Tools) => {
               this._patchBoundary(
                 module.StructuredTool.prototype,
-                GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
+                GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+                false,
+                ['invoke', 'call']
               );
               this._wrap(
                 module.StructuredTool.prototype,
                 'call',
-                this._wrapper(GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL, false)
+                this._wrapper(
+                  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
+                  false,
+                  false,
+                  'call'
+                )
               );
               return module;
             },
@@ -333,14 +355,33 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             `@langchain/classic/dist/vectorstores/memory.${extension}`,
             (module: { MemoryVectorStore: typeof MemoryVectorStore }) => {
               const target = module.MemoryVectorStore.prototype;
-              const wrapper = this._wrapper(
-                GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
-                false
+              const wrapper = (method: OperationMethod) =>
+                this._wrapper(
+                  GEN_AI_OPERATION_NAME_VALUE_RETRIEVAL,
+                  false,
+                  false,
+                  method
+                );
+              this._wrap(
+                target,
+                'similaritySearch',
+                wrapper('similaritySearch')
               );
-              this._wrap(target, 'similaritySearch', wrapper);
-              this._wrap(target, 'similaritySearchWithScore', wrapper);
-              this._wrap(target, 'similaritySearchVectorWithScore', wrapper);
-              this._wrap(target, 'maxMarginalRelevanceSearch', wrapper);
+              this._wrap(
+                target,
+                'similaritySearchWithScore',
+                wrapper('similaritySearchWithScore')
+              );
+              this._wrap(
+                target,
+                'similaritySearchVectorWithScore',
+                wrapper('similaritySearchVectorWithScore')
+              );
+              this._wrap(
+                target,
+                'maxMarginalRelevanceSearch',
+                wrapper('maxMarginalRelevanceSearch')
+              );
             },
             (module: { MemoryVectorStore: typeof MemoryVectorStore }) => {
               for (const method of MEMORY_SEARCH_METHODS)
@@ -414,10 +455,15 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   private _patchBoundary(
     target: Runnable | Agent,
     operation: Operation,
-    graph = false
+    graph = false,
+    streamHandoffs: OperationMethod[] = []
   ) {
     this._wrap(target, 'invoke', this._wrapper(operation, false, graph));
-    this._wrap(target, 'stream', this._wrapper(operation, true, graph));
+    this._wrap(
+      target,
+      'stream',
+      this._wrapper(operation, true, graph, 'stream', streamHandoffs)
+    );
   }
 
   private _unpatchBoundary(target: Runnable | Agent) {
@@ -425,7 +471,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unwrap(target, 'stream');
   }
 
-  private _wrapper(operation: Operation, streaming: boolean, graph = false) {
+  private _wrapper(
+    operation: Operation,
+    streaming: boolean,
+    graph = false,
+    method: OperationMethod = streaming ? 'stream' : 'invoke',
+    handoffs?: OperationMethod[]
+  ) {
     const self = this;
     return <T extends object, A extends unknown[], R>(
       original: (this: T, ...args: A) => R
@@ -487,14 +539,24 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         if (
           !self.isEnabled() ||
           isTracingSuppressed(parent) ||
-          active?.target === this ||
           internalSequence ||
           agentModelSequence
         ) {
           return original.apply(this, args);
         }
+        if (
+          active?.target === this &&
+          !active.ended &&
+          active.handoffs.delete(method)
+        ) {
+          return original.apply(this, args);
+        }
         let state: OperationState;
         try {
+          // Pulling upstream input must not move lazy sibling workflows under
+          // this transform's span. Preserve any existing producer binding.
+          if (method === 'transform' && isIterator(args[0]))
+            void self._bindIterator(args[0], parent);
           const capture = !!self.getConfig().captureMessageContent;
           const options = graph ? self._graphConfig(this, args[1]) : args[1];
           const attributes = self._attributes(
@@ -528,6 +590,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             ended: false,
             streaming,
             outputValid: true,
+            handoffs: new Set(
+              handoffs ?? self._handoffs(operation, method, graph)
+            ),
             agentStream:
               capture &&
               streaming &&
@@ -599,6 +664,23 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         }
         return result;
       };
+  }
+
+  private _handoffs(
+    operation: Operation,
+    method: OperationMethod,
+    graph: boolean
+  ): OperationMethod[] {
+    if (method === 'invoke') {
+      if (graph) return ['stream'];
+      if (operation === GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL)
+        return ['call'];
+    }
+    if (method === 'similaritySearch')
+      return ['similaritySearchWithScore', 'similaritySearchVectorWithScore'];
+    if (method === 'similaritySearchWithScore')
+      return ['similaritySearchVectorWithScore'];
+    return [];
   }
 
   private _attributes(
@@ -720,10 +802,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     iterator: AsyncIterator<unknown, unknown, unknown>,
     ctx: Context
   ): Promise<SourceCompletion> {
+    const sources = (this._iteratorSources ??= new WeakMap());
+    const existing = sources.get(iterator);
+    if (existing) return existing;
     let complete!: (result: SourceCompletion) => void;
     const completion = new Promise<SourceCompletion>(resolve => {
       complete = resolve;
     });
+    sources.set(iterator, completion);
     for (const method of ['next', 'return', 'throw'] as const) {
       const original = iterator[method];
       if (!original) continue;
@@ -731,7 +817,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         iterator,
         method,
         () =>
-          function (...args: [] | [unknown]) {
+          function (this: object, ...args: [] | [unknown]) {
+            if (this !== iterator) return Reflect.apply(original, this, args);
             let result: Promise<IteratorResult<unknown>>;
             try {
               result = context.with(ctx, () => original.apply(iterator, args));

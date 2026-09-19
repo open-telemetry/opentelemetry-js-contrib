@@ -96,7 +96,10 @@ async function main() {
       const inner = lc.RunnableSequence.from([identity, identity]).withConfig({
         runName: 'inner',
       });
-      const outer = lc.RunnableSequence.from([identity, inner]).withConfig({
+      const outer = lc.RunnableSequence.from([
+        inner,
+        inner.withConfig({ runName: 'second' }),
+      ]).withConfig({
         runName: 'outer',
       });
       for await (const chunk of await outer.stream('question'))
@@ -193,7 +196,18 @@ async function main() {
                       handler({ ...request, model: selected }),
                   },
                 ]
-              : [],
+              : [
+                  {
+                    name: 'SuppressedModel',
+                    beforeModel: async () => {
+                      await context.with(
+                        suppressTracing(context.active()),
+                        () => initial.invoke('suppressed question')
+                      );
+                      return {};
+                    },
+                  },
+                ],
         })
         .withConfig({ configurable: { thread_id: 'configured-thread' } });
       assert.equal(

@@ -12,6 +12,8 @@ import type {
   Callbacks,
 } from '@langchain/core/callbacks/manager';
 import type { DiagLogger, Span } from '@opentelemetry/api';
+import { context } from '@opentelemetry/api';
+import { isTracingSuppressed } from '@opentelemetry/core';
 import { isRecord } from './content';
 import {
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
@@ -41,8 +43,19 @@ export function createAgentUsageHandler(
     // Keep this synchronous observer out of the SDK's serial background queue,
     // including when the SDK copies the handler created from these methods.
     awaitHandlers: true,
+    handleLLMStart(_model, _prompts, runId) {
+      if (isTracingSuppressed(context.active())) runs.add(runId);
+    },
+    handleChatModelStart(_model, _messages, runId) {
+      if (isTracingSuppressed(context.active())) runs.add(runId);
+    },
     handleLLMEnd(output, runId) {
-      if (runs.has(runId) || !span.isRecording()) return;
+      if (
+        runs.has(runId) ||
+        !span.isRecording() ||
+        isTracingSuppressed(context.active())
+      )
+        return;
       runs.add(runId);
       try {
         const generation = output.generations[0]?.[0];

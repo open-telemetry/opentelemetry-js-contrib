@@ -4,6 +4,7 @@
  */
 
 import type { BaseMessage } from '@langchain/core/messages';
+import type { BasePromptValueInterface } from '@langchain/core/prompt_values';
 import type { DiagLogger } from '@opentelemetry/api';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -12,6 +13,12 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isMessage(value: unknown): value is BaseMessage {
   return isRecord(value) && typeof value._getType === 'function';
+}
+
+function isPromptValue(
+  value: unknown
+): value is Pick<BasePromptValueInterface, 'toChatMessages'> {
+  return isRecord(value) && typeof value.toChatMessages === 'function';
 }
 
 /**
@@ -136,7 +143,7 @@ function part(value: unknown, diag: DiagLogger): Record<string, unknown> {
     case 'server_tool_call_result':
       return {
         type: 'server_tool_call_response',
-        id: value.tool_call_id,
+        id: value.toolCallId ?? value.tool_call_id,
         server_tool_call_response: { ...value, type: value.name ?? value.type },
       };
   }
@@ -153,9 +160,12 @@ export function messages(
   diag: DiagLogger,
   defaultRole = 'user'
 ): string | undefined {
-  if (isRecord(value) && 'messages' in value) value = value.messages;
-  else if (isRecord(value) && 'output' in value) value = value.output;
-  else if (isRecord(value) && 'input' in value) value = value.input;
+  if (isRecord(value) && !isPromptValue(value)) {
+    if ('messages' in value) value = value.messages;
+    else if ('output' in value) value = value.output;
+    else if ('input' in value) value = value.input;
+  }
+  if (isPromptValue(value)) value = value.toChatMessages();
   if (typeof value === 'string') {
     return JSON.stringify([
       { role: defaultRole, parts: [{ type: 'text', content: value }] },
@@ -172,7 +182,10 @@ export function messages(
     let toolCallId: unknown;
     let additional: unknown;
     let invalidToolCalls: unknown;
-    if (isMessage(item)) {
+    if (typeof item === 'string') {
+      role = 'user';
+      content = item;
+    } else if (isMessage(item)) {
       role = item._getType();
       content = item.content;
       additional = item.additional_kwargs;

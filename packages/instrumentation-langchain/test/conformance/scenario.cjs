@@ -135,10 +135,14 @@ async function runWorkflowContentOff(langchain) {
 }
 
 async function runWorkflowContentOn(langchain) {
+  const { PromptTemplate } = require('@langchain/core/prompts');
+  const input = await PromptTemplate.fromTemplate('{value}').invoke({
+    value: 'hello',
+  });
   const result = await greetingWorkflow(
     langchain.RunnableLambda,
     langchain.RunnableSequence
-  ).invoke('hello', { configurable: { thread_id: 'thread-workflow' } });
+  ).invoke(input, { configurable: { thread_id: 'thread-workflow' } });
   assert.strictEqual(result, 'HELLO!');
 }
 

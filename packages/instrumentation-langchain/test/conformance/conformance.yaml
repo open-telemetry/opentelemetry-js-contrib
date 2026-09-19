@@ -357,6 +357,10 @@ scenarios:
           kind: INTERNAL
           attributes: { gen_ai.workflow.name: outer }
         expect: { count: 1 }
+      - match:
+          kind: INTERNAL
+          attributes: { gen_ai.workflow.name: second }
+        expect: { count: 1 }
     metrics: []
     events: []
 
@@ -387,6 +391,8 @@ scenarios:
             gen_ai.conversation.id: configured-thread
             gen_ai.agent.description: Synthetic conformance agent.
             gen_ai.request.model: initial-model
+            gen_ai.usage.input_tokens: 7
+            gen_ai.usage.output_tokens: 3
     metrics: []
     events: []
 

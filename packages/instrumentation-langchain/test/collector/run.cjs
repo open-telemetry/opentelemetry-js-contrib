@@ -103,7 +103,7 @@ function verify(name, spans) {
       : name.startsWith('invoke_agent') || name.startsWith('agent_')
         ? 'invoke_agent'
         : 'invoke_workflow';
-  assert.equal(spans.length, name === 'nested_workflow_stream' ? 2 : 1);
+  assert.equal(spans.length, name === 'nested_workflow_stream' ? 3 : 1);
   for (const span of spans) {
     assert.equal(span.scope.name, '@opentelemetry/instrumentation-langchain');
     assert.equal(span.attributes['gen_ai.operation.name'], operation);
@@ -155,6 +155,8 @@ function verify(name, spans) {
     } else if (name === 'agent_structured_output') {
       assert.equal(span.attributes['gen_ai.output.type'], 'json');
     } else if (name.startsWith('agent_')) {
+      assert.equal(Number(span.attributes['gen_ai.usage.input_tokens']), 7);
+      assert.equal(Number(span.attributes['gen_ai.usage.output_tokens']), 3);
       assert.equal(
         span.attributes['gen_ai.conversation.id'],
         'configured-thread'
@@ -170,15 +172,17 @@ function verify(name, spans) {
     }
   }
   if (name === 'nested_workflow_stream') {
-    const inner = spans.find(
-      span => span.attributes['gen_ai.workflow.name'] === 'inner'
-    );
     const outer = spans.find(
       span => span.attributes['gen_ai.workflow.name'] === 'outer'
     );
-    assert(inner && outer);
-    assert.equal(inner.parentSpanId, outer.spanId);
-    assert.equal(inner.traceId, outer.traceId);
+    for (const name of ['inner', 'second']) {
+      const inner = spans.find(
+        span => span.attributes['gen_ai.workflow.name'] === name
+      );
+      assert(inner && outer);
+      assert.equal(inner.parentSpanId, outer.spanId);
+      assert.equal(inner.traceId, outer.traceId);
+    }
   }
 }
 

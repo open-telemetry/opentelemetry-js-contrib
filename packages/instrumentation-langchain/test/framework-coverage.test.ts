@@ -16,7 +16,12 @@ import { Embeddings } from '@langchain/core/embeddings';
 import { Document } from '@langchain/core/documents';
 import { VectorStore } from '@langchain/core/vectorstores';
 import { RunnableLambda, RunnableSequence } from '@langchain/core/runnables';
+import { HumanMessage, RemoveMessage } from '@langchain/core/messages';
+import type { BaseMessage } from '@langchain/core/messages';
+import { ChatPromptTemplate, PromptTemplate } from '@langchain/core/prompts';
+import { FakeListChatModel } from '@langchain/core/utils/testing';
 import { Annotation, END, START, StateGraph } from '@langchain/langgraph';
+import { createAgent, createMiddleware } from 'langchain';
 import { retrievalDocuments } from '../src/retrieval';
 import { createGraphStreamAccumulator } from '../src/graph-stream';
 
@@ -67,6 +72,12 @@ function graph() {
     .addEdge(START, 'upper')
     .addEdge('upper', END)
     .compile({ name: 'local-graph' });
+}
+
+class LocalChatModel extends FakeListChatModel {
+  override bindTools() {
+    return this;
+  }
 }
 
 describe('LangChain owned framework coverage', function () {
@@ -248,6 +259,66 @@ describe('LangChain owned framework coverage', function () {
     ]);
   });
 
+  it('captures each graph own namespace across three levels of subgraphs', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const OutputState = Annotation.Root({ output: Annotation<string> });
+    const leaf = new StateGraph(OutputState)
+      .addNode('finish', () => ({ output: 'leaf result' }))
+      .addEdge(START, 'finish')
+      .addEdge('finish', END)
+      .compile({ name: 'namespace-leaf' });
+    const child = new StateGraph(OutputState)
+      .addNode('leaf', leaf)
+      .addNode('finish', () => ({ output: 'child result' }))
+      .addEdge(START, 'leaf')
+      .addEdge('leaf', 'finish')
+      .addEdge('finish', END)
+      .compile({ name: 'namespace-child' });
+    const parent = new StateGraph(OutputState)
+      .addNode('callChild', async state => {
+        let output = state;
+        for await (const [namespace, snapshot] of await child.stream(state, {
+          streamMode: 'values',
+          subgraphs: true,
+        })) {
+          if (namespace.length === 1) output = snapshot;
+        }
+        expect(output.output).toBe('child result');
+        return output;
+      })
+      .addNode('finish', () => ({ output: 'parent result' }))
+      .addEdge(START, 'callChild')
+      .addEdge('callChild', 'finish')
+      .addEdge('finish', END)
+      .compile({ name: 'namespace-parent' });
+    const depths = new Set<number>();
+    for await (const [namespace] of await parent.stream(
+      { output: 'input' },
+      {
+        streamMode: ['updates', 'values'],
+        subgraphs: true,
+        configurable: { checkpoint_ns: 'reset-by-sdk-at-root' },
+      }
+    ))
+      depths.add(namespace.length);
+    expect([...depths]).toEqual(expect.arrayContaining([1, 2]));
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(3);
+    for (const name of ['leaf', 'child', 'parent']) {
+      const span = spans.find(
+        span => span.name === `invoke_workflow namespace-${name}`
+      );
+      expect(span?.attributes['gen_ai.output.messages']).toBe(
+        JSON.stringify([
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: `${name} result` }],
+          },
+        ])
+      );
+    }
+  });
+
   it('preserves graph errors and ends early-cancelled streams without output', async () => {
     instrumentation.setConfig({ captureMessageContent: true });
     const error = new TypeError('private graph failure');
@@ -306,6 +377,60 @@ describe('LangChain owned framework coverage', function () {
     );
     encoded.add(new Uint8Array());
     expect(encoded.output()).toBeUndefined();
+  });
+
+  it('replaces early descendant snapshots when the own namespace arrives', () => {
+    const namespace = ['parent:task', 'child:task'];
+    for (const configured of [false, true]) {
+      const accumulator = createGraphStreamAccumulator(
+        {
+          streamMode: ['updates', 'values'],
+          subgraphs: true,
+          configurable: configured
+            ? { checkpoint_ns: namespace.join('|') }
+            : {},
+        },
+        []
+      );
+      accumulator.add([
+        [...namespace, 'leaf:task'],
+        'values',
+        { output: 'leaf initial' },
+      ]);
+      accumulator.add([namespace, 'updates', {}]);
+      expect(accumulator.output()).toBeUndefined();
+      accumulator.add([namespace, 'values', { output: 'child final' }]);
+      accumulator.add([
+        [...namespace, 'leaf:task'],
+        'values',
+        { output: 'leaf final' },
+      ]);
+      expect(accumulator.output()).toEqual({ output: 'child final' });
+    }
+  });
+
+  it('accepts legacy empty root namespaces and snapshot metadata', () => {
+    for (const streamMode of ['values', ['updates', 'values']]) {
+      for (const checkpoint_ns of [undefined, 'reset-by-sdk-at-root']) {
+        const accumulator = createGraphStreamAccumulator(
+          { streamMode, subgraphs: true, configurable: { checkpoint_ns } },
+          []
+        );
+        const wrap = (namespace: string[], output: string) =>
+          Array.isArray(streamMode)
+            ? [
+                namespace,
+                'values',
+                { output },
+                { checkpoint: { id: 'checkpoint', step: 1, source: 'loop' } },
+              ]
+            : [namespace, { output }];
+        accumulator.add(wrap(['child:task'], 'child initial'));
+        accumulator.add(wrap([''], 'parent result'));
+        accumulator.add(wrap(['child:task'], 'child final'));
+        expect(accumulator.output()).toEqual({ output: 'parent result' });
+      }
+    }
   });
 
   it('rejects malformed retrieval output without inventing documents', () => {
@@ -393,6 +518,93 @@ describe('LangChain owned framework coverage', function () {
         name: 'echo',
         arguments: { text: 'answer' },
       });
+    }
+  });
+
+  for (const capture of [false, true]) {
+    it(`captures public prompt values and string message arrays (capture=${capture})`, async () => {
+      instrumentation.setConfig({ captureMessageContent: capture });
+      const flow = RunnableSequence.from([
+        RunnableLambda.from((input: unknown) => input),
+        new FakeListChatModel({ responses: ['answer'] }),
+      ]);
+      for (const [input, expected] of [
+        [
+          await PromptTemplate.fromTemplate('Question: {question}').invoke({
+            question: 'hello',
+          }),
+          ['Question: hello'],
+        ],
+        [
+          await ChatPromptTemplate.fromMessages([
+            ['human', 'Question: {question}'],
+          ]).invoke({ question: 'hello' }),
+          ['Question: hello'],
+        ],
+        [
+          ['human', 'question'],
+          ['human', 'question'],
+        ],
+        [[['human', 'question']], ['question']],
+        [
+          ['first', new HumanMessage('second'), ['human', 'third']],
+          ['first', 'second', 'third'],
+        ],
+      ] as const) {
+        resetMemoryExporter();
+        expect((await flow.invoke(input)).content).toBe('answer');
+        const spans = getTestSpans();
+        expect(spans).toHaveLength(1);
+        expect(spans[0].attributes['gen_ai.input.messages']).toBe(
+          capture
+            ? JSON.stringify(
+                expected.map(content => ({
+                  role: 'user',
+                  parts: [{ type: 'text', content }],
+                }))
+              )
+            : undefined
+        );
+        if (!capture)
+          expect(spans[0].attributes['gen_ai.output.messages']).toBeUndefined();
+      }
+    });
+  }
+
+  it('omits output removed by afterAgent for both invoke and values streams', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    for (const streaming of [false, true]) {
+      resetMemoryExporter();
+      const agent = createAgent({
+        model: new LocalChatModel({ responses: ['answer'] }),
+        tools: [],
+        middleware: [
+          createMiddleware({
+            name: 'redact-output',
+            afterAgent: state => ({
+              messages: state.messages.map((message: BaseMessage) => {
+                if (!message.id) throw new Error('Missing SDK message ID');
+                return new RemoveMessage({ id: message.id });
+              }),
+            }),
+          }),
+        ],
+      });
+      const input = { messages: [new HumanMessage('question')] };
+      if (streaming) {
+        const snapshots = [];
+        for await (const snapshot of await agent.stream(input, {
+          streamMode: 'values',
+        }))
+          snapshots.push(snapshot.messages.map(message => message.content));
+        expect(snapshots).toEqual([['question'], ['question', 'answer'], []]);
+      } else {
+        expect((await agent.invoke(input)).messages).toEqual([]);
+      }
+      expect(getTestSpans()).toHaveLength(1);
+      expect(
+        getTestSpans()[0].attributes['gen_ai.output.messages']
+      ).toBeUndefined();
     }
   });
 });

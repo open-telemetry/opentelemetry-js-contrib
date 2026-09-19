@@ -5,7 +5,7 @@
 
 import { instrumentation } from './load-instrumentation';
 import { expect } from 'expect';
-import { context, trace } from '@opentelemetry/api';
+import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { suppressTracing } from '@opentelemetry/core';
 import {
   getTestSpans,
@@ -82,6 +82,169 @@ describe('LangChain migration regressions', () => {
 
   afterEach(() => {
     instrumentation.disable();
+  });
+
+  for (const streaming of [false, true]) {
+    it(`keeps configured streaming stages as siblings (streaming=${streaming})`, async () => {
+      const stage = (name: string) =>
+        RunnableSequence.from([
+          RunnableLambda.from((value: string) => value),
+          RunnableLambda.from((value: string) => value),
+        ]).withConfig({ runName: name });
+      const outer = RunnableSequence.from([stage('first'), stage('second')], {
+        name: 'outer',
+      });
+      if (streaming) {
+        for await (const chunk of await outer.stream('question'))
+          expect(chunk).toBe('question');
+      } else {
+        expect(await outer.invoke('question')).toBe('question');
+      }
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(3);
+      const parent = spans.find(span => span.name === 'invoke_workflow outer')!;
+      for (const name of ['first', 'second']) {
+        expect(
+          spans.find(span => span.name === `invoke_workflow ${name}`)
+            ?.parentSpanContext?.spanId
+        ).toBe(parent.spanContext().spanId);
+      }
+    });
+
+    it(`excludes inherited observers from suppressed model runs (streaming=${streaming})`, async () => {
+      class UsageModel extends LocalChatModel {
+        override async _generate(): Promise<ChatResult> {
+          return {
+            generations: [
+              {
+                text: 'answer',
+                message: new AIMessage({
+                  content: 'answer',
+                  usage_metadata: {
+                    input_tokens: 7,
+                    output_tokens: 3,
+                    total_tokens: 10,
+                  },
+                  response_metadata: { finish_reason: 'stop' },
+                }),
+              },
+            ],
+          };
+        }
+      }
+      let userCallbacks = 0;
+      const hidden = new UsageModel();
+      const agent = createAgent({
+        model: new UsageModel(),
+        tools: [],
+        middleware: [
+          createMiddleware({
+            name: 'suppressed-work',
+            beforeModel: async () => {
+              await context.with(suppressTracing(context.active()), () =>
+                hidden.invoke([new HumanMessage('not traced')])
+              );
+              return {};
+            },
+          }),
+        ],
+      });
+      const config = {
+        callbacks: [
+          {
+            handleLLMEnd: () => {
+              userCallbacks++;
+            },
+          },
+        ],
+      };
+      if (streaming) {
+        for await (const chunk of await agent.stream(input(), config))
+          expect(chunk).toBeDefined();
+      } else {
+        await agent.invoke(input(), config);
+      }
+      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(userCallbacks).toBe(2);
+      expect(getTestSpans()).toHaveLength(1);
+      expect(getTestSpans()[0].attributes).toMatchObject({
+        'gen_ai.usage.input_tokens': 7,
+        'gen_ai.usage.output_tokens': 3,
+        'gen_ai.response.finish_reasons': ['stop'],
+      });
+    });
+  }
+
+  for (const streaming of [false, true]) {
+    it(`records recovered recursive workflow failures (streaming=${streaming})`, async () => {
+      const error = new TypeError('inner failure');
+      const workflow: Runnable<string, string> = RunnableSequence.from([
+        RunnableLambda.from(async (value: string) => {
+          if (value === 'inner') throw error;
+          if (streaming) {
+            await expect(
+              (async () => {
+                async function* input() {
+                  yield 'inner';
+                }
+                for await (const chunk of workflow.transform(input(), {
+                  runName: 'inner',
+                }))
+                  expect(chunk).toBeDefined();
+              })()
+            ).rejects.toBe(error);
+          } else {
+            await expect(
+              workflow.invoke('inner', { runName: 'inner' })
+            ).rejects.toBe(error);
+          }
+          return 'recovered';
+        }),
+        RunnableLambda.from((value: string) => value),
+      ]);
+      if (streaming) {
+        for await (const chunk of await workflow.stream('outer', {
+          runName: 'outer',
+        }))
+          expect(chunk).toBe('recovered');
+      } else {
+        expect(await workflow.invoke('outer', { runName: 'outer' })).toBe(
+          'recovered'
+        );
+      }
+      const spans = getTestSpans();
+      expect(spans.map(span => span.name)).toEqual([
+        'invoke_workflow inner',
+        'invoke_workflow outer',
+      ]);
+      expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+      expect(spans[0].attributes['error.type']).toBe('TypeError');
+      expect(spans[0].parentSpanContext?.spanId).toBe(
+        spans[1].spanContext().spanId
+      );
+      expect(spans[1].status.code).toBe(SpanStatusCode.UNSET);
+    });
+  }
+
+  it('deduplicates SDK tool handoffs without hiding recursive legacy calls', async () => {
+    const error = new TypeError('inner tool failure');
+    const tool: DynamicTool = new DynamicTool({
+      name: 'recursive-tool',
+      description: 'Re-enter the same tool and recover.',
+      func: async value => {
+        if (value === 'inner') throw error;
+        await expect(tool.call('inner')).rejects.toBe(error);
+        return 'recovered';
+      },
+    });
+    expect(await tool.invoke('outer')).toBe('recovered');
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(2);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].parentSpanContext?.spanId).toBe(
+      spans[1].spanContext().spanId
+    );
+    expect(spans[1].status.code).toBe(SpanStatusCode.UNSET);
   });
 
   it('preserves scoped tracing suppression in a nested readable stream', async () => {

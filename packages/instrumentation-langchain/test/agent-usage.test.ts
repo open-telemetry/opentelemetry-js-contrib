@@ -5,7 +5,8 @@
 
 import './load-instrumentation';
 import { expect } from 'expect';
-import { diag } from '@opentelemetry/api';
+import { context, diag } from '@opentelemetry/api';
+import { suppressTracing } from '@opentelemetry/core';
 import type { Span } from '@opentelemetry/api';
 import { BaseCallbackHandler } from '@langchain/core/callbacks/base';
 import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
@@ -132,6 +133,27 @@ describe('agent usage callbacks', () => {
     const manager = await CallbackManager.configure(callbacks);
     expect(manager!.handlers[0]).toBe(observer);
   });
+
+  for (const method of ['handleLLMStart', 'handleChatModelStart'] as const) {
+    it(`retains suppression from ${method} when the callback completes elsewhere`, async () => {
+      const observer = createAgentUsageHandler(span, diag, CallbackManager);
+      await context.with(suppressTracing(context.active()), () =>
+        observer[method]!(
+          { lc: 1, type: 'not_implemented', id: ['test'] },
+          [],
+          'hidden'
+        )
+      );
+      await observer.copy().handleLLMEnd!(result, 'hidden');
+      await observer.handleLLMEnd!(result, 'visible');
+      span.end();
+      expect(exporter.getFinishedSpans()[0].attributes).toEqual({
+        'gen_ai.usage.input_tokens': 3,
+        'gen_ai.usage.output_tokens': 5,
+        'gen_ai.response.finish_reasons': ['stop'],
+      });
+    });
+  }
 
   it('creates a span-specific handler name that survives SDK copies', () => {
     const observer = createAgentUsageHandler(span, diag, CallbackManager);
