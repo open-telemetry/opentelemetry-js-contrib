@@ -1,0 +1,13 @@
+{
+  "name": "@opentelemetry/instrumentation-langchain-conformance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "conformance": "genai-conformance .",
+    "scenario": "node scenario.cjs"
+  }
+}

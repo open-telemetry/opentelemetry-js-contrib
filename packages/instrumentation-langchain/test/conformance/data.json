@@ -1,0 +1,57 @@
+{
+  "spans": {
+    "gen_ai.execute_tool.internal": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.tool.call.arguments",
+      "gen_ai.tool.call.id",
+      "gen_ai.tool.call.result",
+      "gen_ai.tool.description",
+      "gen_ai.tool.name",
+      "gen_ai.tool.type"
+    ],
+    "gen_ai.invoke_agent.internal": [
+      "gen_ai.agent.description",
+      "gen_ai.agent.name",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.output.type",
+      "gen_ai.request.model",
+      "gen_ai.response.finish_reasons",
+      "gen_ai.usage.input_tokens",
+      "gen_ai.usage.output_tokens"
+    ],
+    "gen_ai.invoke_workflow.internal": [
+      "error.type",
+      "gen_ai.conversation.id",
+      "gen_ai.input.messages",
+      "gen_ai.operation.name",
+      "gen_ai.output.messages",
+      "gen_ai.workflow.name"
+    ],
+    "gen_ai.retrieval.client": [
+      "error.type",
+      "gen_ai.operation.name",
+      "gen_ai.retrieval.documents",
+      "gen_ai.retrieval.query.text",
+      "gen_ai.retrieval.top_k"
+    ]
+  },
+  "events": {},
+  "metrics": {},
+  "entities": {},
+  "findings": [
+    {
+      "id": "genai_expected_attribute_missing",
+      "message": "Span 'retrieval' (operation 'retrieval') is missing expected attribute 'server.address'",
+      "signal_type": "span",
+      "signal_name": "retrieval",
+      "context": {
+        "missing_attribute": "server.address",
+        "operation": "retrieval"
+      }
+    }
+  ]
+}
