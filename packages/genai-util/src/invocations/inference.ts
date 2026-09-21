@@ -74,9 +74,9 @@ function buildInitialAttributes(
 
   if (options.serverAddress) {
     attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
-  }
-  if (options.serverPort !== undefined) {
-    attrs[ATTR_SERVER_PORT] = options.serverPort;
+    if (options.serverPort !== undefined) {
+      attrs[ATTR_SERVER_PORT] = options.serverPort;
+    }
   }
 
   Object.assign(attrs, getRequestOptionsAttributes(options.requestOptions));
