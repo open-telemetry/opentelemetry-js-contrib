@@ -99,8 +99,8 @@ export interface BlobPart {
   type: 'blob';
   /** Modality of the content (e.g. image, audio, video, document). */
   modality: Modality;
-  /** Raw bytes of the attached data. */
-  content: Uint8Array;
+  /** Raw bytes or already-base64-encoded content, preserved without re-encoding. */
+  content: Uint8Array | string;
   /** The IANA MIME type of the attached data. */
   mime_type?: string | null;
   [key: string]: unknown;

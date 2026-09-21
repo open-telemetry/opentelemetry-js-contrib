@@ -35,6 +35,79 @@ import type {
 
 describe('GenAI Utils', () => {
   describe('serialization helpers', () => {
+    it('preserves pre-encoded blobs through the message formatters', () => {
+      for (const content of ['SGVsbG8=', 'SGVsbG8', '']) {
+        const part: BlobPart = {
+          type: 'blob',
+          modality: 'image',
+          content,
+          mime_type: 'image/png',
+        };
+        const messages: InputMessages = [{ role: 'user', parts: [part] }];
+        assert.strictEqual(
+          formatInputMessages(messages),
+          JSON.stringify(messages)
+        );
+        assert.strictEqual(
+          formatOutputMessages(messages),
+          JSON.stringify(messages)
+        );
+        assert.strictEqual(
+          formatSystemInstructions([part]),
+          JSON.stringify([part])
+        );
+      }
+    });
+
+    it('encodes binary blobs and byte views without changing pre-encoded blobs', () => {
+      const bytes = new Uint8Array([0, 72, 101, 108, 108, 111, 0]);
+      for (const content of [
+        bytes.subarray(1, 6),
+        Buffer.from(bytes).subarray(1, 6),
+      ]) {
+        const binary: BlobPart = { type: 'blob', modality: 'image', content };
+        const encoded: BlobPart = {
+          type: 'blob',
+          modality: 'image',
+          content: 'SGVsbG8',
+        };
+        const messages: InputMessages = [
+          { role: 'user', parts: [binary, encoded] },
+        ];
+        const expected = JSON.stringify([
+          {
+            role: 'user',
+            parts: [
+              { type: 'blob', modality: 'image', content: 'SGVsbG8=' },
+              encoded,
+            ],
+          },
+        ]);
+        assert.strictEqual(formatInputMessages(messages), expected);
+        assert.strictEqual(formatOutputMessages(messages), expected);
+      }
+    });
+
+    it('returns undefined for invalid serialization through the message formatters', () => {
+      const circular: Record<string, unknown> = {};
+      circular.self = circular;
+      for (const value of [
+        circular,
+        BigInt(42),
+        {
+          toJSON: () => {
+            throw new Error('invalid JSON');
+          },
+        },
+      ]) {
+        const part = { type: 'custom', value };
+        const messages: InputMessages = [{ role: 'user', parts: [part] }];
+        assert.strictEqual(formatInputMessages(messages), undefined);
+        assert.strictEqual(formatOutputMessages(messages), undefined);
+        assert.strictEqual(formatSystemInstructions([part]), undefined);
+      }
+    });
+
     it('serializeContent', () => {
       assert.strictEqual(serializeContent('hello'), 'hello');
       assert.strictEqual(serializeContent({ a: 1 }), '{"a":1}');

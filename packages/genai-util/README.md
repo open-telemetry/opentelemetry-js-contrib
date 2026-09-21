@@ -44,6 +44,18 @@ npm install --save @opentelemetry/genai-util
 
 ---
 
+## Blob content
+
+Input and output message formatters encode `Uint8Array` (including Node.js
+`Buffer`) content as base64. `BlobPart.content` also accepts already-base64-encoded
+strings, preserving their original encoding, including omitted padding. SDK
+adapters should not decode and re-encode such strings. These models and
+formatters remain internal until explicitly exported.
+
+The formatters return `undefined` when serialization fails, for example for
+circular references or `BigInt` values. Callers are responsible for reporting
+these failures through their instrumentation's diagnostic logger.
+
 ## Usage Examples
 
 These will be added soon.
