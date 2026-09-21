@@ -10,8 +10,10 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_PROVIDER_NAME,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
@@ -23,6 +25,23 @@ import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
 /**
+ * Format a GenAI span name for an embedding invocation adhering to
+ * OpenTelemetry semantic conventions.
+ *
+ * Format: `{gen_ai.operation.name} {gen_ai.request.model}` when model is present,
+ * or `{gen_ai.operation.name}` when model is omitted.
+ *
+ * @param options - Embedding invocation options.
+ * @returns Standardized span name string.
+ */
+function getEmbeddingSpanName(options: EmbeddingInvocationOptions): string {
+  const operationName =
+    options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS;
+  const model = options.requestModel?.trim();
+  return model ? `${operationName} ${model}` : operationName;
+}
+
+/**
  * Build the span attributes that are known when the embedding span is started.
  *
  * These are passed to the span at creation time so that they are visible to samplers.
@@ -32,18 +51,25 @@ function buildInitialAttributes(
 ): Attributes {
   const attrs: Attributes = {
     [ATTR_GEN_AI_PROVIDER_NAME]: options.providerName,
-    [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+    [ATTR_GEN_AI_OPERATION_NAME]:
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
     ...options.attributes,
   };
 
   if (options.requestModel) {
     attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
   }
+  if (options.encodingFormats && options.encodingFormats.length > 0) {
+    attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] = options.encodingFormats;
+  }
+  if (options.dimensionCount !== undefined) {
+    attrs[ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT] = options.dimensionCount;
+  }
   if (options.serverAddress) {
     attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
-  }
-  if (options.serverPort !== undefined) {
-    attrs[ATTR_SERVER_PORT] = options.serverPort;
+    if (options.serverPort !== undefined) {
+      attrs[ATTR_SERVER_PORT] = options.serverPort;
+    }
   }
 
   return attrs;
@@ -56,10 +82,13 @@ function buildInitialAttributes(
  */
 export class EmbeddingInvocation extends BaseInvocation {
   private readonly _providerName: string;
+  private readonly _operationName: string;
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
   private _responseModel?: string;
+  private _dimensionCount?: number;
+  private _encodingFormats?: string[];
   private _usage?: TokenUsage;
 
   /**
@@ -69,19 +98,19 @@ export class EmbeddingInvocation extends BaseInvocation {
    * @param options Request details, parent context, and initial attributes.
    */
   constructor(handler: TelemetryHandler, options: EmbeddingInvocationOptions) {
-    super(
-      `${GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS} ${options.requestModel}`,
-      handler,
-      {
-        kind: SpanKind.CLIENT,
-        attributes: buildInitialAttributes(options),
-        context: options.parentContext,
-        startTime: options.startTime,
-      }
-    );
+    super(getEmbeddingSpanName(options), handler, {
+      kind: SpanKind.CLIENT,
+      attributes: buildInitialAttributes(options),
+      context: options.parentContext,
+      startTime: options.startTime,
+    });
 
     this._providerName = options.providerName;
+    this._operationName =
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS;
     this._requestModel = options.requestModel;
+    this._dimensionCount = options.dimensionCount;
+    this._encodingFormats = options.encodingFormats;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
   }
@@ -94,6 +123,26 @@ export class EmbeddingInvocation extends BaseInvocation {
 
   public getResponseModel(): string | undefined {
     return this._responseModel;
+  }
+
+  public setDimensionCount(count: number): this {
+    this._dimensionCount = count;
+    this._span.setAttribute(ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT, count);
+    return this;
+  }
+
+  public getDimensionCount(): number | undefined {
+    return this._dimensionCount;
+  }
+
+  public setEncodingFormats(formats: string[]): this {
+    this._encodingFormats = formats;
+    this._span.setAttribute(ATTR_GEN_AI_REQUEST_ENCODING_FORMATS, formats);
+    return this;
+  }
+
+  public getEncodingFormats(): string[] | undefined {
+    return this._encodingFormats;
   }
 
   public setUsage(usage: TokenUsage): this {
@@ -113,7 +162,7 @@ export class EmbeddingInvocation extends BaseInvocation {
   ): void {
     const metricAttrs: Attributes = {
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
-      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
     };
     if (this._requestModel) {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
@@ -123,9 +172,9 @@ export class EmbeddingInvocation extends BaseInvocation {
     }
     if (this._serverAddress) {
       metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-    }
-    if (this._serverPort !== undefined) {
-      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      if (this._serverPort !== undefined) {
+        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      }
     }
     if (error) {
       metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);

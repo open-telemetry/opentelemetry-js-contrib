@@ -16,6 +16,8 @@ import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
@@ -137,5 +139,103 @@ describe('EmbeddingInvocation', () => {
     assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '_OTHER');
 
     assert.strictEqual(tokenMetric, undefined);
+  });
+
+  it('should format span name correctly when requestModel is omitted or provided', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // Case 1: requestModel provided (default operationName 'embeddings')
+    const invWithModel = handler.startEmbedding({
+      providerName: 'openai',
+      requestModel: 'text-embedding-3-small',
+    });
+    invWithModel.stop();
+
+    // Case 2: requestModel omitted (defaults operationName to 'embeddings')
+    const invWithoutModel = handler.startEmbedding({
+      providerName: 'openai',
+    });
+    invWithoutModel.stop();
+
+    // Case 3: custom operationName with requestModel
+    const invCustomOpWithModel = handler.startEmbedding({
+      providerName: 'google',
+      operationName: 'generate_content',
+      requestModel: 'text-embedding-004',
+    });
+    invCustomOpWithModel.stop();
+
+    // Case 4: custom operationName without requestModel
+    const invCustomOp = handler.startEmbedding({
+      providerName: 'google',
+      operationName: 'generate_content',
+    });
+    invCustomOp.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 4);
+    assert.strictEqual(spans[0].name, 'embeddings text-embedding-3-small');
+    assert.strictEqual(spans[1].name, 'embeddings');
+    assert.strictEqual(spans[2].name, 'generate_content text-embedding-004');
+    assert.strictEqual(spans[3].name, 'generate_content');
+  });
+
+  it('should support encodingFormats and dimensionCount via options and methods', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // Test 1: configured via options
+    const inv1 = handler.startEmbedding({
+      providerName: 'openai',
+      requestModel: 'text-embedding-3-small',
+      encodingFormats: ['float', 'base64'],
+      dimensionCount: 512,
+    });
+
+    assert.deepStrictEqual(inv1.getEncodingFormats(), ['float', 'base64']);
+    assert.strictEqual(inv1.getDimensionCount(), 512);
+    inv1.stop();
+
+    // Test 2: configured via setters
+    const inv2 = handler.startEmbedding({
+      providerName: 'openai',
+      requestModel: 'text-embedding-3-large',
+    });
+
+    inv2.setEncodingFormats(['binary']);
+    inv2.setDimensionCount(1024);
+    assert.deepStrictEqual(inv2.getEncodingFormats(), ['binary']);
+    assert.strictEqual(inv2.getDimensionCount(), 1024);
+    inv2.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+
+    // Verify span 1
+    assert.deepStrictEqual(
+      spans[0].attributes[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS],
+      ['float', 'base64']
+    );
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT],
+      512
+    );
+
+    // Verify span 2
+    assert.deepStrictEqual(
+      spans[1].attributes[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS],
+      ['binary']
+    );
+    assert.strictEqual(
+      spans[1].attributes[ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT],
+      1024
+    );
   });
 });

@@ -393,10 +393,14 @@ export interface InferenceInvocationOptions {
 export interface EmbeddingInvocationOptions {
   /** Name of the provider. */
   providerName: string;
+  /** Operation name (e.g. 'embedding', 'generate_content'). Defaults to 'embeddings'. */
+  operationName?: string;
   /** Model name requested. */
   requestModel?: string;
-  /** Input texts to embed. */
-  inputTexts?: string[];
+  /** Target encoding formats requested (`gen_ai.request.encoding_formats`). */
+  encodingFormats?: string[];
+  /** Number of dimensions the resulting output embeddings should have (`gen_ai.embeddings.dimension.count`). */
+  dimensionCount?: number;
   /** Parent context. */
   parentContext?: Context;
   /** Custom initial span attributes. */
