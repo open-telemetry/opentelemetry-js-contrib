@@ -325,7 +325,7 @@ export function getRequestOptionsAttributes(
   if (requestOptions.seed !== undefined) {
     attrs[ATTR_GEN_AI_REQUEST_SEED] = requestOptions.seed;
   }
-  if (requestOptions.stream !== undefined) {
+  if (requestOptions.stream) {
     attrs[ATTR_GEN_AI_REQUEST_STREAM] = requestOptions.stream;
   }
   if (requestOptions.reasoningLevel !== undefined) {

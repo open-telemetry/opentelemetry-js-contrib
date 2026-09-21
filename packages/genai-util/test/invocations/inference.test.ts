@@ -28,6 +28,7 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
   ATTR_GEN_AI_CONVERSATION_ID,
+  ATTR_GEN_AI_REQUEST_STREAM,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
 } from '../../src/semconv';
@@ -369,5 +370,35 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(spans[0].name, 'chat gpt-4o');
     assert.strictEqual(spans[1].name, 'chat');
     assert.strictEqual(spans[2].name, 'generate_content');
+  });
+
+  it('should only set stream attribute on span when stream is true and omit when false', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    const invStreaming = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+      requestOptions: { stream: true },
+    });
+    invStreaming.stop();
+
+    const invNonStreaming = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+      requestOptions: { stream: false },
+    });
+    invNonStreaming.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      spans[1].attributes[ATTR_GEN_AI_REQUEST_STREAM],
+      undefined
+    );
   });
 });

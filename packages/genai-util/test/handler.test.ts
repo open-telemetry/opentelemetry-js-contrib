@@ -229,6 +229,7 @@ describe('TelemetryHandler', () => {
 
       const inference = handler.startInference({
         providerName: 'openai',
+        operationName: 'chat',
         requestModel: 'gpt-4o',
       });
 
