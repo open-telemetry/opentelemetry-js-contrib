@@ -25,6 +25,7 @@ import { InferenceInvocation } from './invocations/inference';
 import { ToolInvocation } from './invocations/tool';
 import {
   createDurationHistogram,
+  createExecuteToolDurationHistogram,
   createTimePerOutputChunkHistogram,
   createTimeToFirstChunkHistogram,
   createTokenUsageHistogram,
@@ -89,6 +90,7 @@ export class TelemetryHandler {
   private readonly _tokenUsageHistogram: Histogram;
   private readonly _timeToFirstChunkHistogram: Histogram;
   private readonly _timePerOutputChunkHistogram: Histogram;
+  private readonly _executeToolDurationHistogram: Histogram;
 
   constructor(options: TelemetryHandlerOptions) {
     const { instrumentationName, instrumentationVersion } = options;
@@ -125,6 +127,9 @@ export class TelemetryHandler {
       this._meter
     );
     this._timePerOutputChunkHistogram = createTimePerOutputChunkHistogram(
+      this._meter
+    );
+    this._executeToolDurationHistogram = createExecuteToolDurationHistogram(
       this._meter
     );
   }
@@ -294,6 +299,31 @@ export class TelemetryHandler {
     context?: Context
   ): void {
     this._timePerOutputChunkHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record the `gen_ai.execute_tool.duration` metric for a single tool execution.
+   *
+   * @param durationSeconds - The duration of the tool execution, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Pass the invocation's context explicitly, since the
+   *   measurement is often recorded after the invocation's context is no
+   *   longer active. Defaults to the currently active context.
+   */
+  public recordExecuteToolDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
+      return;
+    }
+    this._executeToolDurationHistogram.record(
       durationSeconds,
       attributes,
       context
