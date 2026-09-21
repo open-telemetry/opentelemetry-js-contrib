@@ -101,6 +101,25 @@ function buildInitialAttributes(
 }
 
 /**
+ * Format a GenAI span name for an inference invocation adhering to
+ * OpenTelemetry semantic conventions.
+ *
+ * Format: `{gen_ai.operation.name} {gen_ai.request.model}` when model is present,
+ * or `{gen_ai.operation.name}` when model is omitted.
+ *
+ * @param operationName - The GenAI operation name.
+ * @param requestModel - Optional model name requested.
+ * @returns Standardized span name string.
+ */
+function getInferenceSpanName(
+  operationName: string,
+  requestModel?: string
+): string {
+  const model = requestModel?.trim();
+  return model ? `${operationName} ${model}` : operationName;
+}
+
+/**
  * Manages the lifecycle and telemetry of an LLM / GenAI inference operation.
  *
  * @experimental This class is experimental and subject to change.
@@ -129,7 +148,7 @@ export class InferenceInvocation extends BaseInvocation {
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
     const contentCaptureMode = handler.getContentCaptureMode();
 
-    super(`${operationName} ${options.requestModel}`, handler, {
+    super(getInferenceSpanName(operationName, options.requestModel), handler, {
       kind: SpanKind.CLIENT,
       attributes: buildInitialAttributes(
         options,

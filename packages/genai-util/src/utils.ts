@@ -9,7 +9,6 @@
 import type { Attributes } from '@opentelemetry/api';
 import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
@@ -325,13 +324,6 @@ export function getRequestOptionsAttributes(
   }
   if (requestOptions.seed !== undefined) {
     attrs[ATTR_GEN_AI_REQUEST_SEED] = requestOptions.seed;
-  }
-  if (
-    requestOptions.encodingFormats &&
-    requestOptions.encodingFormats.length > 0
-  ) {
-    attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] =
-      requestOptions.encodingFormats;
   }
   if (requestOptions.stream !== undefined) {
     attrs[ATTR_GEN_AI_REQUEST_STREAM] = requestOptions.stream;
