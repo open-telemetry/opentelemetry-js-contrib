@@ -21,11 +21,8 @@ import {
   hrTimeToMilliseconds,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import { TelemetryHandler } from '../../src/handler';
-import {
-  BaseInvocation,
-  type BaseInvocationOptions,
-} from '../../src/invocations/base';
+import { BaseInvocation, TelemetryHandler } from '../../src';
+import type { BaseInvocationOptions } from '../../src/invocations/base';
 import {
   ATTR_GEN_AI_TOKEN_TYPE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,

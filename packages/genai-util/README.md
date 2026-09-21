@@ -46,7 +46,57 @@ npm install --save @opentelemetry/genai-util
 
 ## Usage Examples
 
-These will be added soon.
+### Message content formatting
+
+The public content API exports `BlobPart`, `ChatMessage`, `InputMessages`,
+`OutputMessages`, `MessagePart`, and `SystemInstructions`, together with
+`formatInputMessages`, `formatOutputMessages`, and `formatSystemInstructions`.
+SDK adapters can normalize their messages into these shared models without
+implementing their own JSON serialization.
+
+```typescript
+import {
+  formatInputMessages,
+  type InputMessages,
+} from '@opentelemetry/genai-util';
+
+const messages: InputMessages = [
+  { role: 'user', parts: [{ type: 'text', content: 'Hello' }] },
+];
+const attribute = formatInputMessages(messages);
+```
+
+`BlobPart.content` accepts raw `Uint8Array` bytes (including Node.js `Buffer`).
+SDK adapters must validate and decode SDK base64 strings before constructing
+these parts. The shared message formatters own base64 serialization.
+
+The formatters return `undefined` when serialization fails, for example for
+circular references or `BigInt` values. Callers are responsible for reporting
+these failures through their instrumentation's diagnostic logger.
+`formatSystemInstructions` also returns `undefined` for an empty instruction
+array.
+
+### Invocation lifecycle
+
+`BaseInvocation` and `TelemetryHandler` are now public experimental exports.
+Instrumentations can derive an SDK-specific invocation from `BaseInvocation`
+to share span creation, active context, completion and error handling. A subclass
+must explicitly implement its metrics hook; span-only INTERNAL instrumentation
+can intentionally emit no metrics.
+
+`TelemetryHandler` accepts tracer/meter providers and an explicit content capture
+mode. Instrumentation integrations must preserve their own provider and config
+updates rather than silently switching to global providers. `BaseInvocation.fail`
+records error messages by default; an instrumentation with stricter error-content
+privacy must sanitize the error before passing it to the shared lifecycle.
+
+The named public constants currently used by workflow instrumentation are
+`ATTR_GEN_AI_OPERATION_NAME`, `ATTR_GEN_AI_WORKFLOW_NAME`,
+`ATTR_GEN_AI_CONVERSATION_ID`, `ATTR_GEN_AI_INPUT_MESSAGES`,
+`ATTR_GEN_AI_OUTPUT_MESSAGES`, and
+`GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW`. Other helpers and constants remain
+internal until explicitly exported. No concrete generic workflow invocation is
+exported yet.
 
 ## Useful links
 

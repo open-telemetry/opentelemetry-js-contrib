@@ -20,18 +20,20 @@ import {
 } from '../src/semconv';
 import {
   serializeContent,
-  formatInputMessages,
-  formatOutputMessages,
-  formatSystemInstructions,
   getErrorType,
   getRequestOptionsAttributes,
 } from '../src/utils';
+import {
+  formatInputMessages,
+  formatOutputMessages,
+  formatSystemInstructions,
+} from '../src';
 import type {
   BlobPart,
   InputMessages,
   OutputMessages,
   SystemInstructions,
-} from '../src/types';
+} from '../src';
 
 describe('GenAI Utils', () => {
   describe('serialization helpers', () => {

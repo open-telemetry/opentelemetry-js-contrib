@@ -12,6 +12,9 @@
 import { LangChainInstrumentation } from '../src';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-registerInstrumentations({
-  instrumentations: [new LangChainInstrumentation()],
-});
+process.env.LANGSMITH_TRACING = 'false';
+process.env.LANGCHAIN_TRACING_V2 = 'false';
+process.env.LANGCHAIN_TRACING = 'false';
+
+export const instrumentation = new LangChainInstrumentation();
+registerInstrumentations({ instrumentations: [instrumentation] });
