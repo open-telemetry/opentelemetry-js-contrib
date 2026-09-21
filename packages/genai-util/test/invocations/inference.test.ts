@@ -208,6 +208,7 @@ describe('InferenceInvocation', () => {
 
     const invNone = handlerNone.startInference({
       providerName: 'openai',
+      operationName: 'chat',
       inputMessages: [
         {
           role: 'user',
@@ -248,6 +249,7 @@ describe('InferenceInvocation', () => {
 
     const invSpan = handlerSpan.startInference({
       providerName: 'openai',
+      operationName: 'chat',
       systemInstructions: [
         { type: 'text', content: 'You are a helpful assistant' },
       ],
@@ -331,5 +333,41 @@ describe('InferenceInvocation', () => {
       typeof spans[0].attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
       'number'
     );
+  });
+
+  it('should format span name correctly when requestModel is omitted or provided', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // Case 1: requestModel provided
+    const invWithModel = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+      requestModel: 'gpt-4o',
+    });
+    invWithModel.stop();
+
+    // Case 2: requestModel omitted (defaults operationName to 'chat')
+    const invWithoutModel = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+    });
+    invWithoutModel.stop();
+
+    // Case 3: custom operationName without requestModel
+    const invCustomOp = handler.startInference({
+      providerName: 'google',
+      operationName: 'generate_content',
+    });
+    invCustomOp.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3);
+    assert.strictEqual(spans[0].name, 'chat gpt-4o');
+    assert.strictEqual(spans[1].name, 'chat');
+    assert.strictEqual(spans[2].name, 'generate_content');
   });
 });
