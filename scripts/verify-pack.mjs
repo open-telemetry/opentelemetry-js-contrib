@@ -23,12 +23,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const REPO_ROOT = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+);
 // As for now there is a package that does not export anything. It is possible new packages
 // might take the same approach (empty exports and gradually add them).
-const SKIP_PACKAGES= [
-  '@opentelemetry/genai-util'
-];
+const SKIP_PACKAGES = ['@opentelemetry/genai-util'];
 
 const failures = [];
 const targets = [];
@@ -56,7 +57,9 @@ for (const { dir, pkg } of targets) {
     for (const { kind, subpath, file } of entries) {
       const filePath = path.resolve(extracted, file);
       if (!existsSync(filePath)) {
-        failures.push(`${label} :: ${kind} "${subpath}" -> ${file} (missing in tarball)`);
+        failures.push(
+          `${label} :: ${kind} "${subpath}" -> ${file} (missing in tarball)`
+        );
         continue;
       }
       if (kind === 'require') {
@@ -64,8 +67,13 @@ for (const { dir, pkg } of targets) {
           const req = createRequire(path.join(extracted, 'package.json'));
           const mod = req(filePath);
           // A bare `module.exports = fn/class` has no enumerable keys but is valid.
-          if (!mod || (typeof mod !== 'function' && Object.keys(mod).length === 0)) {
-            failures.push(`${label} :: require("${subpath}") resolved an empty module`);
+          if (
+            !mod ||
+            (typeof mod !== 'function' && Object.keys(mod).length === 0)
+          ) {
+            failures.push(
+              `${label} :: require("${subpath}") resolved an empty module`
+            );
           }
         } catch (err) {
           handleLoadError(err, pkg, `${label} :: require("${subpath}")`);
@@ -74,14 +82,18 @@ for (const { dir, pkg } of targets) {
         try {
           const mod = await import(pathToFileURL(filePath).href);
           if (!mod || Object.keys(mod).length === 0) {
-            failures.push(`${label} :: import("${subpath}") resolved an empty module`);
+            failures.push(
+              `${label} :: import("${subpath}") resolved an empty module`
+            );
           }
         } catch (err) {
           handleLoadError(err, pkg, `${label} :: import("${subpath}")`);
         }
       }
     }
-    console.log(failures.length === failuresBefore ? `  ok   ${label}` : `  FAIL ${label}`);
+    console.log(
+      failures.length === failuresBefore ? `  ok   ${label}` : `  FAIL ${label}`
+    );
   } catch (err) {
     failures.push(`${label} :: pack/extract failed: ${err.message}`);
     console.log(`  FAIL ${label}`);
@@ -109,19 +121,29 @@ function walk(dir, out, depth) {
     // ENOENT/ENOTDIR are expected (race, non-dir); anything else means a
     // package directory was silently dropped, so surface it.
     if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
-      failures.push(`${path.relative(REPO_ROOT, dir)} :: cannot read directory: ${err.message}`);
+      failures.push(
+        `${path.relative(REPO_ROOT, dir)} :: cannot read directory: ${err.message}`
+      );
     }
     return;
   }
   for (const ent of entries) {
-    if (ent.name === 'node_modules' || ent.name === 'dist' || ent.name === 'build') continue;
+    if (
+      ent.name === 'node_modules' ||
+      ent.name === 'dist' ||
+      ent.name === 'build'
+    )
+      continue;
     if (ent.name.startsWith('.')) continue;
     // Scratch dirs (e.g. scripts/semconv/tmp-changelog-gen) hold extracted npm tarballs.
     if (ent.name.startsWith('tmp-')) continue;
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) {
       walk(full, out, depth + 1);
-    } else if (ent.name === 'package.json' && full !== path.join(REPO_ROOT, 'package.json')) {
+    } else if (
+      ent.name === 'package.json' &&
+      full !== path.join(REPO_ROOT, 'package.json')
+    ) {
       try {
         const pkg = JSON.parse(readFileSync(full, 'utf8'));
         if (pkg.private) continue;
@@ -129,7 +151,9 @@ function walk(dir, out, depth) {
         if (SKIP_PACKAGES.includes(pkg.name)) continue;
         out.push({ dir: path.dirname(full), pkg });
       } catch (err) {
-        failures.push(`${path.relative(REPO_ROOT, full)} :: malformed package.json: ${err.message}`);
+        failures.push(
+          `${path.relative(REPO_ROOT, full)} :: malformed package.json: ${err.message}`
+        );
       }
     }
   }
@@ -166,7 +190,8 @@ function collectEntries(pkg) {
   if (pkg.browser && typeof pkg.browser === 'object') {
     for (const [from, to] of Object.entries(pkg.browser)) {
       if (from.startsWith('./')) push('exists', '#browser', from);
-      if (typeof to === 'string' && to.startsWith('./')) push('exists', '#browser', to);
+      if (typeof to === 'string' && to.startsWith('./'))
+        push('exists', '#browser', to);
     }
   }
   return out;
@@ -201,7 +226,9 @@ function handleLoadError(err, pkg, context) {
     // Match the package portion so deep subpaths (`dep/sub`) count as `dep`.
     const isDeclaredDep = declared.includes(pkgName(spec));
     if (!isPathSpec && !isSelfRef && isDeclaredDep) {
-      console.log(`  skip ${context} cannot resolve declared dep "${spec}" (not packed)`);
+      console.log(
+        `  skip ${context} cannot resolve declared dep "${spec}" (not packed)`
+      );
       return;
     }
   }
