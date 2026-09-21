@@ -418,3 +418,39 @@ export interface GenAIInstrumentationConfig {
    */
   captureMessageContent?: ContentCaptureMode;
 }
+
+/**
+ * Error details for an invocation that failed.
+ *
+ * @experimental This interface is experimental and subject to change.
+ */
+export interface InvocationError {
+  /**
+   * The caught exception, if the failure was caused by an instance of `Error`.
+   *
+   * SHOULD be unset if the value caught from the operation is not an `instanceof Error`.
+   * When provided, it is used to derive {@link errorType} if {@link errorType} is not
+   * explicitly provided.
+   */
+  exception?: Error;
+
+  /**
+   * Describes a class of error the operation ended with. SHOULD be predictable and
+   * SHOULD have low cardinality.
+   *
+   * If this is not set, the invocation derives the error type from {@link exception}
+   * via `getErrorType`, falling back to `'_OTHER'` if no exception was provided.
+   */
+  errorType?: string;
+
+  /**
+   * Human readable additional information about the error which is not expected to contain
+   * sensitive details.
+   *
+   * SHOULD be documented and predictable. Instrumentation libraries SHOULD publish their own
+   * conventions, including possible values of description and what they mean.
+   *
+   * This is set as the span status description (`Span.setStatus({ code: ERROR, message: statusDescription })`).
+   */
+  statusDescription: string;
+}
