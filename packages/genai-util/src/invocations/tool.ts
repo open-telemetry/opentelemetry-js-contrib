@@ -15,7 +15,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from '../semconv';
 import type { ContentCaptureMode, ToolInvocationOptions } from '../types';
-import { getSpanName, serializeContent } from '../utils';
+import { serializeContent } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -78,7 +78,7 @@ export class ToolInvocation extends BaseInvocation {
     const contentCaptureMode = handler.getContentCaptureMode();
 
     super(
-      getSpanName(GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL, options.toolName),
+      `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${options.toolName}`,
       handler,
       {
         kind: SpanKind.INTERNAL,
