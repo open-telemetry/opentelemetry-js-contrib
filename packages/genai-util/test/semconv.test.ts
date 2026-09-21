@@ -19,6 +19,8 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_AGENT_VERSION,
   ATTR_GEN_AI_WORKFLOW_NAME,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
@@ -75,6 +77,14 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(ATTR_GEN_AI_TOOL_TYPE, 'gen_ai.tool.type');
     assert.strictEqual(ATTR_GEN_AI_AGENT_VERSION, 'gen_ai.agent.version');
     assert.strictEqual(ATTR_GEN_AI_WORKFLOW_NAME, 'gen_ai.workflow.name');
+    assert.strictEqual(
+      ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+      'gen_ai.request.encoding_formats'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
+      'gen_ai.embeddings.dimension.count'
+    );
   });
 
   it('should define expected constant values', () => {

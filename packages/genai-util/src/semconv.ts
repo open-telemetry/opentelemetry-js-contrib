@@ -144,6 +144,15 @@ export const ATTR_GEN_AI_REQUEST_ENCODING_FORMATS =
   'gen_ai.request.encoding_formats' as const;
 
 /**
+ * The number of dimensions the resulting output embeddings should have.
+ *
+ * @example 512
+ * @example 1536
+ */
+export const ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT =
+  'gen_ai.embeddings.dimension.count' as const;
+
+/**
  * The unique identifier for a GenAI response.
  *
  * @example chatcmpl-123
