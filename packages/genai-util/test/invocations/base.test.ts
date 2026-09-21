@@ -26,6 +26,7 @@ import {
   BaseInvocation,
   type BaseInvocationOptions,
 } from '../../src/invocations/base';
+import type { InvocationError } from '../../src/types';
 import {
   ATTR_GEN_AI_TOKEN_TYPE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
@@ -180,9 +181,12 @@ describe('BaseInvocation', () => {
     const inv = new CustomInvocation('custom-fail-span', handler);
 
     const testError = new Error('Test failure');
-    inv.fail(testError);
+    inv.fail({ statusDescription: 'Test failure', exception: testError });
     // Double fail should be a no-op
-    inv.fail(new Error('Second failure'));
+    inv.fail({
+      statusDescription: 'Failure Type #2',
+      exception: new Error('Second failure'),
+    });
 
     // Verify the extension points ran exactly once with error and duration
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
@@ -199,13 +203,14 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[0].status.message, 'Test failure');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(spans[0].events.length, 0);
   });
 
-  it('should handle custom explicit endTime array and string errors', () => {
+  it('should handle custom explicit endTime array and errors without exception', () => {
     const inv = new CustomInvocation('custom-endtime-span', handler);
 
     const customEndTime: HrTime = [1000, 500000000];
-    inv.fail('String error message', customEndTime);
+    inv.fail({ statusDescription: 'String error message' }, customEndTime);
 
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(inv.recordMetricsCalls[0].errorType, '_OTHER');
@@ -218,6 +223,62 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[0].status.message, 'String error message');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should prioritize explicit errorType over exception type when provided', () => {
+    const inv = new CustomInvocation('explicit-error-type-span', handler);
+
+    inv.fail({
+      statusDescription: 'Rate limit hit',
+      errorType: 'rate_limit_exceeded',
+      exception: new Error('Too many requests'),
+    });
+
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'rate_limit_exceeded'
+    );
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'rate_limit_exceeded'
+    );
+    assert.strictEqual(spans[0].status.message, 'Rate limit hit');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should accept Error instances directly in fail() without setting statusDescription', () => {
+    const inv = new CustomInvocation('direct-error-span', handler);
+    const testError = new Error('Direct error failure');
+
+    inv.fail(testError);
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should extract errorType from Error subclasses when Error is passed to fail() without setting statusDescription', () => {
+    const inv = new CustomInvocation('error-subclass-span', handler);
+    const rangeError = new RangeError('Index out of bounds');
+
+    inv.fail(rangeError);
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'RangeError');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
   });
 
   it('should accept Date and number TimeInput for startTime and endTime', () => {
@@ -351,7 +412,7 @@ describe('BaseInvocation', () => {
       });
 
       inv.setMetricAttribute('added.later', 'value');
-      inv.fail(new Error('boom'));
+      inv.fail({ statusDescription: 'boom', exception: new Error('boom') });
 
       assert.deepStrictEqual(callerAttributes, {
         'gen_ai.provider.name': 'openai',
@@ -363,7 +424,10 @@ describe('BaseInvocation', () => {
         metricAttributes: { 'gen_ai.provider.name': 'openai' },
       });
 
-      inv.fail(new Error('Test failure'));
+      inv.fail({
+        statusDescription: 'Test failure',
+        exception: new Error('Test failure'),
+      });
 
       // The conventions define `error.type` on some metrics only, so it must not be in
       // the shared bag: a subclass that spreads the bag into every measurement would
@@ -704,7 +768,12 @@ describe('BaseInvocation', () => {
         'metrics'
       );
 
-      assert.doesNotThrow(() => inv.fail(new RangeError('upstream failure')));
+      assert.doesNotThrow(() =>
+        inv.fail({
+          statusDescription: 'upstream failure',
+          exception: new RangeError('upstream failure'),
+        })
+      );
 
       // The span's error state is recorded before the hooks run, so a hook that throws
       // cannot downgrade a failed invocation to a span without an error status.
@@ -737,16 +806,20 @@ describe('BaseInvocation', () => {
       );
     });
 
-    it('should end the span when the thrown value cannot be stringified', () => {
+    it('should end the span when error introspection throws', () => {
       const { logger, errors } = createRecordingDiag();
       const inv = new CustomInvocation(
         'unstringifiable-error-span',
         createHandlerWithDiag(logger)
       );
 
-      // `fail` accepts `unknown`, and a null-prototype object cannot be converted to a
-      // string at all, so deriving the status description throws.
-      const hostileError = Object.create(null);
+      // If an InvocationError throws during property access, the failure is caught
+      // and logged to diagnostics, while still ending the span.
+      const hostileError = {
+        get statusDescription(): string {
+          throw new Error('Hostile getter error');
+        },
+      } as unknown as InvocationError;
       assert.doesNotThrow(() => inv.fail(hostileError));
 
       // The span is still ended and the caller is still shielded, but the failure is
