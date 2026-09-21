@@ -44,7 +44,6 @@ import {
   formatSystemInstructions,
   getErrorType,
   getRequestOptionsAttributes,
-  getSpanName,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
@@ -130,7 +129,7 @@ export class InferenceInvocation extends BaseInvocation {
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
     const contentCaptureMode = handler.getContentCaptureMode();
 
-    super(getSpanName(operationName, options.requestModel), handler, {
+    super(`${operationName} ${options.requestModel}`, handler, {
       kind: SpanKind.CLIENT,
       attributes: buildInitialAttributes(
         options,

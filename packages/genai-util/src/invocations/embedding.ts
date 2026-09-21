@@ -18,7 +18,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
 import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
-import { getErrorType, getSpanName } from '../utils';
+import { getErrorType } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -70,7 +70,7 @@ export class EmbeddingInvocation extends BaseInvocation {
    */
   constructor(handler: TelemetryHandler, options: EmbeddingInvocationOptions) {
     super(
-      getSpanName(GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS, options.requestModel),
+      `${GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS} ${options.requestModel}`,
       handler,
       {
         kind: SpanKind.CLIENT,
