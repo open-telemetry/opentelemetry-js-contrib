@@ -4,10 +4,18 @@
  */
 
 import * as assert from 'assert';
-import { SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode, type Attributes } from '@opentelemetry/api';
+import {
+  InMemorySpanExporter,
+  SamplingDecision,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { TelemetryHandler } from '../../src/handler';
 import {
+  ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_DESCRIPTION,
@@ -15,6 +23,7 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
+  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -210,9 +219,267 @@ describe('ToolInvocation', () => {
       span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
       '{"expr":"1/0"}'
     );
+    // No result was ever set here; the suppression of a result that *was* set is
+    // covered separately below.
     assert.strictEqual(
       span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
       undefined
+    );
+  });
+
+  // `gen_ai.tool.call.result` is defined as the result of a *successful* execution, so
+  // the attribute is buffered by `setResult` and only written once the invocation is
+  // known to have succeeded.
+  describe('gen_ai.tool.call.result', () => {
+    function createHandler(): TelemetryHandler {
+      return new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        contentCaptureMode: 'span_only',
+      });
+    }
+
+    it('should record a result that was set before a successful stop', () => {
+      const inv = createHandler().startTool({ toolName: 'calculator' });
+
+      inv.setResult({ value: 42 });
+      inv.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"value":42}'
+      );
+    });
+
+    it('should suppress a result that was set before the execution failed', () => {
+      const inv = createHandler().startTool({
+        toolName: 'calculator',
+        toolArguments: { expr: '1/0' },
+      });
+
+      // A caller may optimistically record a partial result and only discover the
+      // failure afterwards; the attribute must not survive that.
+      inv.setResult({ value: 42 });
+      inv.fail(new RangeError('Division by zero'));
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        undefined
+      );
+      // Arguments and error details are still reported: only the result is dropped.
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"expr":"1/0"}'
+      );
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'RangeError');
+    });
+
+    it('should keep the result readable via getResult() after a failure', () => {
+      const inv = createHandler().startTool({ toolName: 'calculator' });
+
+      inv.setResult({ value: 42 });
+      inv.fail(new Error('boom'));
+
+      // Suppression applies to the recorded attribute, not to the in-memory value that
+      // completion hooks and callers may still inspect.
+      assert.deepStrictEqual(inv.getResult(), { value: 42 });
+    });
+
+    it('should not record a result when content capture is disabled', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        contentCaptureMode: 'none',
+      });
+      const inv = handler.startTool({ toolName: 'calculator' });
+
+      inv.setResult({ value: 42 });
+      inv.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        undefined
+      );
+    });
+  });
+
+  it('should record gen_ai.agent.name and gen_ai.conversation.id on the span', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    handler
+      .startTool({
+        toolName: 'get_weather',
+        agentName: 'Math Tutor',
+        conversationId: 'conv_5j66UpCpwteGg4YSxUnt7lPY',
+      })
+      .stop();
+
+    const span = ctx.memoryExporter.getFinishedSpans()[0];
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_NAME], 'Math Tutor');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_CONVERSATION_ID],
+      'conv_5j66UpCpwteGg4YSxUnt7lPY'
+    );
+  });
+
+  // `gen_ai.agent.name` and `gen_ai.operation.name` are listed by the semantic conventions
+  // as attributes that SHOULD be available at span creation time so that samplers can act
+  // on them, so they must not be added after the span has started.
+  it('should provide sampling-relevant attributes at span creation time', () => {
+    const seen: Attributes[] = [];
+    const samplingTracerProvider = new TracerProvider({
+      spanProcessors: [
+        new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+      ],
+      sampler: {
+        shouldSample(_ctx, _traceId, _name, _kind, attributes) {
+          seen.push(attributes);
+          return { decision: SamplingDecision.RECORD_AND_SAMPLED };
+        },
+        toString: () => 'CapturingSampler',
+      },
+    });
+
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: samplingTracerProvider,
+    });
+
+    handler
+      .startTool({ toolName: 'get_weather', agentName: 'Math Tutor' })
+      .stop();
+
+    assert.strictEqual(seen.length, 1);
+    assert.strictEqual(seen[0][ATTR_GEN_AI_AGENT_NAME], 'Math Tutor');
+    assert.strictEqual(seen[0][ATTR_GEN_AI_OPERATION_NAME], 'execute_tool');
+    assert.strictEqual(seen[0][ATTR_GEN_AI_TOOL_NAME], 'get_weather');
+  });
+
+  it('should keep the span name and operation name in sync when overridden', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    handler
+      .startTool({ toolName: 'get_weather', operationName: 'invoke_tool' })
+      .stop();
+
+    const span = ctx.memoryExporter.getFinishedSpans()[0];
+    assert.strictEqual(span.name, 'invoke_tool get_weather');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      'invoke_tool'
+    );
+  });
+
+  // The required `gen_ai.operation.name` / `gen_ai.tool.name` must survive a caller that
+  // passes conflicting keys through the generic `attributes` escape hatch.
+  it('should not let custom attributes override required semconv attributes', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    handler
+      .startTool({
+        toolName: 'get_weather',
+        attributes: {
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_TOOL_NAME]: 'something_else',
+          'custom.attr': 'kept',
+        },
+      })
+      .stop();
+
+    const span = ctx.memoryExporter.getFinishedSpans()[0];
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      'execute_tool'
+    );
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_TOOL_NAME], 'get_weather');
+    assert.strictEqual(span.attributes['custom.attr'], 'kept');
+  });
+
+  it('should record the gen_ai.execute_tool.duration metric', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    handler
+      .startTool({
+        toolName: 'get_weather',
+        toolType: 'function',
+        agentName: 'Math Tutor',
+      })
+      .stop();
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const durationMetric = metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_EXECUTE_TOOL_DURATION
+    );
+
+    assert.ok(durationMetric, 'gen_ai.execute_tool.duration was not recorded');
+    assert.strictEqual(durationMetric.descriptor.unit, 's');
+
+    const dataPoint = durationMetric.dataPoints[0];
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_TOOL_NAME],
+      'get_weather'
+    );
+    assert.strictEqual(dataPoint.attributes[ATTR_GEN_AI_TOOL_TYPE], 'function');
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_AGENT_NAME],
+      'Math Tutor'
+    );
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
+  });
+
+  it('should record error.type on the duration metric when the tool fails', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    handler
+      .startTool({ toolName: 'calculator' })
+      .fail(new RangeError('Division by zero'));
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const durationMetric = metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_EXECUTE_TOOL_DURATION
+    );
+    assert.ok(durationMetric);
+
+    const dataPoint = durationMetric.dataPoints[0];
+    assert.strictEqual(
+      dataPoint.attributes[ATTR_GEN_AI_TOOL_NAME],
+      'calculator'
+    );
+    // The metric must report the same `error.type` as the span, not `_OTHER`.
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'RangeError');
+    assert.strictEqual(
+      ctx.memoryExporter.getFinishedSpans()[0].attributes[ATTR_ERROR_TYPE],
+      'RangeError'
     );
   });
 });

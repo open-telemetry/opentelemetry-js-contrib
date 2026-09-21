@@ -417,16 +417,22 @@ export interface EmbeddingInvocationOptions {
  * Options for starting a tool execution invocation.
  */
 export interface ToolInvocationOptions {
-  /** Name of the tool being executed. */
+  /** Name of the tool being executed (`gen_ai.tool.name`). */
   toolName: string;
-  /** Description of the tool. */
+  /**
+   * Operation name (`gen_ai.operation.name`). Defaults to `'execute_tool'`.
+   */
+  operationName?: string;
+  /** Description of the tool (`gen_ai.tool.description`). */
   toolDescription?: string;
-  /** Unique ID of the tool call. */
+  /** Unique ID of the tool call (`gen_ai.tool.call.id`). */
   toolCallId?: string;
-  /** Type classification of the tool ('function', 'extension', 'datastore'). */
-  toolType?: string;
-  /** Arguments provided to the tool. */
+  /** Type classification of the tool (`gen_ai.tool.type`). */
+  toolType?: ToolType;
+  /** Arguments provided to the tool (`gen_ai.tool.call.arguments`). */
   toolArguments?: unknown;
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
+  conversationId?: string;
   /** Parent context. */
   parentContext?: Context;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */

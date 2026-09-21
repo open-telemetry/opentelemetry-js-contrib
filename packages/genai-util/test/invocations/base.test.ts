@@ -86,11 +86,18 @@ describe('BaseInvocation', () => {
       metricAttributes: Attributes;
     }> = [];
     public emitContentEventCalls: Array<{ endTime?: HrTime }> = [];
+    public onInvocationEndCalls: Array<{
+      endTime: HrTime;
+      errorType?: string;
+    }> = [];
+    /** Order in which the completion hooks ran, for the ordering assertions below. */
+    public hookOrder: string[] = [];
 
     protected override _recordMetrics(
       durationSec: number,
       errorType?: string
     ): void {
+      this.hookOrder.push('_recordMetrics');
       // Snapshot the attributes as they stand when metrics are recorded.
       this.recordMetricsCalls.push({
         durationSec,
@@ -100,7 +107,16 @@ describe('BaseInvocation', () => {
     }
 
     protected override _emitContentEvent(endTime?: HrTime): void {
+      this.hookOrder.push('_emitContentEvent');
       this.emitContentEventCalls.push({ endTime });
+    }
+
+    protected override _onInvocationEnd(
+      endTime: HrTime,
+      errorType?: string
+    ): void {
+      this.hookOrder.push('_onInvocationEnd');
+      this.onInvocationEndCalls.push({ endTime, errorType });
     }
   }
 
@@ -273,6 +289,56 @@ describe('BaseInvocation', () => {
         hrTimeToMicroseconds(finishedSpan.endTime)
     );
     assert.ok(durationMs > 0, `Expected durationMs (${durationMs}) to be > 0`);
+  });
+
+  describe('_onInvocationEnd', () => {
+    it('should run before the metrics and content hooks', () => {
+      const inv = new CustomInvocation('hook-order-span', handler);
+
+      inv.stop();
+
+      // `_onInvocationEnd` writes span attributes, so it deliberately runs first: a
+      // throwing `_recordMetrics` must not be able to strip data off the span.
+      assert.deepStrictEqual(inv.hookOrder, [
+        '_onInvocationEnd',
+        '_recordMetrics',
+        '_emitContentEvent',
+      ]);
+    });
+
+    it('should receive the end time and no error type on stop', () => {
+      const endTime: HrTime = [1000, 500000000];
+      const inv = new CustomInvocation('hook-stop-span', handler);
+
+      inv.stop(endTime);
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+      assert.deepStrictEqual(inv.onInvocationEndCalls[0].endTime, endTime);
+      assert.strictEqual(inv.onInvocationEndCalls[0].errorType, undefined);
+    });
+
+    it('should receive the resolved error type on fail', () => {
+      const inv = new CustomInvocation('hook-fail-span', handler);
+
+      inv.fail(new RangeError('boom'));
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+      assert.strictEqual(inv.onInvocationEndCalls[0].errorType, 'RangeError');
+      // The same value the base class puts on the span, so subclasses never have to
+      // re-derive it.
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'RangeError');
+    });
+
+    it('should run exactly once even when the invocation is completed twice', () => {
+      const inv = new CustomInvocation('hook-once-span', handler);
+
+      inv.stop();
+      inv.stop();
+      inv.fail(new Error('too late'));
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+    });
   });
 
   describe('shouldCaptureContent', () => {
@@ -647,18 +713,23 @@ describe('BaseInvocation', () => {
     class HookFailureInvocation extends BaseInvocation {
       public static readonly METRICS_ERROR = new Error('metrics hook exploded');
       public static readonly CONTENT_ERROR = new Error('content hook exploded');
+      public static readonly INVOCATION_END_ERROR = new Error(
+        'invocation end hook exploded'
+      );
 
       public emitContentEventCalled = false;
+      public recordMetricsCalled = false;
 
       constructor(
         spanName: string,
         handlerArg: TelemetryHandler,
-        private readonly _failIn: 'metrics' | 'content'
+        private readonly _failIn: 'metrics' | 'content' | 'invocation-end'
       ) {
         super(spanName, handlerArg, { kind: SpanKind.CLIENT });
       }
 
       protected override _recordMetrics(): void {
+        this.recordMetricsCalled = true;
         if (this._failIn === 'metrics') {
           throw HookFailureInvocation.METRICS_ERROR;
         }
@@ -668,6 +739,12 @@ describe('BaseInvocation', () => {
         this.emitContentEventCalled = true;
         if (this._failIn === 'content') {
           throw HookFailureInvocation.CONTENT_ERROR;
+        }
+      }
+
+      protected override _onInvocationEnd(): void {
+        if (this._failIn === 'invocation-end') {
+          throw HookFailureInvocation.INVOCATION_END_ERROR;
         }
       }
     }
@@ -735,6 +812,50 @@ describe('BaseInvocation', () => {
         errors[0].args[0],
         HookFailureInvocation.CONTENT_ERROR
       );
+    });
+
+    it('should end the span and report the bug when _onInvocationEnd throws', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'invocation-end-throw-span',
+        createHandlerWithDiag(logger),
+        'invocation-end'
+      );
+
+      assert.doesNotThrow(() => inv.stop());
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'invocation-end-throw-span');
+      assert.strictEqual(inv.isEnded(), true);
+
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(
+        errors[0].args[0],
+        HookFailureInvocation.INVOCATION_END_ERROR
+      );
+
+      // The hook runs first, so the later hooks are skipped. Telemetry is best-effort:
+      // losing the metrics is acceptable, leaking an unfinished span is not.
+      assert.strictEqual(inv.recordMetricsCalled, false);
+      assert.strictEqual(inv.emitContentEventCalled, false);
+    });
+
+    it('should keep the span error status when _onInvocationEnd throws on fail', () => {
+      const { logger } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'invocation-end-throw-fail-span',
+        createHandlerWithDiag(logger),
+        'invocation-end'
+      );
+
+      assert.doesNotThrow(() => inv.fail(new RangeError('upstream failure')));
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].status.message, 'upstream failure');
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
     });
 
     it('should end the span when the thrown value cannot be stringified', () => {

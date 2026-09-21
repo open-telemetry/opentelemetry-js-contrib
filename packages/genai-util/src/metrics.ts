@@ -9,6 +9,7 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
 } from './semconv';
 
 /**
@@ -118,4 +119,19 @@ export function createTimePerOutputChunkHistogram(meter: Meter): Histogram {
       },
     }
   );
+}
+
+/**
+ * Create standard `gen_ai.execute_tool.duration` histogram.
+ *
+ * @experimental
+ */
+export function createExecuteToolDurationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_EXECUTE_TOOL_DURATION, {
+    description: 'The duration of a single tool execution.',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
+    },
+  });
 }

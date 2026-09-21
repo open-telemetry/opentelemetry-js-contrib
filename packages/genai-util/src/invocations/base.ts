@@ -286,11 +286,11 @@ export abstract class BaseInvocation {
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     this._isEnded = true;
 
+    let errorType: string | undefined;
     try {
       const durationSec = hrTimeToSeconds(
         hrTimeDuration(this._startTime, endHr)
       );
-      let errorType: string | undefined;
 
       if (failure) {
         // The span's error state is recorded before the subclass hooks run so that a hook
@@ -311,8 +311,8 @@ export abstract class BaseInvocation {
         });
       }
 
+      this._onInvocationEnd(endHr, errorType);
       this._recordMetrics(durationSec, errorType);
-
       this._emitContentEvent(endHr);
     } catch (err) {
       // Reached when a subclass hook or error introspection throws. Telemetry is
@@ -362,4 +362,9 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
+
+  /**
+   * Hook for subclasses to emit invocation specific telemetry.
+   */
+  protected _onInvocationEnd(_endTime: HrTime, _errorType?: string): void {}
 }
