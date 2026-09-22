@@ -361,11 +361,15 @@ describe('LangChain non-streaming workflows', () => {
     const sensitive = sinon.stub().throws(new Error('private message getter'));
     const error = new Error();
     Object.defineProperties(error, {
+      // Node 20 materializes lazy Error.stack when replacing it. Do this before
+      // installing getters that must only be observed by the instrumentation.
+      stack: { get: sensitive },
       name: { get: name },
       message: { get: sensitive },
-      stack: { get: sensitive },
       code: { get: sensitive },
     });
+    expect(name.called).toBe(false);
+    expect(sensitive.called).toBe(false);
     const { warn } = diagnostics();
     instrumentation.disable();
     sinon
@@ -373,6 +377,7 @@ describe('LangChain non-streaming workflows', () => {
       .callsFake(() => Promise.reject(error));
     instrumentation.enable();
     await expect(identity().invoke('input')).rejects.toBe(error);
+    expect(name.calledOnce).toBe(true);
     expect(sensitive.called).toBe(false);
     expect(
       warn.calledWith(
