@@ -15,6 +15,7 @@ import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
 import * as path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const model = 'claude-haiku-4-5-20251001';
 const input = 'Reply with exactly two words: Hello telemetry';
@@ -366,33 +367,65 @@ describe('Anthropic instrumentation', function () {
     expect(getTestSpans()).toHaveLength(0);
   });
 
-  it('derives gen_ai.provider.name from the client base URL', async () => {
-    nock('https://bedrock-runtime.us-east-1.amazonaws.com')
-      .post(/.*/)
-      .reply(200, {
-        id: 'msg_01234567890',
-        type: 'message',
-        role: 'assistant',
+  const providerCases = [
+    {
+      title: 'Bedrock',
+      baseURL: 'https://bedrock-runtime.us-east-1.amazonaws.com',
+      expected: 'aws.bedrock',
+    },
+    {
+      title: 'regional Vertex',
+      baseURL: 'https://us-east5-aiplatform.googleapis.com/v1',
+      expected: 'gcp.vertex_ai',
+    },
+    {
+      title: 'global Vertex',
+      baseURL: 'https://aiplatform.googleapis.com/v1',
+      expected: 'gcp.vertex_ai',
+    },
+  ];
+
+  providerCases.forEach(({ title, baseURL, expected }) => {
+    it(`derives gen_ai.provider.name for ${title} endpoints`, async () => {
+      nock(new URL(baseURL).origin)
+        .post(/.*/)
+        .reply(200, {
+          id: 'msg_01234567890',
+          type: 'message',
+          role: 'assistant',
+          model,
+          content: [{ type: 'text', text: 'Hello telemetry' }],
+          stop_reason: 'end_turn',
+          usage: { input_tokens: 10, output_tokens: 3 },
+        });
+
+      const client = new Anthropic({
+        apiKey: 'testing',
+        maxRetries: 0,
+        baseURL,
+      });
+      await client.messages.create({
         model,
-        content: [{ type: 'text', text: 'Hello telemetry' }],
-        stop_reason: 'end_turn',
-        usage: { input_tokens: 10, output_tokens: 3 },
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
       });
 
-    const bedrockClient = new Anthropic({
-      apiKey: 'testing',
-      maxRetries: 0,
-      baseURL: 'https://bedrock-runtime.us-east-1.amazonaws.com',
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].attributes['gen_ai.provider.name']).toBe(expected);
     });
-    await bedrockClient.messages.create({
-      model,
-      max_tokens: 16,
-      messages: [{ role: 'user', content: input }],
-    });
+  });
 
-    const spans = getTestSpans();
-    expect(spans).toHaveLength(1);
-    expect(spans[0].attributes['gen_ai.provider.name']).toBe('aws.bedrock');
+  it('instruments clients built from the SDK subpath export', () => {
+    // Bedrock and Vertex clients import SDK subpaths rather than the package
+    // root, so the patch must not depend on the root being loaded. This runs
+    // in a child process because this file has already imported the root.
+    const output = execFileSync(
+      process.execPath,
+      [path.join(__dirname, 'fixtures', 'subpath-import.js')],
+      { encoding: 'utf8' }
+    );
+    expect(JSON.parse(output)).toEqual({ wrapped: true });
   });
 
   it('ends the span when a streaming response is read via asResponse', async () => {

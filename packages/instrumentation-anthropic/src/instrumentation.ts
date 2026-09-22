@@ -9,16 +9,17 @@ import type { Span } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import { isTracingSuppressed } from '@opentelemetry/core';
 import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-type AnthropicModule = typeof Anthropic & {
-  Anthropic?: typeof Anthropic;
-  default?: typeof Anthropic;
-};
+/** The shared `resources/messages/messages` module, whichever entry point loaded it. */
+interface MessagesModule {
+  Messages: { prototype: Record<string, unknown> };
+}
 
 interface SpanState {
   span: Span;
@@ -53,10 +54,6 @@ interface AnthropicAPIPromise<T> extends Promise<T> {
   parse(): Promise<T>;
 }
 
-function getAnthropicExport(module: AnthropicModule): typeof Anthropic {
-  return module.Anthropic ?? module.default ?? module;
-}
-
 function isMessageCreateParams(
   value: unknown
 ): value is Anthropic.Messages.MessageCreateParams {
@@ -80,7 +77,9 @@ function getProviderName(client: unknown): string {
     if (/\.amazonaws\.com$/.test(host) && host.includes('bedrock')) {
       return 'aws.bedrock';
     }
-    if (/(^|\.)aiplatform\.googleapis\.com$/.test(host)) {
+    // Regional endpoints are `<region>-aiplatform.googleapis.com`; the global
+    // endpoint has no region prefix.
+    if (/(^|[.-])aiplatform\.googleapis\.com$/.test(host)) {
       return 'gcp.vertex_ai';
     }
   }
@@ -112,23 +111,33 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   }
 
   protected init() {
+    // Patch the shared `Messages` resource file rather than the package root:
+    // `@anthropic-ai/sdk/client` and the Bedrock and Vertex packages import SDK
+    // subpaths, so a root-only hook never runs for them. Every entry point
+    // loads this one file, so patching it here covers them all exactly once.
+    const messagesFile = new InstrumentationNodeModuleFile(
+      '@anthropic-ai/sdk/resources/messages/messages.js',
+      ['>=0.65.0 <1'],
+      (moduleExports: MessagesModule) => {
+        this._wrap(
+          moduleExports.Messages.prototype,
+          'create',
+          this._getPatchedMessagesCreate()
+        );
+        return moduleExports;
+      },
+      (moduleExports: MessagesModule) => {
+        this._unwrap(moduleExports.Messages.prototype, 'create');
+      }
+    );
+
     return [
       new InstrumentationNodeModuleDefinition(
         '@anthropic-ai/sdk',
         ['>=0.65.0 <1'],
-        (module: AnthropicModule) => {
-          const anthropic = getAnthropicExport(module);
-          this._wrap(
-            anthropic.Messages.prototype,
-            'create',
-            this._getPatchedMessagesCreate()
-          );
-          return module;
-        },
-        (module: AnthropicModule) => {
-          const anthropic = getAnthropicExport(module);
-          this._unwrap(anthropic.Messages.prototype, 'create');
-        }
+        undefined,
+        undefined,
+        [messagesFile]
       ),
     ];
   }
