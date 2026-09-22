@@ -324,9 +324,13 @@ export interface TokenUsage {
 }
 
 /**
- * Standard parameters for a GenAI request.
+ * Standard parameters for a GenAI inference request.
+ *
+ * Every attribute produced from this interface is defined by the GenAI
+ * semantic conventions on the inference span only; other invocation types
+ * (embeddings, execute tool, ...) declare their own request parameters.
  */
-export interface GenAIRequestOptions {
+export interface InferenceRequestOptions {
   /** Sampling temperature (`gen_ai.request.temperature`). */
   temperature?: number;
   /** Top-p nucleus sampling parameter (`gen_ai.request.top_p`). */
@@ -345,8 +349,6 @@ export interface GenAIRequestOptions {
   choiceCount?: number;
   /** Random seed for deterministic generation (`gen_ai.request.seed`). */
   seed?: number;
-  /** Target encoding formats (`gen_ai.request.encoding_formats`). */
-  encodingFormats?: string[];
   /** Whether the request was streamed (`gen_ai.request.stream`). */
   stream?: boolean;
   /** The requested reasoning effort/level (`gen_ai.request.reasoning.level`). */
@@ -368,7 +370,7 @@ export interface InferenceInvocationOptions {
   /** Model name requested. */
   requestModel?: string;
   /** Request parameters/settings. */
-  requestOptions?: GenAIRequestOptions;
+  requestOptions?: InferenceRequestOptions;
   /** Input messages sent to the model. */
   inputMessages?: InputMessages;
   /** System instructions. */
