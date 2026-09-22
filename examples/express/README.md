@@ -7,7 +7,6 @@ shows key aspects of tracing such as
 
 - Root Span (on Client)
 - Child Span (on Client)
-- Span Events
 - Span Attributes
 
 ## Installation

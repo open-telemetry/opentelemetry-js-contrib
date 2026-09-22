@@ -9,100 +9,67 @@ shows key aspects of tracing such as
 - Child Span (on Client)
 - Child Span from a Remote Parent (on Server)
 - SpanContext Propagation (from Client to Server)
-- Span Events
 - Span Attributes
 
 ## Installation
 
 ```sh
-# from this directory
+cd examples/redis
 npm install
 ```
 
-Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
-or
-Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/#all-in-one)
+Start Jaeger in Docker for receiving tracing data (see [the Jaeger docs](https://www.jaegertracing.io/docs/2.0/getting-started/#in-docker) for more details about running Jaeger):
+
+```bash
+docker run --rm --name jaeger \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  -p 9411:9411 \
+  jaegertracing/jaeger:2.0.0 \
+  --set receivers.otlp.protocols.http.endpoint=0.0.0.0:4318 \
+  --set receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317
+```
+
+(Note: Any backend for visualizing observability data will do, as long as it supports ingesting OTLP. This example just happens to use Jaeger.)
+
 
 ## Run the Application
 
-### Zipkin
+Start redis via docker:
 
-- Start redis via docker
+```sh
+npm run docker:start
+```
 
-   ```sh
-   # from this directory
-   npm run docker:start
-   ```
+Run the server:
 
-- Run the server
+```sh
+npm run server
+```
 
-   ```sh
-   # from this directory
-   $ npm run zipkin:server
-   ```
+Run the client:
 
-- Run the client
-
-   ```sh
-   # from this directory
-   npm run zipkin:client
-   ```
-
-- Cleanup docker
-
-   ```sh
-   # from this directory
-   npm run docker:stop
-   ```
-
-#### Zipkin UI
-
-After a short time, the generated traces should be available in the Zipkin UI.
-Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
-recent traces, then click "SHOW" on a given trace.
-
-<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin.jpg?raw=true"/></p>
-
-### Jaeger
-
-- Start redis via docker
-
-   ```sh
-   # from this directory
-   npm run docker:start
-   ```
-
-- Run the server
-
-   ```sh
-   # from this directory
-   $ npm run otlp:server
-   ```
-
-- Run the client
-
-   ```sh
-   # from this directory
-   npm run otlp:client
-   ```
-
-- Cleanup docker
-
-   ```sh
-   # from this directory
-   npm run docker:stop
-   ```
-
-#### Jaeger UI
+```sh
+npm run client
+```
 
 Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
 
 <p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.jpg?raw=true"/></p>
 
+Cleanup docker when done:
+
+```sh
+# from this directory
+npm run docker:stop
+```
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node>
+- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-sdk-node>
 
 ## LICENSE
 
