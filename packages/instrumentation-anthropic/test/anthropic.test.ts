@@ -553,6 +553,40 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].attributes['error.type']).toBeUndefined();
   });
 
+  it('ends the span when an abort delivers a buffered event', async () => {
+    const { nockDone } = await nockBack(
+      'anthropic-messages-create-streaming.json',
+      { afterRecord: sanitizeRecordings }
+    );
+    try {
+      const stream = await createRecordingClient().messages.create({
+        model,
+        max_tokens: 16,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+      });
+
+      const iterator = stream[Symbol.asyncIterator]();
+      await iterator.next();
+
+      // Abort while `next()` is outstanding: it can still resolve with an
+      // already-buffered event rather than completing the stream.
+      const pending = iterator.next();
+      stream.controller.abort();
+      const delivered = await pending;
+      expect(delivered.done).toBe(false);
+
+      // The caller stops reading here, so nothing else will close the stream.
+    } finally {
+      nockDone();
+    }
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
   it('records messages.create errors', async () => {
     nock('https://api.anthropic.com')
       .post('/v1/messages')

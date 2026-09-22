@@ -326,6 +326,13 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           exhausted = true;
           break;
         }
+        // An abort raised while `next()` was outstanding is deferred to here,
+        // and that call can still deliver a buffered event. The abort listener
+        // has already fired by now, so nothing else would ever end the span if
+        // the caller stops reading after this event.
+        if (signal?.aborted) {
+          this._endSpanWithAbort(state);
+        }
         yield next.value;
       }
       // `Stream.fromSSEResponse` swallows abort errors and simply stops
