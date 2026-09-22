@@ -7,6 +7,8 @@ import { instrumentation } from './load-instrumentation';
 import {
   getTestSpans,
   resetMemoryExporter,
+  runTestFixture,
+  TestCollector,
 } from '@opentelemetry/contrib-test-utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
@@ -426,6 +428,32 @@ describe('Anthropic instrumentation', function () {
       { encoding: 'utf8' }
     );
     expect(JSON.parse(output)).toEqual({ wrapped: true });
+  });
+
+  it('instruments the SDK when imported as native ESM', async () => {
+    // Native ESM resolves the SDK's `.mjs` build, which a `.js`-only hook does
+    // not match.
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/use-anthropic.mjs'],
+      env: {
+        NODE_OPTIONS:
+          '--experimental-loader=@opentelemetry/instrumentation/hook.mjs',
+        NODE_NO_WARNINGS: '1',
+      },
+      checkResult: err => {
+        expect(err).toBeFalsy();
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        expect(spans).toHaveLength(1);
+        expect(spans[0].name).toBe(`chat ${model}`);
+        expect(
+          spans[0].attributes.find(a => a.key === 'gen_ai.provider.name')?.value
+            .stringValue
+        ).toBe('anthropic');
+      },
+    });
   });
 
   it('ends the span when a streaming response is read via asResponse', async () => {

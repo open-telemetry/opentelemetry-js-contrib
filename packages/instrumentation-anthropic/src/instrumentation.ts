@@ -115,20 +115,28 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // `@anthropic-ai/sdk/client` and the Bedrock and Vertex packages import SDK
     // subpaths, so a root-only hook never runs for them. Every entry point
     // loads this one file, so patching it here covers them all exactly once.
-    const messagesFile = new InstrumentationNodeModuleFile(
+    // Both extensions are registered: native ESM resolves to `.mjs`, which a
+    // `.js` hook does not match.
+    const messagesFiles = [
       '@anthropic-ai/sdk/resources/messages/messages.js',
-      ['>=0.65.0 <1'],
-      (moduleExports: MessagesModule) => {
-        this._wrap(
-          moduleExports.Messages.prototype,
-          'create',
-          this._getPatchedMessagesCreate()
-        );
-        return moduleExports;
-      },
-      (moduleExports: MessagesModule) => {
-        this._unwrap(moduleExports.Messages.prototype, 'create');
-      }
+      '@anthropic-ai/sdk/resources/messages/messages.mjs',
+    ].map(
+      name =>
+        new InstrumentationNodeModuleFile(
+          name,
+          ['>=0.65.0 <1'],
+          (moduleExports: MessagesModule) => {
+            this._wrap(
+              moduleExports.Messages.prototype,
+              'create',
+              this._getPatchedMessagesCreate()
+            );
+            return moduleExports;
+          },
+          (moduleExports: MessagesModule) => {
+            this._unwrap(moduleExports.Messages.prototype, 'create');
+          }
+        )
     );
 
     return [
@@ -137,7 +145,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         ['>=0.65.0 <1'],
         undefined,
         undefined,
-        [messagesFile]
+        messagesFiles
       ),
     ];
   }
