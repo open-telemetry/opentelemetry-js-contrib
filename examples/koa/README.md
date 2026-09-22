@@ -52,19 +52,19 @@ Go to Zipkin with your browser <http://localhost:9411/zipkin/traces/(your-trace-
 
    ```sh
    # from this directory
-   $ npm run jaeger:server
+   $ npm run otlp:server
    ```
 
 - Run the client
 
    ```sh
    # from this directory
-   npm run jaeger:client
+   npm run otlp:client
    ```
 
 #### Jaeger UI
 
-The `jaeger:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
+The `otlp:server` script should output the `traceid` in the terminal (e.g `traceid: 4815c3d576d930189725f1f1d1bdfcc6`).
 Go to Jaeger with your browser <http://localhost:16686/trace/(your-trace-id)> (e.g <http://localhost:16686/trace/4815c3d576d930189725f1f1d1bdfcc6>)
 
 <p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.jpg?raw=true"/></p>

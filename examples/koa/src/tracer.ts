@@ -19,10 +19,10 @@ const EXPORTER = process.env.EXPORTER || '';
 
 export const setupTracing = (serviceName: string) => {
   let exporter;
-  if (EXPORTER === 'jaeger' || EXPORTER === 'otlp') {
-    exporter = new OTLPTraceExporter();
-  } else {
+  if (EXPORTER?.toLowerCase().startsWith('z')) {
     exporter = new ZipkinExporter();
+  } else {
+    exporter = new OTLPTraceExporter();
   }
 
   const provider = new NodeTracerProvider({

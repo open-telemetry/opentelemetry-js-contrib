@@ -65,14 +65,14 @@ recent traces, then click "SHOW" on a given trace.
 
    ```sh
    # from this directory
-   npm run jaeger:server
+   npm run otlp:server
    ```
 
 - Run the client
 
    ```sh
    # from this directory
-   npm run jaeger:client
+   npm run otlp:client
    ```
 
 #### Jaeger UI

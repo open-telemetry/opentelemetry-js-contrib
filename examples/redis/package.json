@@ -9,8 +9,8 @@
     "docker:stop": "docker stop otel-redis && docker rm otel-redis",
     "zipkin:server": "cross-env EXPORTER=zipkin ts-node src/server.ts",
     "zipkin:client": "cross-env EXPORTER=zipkin ts-node src/client.ts",
-    "jaeger:server": "cross-env EXPORTER=jaeger ts-node src/server.ts",
-    "jaeger:client": "cross-env EXPORTER=jaeger ts-node src/client.ts",
+    "otlp:server": "cross-env EXPORTER=otlp ts-node src/server.ts",
+    "otlp:client": "cross-env EXPORTER=otlp ts-node src/client.ts",
     "compile": "tsc -p ."
   },
   "repository": {
