@@ -34,19 +34,41 @@ function isPromptValue(
   return isRecord(value) && typeof value.toChatMessages === 'function';
 }
 
+function validBase64(value: string): boolean {
+  let length = value.length;
+  while (length > 0 && value.charCodeAt(length - 1) === 61) length--;
+  const padding = value.length - length;
+  const remainder = length % 4;
+  if (
+    padding > 2 ||
+    remainder === 1 ||
+    (padding > 0 && (value.length % 4 !== 0 || remainder !== 4 - padding))
+  )
+    return false;
+  let last = 0;
+  // A repeated-quartet regexp can exhaust V8's regexp stack for large images.
+  // Scan once, with constant space, before using Buffer's permissive decoder.
+  for (let index = 0; index < length; index++) {
+    const code = value.charCodeAt(index);
+    if (code >= 65 && code <= 90) last = code - 65;
+    else if (code >= 97 && code <= 122) last = code - 71;
+    else if (code >= 48 && code <= 57) last = code + 4;
+    else if (code === 43) last = 62;
+    else if (code === 47) last = 63;
+    else return false;
+  }
+  return remainder === 2
+    ? (last & 15) === 0
+    : remainder === 3
+      ? (last & 3) === 0
+      : true;
+}
+
 function decodeBase64(
   value: unknown,
   diag: DiagLogger
 ): Uint8Array | undefined {
-  // Validate alphabet, length, padding and unused pad bits before Buffer's
-  // permissive decoder. Both padded and unpadded RFC 4648 encodings are accepted.
-  if (
-    typeof value !== 'string' ||
-    value.trim() !== value ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw](?:==)?|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=?)?$/.test(
-      value
-    )
-  ) {
+  if (typeof value !== 'string' || !validBase64(value)) {
     diag.debug('LangChain: omitting invalid base64 content');
     return undefined;
   }
@@ -318,6 +340,27 @@ export function messages(
       : formatInputMessages(parsed);
   if (formatted === undefined)
     diag.debug('LangChain: failed to serialize messages');
+  return formatted;
+}
+
+export function batchOutputMessages(
+  value: unknown,
+  diag: DiagLogger
+): string | undefined {
+  if (!Array.isArray(value)) {
+    diag.debug('LangChain: cannot normalize non-array batch output');
+    return undefined;
+  }
+  // The outer array is a batch, not a conversation. Each individual result
+  // still follows LangChain's message/history semantics, including explicit roles.
+  const parsed = value.flatMap(result => {
+    const output =
+      isRecord(result) && typeof result.role === 'string' ? [result] : result;
+    return parseOutputMessages(output, diag) ?? [];
+  });
+  const formatted = formatOutputMessages(parsed);
+  if (formatted === undefined)
+    diag.debug('LangChain: failed to serialize batch output messages');
   return formatted;
 }
 

@@ -597,6 +597,51 @@ describe('LangChain content mapping', () => {
     }
   });
 
+  it('retains complete 4 MiB binary payloads and sibling text on every content path', function () {
+    this.timeout(15000);
+    const bytes = Buffer.alloc(4 * 1024 * 1024);
+    for (let index = 0; index < bytes.length; index++)
+      bytes[index] = index % 251;
+    const encoded = bytes.toString('base64');
+    const debug = sinon.spy();
+    const logger = { ...diag, debug };
+    for (const image of [
+      { type: 'image', base64: encoded },
+      { type: 'image_url', image_url: `data:image/png;base64,${encoded}` },
+    ]) {
+      const content = [{ type: 'text', text: 'retained text' }, image];
+      for (const [parsed, formatted] of [
+        [
+          parseInputMessages([{ role: 'user', content }], logger)?.[0].parts,
+          messages([{ role: 'user', content }], logger),
+        ],
+        [
+          parseOutputMessages([{ role: 'assistant', content }], logger)?.[0]
+            .parts,
+          messages([{ role: 'assistant', content }], logger, 'assistant'),
+        ],
+        [
+          parseSystemInstructions(content, logger),
+          systemInstructions(content, logger),
+        ],
+      ] as const) {
+        expect(parsed).toHaveLength(2);
+        expect(parsed![0]).toEqual({ type: 'text', content: 'retained text' });
+        const binary = parsed![1].content;
+        expect(binary instanceof Uint8Array).toBe(true);
+        if (!(binary instanceof Uint8Array))
+          throw new Error('Expected binary content');
+        expect(Buffer.compare(Buffer.from(binary), bytes)).toBe(0);
+        const json = JSON.parse(formatted!);
+        const parts = json[0].parts ?? json;
+        expect(parts[0]).toEqual({ type: 'text', content: 'retained text' });
+        expect(parts[1].content.length).toBe(encoded.length);
+        expect(parts[1].content === encoded).toBe(true);
+      }
+    }
+    expect(debug.called).toBe(false);
+  });
+
   it('serializes raw blob views without including bytes outside the view', () => {
     const bytes = new Uint8Array([255, 0, 1, 2, 255]);
     for (const content of [

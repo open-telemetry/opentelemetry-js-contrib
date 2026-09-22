@@ -706,10 +706,12 @@ describe('LangChain non-streaming workflows', () => {
     expect(JSON.stringify(debug.args)).not.toContain('private getter');
   });
 
-  it('diagnoses boundary metadata failures and preserves the original call', async () => {
+  it('omits unobservable metadata without invoking its getter or replacing the SDK call', async () => {
     const { warn } = diagnostics();
+    let reads = 0;
     const options = Object.defineProperty({}, 'metadata', {
       get() {
+        reads++;
         throw new Error('private getter');
       },
     });
@@ -721,7 +723,11 @@ describe('LangChain non-streaming workflows', () => {
     expect(await identity().invoke('input', options)).toBe('answer');
     expect(original.calledOnce).toBe(true);
     expect(original.firstCall.args[1]).toBe(options);
-    expect(getTestSpans()).toHaveLength(0);
+    expect(reads).toBe(0);
+    expect(getTestSpans()).toHaveLength(1);
+    expect(
+      getTestSpans()[0].attributes['gen_ai.conversation.id']
+    ).toBeUndefined();
     expect(warn.called).toBe(true);
     expect(JSON.stringify(warn.args)).not.toContain('private getter');
   });

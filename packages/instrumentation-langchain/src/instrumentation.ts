@@ -103,7 +103,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               this._wrap(
                 module.RunnableSequence.prototype,
                 'batch',
-                this._wrapper()
+                this._wrapper(true)
               );
             },
             (module: typeof Runnables) => {
@@ -141,7 +141,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return this._handler;
   }
 
-  private _wrapper() {
+  private _wrapper(batch = false) {
     const self = this;
     return <T extends Runnables.Runnable, A extends unknown[], R>(
       original: (this: T, ...args: A) => R
@@ -164,7 +164,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 args[1],
                 handler.shouldCaptureContent()
               ),
-              parent
+              parent,
+              batch
             );
           }
         } catch {
@@ -202,26 +203,24 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     options: unknown,
     capture: boolean
   ): Attributes {
-    const config = isRecord(options) ? options : undefined;
-    const configurable =
-      config && isRecord(config.configurable) ? config.configurable : undefined;
-    const metadata =
-      config && isRecord(config.metadata) ? config.metadata : undefined;
+    const configurable = this._configValue(options, 'configurable');
+    const metadata = this._configValue(options, 'metadata');
     const conversation = [
-      configurable?.thread_id,
-      configurable?.session_id,
-      configurable?.conversation_id,
-      metadata?.session_id,
-      metadata?.thread_id,
-      metadata?.conversation_id,
+      this._configValue(configurable, 'thread_id'),
+      this._configValue(configurable, 'session_id'),
+      this._configValue(configurable, 'conversation_id'),
+      this._configValue(metadata, 'session_id'),
+      this._configValue(metadata, 'thread_id'),
+      this._configValue(metadata, 'conversation_id'),
     ].find(
       (value): value is string => typeof value === 'string' && value.length > 0
     );
+    const runName = this._configValue(options, 'runName');
     const attributes: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
       [ATTR_GEN_AI_WORKFLOW_NAME]:
-        typeof config?.runName === 'string'
-          ? config.runName
+        typeof runName === 'string'
+          ? runName
           : (target.name ?? target.getName()),
     };
     if (conversation !== undefined)
@@ -232,6 +231,20 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         attributes[ATTR_GEN_AI_INPUT_MESSAGES] = content;
     }
     return attributes;
+  }
+
+  private _configValue(value: unknown, key: string): unknown {
+    if (!isRecord(value)) return undefined;
+    // The SDK owns reading its options. Observing accessors here can change
+    // both their side effects and the effective values subsequently seen by it.
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (descriptor && !('value' in descriptor)) {
+      this._diag.warn(
+        'LangChain: omitting accessor-backed configuration attribute'
+      );
+      return undefined;
+    }
+    return descriptor?.value;
   }
 
   private _end(

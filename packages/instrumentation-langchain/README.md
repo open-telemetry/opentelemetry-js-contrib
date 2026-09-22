@@ -63,6 +63,9 @@ spans. `RunnableSequence.batch` creates one span around its optimized batch
 implementation; `RunnableMap.batch` delegates to independently traced invocations
 for each input. Nested and recursive composed workflows remain distinct spans.
 Standalone lambdas, prompts, parsers and model calls are not patched.
+Batch output is normalized one result at a time, in result order: generated
+strings are assistant messages, while explicit SDK roles and nested message
+histories retain their roles. Input string-message shorthand remains user content.
 
 This layer does **not** instrument `stream` or `transform`, tools, agents,
 LangGraph operations or retrieval. Internal graph adapter sequences are excluded.
@@ -78,6 +81,9 @@ then `metadata.conversation_id`. Arbitrary metadata is never copied.
 The SDK applies `withConfig` defaults before the instrumented invocation;
 per-input batch configurations are left unchanged, without inventing one shared
 conversation ID or name for the entire batch.
+Configuration observation reads only own data properties. Accessor-backed
+`runName`, `metadata`, `configurable` and conversation aliases are omitted with
+content-free diagnostics, without invoking getters or changing SDK options.
 
 ## Configuration Options
 
@@ -119,6 +125,8 @@ omitted with content-free diagnostics; other valid parts remain intact.
 Raw binary blob views retain their exact byte range. Unknown provider-specific
 parts remain unchanged, but invalid standardized blobs cannot bypass validation
 through that fallback.
+Base64 validation is a linear, constant-space scan without a regexp stack or an
+instrumentation-imposed payload-size cap.
 
 `parseInputMessages`, `parseOutputMessages`, and `parseSystemInstructions` return
 structured models for instrumentation code. The internal `messages` and
@@ -131,6 +139,34 @@ literal text.
 These adapters are not a public LangChain instrumentation API. The workflow
 lifecycle uses them only when content capture is enabled. System-instruction
 adapters are available internally for later operation-specific instrumentation.
+
+## Collector regression tests
+
+After building this package and its workspace dependencies, run the opt-in
+workflow-only regression harness with Docker available:
+
+```bash
+npm run test:collector --workspace @opentelemetry/instrumentation-langchain
+```
+
+The harness starts the official Collector Contrib 0.161.0 image pinned by digest
+in `test/collector/run.cjs`, exports through OTLP/gRPC, and asserts the actual
+Collector file output. It checks configuration getter behavior against disabled
+instrumentation, batch roles/order, privacy, errors, active context, and complete
+4 MiB synthetic image bytes plus sibling text through both base64 fields and
+data URLs. No provider requests are made.
+
+Only loopback ephemeral ports are published. The Collector receiver sets
+`max_recv_msg_size_mib: 64`: two full base64 message attributes exceed the default
+4 MiB receive limit. Span attributes are not truncated to fit transport limits.
+Cases flush serially to avoid the exporter's concurrent-request limit.
+
+Set `OTEL_LANGCHAIN_COLLECTOR_ARTIFACTS` to an existing directory to select the
+evidence parent; otherwise the OS temporary directory is used. Each run creates
+its own subdirectory. On success, only a concise receipt and Collector logs are
+retained; full payload/config files are removed. Failures retain evidence for
+diagnosis. The harness stops and removes only its own container on either path.
+This is scoped regression proof, not the later full migration conformance suite.
 
 ## Semantic Conventions
 

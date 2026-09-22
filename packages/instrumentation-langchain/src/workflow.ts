@@ -16,13 +16,14 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   TelemetryHandler,
 } from '@opentelemetry/genai-util';
-import { messages } from './content';
+import { batchOutputMessages, messages } from './content';
 
 export class LangChainWorkflowInvocation extends BaseInvocation {
   constructor(
     handler: TelemetryHandler,
     attributes: Attributes,
-    context: Context
+    context: Context,
+    private readonly _batch = false
   ) {
     const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
     super(
@@ -38,7 +39,9 @@ export class LangChainWorkflowInvocation extends BaseInvocation {
     if (this.isEnded()) return;
     try {
       if (this.shouldCaptureContent()) {
-        const content = messages(output, this._handler.getDiag(), 'assistant');
+        const content = this._batch
+          ? batchOutputMessages(output, this._handler.getDiag())
+          : messages(output, this._handler.getDiag(), 'assistant');
         if (content !== undefined)
           this.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, content);
       }
