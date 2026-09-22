@@ -110,8 +110,15 @@ The internal content adapter normalizes LangChain messages and prompt values
 into the shared `@opentelemetry/genai-util` message models. It preserves message
 roles, tuple and string-array inputs, tool/function-call envelopes, server-tool
 result IDs, reasoning, multimodal content, and unknown provider-specific parts.
-Inline image data URLs become blob parts; already-base64-encoded content is
-preserved without decoding and re-encoding.
+Inline image data URLs and SDK multimedia `base64` fields are validated locally
+and decoded into raw `Uint8Array` blob content. The shared formatters encode those
+bytes as base64 for message and system-instruction attributes. Valid padded and
+unpadded inputs preserve the same bytes, not their original encoded spelling.
+Invalid encoding (including malformed padding or nonzero unused pad bits) is
+omitted with content-free diagnostics; other valid parts remain intact.
+Raw binary blob views retain their exact byte range. Unknown provider-specific
+parts remain unchanged, but invalid standardized blobs cannot bypass validation
+through that fallback.
 
 `parseInputMessages`, `parseOutputMessages`, and `parseSystemInstructions` return
 structured models for instrumentation code. The internal `messages` and

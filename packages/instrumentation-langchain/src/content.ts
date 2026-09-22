@@ -34,8 +34,26 @@ function isPromptValue(
   return isRecord(value) && typeof value.toChatMessages === 'function';
 }
 
-function imagePart(url: unknown): MessagePart | undefined {
-  if (typeof url !== 'string') return undefined;
+function decodeBase64(
+  value: unknown,
+  diag: DiagLogger
+): Uint8Array | undefined {
+  // Validate alphabet, length, padding and unused pad bits before Buffer's
+  // permissive decoder. Both padded and unpadded RFC 4648 encodings are accepted.
+  if (
+    typeof value !== 'string' ||
+    value.trim() !== value ||
+    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/][AQgw](?:==)?|[A-Za-z0-9+/]{2}[AEIMQUYcgkosw048]=?)?$/.test(
+      value
+    )
+  ) {
+    diag.debug('LangChain: omitting invalid base64 content');
+    return undefined;
+  }
+  return Buffer.from(value, 'base64');
+}
+
+function imagePart(url: string, diag: DiagLogger): MessagePart | undefined {
   if (!/^data:/i.test(url)) {
     return { type: 'uri', modality: 'image', uri: url };
   }
@@ -43,21 +61,19 @@ function imagePart(url: unknown): MessagePart | undefined {
     /^data:(image\/[a-z0-9!#$&^_.+-]+)(?:;[a-z0-9!#$%&'*+.^_`|~-]+=[a-z0-9!#$%&'*+.^_`|~-]+)*;base64,(.*)$/i.exec(
       url
     );
-  if (!match || match[0] !== url || /%(?![a-f0-9]{2})/i.test(url))
-    return undefined;
-  let content: string;
-  try {
-    content = decodeURIComponent(match[2]);
-  } catch {
+  if (!match || match[0] !== url || /%(?![a-f0-9]{2})/i.test(url)) {
+    diag.debug('LangChain: omitting invalid image data URL');
     return undefined;
   }
-  if (
-    content.trim() !== content ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}(?:==)?|[A-Za-z0-9+/]{3}=?)?$/.test(
-      content
-    )
-  )
+  let encoded: string;
+  try {
+    encoded = decodeURIComponent(match[2]);
+  } catch {
+    diag.debug('LangChain: omitting invalid image data URL');
     return undefined;
+  }
+  const content = decodeBase64(encoded, diag);
+  if (content === undefined) return undefined;
   return {
     type: 'blob',
     modality: 'image',
@@ -66,7 +82,7 @@ function imagePart(url: unknown): MessagePart | undefined {
   } satisfies BlobPart;
 }
 
-function part(value: unknown, diag: DiagLogger): MessagePart {
+function part(value: unknown, diag: DiagLogger): MessagePart | undefined {
   if (!isRecord(value)) {
     return { type: 'text', content: String(value) };
   }
@@ -80,10 +96,10 @@ function part(value: unknown, diag: DiagLogger): MessagePart {
         content: value.reasoning ?? value.thinking,
       };
     case 'image_url': {
-      const image = imagePart(
-        isRecord(value.image_url) ? value.image_url.url : value.image_url
-      );
-      if (image) return image;
+      const url = isRecord(value.image_url)
+        ? value.image_url.url
+        : value.image_url;
+      if (typeof url === 'string') return imagePart(url, diag);
       break;
     }
     case 'image':
@@ -103,9 +119,7 @@ function part(value: unknown, diag: DiagLogger): MessagePart {
       }
       if (typeof value.url === 'string') {
         if (value.type === 'image') {
-          const image = imagePart(value.url);
-          if (image) return image;
-          break;
+          return imagePart(value.url, diag);
         }
         return {
           type: 'uri',
@@ -113,15 +127,23 @@ function part(value: unknown, diag: DiagLogger): MessagePart {
           uri: value.url,
         };
       }
-      if (typeof value.base64 === 'string') {
+      if ('base64' in value) {
+        const content = decodeBase64(value.base64, diag);
+        if (content === undefined) return undefined;
         return {
           type: 'blob',
           modality: value.type === 'file' ? 'document' : value.type,
-          content: value.base64,
+          content,
           ...(value.mime_type ? { mime_type: value.mime_type } : {}),
         };
       }
       break;
+    case 'blob':
+      if (!(value.content instanceof Uint8Array)) {
+        diag.debug('LangChain: omitting invalid binary blob content');
+        return undefined;
+      }
+      return { ...value, type: 'blob', content: value.content };
     case 'tool_call':
       return {
         type: 'tool_call',
@@ -150,6 +172,12 @@ function part(value: unknown, diag: DiagLogger): MessagePart {
     ...value,
     type: typeof value.type === 'string' ? value.type : 'unknown',
   };
+}
+
+function normalizeParts(values: unknown[], diag: DiagLogger): MessagePart[] {
+  return values
+    .map(value => part(value, diag))
+    .filter((value): value is MessagePart => value !== undefined);
 }
 
 function normalizeMessages(
@@ -213,7 +241,7 @@ function normalizeMessages(
         : typeof content === 'string'
           ? [{ type: 'text', content }]
           : Array.isArray(content)
-            ? content.map(p => part(p, diag))
+            ? normalizeParts(content, diag)
             : [];
     if (Array.isArray(toolCalls) && toolCalls.length > 0) {
       for (const call of toolCalls) {
@@ -316,8 +344,10 @@ export function parseSystemInstructions(
   try {
     const content = isMessage(value) ? value.content : value;
     if (typeof content === 'string') return [{ type: 'text', content }];
-    if (Array.isArray(content) && content.length)
-      return content.map(item => part(item, diag));
+    if (Array.isArray(content) && content.length) {
+      const parts = normalizeParts(content, diag);
+      return parts.length ? parts : undefined;
+    }
     return undefined;
   } catch {
     diag.debug('LangChain: failed to normalize system instructions');

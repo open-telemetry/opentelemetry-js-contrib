@@ -143,7 +143,7 @@ describe('LangChain content mapping', () => {
   it('maps inline image URLs to blobs in every supported image shape', () => {
     for (const [url, content] of [
       ['data:image/png;base64,aGVsbG8=', 'aGVsbG8='],
-      ['data:IMAGE/PNG;BASE64,aGVsbG8', 'aGVsbG8'],
+      ['data:IMAGE/PNG;BASE64,aGVsbG8', 'aGVsbG8='],
       ['data:image/png;charset=utf-8;base64,%2B%2F8%3D', '+/8='],
       ['data:image/png;base64,', ''],
     ]) {
@@ -157,11 +157,17 @@ describe('LangChain content mapping', () => {
         ).toEqual([
           { type: 'blob', modality: 'image', mime_type: 'image/png', content },
         ]);
+        const parsed = parseSystemInstructions([image], diag)!;
+        expect(parsed[0].content).toBeInstanceOf(Uint8Array);
+        expect(parsed[0].content).toEqual(Buffer.from(content, 'base64'));
+        expect(JSON.parse(systemInstructions([image], diag)!)).toEqual([
+          { type: 'blob', modality: 'image', mime_type: 'image/png', content },
+        ]);
       }
     }
   });
 
-  it('preserves unknown or malformed inline image URLs without discarding them', () => {
+  it('omits malformed image data URLs with content-free diagnostics', () => {
     for (const url of [
       'data:image/png,not-base64',
       'data:text/plain;base64,aGVsbG8=',
@@ -175,9 +181,30 @@ describe('LangChain content mapping', () => {
       'data:image/png;base64,AAAA%0A',
       'data:image/png;unknown;base64,AAAA',
       'data:image/png;base64;extra=1,AAAA',
-      undefined,
-      42,
     ]) {
+      const debug = sinon.spy();
+      const logger = { ...diag, debug };
+      const content = [
+        { type: 'image_url', image_url: url },
+        { type: 'image_url', image_url: { url } },
+        { type: 'image', url },
+      ];
+      expect(
+        JSON.parse(messages([{ role: 'user', content }], logger)!)[0].parts
+      ).toEqual([]);
+      expect(systemInstructions(content, logger)).toBeUndefined();
+      expect(debug.callCount).toBe(6);
+      for (const args of debug.args)
+        expect(args).toEqual([
+          expect.stringMatching(
+            /^LangChain: omitting invalid (base64 content|image data URL)$/
+          ),
+        ]);
+    }
+  });
+
+  it('preserves unrecognized image fields as provider-specific parts', () => {
+    for (const url of [undefined, 42]) {
       const content = [
         { type: 'image_url', image_url: url },
         { type: 'image_url', image_url: { url } },
@@ -469,15 +496,37 @@ describe('LangChain content mapping', () => {
     }
   });
 
-  it('preserves pre-encoded blob strings across messages and system instructions', () => {
-    for (const content of ['aGVsbG8=', 'aGVsbG8', '']) {
+  it('decodes SDK base64 to bytes before shared canonical serialization', () => {
+    for (const [content, canonical, bytes] of [
+      ['aGVsbG8=', 'aGVsbG8=', [104, 101, 108, 108, 111]],
+      ['aGVsbG8', 'aGVsbG8=', [104, 101, 108, 108, 111]],
+      ['AA==', 'AA==', [0]],
+      ['AA', 'AA==', [0]],
+      ['AAA=', 'AAA=', [0, 0]],
+      ['AAA', 'AAA=', [0, 0]],
+      ['+/8=', '+/8=', [251, 255]],
+      ['', '', []],
+    ] as const) {
       for (const type of ['image', 'audio', 'video', 'file']) {
         const part = { type, base64: content };
         const expected = {
           type: 'blob',
           modality: type === 'file' ? 'document' : type,
-          content,
+          content: canonical,
         };
+        for (const parsed of [
+          parseInputMessages([{ role: 'user', content: [part] }], diag)?.[0]
+            .parts,
+          parseOutputMessages(
+            [{ role: 'assistant', content: [part] }],
+            diag
+          )?.[0].parts,
+          parseSystemInstructions([part], diag),
+        ]) {
+          expect(parsed).toHaveLength(1);
+          expect(parsed![0].content).toBeInstanceOf(Uint8Array);
+          expect(parsed![0].content).toEqual(Buffer.from(bytes));
+        }
         for (const role of ['user', 'assistant']) {
           expect(
             JSON.parse(messages([{ role, content: [part] }], diag, role)!)[0]
@@ -489,6 +538,98 @@ describe('LangChain content mapping', () => {
         ]);
       }
     }
+  });
+
+  it('omits invalid SDK base64 rather than passing it through as a blob or unknown part', () => {
+    for (const base64 of [
+      'A',
+      'AAAAA',
+      'AA=',
+      'AAAA=',
+      'AAAA====',
+      '=AAA',
+      'AA==AA==',
+      'A-A_',
+      'AA$A',
+      'AA A',
+      'AAAA\n',
+      ' AAAA',
+      'AAAA ',
+      'AA%3D%3D',
+      'AB==',
+      'AAB=',
+      'AB',
+      'AAB',
+      null,
+      42,
+      new Uint8Array([0]),
+    ]) {
+      for (const type of ['image', 'audio', 'video', 'file']) {
+        const debug = sinon.spy();
+        const logger = { ...diag, debug };
+        const content = [
+          { type: 'text', text: 'retained' },
+          { type, base64 },
+          { type: 'custom', value: 'retained' },
+        ];
+        const expected = [
+          { type: 'text', content: 'retained' },
+          { type: 'custom', value: 'retained' },
+        ];
+        for (const role of ['user', 'assistant']) {
+          expect(
+            JSON.parse(messages([{ role, content }], logger, role)!)[0].parts
+          ).toEqual(expected);
+        }
+        expect(JSON.parse(systemInstructions(content, logger)!)).toEqual(
+          expected
+        );
+        expect(
+          debug.withArgs('LangChain: omitting invalid base64 content').callCount
+        ).toBe(3);
+        for (const args of debug.args) {
+          expect(args).toHaveLength(1);
+          expect(args[0]).toMatch(
+            /^LangChain: (omitting invalid base64 content|preserving an unmapped message part)$/
+          );
+        }
+      }
+    }
+  });
+
+  it('serializes raw blob views without including bytes outside the view', () => {
+    const bytes = new Uint8Array([255, 0, 1, 2, 255]);
+    for (const content of [
+      bytes.subarray(1, 4),
+      Buffer.from(bytes).subarray(1, 4),
+    ]) {
+      const part = { type: 'blob', modality: 'image', content };
+      const expected = { ...part, content: 'AAEC' };
+      expect(parseSystemInstructions([part], diag)![0].content).toBe(content);
+      expect(JSON.parse(systemInstructions([part], diag)!)).toEqual([expected]);
+      for (const role of ['user', 'assistant']) {
+        expect(
+          JSON.parse(messages([{ role, content: [part] }], diag, role)!)[0]
+            .parts
+        ).toEqual([expected]);
+      }
+    }
+  });
+
+  it('rejects string-valued standardized blobs without the unknown-part escape hatch', () => {
+    const debug = sinon.spy();
+    const logger = { ...diag, debug };
+    for (const content of ['AA==', 'private invalid encoding', null, {}]) {
+      const part = { type: 'blob', modality: 'image', content };
+      expect(
+        parseInputMessages([{ role: 'user', content: [part] }], logger)![0]
+          .parts
+      ).toEqual([]);
+      expect(systemInstructions([part], logger)).toBeUndefined();
+    }
+    expect(debug.callCount).toBe(8);
+    for (const args of debug.args)
+      expect(args).toEqual(['LangChain: omitting invalid binary blob content']);
   });
 
   it('preserves text instructions literally and uses shared empty-instruction semantics', () => {

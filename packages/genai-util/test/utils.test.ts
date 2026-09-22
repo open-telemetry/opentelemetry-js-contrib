@@ -37,6 +37,44 @@ import type {
 
 describe('GenAI Utils', () => {
   describe('serialization helpers', () => {
+    it('serializes byte-only blobs consistently in messages and system instructions', () => {
+      const bytes = new Uint8Array([0, 72, 101, 108, 108, 111, 0]);
+      for (const content of [
+        new Uint8Array([72, 101, 108, 108, 111]),
+        bytes.subarray(1, 6),
+        Buffer.from(bytes).subarray(1, 6),
+        new Uint8Array(),
+        Buffer.alloc(0),
+      ]) {
+        const part: BlobPart = {
+          type: 'blob',
+          modality: 'image',
+          mime_type: 'image/png',
+          content,
+        };
+        const expected = {
+          type: 'blob',
+          modality: 'image',
+          mime_type: 'image/png',
+          content: content.length ? 'SGVsbG8=' : '',
+        };
+        const messages: InputMessages = [{ role: 'user', parts: [part] }];
+        assert.strictEqual(
+          formatInputMessages(messages),
+          JSON.stringify([{ role: 'user', parts: [expected] }])
+        );
+        assert.strictEqual(
+          formatOutputMessages(messages),
+          JSON.stringify([{ role: 'user', parts: [expected] }])
+        );
+        assert.strictEqual(
+          formatSystemInstructions([part]),
+          JSON.stringify([expected])
+        );
+        assert.strictEqual(part.content, content);
+      }
+    });
+
     it('serializeContent', () => {
       assert.strictEqual(serializeContent('hello'), 'hello');
       assert.strictEqual(serializeContent({ a: 1 }), '{"a":1}');

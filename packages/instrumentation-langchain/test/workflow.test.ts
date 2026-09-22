@@ -623,6 +623,52 @@ describe('LangChain non-streaming workflows', () => {
     });
   }
 
+  it('preserves SDK results while omitting invalid binary content from telemetry', async () => {
+    instrumentation.setConfig({ captureMessageContent: true });
+    const { debug } = diagnostics();
+    const input = [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: 'retained' },
+          { type: 'image', base64: 'private-invalid-encoding' },
+          {
+            type: 'image_url',
+            image_url: 'data:image/png;base64,private-invalid-encoding',
+          },
+          { type: 'audio', base64: 'aGVsbG8' },
+        ],
+      },
+    ];
+    expect(await identity().invoke(input)).toBe(input);
+    const span = getTestSpans()[0];
+    expect(span.status.code).toBe(SpanStatusCode.UNSET);
+    for (const key of ['gen_ai.input.messages', 'gen_ai.output.messages']) {
+      expect(JSON.parse(String(span.attributes[key]))).toEqual([
+        {
+          role: 'user',
+          parts: [
+            { type: 'text', content: 'retained' },
+            { type: 'blob', modality: 'audio', content: 'aGVsbG8=' },
+          ],
+        },
+      ]);
+    }
+    expect(
+      debug.withArgs(
+        sinon.match.string,
+        'LangChain: omitting invalid base64 content'
+      ).callCount
+    ).toBe(4);
+    expect(JSON.stringify(debug.args)).not.toContain(
+      'private-invalid-encoding'
+    );
+    expect(JSON.stringify(span.attributes)).not.toContain(
+      'private-invalid-encoding'
+    );
+    expect(input[0].content[1].base64).toBe('private-invalid-encoding');
+  });
+
   it('contains content extraction failures without changing SDK results', async () => {
     instrumentation.setConfig({ captureMessageContent: true });
     const { debug } = diagnostics();

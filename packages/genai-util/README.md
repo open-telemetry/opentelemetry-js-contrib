@@ -68,7 +68,8 @@ const attribute = formatInputMessages(messages);
 
 `BlobPart.content` accepts raw `Uint8Array` bytes (including Node.js `Buffer`).
 SDK adapters must validate and decode SDK base64 strings before constructing
-these parts. The shared message formatters own base64 serialization.
+these parts. Input, output and system-instruction formatters own base64
+serialization, including the exact byte range of binary views.
 
 The formatters return `undefined` when serialization fails, for example for
 circular references or `BigInt` values. Callers are responsible for reporting
