@@ -6,7 +6,7 @@
 import * as api from '@opentelemetry/api';
 import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { JaegerExporter } from '@opentelemetry/exporter-jaeger';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { ZipkinExporter } from '@opentelemetry/exporter-zipkin';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
@@ -21,7 +21,7 @@ export const setupTracing = (serviceName: string) => {
   if (EXPORTER.toLowerCase().startsWith('z')) {
     exporter = new ZipkinExporter();
   } else {
-    exporter = new JaegerExporter();
+    exporter = new OTLPTraceExporter();
   }
 
   const provider = new NodeTracerProvider({
