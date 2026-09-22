@@ -308,7 +308,6 @@ describe('InferenceInvocation', () => {
         presencePenalty: 0.2,
         choiceCount: 1,
         seed: 42,
-        encodingFormats: ['text'],
       },
     });
 

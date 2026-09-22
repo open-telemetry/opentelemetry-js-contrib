@@ -21,7 +21,7 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_P,
 } from './semconv';
 import type {
-  GenAIRequestOptions,
+  InferenceRequestOptions,
   InputMessages,
   OutputMessages,
   SystemInstructionPart,
@@ -283,13 +283,17 @@ export function getErrorType(error: unknown): string {
 }
 
 /**
- * Extract OpenTelemetry span attributes from GenAI request options.
+ * Extract OpenTelemetry span attributes from GenAI inference request options.
  *
- * @param requestOptions - Optional GenAI request options to extract attributes from.
+ * All returned attributes are defined by the GenAI semantic conventions on the
+ * inference span only, so this helper is not applicable to other invocation
+ * types.
+ *
+ * @param requestOptions - Optional inference request options to extract attributes from.
  * @returns Attributes object populated with GenAI request semantic conventions.
  */
 export function getRequestOptionsAttributes(
-  requestOptions?: GenAIRequestOptions
+  requestOptions?: InferenceRequestOptions
 ): Attributes {
   const attrs: Attributes = {};
   if (!requestOptions) {
