@@ -2,20 +2,31 @@
   "name": "@opentelemetry/instrumentation-browser-navigation",
   "version": "0.15.0",
   "description": "OpenTelemetry instrumentation for browser navigation events (page load and same-document navigations)",
-  "main": "build/src/index.js",
-  "module": "build/esm/index.js",
-  "esnext": "build/esnext/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": "open-telemetry/opentelemetry-js-contrib",
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "clean": "rimraf dist build",
     "prewatch": "npm run version:update",
     "version:update": "node ../../scripts/version-update.js",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json tsconfig.esnext.json",
+    "compile": "tsdown",
     "prepublishOnly": "npm run compile",
     "tdd": "wtr --watch",
     "test:browser": "wtr --coverage",
-    "watch": "tsc --build -watch tsconfig.json tsconfig.esm.json tsconfig.esnext.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "keywords": [
     "opentelemetry",
@@ -31,15 +42,9 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.map",
-    "build/esm/**/*.d.ts",
-    "build/esnext/**/*.js",
-    "build/esnext/**/*.map",
-    "build/esnext/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

@@ -16,17 +16,25 @@
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esm/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
+    "README.md",
     "LICENSE",
-    "README.md"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -37,14 +45,14 @@
     "directory": "packages/sampler-aws-xray"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "clean": "rimraf dist build",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/sampler-aws-xray",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json"
+    "watch": "tsdown --watch --no-clean"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.1.0"

@@ -9,7 +9,7 @@
 import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
-import { MongooseInstrumentation } from '../../build/src/index.js';
+import { MongooseInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-mongoose',

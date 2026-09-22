@@ -2,8 +2,21 @@
   "name": "@opentelemetry/instrumentation-fs",
   "version": "0.41.0",
   "description": "OpenTelemetry instrumentation for `node:fs` file system interactions module",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
@@ -11,13 +24,13 @@
   },
   "scripts": {
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
-    "clean": "rimraf build/*",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
+    "clean": "rimraf dist build",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "version:update": "node ../../scripts/version-update.js",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-fs",
-    "compile": "tsc -p ."
+    "compile": "tsdown"
   },
   "keywords": [
     "fs",
@@ -33,9 +46,9 @@
     "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
