@@ -299,6 +299,77 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
   });
 
+  it('should derive errorType from exception in InvocationError when errorType is omitted', () => {
+    const inv = new CustomInvocation('exception-in-obj-span', handler);
+    inv.fail({ exception: new TypeError('Invalid parameter') });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'TypeError');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'TypeError');
+  });
+
+  it('should prioritize explicit errorType over exception in InvocationError', () => {
+    const inv = new CustomInvocation('error-type-precedence-span', handler);
+    inv.fail({
+      exception: new TypeError('Invalid parameter'),
+      errorType: 'custom_validation_error',
+    });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'custom_validation_error'
+    );
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'custom_validation_error'
+    );
+  });
+
+  it('should support exception with statusDescription in InvocationError', () => {
+    const inv = new CustomInvocation('exception-with-desc-span', handler);
+    inv.fail({
+      exception: new Error('Underlying message'),
+      statusDescription: 'Predictable error description',
+    });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(
+      spans[0].status.message,
+      'Predictable error description'
+    );
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+  });
+
+  it('should fall back to _OTHER when InvocationError has neither errorType nor exception', () => {
+    const inv = new CustomInvocation('empty-err-span', handler);
+    inv.fail({});
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, '_OTHER');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
+  });
+
   it('should accept Date and number TimeInput for startTime and endTime', () => {
     const startDate = new Date(1700000000000);
     const endDate = new Date(1700000005000);
