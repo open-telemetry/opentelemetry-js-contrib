@@ -4,18 +4,28 @@
  */
 
 import { LangChainInstrumentation } from '../src';
+import type { LangChainInstrumentationConfig } from '../src';
+import { diag, DiagLogLevel } from '@opentelemetry/api';
 import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
 import { expect } from 'expect';
+import * as sinon from 'sinon';
 
 describe('LangChainInstrumentation', () => {
   let instrumentation: LangChainInstrumentation;
+  const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
+  let previous: string | undefined;
 
   beforeEach(() => {
+    previous = process.env[key];
+    delete process.env[key];
     instrumentation = new LangChainInstrumentation();
   });
 
   afterEach(() => {
     instrumentation.disable();
+    diag.disable();
+    if (previous === undefined) delete process.env[key];
+    else process.env[key] = previous;
   });
 
   it('patches every loaded module copy without touching streaming methods', () => {
@@ -125,57 +135,146 @@ describe('LangChainInstrumentation', () => {
   });
 
   describe('setConfig', () => {
-    it('should normalize captureMessageContent config', () => {
-      const instr = new LangChainInstrumentation({
-        captureMessageContent: true,
-      });
-      const config = instr.getConfig();
-      expect(config.captureMessageContent).toBe(true);
-      instr.disable();
+    it('defaults to none, accepts both canonical modes and resets to none', () => {
+      expect(instrumentation.getConfig().captureMessageContent).toBe('none');
+      for (const mode of ['span_only', 'none'] as const) {
+        instrumentation.setConfig({ captureMessageContent: mode });
+        expect(instrumentation.getConfig().captureMessageContent).toBe(mode);
+      }
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      instrumentation.setConfig({});
+      expect(instrumentation.getConfig().captureMessageContent).toBe('none');
     });
 
-    it('should default captureMessageContent to false', () => {
-      const config = instrumentation.getConfig();
-      expect(config.captureMessageContent).toBe(false);
+    it('rejects boolean TypeScript configuration and safely handles invalid JavaScript values', () => {
+      const booleanConfig: LangChainInstrumentationConfig = {
+        enabled: false,
+        // @ts-expect-error Boolean content capture is no longer part of the API.
+        captureMessageContent: true,
+      };
+      const warn = sinon.spy();
+      diag.setLogger(
+        {
+          error() {},
+          warn,
+          info() {},
+          debug() {},
+          verbose() {},
+        },
+        DiagLogLevel.WARN
+      );
+      for (const value of [
+        booleanConfig.captureMessageContent,
+        false,
+        'true',
+        'false',
+        'span',
+        'no_content',
+        '',
+        null,
+        1,
+        'SPAN_ONLY',
+        ' span_only ',
+        {
+          toString() {
+            throw new Error('private value');
+          },
+        },
+      ]) {
+        const instance: LangChainInstrumentation = Reflect.construct(
+          LangChainInstrumentation,
+          [{ enabled: false, captureMessageContent: value }]
+        );
+        expect(instance.getConfig().captureMessageContent).toBe('none');
+        instance.setConfig({
+          enabled: false,
+          captureMessageContent: 'span_only',
+        });
+        Reflect.apply(instance.setConfig, instance, [
+          { enabled: false, captureMessageContent: value },
+        ]);
+        expect(instance.getConfig().captureMessageContent).toBe('none');
+      }
+      expect(warn.callCount).toBe(24);
+      for (const args of warn.args)
+        expect(args.at(-1)).toBe(
+          'LangChain: invalid captureMessageContent mode; using none'
+        );
     });
 
     describe('content capture environment', () => {
-      const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
-      let previous: string | undefined;
-      beforeEach(() => {
-        previous = process.env[key];
-      });
-      afterEach(() => {
-        if (previous === undefined) delete process.env[key];
-        else process.env[key] = previous;
-      });
-
       for (const [value, expected] of [
-        ['TRUE', true],
-        ['false', false],
+        ['span_only', 'span_only'],
+        [' SPAN_ONLY ', 'span_only'],
+        ['none', 'none'],
+        [' NONE ', 'none'],
       ] as const) {
         it(`honors ${value} over the constructor setting but allows later config updates`, () => {
           process.env[key] = value;
+          const opposite = expected === 'span_only' ? 'none' : 'span_only';
           const instance = new LangChainInstrumentation({
             enabled: false,
-            captureMessageContent: !expected,
+            captureMessageContent: opposite,
           });
           expect(instance.getConfig().captureMessageContent).toBe(expected);
           instance.setConfig({
             enabled: false,
-            captureMessageContent: !expected,
+            captureMessageContent: opposite,
           });
-          expect(instance.getConfig().captureMessageContent).toBe(!expected);
+          expect(instance.getConfig().captureMessageContent).toBe(opposite);
           instance.setConfig({ enabled: false });
-          expect(instance.getConfig().captureMessageContent).toBe(false);
+          expect(instance.getConfig().captureMessageContent).toBe('none');
         });
       }
 
-      for (const value of ['invalid', 'span_only', 'none', ' true ']) {
-        it(`ignores ${value} rather than changing the boolean capture API`, () => {
+      for (const value of [undefined, '', ' \t ']) {
+        it(`preserves explicit configuration for an unset or blank environment (${JSON.stringify(value)})`, () => {
+          if (value === undefined) delete process.env[key];
+          else process.env[key] = value;
+          const instance = new LangChainInstrumentation({
+            enabled: false,
+            captureMessageContent: 'span_only',
+          });
+          expect(instance.getConfig().captureMessageContent).toBe('span_only');
+        });
+      }
+
+      for (const value of [
+        'true',
+        'false',
+        ' TRUE ',
+        'span',
+        'no_content',
+        'private-invalid',
+      ]) {
+        it(`fails closed for invalid environment ${value} even with enabled constructor capture`, () => {
+          const warn = sinon.spy();
+          diag.setLogger(
+            {
+              error() {},
+              warn,
+              info() {},
+              debug() {},
+              verbose() {},
+            },
+            DiagLogLevel.WARN
+          );
           process.env[key] = value;
-          const instance = new LangChainInstrumentation({ enabled: false });
-          expect(instance.getConfig().captureMessageContent).toBe(false);
+          const instance = new LangChainInstrumentation({
+            enabled: false,
+            captureMessageContent: 'span_only',
+          });
+          expect(instance.getConfig().captureMessageContent).toBe('none');
+          expect(warn.callCount).toBe(1);
+          expect(warn.firstCall.args).toEqual([
+            '@opentelemetry/instrumentation-langchain',
+            'LangChain: invalid captureMessageContent mode; using none',
+          ]);
+          instance.setConfig({
+            enabled: false,
+            captureMessageContent: 'span_only',
+          });
+          expect(instance.getConfig().captureMessageContent).toBe('span_only');
         });
       }
     });

@@ -78,8 +78,123 @@ async function exercise(provider) {
   process.env.LANGSMITH_TRACING = 'false';
   process.env.LANGCHAIN_TRACING_V2 = 'false';
   process.env.LANGCHAIN_TRACING = 'false';
+  const captureEnv = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
+  const previousCaptureEnv = process.env[captureEnv];
+  delete process.env[captureEnv];
   const instrumentation = new LangChainInstrumentation();
   instrumentation.setTracerProvider(provider);
+  // Register each real instrumentation before SDK loading; enable one at a time.
+  const modeCases = [
+    { name: 'mode-default', expected: 'none' },
+    { name: 'mode-none', config: 'none', expected: 'none' },
+    { name: 'mode-span-only', config: 'span_only', expected: 'span_only' },
+    { name: 'mode-invalid-config-true', config: true, expected: 'none' },
+    { name: 'mode-invalid-config-false', config: false, expected: 'none' },
+    {
+      name: 'mode-invalid-config-string-true',
+      config: 'true',
+      expected: 'none',
+    },
+    {
+      name: 'mode-invalid-config-string-false',
+      config: 'false',
+      expected: 'none',
+    },
+    { name: 'mode-invalid-config-alias', config: 'span', expected: 'none' },
+    {
+      name: 'mode-invalid-config-unknown',
+      config: 'private-invalid-mode',
+      expected: 'none',
+    },
+    {
+      name: 'mode-env-none',
+      config: 'span_only',
+      env: ' NONE ',
+      expected: 'none',
+    },
+    {
+      name: 'mode-env-span-only',
+      config: 'none',
+      env: ' SPAN_ONLY ',
+      expected: 'span_only',
+    },
+    {
+      name: 'mode-env-empty',
+      config: 'span_only',
+      env: '',
+      expected: 'span_only',
+    },
+    {
+      name: 'mode-env-blank',
+      config: 'span_only',
+      env: ' \t ',
+      expected: 'span_only',
+    },
+    {
+      name: 'mode-invalid-env-true',
+      config: 'span_only',
+      env: 'true',
+      expected: 'none',
+    },
+    {
+      name: 'mode-invalid-env-false',
+      config: 'span_only',
+      env: 'false',
+      expected: 'none',
+    },
+    {
+      name: 'mode-invalid-env-alias',
+      config: 'span_only',
+      env: 'span',
+      expected: 'none',
+    },
+    {
+      name: 'mode-invalid-env-no-content',
+      config: 'span_only',
+      env: 'no_content',
+      expected: 'none',
+    },
+    {
+      name: 'mode-invalid-env-unknown',
+      config: 'span_only',
+      env: 'private-invalid-mode',
+      expected: 'none',
+    },
+    {
+      name: 'mode-update-on',
+      env: 'none',
+      update: { captureMessageContent: 'span_only' },
+      expected: 'span_only',
+    },
+    {
+      name: 'mode-update-off',
+      env: 'span_only',
+      update: { captureMessageContent: 'none' },
+      expected: 'none',
+    },
+    {
+      name: 'mode-update-invalid',
+      env: 'span_only',
+      update: { captureMessageContent: true },
+      expected: 'none',
+    },
+    {
+      name: 'mode-update-reset',
+      env: 'span_only',
+      update: {},
+      expected: 'none',
+    },
+  ].map(spec => {
+    if (spec.env === undefined) delete process.env[captureEnv];
+    else process.env[captureEnv] = spec.env;
+    const instance = new LangChainInstrumentation({
+      captureMessageContent: spec.config,
+    });
+    instance.setTracerProvider(provider);
+    instance.disable();
+    return { spec, instance };
+  });
+  delete process.env[captureEnv];
   const {
     RunnableSequence,
     RunnableLambda,
@@ -93,7 +208,9 @@ async function exercise(provider) {
       RunnableLambda.from(value => value),
     ]);
   const runCase = async (name, capture, run, verify, evidence = {}) => {
-    instrumentation.setConfig({ captureMessageContent: capture });
+    instrumentation.setConfig({
+      captureMessageContent: capture ? 'span_only' : 'none',
+    });
     instrumentation.enable();
     const parent = tracer.startSpan(`request ${name}`);
     try {
@@ -107,6 +224,45 @@ async function exercise(provider) {
     checks.push({ name, capture, verify, evidence });
   };
   try {
+    for (const { spec, instance } of modeCases) {
+      await runCase(
+        spec.name,
+        spec.expected === 'span_only',
+        async () => {
+          instrumentation.disable();
+          if (spec.env === undefined) delete process.env[captureEnv];
+          else process.env[captureEnv] = spec.env;
+          try {
+            if (spec.update !== undefined) instance.setConfig(spec.update);
+            instance.enable();
+            assert.equal(
+              instance.getConfig().captureMessageContent,
+              spec.expected
+            );
+            assert.equal(
+              await identity().invoke('mode-private-input'),
+              'mode-private-input'
+            );
+          } finally {
+            instance.disable();
+            delete process.env[captureEnv];
+          }
+        },
+        span => {
+          if (spec.expected === 'span_only') {
+            assert.deepEqual(JSON.parse(span.attributes[contentKeys[0]]), [
+              message('user', 'mode-private-input'),
+            ]);
+            assert.deepEqual(JSON.parse(span.attributes[contentKeys[1]]), [
+              message('assistant', 'mode-private-input'),
+            ]);
+          } else {
+            assert(!JSON.stringify(span).includes('mode-private-input'));
+          }
+        },
+        { captureMode: spec.expected }
+      );
+    }
     for (const capture of [false, true]) {
       for (const property of ['metadata', 'configurable', 'runName']) {
         const invoke = async enabled => {
@@ -369,6 +525,9 @@ async function exercise(provider) {
     return checks;
   } finally {
     instrumentation.disable();
+    for (const { instance } of modeCases) instance.disable();
+    if (previousCaptureEnv === undefined) delete process.env[captureEnv];
+    else process.env[captureEnv] = previousCaptureEnv;
   }
 }
 

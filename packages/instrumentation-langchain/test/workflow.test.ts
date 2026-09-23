@@ -4,6 +4,7 @@
  */
 
 import { instrumentation } from './load-instrumentation';
+import { LangChainInstrumentation } from '../src';
 import { expect } from 'expect';
 import {
   context,
@@ -68,7 +69,7 @@ describe('LangChain non-streaming workflows', () => {
     if (Number(process.versions.node.split('.')[0]) < 20) this.skip();
   });
   beforeEach(() => {
-    instrumentation.setConfig({ captureMessageContent: false });
+    instrumentation.setConfig({ captureMessageContent: 'none' });
     instrumentation.enable();
     resetMemoryExporter();
   });
@@ -165,7 +166,7 @@ describe('LangChain non-streaming workflows', () => {
   });
 
   it('captures workflow content only when enabled and honors config resets', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     await workflow().invoke('hello', {
       configurable: { thread_id: 'test-thread' },
     });
@@ -185,6 +186,156 @@ describe('LangChain non-streaming workflows', () => {
     expect(
       getTestSpans()[1].attributes['gen_ai.output.messages']
     ).toBeUndefined();
+  });
+
+  describe('capture mode privacy at public SDK boundaries', () => {
+    const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
+    let previous: string | undefined;
+    beforeEach(() => {
+      previous = process.env[key];
+      delete process.env[key];
+      instrumentation.disable();
+    });
+    afterEach(() => {
+      if (previous === undefined) delete process.env[key];
+      else process.env[key] = previous;
+    });
+
+    async function withCaptureConfig(
+      captureMessageContent: unknown,
+      run: (instance: LangChainInstrumentation) => Promise<void>
+    ) {
+      const configured: LangChainInstrumentation = Reflect.construct(
+        LangChainInstrumentation,
+        [{ enabled: false, captureMessageContent }]
+      );
+      // Use the instrumentation registered before SDK loading. Constructor
+      // configuration is exercised here; fresh-instance loading is covered by
+      // the Collector fixture, which initializes its instances before imports.
+      instrumentation.setConfig(configured.getConfig());
+      instrumentation.enable();
+      try {
+        await run(instrumentation);
+      } finally {
+        instrumentation.disable();
+      }
+    }
+
+    function assertCapture(index: number, capture: boolean) {
+      const attrs = getTestSpans()[index].attributes;
+      for (const [key, role, content] of [
+        ['gen_ai.input.messages', 'user', 'private-input'],
+        ['gen_ai.output.messages', 'assistant', 'PRIVATE-INPUT!'],
+      ]) {
+        expect(attrs[key]).toBe(
+          capture
+            ? JSON.stringify([{ role, parts: [{ type: 'text', content }] }])
+            : undefined
+        );
+      }
+    }
+
+    for (const value of [
+      undefined,
+      'none',
+      'span_only',
+      true,
+      false,
+      'true',
+      'false',
+      'span',
+      'no_content',
+      null,
+      '',
+      'private-invalid-mode',
+    ]) {
+      it(`captures only for canonical span_only config (${JSON.stringify(value)})`, async () => {
+        await withCaptureConfig(value, async () => {
+          expect(await workflow().invoke('private-input')).toBe(
+            'PRIVATE-INPUT!'
+          );
+          expect(getTestSpans()).toHaveLength(1);
+          assertCapture(0, value === 'span_only');
+        });
+      });
+    }
+
+    for (const [env, config, capture] of [
+      [undefined, 'span_only', true],
+      ['', 'span_only', true],
+      [' \t ', 'span_only', true],
+      [' NONE ', 'span_only', false],
+      [' SPAN_ONLY ', 'none', true],
+      ['true', 'span_only', false],
+      ['false', 'span_only', false],
+      ['span', 'span_only', false],
+      ['no_content', 'span_only', false],
+      ['private-invalid-mode', 'span_only', false],
+    ] as const) {
+      it(`applies initial environment ${JSON.stringify(env)} but honors later config and reset`, async () => {
+        if (env !== undefined) process.env[key] = env;
+        await withCaptureConfig(config, async instance => {
+          await workflow().invoke('private-input');
+          assertCapture(0, capture);
+          instance.setConfig({
+            captureMessageContent: capture ? 'none' : 'span_only',
+          });
+          await workflow().invoke('private-input');
+          assertCapture(1, !capture);
+          instance.setConfig({});
+          await workflow().invoke('private-input');
+          assertCapture(2, false);
+          expect(getTestSpans()).toHaveLength(3);
+        });
+      });
+    }
+
+    it('disables future capture for invalid JavaScript config updates', async () => {
+      await withCaptureConfig('span_only', async instance => {
+        for (const value of [
+          true,
+          false,
+          'true',
+          'false',
+          'span',
+          'no_content',
+        ]) {
+          instance.setConfig({ captureMessageContent: 'span_only' });
+          await workflow().invoke('private-input');
+          assertCapture(getTestSpans().length - 1, true);
+          Reflect.apply(instance.setConfig, instance, [
+            { captureMessageContent: value },
+          ]);
+          await workflow().invoke('private-input');
+          assertCapture(getTestSpans().length - 1, false);
+        }
+      });
+    });
+
+    it('does not enable in-flight content when a later config enables capture', async () => {
+      await withCaptureConfig('none', async instance => {
+        let release!: (value: string) => void;
+        const pending = new Promise<string>(resolve => {
+          release = resolve;
+        });
+        const flow = RunnableSequence.from([
+          RunnableLambda.from(() => pending),
+          RunnableLambda.from((value: string) => value),
+        ]);
+        const result = flow.invoke('private-input');
+        instance.setConfig({ captureMessageContent: 'span_only' });
+        release('private-output');
+        expect(await result).toBe('private-output');
+        expect(
+          getTestSpans()[0].attributes['gen_ai.input.messages']
+        ).toBeUndefined();
+        expect(
+          getTestSpans()[0].attributes['gen_ai.output.messages']
+        ).toBeUndefined();
+        await workflow().invoke('private-input');
+        assertCapture(1, true);
+      });
+    });
   });
 
   for (const key of ['session_id', 'thread_id', 'conversation_id']) {
@@ -311,7 +462,9 @@ describe('LangChain non-streaming workflows', () => {
   for (const capture of [false, true]) {
     for (const synchronous of [false, true]) {
       it(`preserves failures without message or stack (capture=${capture}, synchronous=${synchronous})`, async () => {
-        instrumentation.setConfig({ captureMessageContent: capture });
+        instrumentation.setConfig({
+          captureMessageContent: capture ? 'span_only' : 'none',
+        });
         const error = new TypeError('private failure');
         instrumentation.disable();
         const original = sinon
@@ -426,7 +579,7 @@ describe('LangChain non-streaming workflows', () => {
       RunnableLambda.from(() => pending),
       RunnableLambda.from((value: string) => value),
     ]);
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     instrumentation.enable();
     instrumentation.enable();
     const result = chain.invoke('hello');
@@ -558,7 +711,7 @@ describe('LangChain non-streaming workflows', () => {
   });
 
   it('preserves legacy function-call content at a public workflow boundary', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     const message = {
       role: 'assistant',
       content: '',
@@ -580,7 +733,9 @@ describe('LangChain non-streaming workflows', () => {
 
   for (const capture of [false, true]) {
     it(`captures public prompt values and string message arrays (capture=${capture})`, async () => {
-      instrumentation.setConfig({ captureMessageContent: capture });
+      instrumentation.setConfig({
+        captureMessageContent: capture ? 'span_only' : 'none',
+      });
       const flow = RunnableSequence.from([
         RunnableLambda.from((input: unknown) => input),
         new FakeListChatModel({ responses: ['answer'] }),
@@ -629,7 +784,7 @@ describe('LangChain non-streaming workflows', () => {
   }
 
   it('preserves SDK results while omitting invalid binary content from telemetry', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     const { debug } = diagnostics();
     const input = [
       {
@@ -675,7 +830,7 @@ describe('LangChain non-streaming workflows', () => {
   });
 
   it('contains content extraction failures without changing SDK results', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     const { debug } = diagnostics();
     const failure = new Error('private getter');
     const input = Object.defineProperty({}, 'toChatMessages', {

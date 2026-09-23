@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, type Attributes } from '@opentelemetry/api';
+import { context, diag, type Attributes } from '@opentelemetry/api';
 import { isTracingSuppressed } from '@opentelemetry/core';
 import {
   InstrumentationBase,
@@ -62,26 +62,33 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    const env = process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
+    const env =
+      process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT?.trim();
     if (env) {
-      if (/^(true|false)$/i.test(env)) {
-        this.setConfig({
-          ...this.getConfig(),
-          captureMessageContent: env.toLowerCase() === 'true',
-        });
-      } else {
-        this._diag.warn(
-          'Invalid OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT; ignoring'
-        );
-      }
+      this.setConfig({
+        ...this.getConfig(),
+        captureMessageContent: this._captureMode(env.toLowerCase()),
+      });
     }
   }
 
   override setConfig(config: LangChainInstrumentationConfig = {}) {
     super.setConfig({
       ...config,
-      captureMessageContent: !!config.captureMessageContent,
+      captureMessageContent: this._captureMode(config.captureMessageContent),
     });
+  }
+
+  private _captureMode(
+    value: unknown
+  ): NonNullable<LangChainInstrumentationConfig['captureMessageContent']> {
+    if (value === undefined) return 'none';
+    if (value === 'span_only' || value === 'none') return value;
+    // The base constructor calls setConfig before its component logger exists.
+    (this._diag ?? diag).warn(
+      'LangChain: invalid captureMessageContent mode; using none'
+    );
+    return 'none';
   }
 
   protected init() {
@@ -119,14 +126,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _getHandler(): TelemetryHandler {
-    const capture = !!this.getConfig().captureMessageContent;
+    const capture = this.getConfig().captureMessageContent ?? 'none';
     // Lazy snapshots avoid base-constructor override hazards and pick up
     // setTracerProvider, setMeterProvider and setConfig for future invocations.
     if (
       !this._handler ||
       this._handler.getTracer() !== this.tracer ||
       this._handler.getMeter() !== this.meter ||
-      this._handler.shouldCaptureContent() !== capture
+      this._handler.getContentCaptureMode() !== capture
     ) {
       this._handler = new TelemetryHandler({
         instrumentationName: PACKAGE_NAME,
@@ -134,8 +141,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         tracerProvider: { getTracer: () => this.tracer },
         meterProvider: { getMeter: () => this.meter },
         diag: this._diag,
-        // Preserve the boolean API and constructor-only environment precedence.
-        contentCaptureMode: capture ? 'span_only' : 'none',
+        // Resolve the environment only at construction, not on later updates.
+        contentCaptureMode: capture,
       });
     }
     return this._handler;

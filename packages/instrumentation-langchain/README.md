@@ -29,7 +29,7 @@ const sdk = new NodeSDK({
   instrumentations: [
     new LangChainInstrumentation({
       // Configuration options
-      captureMessageContent: false, // Set to true to capture prompt/completion content
+      captureMessageContent: 'none', // Use 'span_only' to capture prompt/completion content
     }),
   ],
 });
@@ -89,14 +89,21 @@ content-free diagnostics, without invoking getters or changing SDK options.
 
 | Option                  | Type      | Default | Description                            |
 |-------------------------|-----------|---------|----------------------------------------|
-| `captureMessageContent` | `boolean` | `false` | Capture prompt and completion content. |
+| `captureMessageContent` | `'span_only' \| 'none'` | `'none'` | Capture prompt and completion content on spans, or disable capture. |
 
-`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true|false` (case-insensitive)
-overrides the constructor option. Invalid values are diagnosed and ignored.
-The environment is read only at construction: later `setConfig` calls take
-precedence, and omitting `captureMessageContent` resets it to `false`.
-The boolean setting maps explicitly to the shared utility's `span_only` or
-`none` mode. Content can contain sensitive data; enable capture deliberately.
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=span_only|none` overrides the
+constructor option. Environment values are trimmed and case-insensitive; unset,
+empty or whitespace-only values leave the constructor option in effect. The
+environment is read only at construction: later `setConfig` calls take precedence,
+and omitting `captureMessageContent` resets it to `'none'`.
+
+The option accepts only the canonical strings `'span_only'` and `'none'`.
+Booleans and boolean-like strings (`true`/`false`), aliases, and other invalid
+values are not supported. Invalid configuration or non-empty environment
+overrides produce content-free warnings and disable capture, even when the
+previous or constructor setting enabled it. This replaces the earlier
+experimental boolean option. Content can contain sensitive data; enable capture
+deliberately.
 
 Instrumentation-owned tracer and meter providers are used, including providers
 supplied through `setTracerProvider` and `setMeterProvider`. Config/provider updates
@@ -148,7 +155,8 @@ npm run test:collector --workspace @opentelemetry/instrumentation-langchain
 The harness starts the official Collector Contrib 0.161.0 image pinned by digest
 in `test/collector/run.cjs`, exports through OTLP/gRPC, and asserts the actual
 Collector file output. It checks configuration getter behavior against disabled
-instrumentation, batch roles/order, privacy, errors, active context, and complete
+instrumentation, canonical capture modes, invalid/boolean-like settings and
+environment precedence, batch roles/order, privacy, errors, active context, and complete
 4 MiB synthetic image bytes plus sibling text through both base64 fields and
 data URLs. No provider requests are made.
 

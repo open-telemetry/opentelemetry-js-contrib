@@ -56,7 +56,9 @@ describe('LangChain workflow regressions', () => {
             ),
             RunnableLambda.from(value => value),
           ]);
-          instrumentation.setConfig({ captureMessageContent: capture });
+          instrumentation.setConfig({
+            captureMessageContent: capture ? 'span_only' : 'none',
+          });
           if (enabled) instrumentation.enable();
           else instrumentation.disable();
           resetMemoryExporter();
@@ -107,7 +109,7 @@ describe('LangChain workflow regressions', () => {
             ),
             RunnableLambda.from(value => value),
           ]);
-          instrumentation.setConfig({ captureMessageContent: false });
+          instrumentation.setConfig({ captureMessageContent: 'none' });
           if (enabled) instrumentation.enable();
           else instrumentation.disable();
           resetMemoryExporter();
@@ -125,7 +127,7 @@ describe('LangChain workflow regressions', () => {
   }
 
   it('keeps batch result roles separate from string message history', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     instrumentation.enable();
     resetMemoryExporter();
     const chain = RunnableSequence.from([
@@ -161,7 +163,7 @@ describe('LangChain workflow regressions', () => {
   });
 
   it('preserves batch order, explicit roles, nested histories and result identity', async () => {
-    instrumentation.setConfig({ captureMessageContent: true });
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
     instrumentation.enable();
     resetMemoryExporter();
     const results = [
