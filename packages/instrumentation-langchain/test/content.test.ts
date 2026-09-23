@@ -18,20 +18,13 @@ import {
 import {
   formatInputMessages,
   formatOutputMessages,
-  formatSystemInstructions,
 } from '@opentelemetry/genai-util';
-import type {
-  InputMessages,
-  OutputMessages,
-  SystemInstructions,
-} from '@opentelemetry/genai-util';
+import type { InputMessages, OutputMessages } from '@opentelemetry/genai-util';
 import * as sinon from 'sinon';
 import {
   messages,
   parseInputMessages,
   parseOutputMessages,
-  parseSystemInstructions,
-  systemInstructions,
 } from '../src/content';
 
 describe('LangChain content mapping', () => {
@@ -157,12 +150,6 @@ describe('LangChain content mapping', () => {
         ).toEqual([
           { type: 'blob', modality: 'image', mime_type: 'image/png', content },
         ]);
-        const parsed = parseSystemInstructions([image], diag)!;
-        expect(parsed[0].content).toBeInstanceOf(Uint8Array);
-        expect(parsed[0].content).toEqual(Buffer.from(content, 'base64'));
-        expect(JSON.parse(systemInstructions([image], diag)!)).toEqual([
-          { type: 'blob', modality: 'image', mime_type: 'image/png', content },
-        ]);
       }
     }
   });
@@ -192,8 +179,7 @@ describe('LangChain content mapping', () => {
       expect(
         JSON.parse(messages([{ role: 'user', content }], logger)!)[0].parts
       ).toEqual([]);
-      expect(systemInstructions(content, logger)).toBeUndefined();
-      expect(debug.callCount).toBe(6);
+      expect(debug.callCount).toBe(3);
       for (const args of debug.args)
         expect(args).toEqual([
           expect.stringMatching(
@@ -431,28 +417,6 @@ describe('LangChain content mapping', () => {
     }
   });
 
-  it('maps string and SDK system-message instruction shapes', () => {
-    for (const value of [
-      'generated instruction',
-      new SystemMessage('generated instruction'),
-    ]) {
-      expect(JSON.parse(systemInstructions(value, diag)!)).toEqual([
-        { type: 'text', content: 'generated instruction' },
-      ]);
-    }
-    expect(systemInstructions(undefined, diag)).toBeUndefined();
-    expect(
-      JSON.parse(
-        systemInstructions(
-          new SystemMessage({
-            content: [{ type: 'text', text: 'generated instruction' }],
-          }),
-          diag
-        )!
-      )
-    ).toEqual([{ type: 'text', content: 'generated instruction' }]);
-  });
-
   it('returns shared input and output models without serializing them', () => {
     const input: InputMessages | undefined = parseInputMessages(
       'question',
@@ -521,7 +485,6 @@ describe('LangChain content mapping', () => {
             [{ role: 'assistant', content: [part] }],
             diag
           )?.[0].parts,
-          parseSystemInstructions([part], diag),
         ]) {
           expect(parsed).toHaveLength(1);
           expect(parsed![0].content).toBeInstanceOf(Uint8Array);
@@ -533,9 +496,6 @@ describe('LangChain content mapping', () => {
               .parts
           ).toEqual([expected]);
         }
-        expect(JSON.parse(systemInstructions([part], diag)!)).toEqual([
-          expected,
-        ]);
       }
     }
   });
@@ -581,12 +541,9 @@ describe('LangChain content mapping', () => {
             JSON.parse(messages([{ role, content }], logger, role)!)[0].parts
           ).toEqual(expected);
         }
-        expect(JSON.parse(systemInstructions(content, logger)!)).toEqual(
-          expected
-        );
         expect(
           debug.withArgs('LangChain: omitting invalid base64 content').callCount
-        ).toBe(3);
+        ).toBe(2);
         for (const args of debug.args) {
           expect(args).toHaveLength(1);
           expect(args[0]).toMatch(
@@ -597,7 +554,7 @@ describe('LangChain content mapping', () => {
     }
   });
 
-  it('retains complete 4 MiB binary payloads and sibling text on every content path', function () {
+  it('retains complete 4 MiB binary payloads and sibling text on input and output paths', function () {
     this.timeout(15000);
     const bytes = Buffer.alloc(4 * 1024 * 1024);
     for (let index = 0; index < bytes.length; index++)
@@ -620,10 +577,6 @@ describe('LangChain content mapping', () => {
             .parts,
           messages([{ role: 'assistant', content }], logger, 'assistant'),
         ],
-        [
-          parseSystemInstructions(content, logger),
-          systemInstructions(content, logger),
-        ],
       ] as const) {
         expect(parsed).toHaveLength(2);
         expect(parsed![0]).toEqual({ type: 'text', content: 'retained text' });
@@ -633,7 +586,7 @@ describe('LangChain content mapping', () => {
           throw new Error('Expected binary content');
         expect(Buffer.compare(Buffer.from(binary), bytes)).toBe(0);
         const json = JSON.parse(formatted!);
-        const parts = json[0].parts ?? json;
+        const parts = json[0].parts;
         expect(parts[0]).toEqual({ type: 'text', content: 'retained text' });
         expect(parts[1].content.length).toBe(encoded.length);
         expect(parts[1].content === encoded).toBe(true);
@@ -650,8 +603,6 @@ describe('LangChain content mapping', () => {
     ]) {
       const part = { type: 'blob', modality: 'image', content };
       const expected = { ...part, content: 'AAEC' };
-      expect(parseSystemInstructions([part], diag)![0].content).toBe(content);
-      expect(JSON.parse(systemInstructions([part], diag)!)).toEqual([expected]);
       for (const role of ['user', 'assistant']) {
         expect(
           JSON.parse(messages([{ role, content: [part] }], diag, role)!)[0]
@@ -670,29 +621,10 @@ describe('LangChain content mapping', () => {
         parseInputMessages([{ role: 'user', content: [part] }], logger)![0]
           .parts
       ).toEqual([]);
-      expect(systemInstructions([part], logger)).toBeUndefined();
     }
-    expect(debug.callCount).toBe(8);
+    expect(debug.callCount).toBe(4);
     for (const args of debug.args)
       expect(args).toEqual(['LangChain: omitting invalid binary blob content']);
-  });
-
-  it('preserves text instructions literally and uses shared empty-instruction semantics', () => {
-    for (const content of [
-      '',
-      '   ',
-      '[]',
-      '[{"type":"text","content":"nested"}]',
-    ]) {
-      const instructions: SystemInstructions | undefined =
-        parseSystemInstructions(content, diag);
-      expect(instructions).toEqual([{ type: 'text', content }]);
-      expect(systemInstructions(content, diag)).toBe(
-        formatSystemInstructions(instructions)
-      );
-    }
-    expect(parseSystemInstructions([], diag)).toBeUndefined();
-    expect(systemInstructions([], diag)).toBeUndefined();
   });
 
   it('preserves untyped and scalar content parts', () => {
@@ -718,18 +650,6 @@ describe('LangChain content mapping', () => {
     expect(parseInputMessages(prompt, logger)).toBeUndefined();
     expect(
       debug.calledWithExactly('LangChain: failed to normalize messages')
-    ).toBe(true);
-    const message = {
-      _getType: () => 'system',
-      get content() {
-        throw error;
-      },
-    };
-    expect(parseSystemInstructions(message, logger)).toBeUndefined();
-    expect(
-      debug.calledWithExactly(
-        'LangChain: failed to normalize system instructions'
-      )
     ).toBe(true);
   });
 
@@ -759,12 +679,6 @@ describe('LangChain content mapping', () => {
       expect(debug.calledWith('LangChain: failed to serialize messages')).toBe(
         true
       );
-      expect(
-        systemInstructions([{ type: 'custom', value }], logger)
-      ).toBeUndefined();
-      expect(
-        debug.calledWith('LangChain: failed to serialize system instructions')
-      ).toBe(true);
     }
   });
 });

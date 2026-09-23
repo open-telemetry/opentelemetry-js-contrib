@@ -49,8 +49,8 @@ npm install --save @opentelemetry/genai-util
 ### Message content formatting
 
 The public content API exports `BlobPart`, `ChatMessage`, `InputMessages`,
-`OutputMessages`, `MessagePart`, and `SystemInstructions`, together with
-`formatInputMessages`, `formatOutputMessages`, and `formatSystemInstructions`.
+`OutputMessages`, and `MessagePart`, together with
+`formatInputMessages` and `formatOutputMessages`.
 SDK adapters can normalize their messages into these shared models without
 implementing their own JSON serialization.
 
@@ -68,14 +68,12 @@ const attribute = formatInputMessages(messages);
 
 `BlobPart.content` accepts raw `Uint8Array` bytes (including Node.js `Buffer`).
 SDK adapters must validate and decode SDK base64 strings before constructing
-these parts. Input, output and system-instruction formatters own base64
+these parts. Input and output formatters own base64
 serialization, including the exact byte range of binary views.
 
 The formatters return `undefined` when serialization fails, for example for
 circular references or `BigInt` values. Callers are responsible for reporting
 these failures through their instrumentation's diagnostic logger.
-`formatSystemInstructions` also returns `undefined` for an empty instruction
-array.
 
 ### Invocation lifecycle
 

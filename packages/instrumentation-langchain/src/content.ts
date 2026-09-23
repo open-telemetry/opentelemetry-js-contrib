@@ -9,7 +9,6 @@ import type { DiagLogger } from '@opentelemetry/api';
 import {
   formatInputMessages,
   formatOutputMessages,
-  formatSystemInstructions,
 } from '@opentelemetry/genai-util';
 import type {
   BlobPart,
@@ -17,7 +16,6 @@ import type {
   InputMessages,
   MessagePart,
   OutputMessages,
-  SystemInstructions,
 } from '@opentelemetry/genai-util';
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
@@ -378,34 +376,4 @@ function toolCallPart(
     }
   }
   return { type: 'tool_call', id: call.id, name: fn.name, arguments: args };
-}
-
-export function parseSystemInstructions(
-  value: unknown,
-  diag: DiagLogger
-): SystemInstructions | undefined {
-  try {
-    const content = isMessage(value) ? value.content : value;
-    if (typeof content === 'string') return [{ type: 'text', content }];
-    if (Array.isArray(content) && content.length) {
-      const parts = normalizeParts(content, diag);
-      return parts.length ? parts : undefined;
-    }
-    return undefined;
-  } catch {
-    diag.debug('LangChain: failed to normalize system instructions');
-    return undefined;
-  }
-}
-
-export function systemInstructions(
-  value: unknown,
-  diag: DiagLogger
-): string | undefined {
-  const parsed = parseSystemInstructions(value, diag);
-  if (!parsed) return undefined;
-  const formatted = formatSystemInstructions(parsed);
-  if (formatted === undefined)
-    diag.debug('LangChain: failed to serialize system instructions');
-  return formatted;
 }

@@ -28,13 +28,8 @@ export type {
   InputMessages,
   MessagePart,
   OutputMessages,
-  SystemInstructions,
 } from './types';
-export {
-  formatInputMessages,
-  formatOutputMessages,
-  formatSystemInstructions,
-} from './utils';
+export { formatInputMessages, formatOutputMessages } from './utils';
 export { BaseInvocation } from './invocations/base';
 export { TelemetryHandler } from './handler';
 export {

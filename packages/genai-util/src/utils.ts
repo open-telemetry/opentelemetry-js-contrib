@@ -239,7 +239,7 @@ export function formatSystemInstructions(
     return undefined;
   }
   try {
-    return JSON.stringify(normalized, serializeMessageReplacer);
+    return JSON.stringify(normalized);
   } catch {
     return undefined;
   }

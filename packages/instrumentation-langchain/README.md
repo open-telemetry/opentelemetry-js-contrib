@@ -118,7 +118,7 @@ roles, tuple and string-array inputs, tool/function-call envelopes, server-tool
 result IDs, reasoning, multimodal content, and unknown provider-specific parts.
 Inline image data URLs and SDK multimedia `base64` fields are validated locally
 and decoded into raw `Uint8Array` blob content. The shared formatters encode those
-bytes as base64 for message and system-instruction attributes. Valid padded and
+bytes as base64 for input and output message attributes. Valid padded and
 unpadded inputs preserve the same bytes, not their original encoded spelling.
 Invalid encoding (including malformed padding or nonzero unused pad bits) is
 omitted with content-free diagnostics; other valid parts remain intact.
@@ -128,17 +128,13 @@ through that fallback.
 Base64 validation is a linear, constant-space scan without a regexp stack or an
 instrumentation-imposed payload-size cap.
 
-`parseInputMessages`, `parseOutputMessages`, and `parseSystemInstructions` return
-structured models for instrumentation code. The internal `messages` and
-`systemInstructions` wrappers serialize those models through the shared public
-formatters and diagnose normalization or serialization failures. Empty system
-instruction arrays follow the shared formatter's convention and produce no
-attribute; string instructions, including empty or JSON-like strings, remain
-literal text.
+`parseInputMessages` and `parseOutputMessages` return structured models for
+instrumentation code. The internal `messages` wrapper serializes those models
+through the shared public formatters and diagnoses normalization or serialization
+failures.
 
 These adapters are not a public LangChain instrumentation API. The workflow
-lifecycle uses them only when content capture is enabled. System-instruction
-adapters are available internally for later operation-specific instrumentation.
+lifecycle uses them only when content capture is enabled.
 
 ## Collector regression tests
 
