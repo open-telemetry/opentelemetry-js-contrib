@@ -28,7 +28,7 @@ import { LangChainWorkflowInvocation } from './workflow';
 const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 
-function instrumentModuleInstances<T extends object>(
+function createTrackedModuleFile<T extends object>(
   name: string,
   patch: (module: T) => void,
   unpatch: (module: T) => void
@@ -93,37 +93,38 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   protected init() {
+    const files = ['cjs', 'js'].map(extension =>
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/runnables/base.${extension}`,
+        (module: typeof Runnables) => this._patchRunnables(module),
+        (module: typeof Runnables) => this._unpatchRunnables(module)
+      )
+    );
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
         SUPPORTED_VERSIONS,
         undefined,
         undefined,
-        ['cjs', 'js'].map(extension =>
-          instrumentModuleInstances(
-            `${MODULE_NAME}/dist/runnables/base.${extension}`,
-            (module: typeof Runnables) => {
-              for (const cls of [module.RunnableSequence, module.RunnableMap]) {
-                this._wrap(cls.prototype, 'invoke', this._wrapper());
-              }
-              // Sequence has an optimized batch; Map's inherited batch invokes
-              // each item separately and is already covered by its invoke patch.
-              this._wrap(
-                module.RunnableSequence.prototype,
-                'batch',
-                this._wrapper(true)
-              );
-            },
-            (module: typeof Runnables) => {
-              for (const cls of [module.RunnableSequence, module.RunnableMap]) {
-                this._unwrap(cls.prototype, 'invoke');
-              }
-              this._unwrap(module.RunnableSequence.prototype, 'batch');
-            }
-          )
-        )
+        files
       ),
     ];
+  }
+
+  private _patchRunnables(module: typeof Runnables) {
+    for (const cls of [module.RunnableSequence, module.RunnableMap]) {
+      this._wrap(cls.prototype, 'invoke', this._wrapper());
+    }
+    // Sequence has an optimized batch; Map's inherited batch invokes
+    // each item separately and is already covered by its invoke patch.
+    this._wrap(module.RunnableSequence.prototype, 'batch', this._wrapper(true));
+  }
+
+  private _unpatchRunnables(module: typeof Runnables) {
+    for (const cls of [module.RunnableSequence, module.RunnableMap]) {
+      this._unwrap(cls.prototype, 'invoke');
+    }
+    this._unwrap(module.RunnableSequence.prototype, 'batch');
   }
 
   private _getHandler(): TelemetryHandler {
