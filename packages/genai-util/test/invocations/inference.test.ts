@@ -31,6 +31,8 @@ import {
   ATTR_GEN_AI_REQUEST_STREAM,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -196,7 +198,8 @@ describe('InferenceInvocation', () => {
       dataPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
       'anthropic'
     );
-    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '_OTHER');
+    // The metric must report the same `error.type` as the span, not `_OTHER`.
+    assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
   });
 
   it('should respect content capture mode when disabled vs enabled', () => {
@@ -399,5 +402,59 @@ describe('InferenceInvocation', () => {
       spans[1].attributes[ATTR_GEN_AI_REQUEST_STREAM],
       undefined
     );
+  });
+
+  it('should record caller-supplied metric attributes on every metric it emits', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      operationName: 'chat',
+      requestModel: 'gpt-4o',
+    });
+
+    // Set before the first chunk: time to first chunk is recorded as the stream is
+    // consumed, so attributes added later cannot reach it.
+    invocation.setMetricAttribute('custom.metric.attr', 'metric-value');
+    invocation.recordStreamChunk();
+    invocation.setUsage({ inputTokens: 10, outputTokens: 20 });
+    invocation.stop();
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.deepStrictEqual(
+      metrics.map(m => m.descriptor.name).sort(),
+      [
+        METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+        METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+        METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+      ].sort()
+    );
+
+    // The metric attribute bag owned by `BaseInvocation` must reach every metric: an
+    // implementation that builds its dimensions from scratch turns the public
+    // `setMetricAttribute` into a silent no-op.
+    for (const metric of metrics) {
+      for (const dataPoint of metric.dataPoints) {
+        assert.strictEqual(
+          dataPoint.attributes['custom.metric.attr'],
+          'metric-value',
+          `${metric.descriptor.name} dropped a caller-supplied metric attribute`
+        );
+        assert.strictEqual(
+          dataPoint.attributes[ATTR_GEN_AI_OPERATION_NAME],
+          'chat'
+        );
+      }
+    }
+
+    // Metric attributes must not leak onto the span.
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
   });
 });
