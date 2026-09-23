@@ -5,8 +5,7 @@
 
 import * as assert from 'assert';
 import { diag, type DiagLogger } from '@opentelemetry/api';
-import { TelemetryHandler } from '../src';
-import type { TelemetryHandlerOptions } from '../src/handler';
+import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
 import { GEN_AI_SCHEMA_URL } from '../src/semconv';
 import {
   createTestTelemetryContext,
