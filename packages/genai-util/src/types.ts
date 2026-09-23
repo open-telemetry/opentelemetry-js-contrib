@@ -422,46 +422,34 @@ export interface GenAIInstrumentationConfig {
 /**
  * Error details for an invocation that failed.
  *
- * Callers must provide at least one of {@link errorType} or {@link statusDescription}.
- *
  * @experimental This type is experimental and subject to change.
  */
-export type InvocationError =
-  | {
-      /**
-       * Describes a class of error the operation ended with. SHOULD be predictable and
-       * SHOULD have low cardinality.
-       */
-      errorType: string;
+export type InvocationError = {
+  /**
+   * The underlying exception that caused the invocation to fail, if available.
+   *
+   * When {@link errorType} is not explicitly provided, the error type is automatically
+   * derived from this exception (e.g. from its `name` or `code`).
+   */
+  exception?: Error;
 
-      /**
-       * Human readable additional information about the error which is not expected to contain
-       * sensitive details.
-       *
-       * SHOULD be documented and predictable. Instrumentation libraries SHOULD publish their own
-       * conventions, including possible values of description and what they mean.
-       *
-       * This is set as the span status description (`Span.setStatus({ code: ERROR, message: statusDescription })`).
-       */
-      statusDescription?: string;
-    }
-  | {
-      /**
-       * Describes a class of error the operation ended with. SHOULD be predictable and
-       * SHOULD have low cardinality.
-       *
-       * Defaults to `'_OTHER'` if not provided.
-       */
-      errorType?: string;
+  /**
+   * Describes a class of error the operation ended with (`error.type`). SHOULD be predictable and
+   * SHOULD have low cardinality.
+   *
+   * If omitted, defaults to the error type derived from {@link exception}, or `'_OTHER'`.
+   */
+  errorType?: string;
 
-      /**
-       * Human readable additional information about the error which is not expected to contain
-       * sensitive details.
-       *
-       * SHOULD be documented and predictable. Instrumentation libraries SHOULD publish their own
-       * conventions, including possible values of description and what they mean.
-       *
-       * This is set as the span status description (`Span.setStatus({ code: ERROR, message: statusDescription })`).
-       */
-      statusDescription: string;
-    };
+  /**
+   * Human readable additional information about the error which is not expected to contain
+   * sensitive details.
+   *
+   * SHOULD be documented and predictable. Instrumentation libraries SHOULD publish their own
+   * conventions, including possible values of description and what they mean.
+   *
+   * When provided, this is set as the span status description (`Span.setStatus({ code: ERROR, message: statusDescription })`).
+   * If omitted, the span status description is left unset to prevent leaking sensitive or high-cardinality error messages.
+   */
+  statusDescription?: string;
+};

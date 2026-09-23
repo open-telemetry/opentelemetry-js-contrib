@@ -107,9 +107,15 @@ export interface BaseInvocationOptions {
  *   invocation.stop();
  *   return response;
  * } catch (error) {
- *   invocation.fail(
- *     error instanceof Error ? error : { errorType: '_OTHER' }
- *   );
+ *   if (error instanceof OpenAI.APIError) {
+ *     invocation.fail({
+ *       errorType: error.type,
+ *       statusDescription: getLowCardinalityStatus(error),
+ *     });
+ *   } else {
+ *     // Non-API errors (e.g., local networking bugs or code typos)
+ *     invocation.fail(error);
+ *   }
  *   throw error;
  * }
  * ```
@@ -266,7 +272,9 @@ export abstract class BaseInvocation {
    * @param endTime End time of the invocation, or `undefined` to use the current time.
    */
   public fail(error: InvocationError | Error, endTime?: TimeInput): void {
-    this._end(endTime, error);
+    const invocationError: InvocationError =
+      error instanceof Error ? { exception: error } : error;
+    this._end(endTime, invocationError);
   }
 
   /**
@@ -280,7 +288,7 @@ export abstract class BaseInvocation {
    * @param endTime End time of the invocation, or `undefined` to use the current time.
    * @param error The error to record, or `undefined` for a successful invocation.
    */
-  private _end(endTime?: TimeInput, error?: InvocationError | Error): void {
+  private _end(endTime?: TimeInput, error?: InvocationError): void {
     if (this._isEnded) {
       return;
     }
@@ -302,17 +310,10 @@ export abstract class BaseInvocation {
         // The span's error state is recorded before the subclass hooks run so that a hook
         // that throws cannot leave a failed invocation reported as a span without an error
         // status.
-        let statusDescription: string | undefined;
-        let resolvedErrorType: string;
-        if (error instanceof Error) {
-          resolvedErrorType = getErrorType(error);
-        } else {
-          statusDescription = error.statusDescription;
-          resolvedErrorType = error.errorType ?? '_OTHER';
-        }
+        const statusDescription: string | undefined = error.statusDescription;
+        errorType = error.errorType ?? getErrorType(error.exception);
 
-        errorType = resolvedErrorType;
-        this._span.setAttribute(ATTR_ERROR_TYPE, resolvedErrorType);
+        this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
         this._span.setStatus(
           statusDescription !== undefined
             ? {
