@@ -15,11 +15,6 @@ import {
   ChatPromptValue,
   StringPromptValue,
 } from '@langchain/core/prompt_values';
-import {
-  formatInputMessages,
-  formatOutputMessages,
-} from '@opentelemetry/genai-util';
-import type { InputMessages, OutputMessages } from '@opentelemetry/genai-util';
 import * as sinon from 'sinon';
 import {
   messages,
@@ -417,25 +412,17 @@ describe('LangChain content mapping', () => {
     }
   });
 
-  it('returns shared input and output models without serializing them', () => {
-    const input: InputMessages | undefined = parseInputMessages(
-      'question',
-      diag
-    );
-    const output: OutputMessages | undefined = parseOutputMessages(
-      'answer',
-      diag
-    );
+  it('returns normalized input and output messages without serializing them', () => {
+    const input = parseInputMessages('question', diag);
+    const output = parseOutputMessages('answer', diag);
     expect(input).toEqual([
       { role: 'user', parts: [{ type: 'text', content: 'question' }] },
     ]);
     expect(output).toEqual([
       { role: 'assistant', parts: [{ type: 'text', content: 'answer' }] },
     ]);
-    expect(formatInputMessages(input)).toBe(messages('question', diag));
-    expect(formatOutputMessages(output)).toBe(
-      messages('answer', diag, 'assistant')
-    );
+    expect(JSON.stringify(input)).toBe(messages('question', diag));
+    expect(JSON.stringify(output)).toBe(messages('answer', diag, 'assistant'));
     expect(parseOutputMessages(['question'], diag)).toEqual(input);
     expect(messages('instruction', diag, 'developer')).toBe(
       '[{"role":"developer","parts":[{"type":"text","content":"instruction"}]}]'
@@ -460,7 +447,7 @@ describe('LangChain content mapping', () => {
     }
   });
 
-  it('decodes SDK base64 to bytes before shared canonical serialization', () => {
+  it('decodes SDK base64 to bytes before canonical serialization', () => {
     for (const [content, canonical, bytes] of [
       ['aGVsbG8=', 'aGVsbG8=', [104, 101, 108, 108, 111]],
       ['aGVsbG8', 'aGVsbG8=', [104, 101, 108, 108, 111]],

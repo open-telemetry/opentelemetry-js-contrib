@@ -6,17 +6,52 @@
 import type { BaseMessage } from '@langchain/core/messages';
 import type { BasePromptValueInterface } from '@langchain/core/prompt_values';
 import type { DiagLogger } from '@opentelemetry/api';
-import {
-  formatInputMessages,
-  formatOutputMessages,
-} from '@opentelemetry/genai-util';
-import type {
-  BlobPart,
-  ChatMessage,
-  InputMessages,
-  MessagePart,
-  OutputMessages,
-} from '@opentelemetry/genai-util';
+
+// LangChain also supplies provider-defined parts and malformed tool calls.
+// Keep their fields without claiming a stronger SDK-independent schema.
+interface MessagePart {
+  type: string;
+  [key: string]: unknown;
+}
+
+interface BlobPart extends MessagePart {
+  type: 'blob';
+  modality: string;
+  content: Uint8Array;
+  mime_type?: unknown;
+}
+
+interface Message {
+  role: string;
+  parts: MessagePart[];
+}
+
+function serializeMessages(
+  value: Message[],
+  diag: DiagLogger
+): string | undefined {
+  try {
+    return JSON.stringify(
+      value,
+      function (
+        this: Record<string, unknown>,
+        key: string,
+        serialized: unknown
+      ) {
+        // Read the original property because Buffer.toJSON runs before a replacer.
+        const raw: unknown = this[key];
+        return raw instanceof Uint8Array
+          ? Buffer.from(raw.buffer, raw.byteOffset, raw.byteLength).toString(
+              'base64'
+            )
+          : serialized;
+      }
+    );
+  } catch {
+    diag.debug('LangChain: failed to serialize messages');
+    return undefined;
+  }
+}
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -99,7 +134,7 @@ function imagePart(url: string, diag: DiagLogger): MessagePart | undefined {
     modality: 'image',
     mime_type: match[1].toLowerCase(),
     content,
-  } satisfies BlobPart;
+  };
 }
 
 function part(value: unknown, diag: DiagLogger): MessagePart | undefined {
@@ -155,7 +190,7 @@ function part(value: unknown, diag: DiagLogger): MessagePart | undefined {
           modality: value.type === 'file' ? 'document' : value.type,
           content,
           ...(value.mime_type ? { mime_type: value.mime_type } : {}),
-        };
+        } satisfies BlobPart;
       }
       break;
     case 'blob':
@@ -204,7 +239,7 @@ function normalizeMessages(
   value: unknown,
   diag: DiagLogger,
   defaultRole: string
-): ChatMessage[] | undefined {
+): Message[] | undefined {
   if (isRecord(value) && !isPromptValue(value)) {
     if ('messages' in value) value = value.messages;
     else if ('output' in value) value = value.output;
@@ -217,7 +252,7 @@ function normalizeMessages(
   if (isMessage(value)) value = [value];
   if (!Array.isArray(value)) return undefined;
 
-  const result: ChatMessage[] = [];
+  const result: Message[] = [];
   for (const item of value) {
     let role: unknown;
     let content: unknown;
@@ -302,7 +337,7 @@ function parseMessages(
   value: unknown,
   diag: DiagLogger,
   defaultRole: string
-): ChatMessage[] | undefined {
+): Message[] | undefined {
   try {
     return normalizeMessages(value, diag, defaultRole);
   } catch {
@@ -314,14 +349,14 @@ function parseMessages(
 export function parseInputMessages(
   value: unknown,
   diag: DiagLogger
-): InputMessages | undefined {
+): Message[] | undefined {
   return parseMessages(value, diag, 'user');
 }
 
 export function parseOutputMessages(
   value: unknown,
   diag: DiagLogger
-): OutputMessages | undefined {
+): Message[] | undefined {
   return parseMessages(value, diag, 'assistant');
 }
 
@@ -332,13 +367,7 @@ export function messages(
 ): string | undefined {
   const parsed = parseMessages(value, diag, defaultRole);
   if (!parsed) return undefined;
-  const formatted =
-    defaultRole === 'assistant'
-      ? formatOutputMessages(parsed)
-      : formatInputMessages(parsed);
-  if (formatted === undefined)
-    diag.debug('LangChain: failed to serialize messages');
-  return formatted;
+  return serializeMessages(parsed, diag);
 }
 
 export function batchOutputMessages(
@@ -356,10 +385,7 @@ export function batchOutputMessages(
       isRecord(result) && typeof result.role === 'string' ? [result] : result;
     return parseOutputMessages(output, diag) ?? [];
   });
-  const formatted = formatOutputMessages(parsed);
-  if (formatted === undefined)
-    diag.debug('LangChain: failed to serialize batch output messages');
-  return formatted;
+  return serializeMessages(parsed, diag);
 }
 
 function toolCallPart(

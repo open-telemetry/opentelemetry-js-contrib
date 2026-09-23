@@ -105,11 +105,12 @@ previous or constructor setting enabled it. This replaces the earlier
 experimental boolean option. Content can contain sensitive data; enable capture
 deliberately.
 
-Instrumentation-owned tracer and meter providers are used, including providers
-supplied through `setTracerProvider` and `setMeterProvider`. Config/provider updates
-apply to future invocations; in-flight invocations finish with their original
-lifecycle handler and content setting. Disabling instrumentation does not abandon
-in-flight spans.
+Workflow spans use the standard OpenTelemetry tracer, span and context APIs
+directly, with the instrumentation-owned tracer (including `setTracerProvider`).
+Config/provider updates apply to future invocations; in-flight invocations finish
+with their original span and content setting. Disabling instrumentation does not
+abandon in-flight spans. `setMeterProvider` remains supported by the instrumentation
+base, but workflows do not create metric instruments or record client metrics.
 
 Failed operations record `error.type` (the error name, or `_OTHER`) and ERROR
 status, but never the original error message, stack or exception event, even
@@ -120,11 +121,11 @@ replace application results or failures.
 ## Content adapters
 
 The internal content adapter normalizes LangChain messages and prompt values
-into the shared `@opentelemetry/genai-util` message models. It preserves message
+into role/part arrays for the input and output message attributes. It preserves message
 roles, tuple and string-array inputs, tool/function-call envelopes, server-tool
 result IDs, reasoning, multimodal content, and unknown provider-specific parts.
 Inline image data URLs and SDK multimedia `base64` fields are validated locally
-and decoded into raw `Uint8Array` blob content. The shared formatters encode those
+and decoded into raw `Uint8Array` blob content. A local JSON serializer encodes those
 bytes as base64 for input and output message attributes. Valid padded and
 unpadded inputs preserve the same bytes, not their original encoded spelling.
 Invalid encoding (including malformed padding or nonzero unused pad bits) is
@@ -136,9 +137,9 @@ Base64 validation is a linear, constant-space scan without a regexp stack or an
 instrumentation-imposed payload-size cap.
 
 `parseInputMessages` and `parseOutputMessages` return structured models for
-instrumentation code. The internal `messages` wrapper serializes those models
-through the shared public formatters and diagnoses normalization or serialization
-failures.
+instrumentation code. The internal `messages` wrapper serializes those arrays
+and diagnoses normalization or serialization failures without logging their
+contents.
 
 These adapters are not a public LangChain instrumentation API. The workflow
 lifecycle uses them only when content capture is enabled.
@@ -174,11 +175,11 @@ This is scoped regression proof, not the later full migration conformance suite.
 
 ## Semantic Conventions
 
-This package uses the shared GenAI conventions from
-[`@opentelemetry/genai-util`](../genai-util/README.md):
+This package uses the experimental GenAI conventions
 `gen_ai.operation.name`, `gen_ai.workflow.name`, `gen_ai.conversation.id`,
-`gen_ai.input.messages`, and `gen_ai.output.messages`. The shared conventions
-are experimental and pinned in that package's `src/semconv.ts`.
+`gen_ai.input.messages`, and `gen_ai.output.messages`. Their exact provenance is
+pinned in this package's `src/semconv.ts`; stable `error.type` is imported from
+`@opentelemetry/semantic-conventions`.
 
 ## Useful links
 

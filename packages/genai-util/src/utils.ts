@@ -4,7 +4,7 @@
  */
 
 /**
- * Only helpers explicitly exported from index.ts are public.
+ * Functions declared in this file are only meant to be used within the genai-util package.
  */
 import type { Attributes } from '@opentelemetry/api';
 import {

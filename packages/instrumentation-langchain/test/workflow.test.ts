@@ -32,6 +32,7 @@ import { ChatPromptTemplate, PromptTemplate } from '@langchain/core/prompts';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import {
   InMemorySpanExporter,
+  SamplingDecision,
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
@@ -916,7 +917,7 @@ describe('LangChain non-streaming workflows', () => {
     }
   });
 
-  it('uses instrumentation-owned meters after updates without recording client metrics', async () => {
+  it('does not create or record client metrics when meter providers change', async () => {
     for (let index = 0; index < 2; index++) {
       const provider = new MeterProvider();
       const meter = provider.getMeter(`workflow-test-${index}`);
@@ -924,11 +925,114 @@ describe('LangChain non-streaming workflows', () => {
       const create = sinon.stub(meter, 'createHistogram').returns({ record });
       const getMeter = sinon.stub().returns(meter);
       instrumentation.setMeterProvider({ getMeter });
-      await workflow().invoke('test');
-      expect(create.callCount).toBe(4);
-      expect(getMeter.calledOnce).toBe(true);
-      expect(record.called).toBe(false);
+      try {
+        await workflow().invoke('test');
+        await workflow().batch(['one', 'two']);
+        const failure = new Error('private error');
+        const broken = RunnableSequence.from([
+          RunnableLambda.from(() => {
+            throw failure;
+          }),
+          RunnableLambda.from(value => value),
+        ]);
+        await expect(broken.invoke('input')).rejects.toBe(failure);
+        expect(create.called).toBe(false);
+        expect(getMeter.calledOnce).toBe(true);
+        expect(record.called).toBe(false);
+      } finally {
+        await provider.shutdown();
+      }
+    }
+  });
+
+  it('supplies workflow name, kind, parent and initial attributes to the sampler', async () => {
+    const shouldSample = sinon
+      .stub()
+      .returns({ decision: SamplingDecision.RECORD_AND_SAMPLED });
+    const exporter = new InMemorySpanExporter();
+    const provider = new TracerProvider({
+      sampler: { shouldSample, toString: () => 'workflow-test-sampler' },
+      spanProcessors: [new SimpleSpanProcessor({ exporter })],
+    });
+    const parent = trace.getTracer('test').startSpan('request');
+    instrumentation.setTracerProvider(provider);
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
+    try {
+      await context.with(trace.setSpan(context.active(), parent), () =>
+        workflow().invoke('hello', { configurable: { thread_id: 'thread' } })
+      );
+      expect(shouldSample.calledOnce).toBe(true);
+      const [ctx, , name, kind, attributes] = shouldSample.firstCall.args;
+      expect(trace.getSpan(ctx)).toBe(parent);
+      expect(name).toBe('invoke_workflow greeting');
+      expect(kind).toBe(SpanKind.INTERNAL);
+      expect(attributes).toMatchObject({
+        'gen_ai.operation.name': 'invoke_workflow',
+        'gen_ai.workflow.name': 'greeting',
+        'gen_ai.conversation.id': 'thread',
+        'gen_ai.input.messages': JSON.stringify([
+          { role: 'user', parts: [{ type: 'text', content: 'hello' }] },
+        ]),
+      });
+      expect(exporter.getFinishedSpans()).toHaveLength(1);
+    } finally {
+      parent.end();
+      instrumentation.setTracerProvider(trace.getTracerProvider());
       await provider.shutdown();
+    }
+  });
+
+  it('finishes in-flight spans with their original provider and capture mode', async () => {
+    const exporters = [new InMemorySpanExporter(), new InMemorySpanExporter()];
+    const providers = exporters.map(
+      exporter =>
+        new TracerProvider({
+          spanProcessors: [new SimpleSpanProcessor({ exporter })],
+        })
+    );
+    let release!: (value: string) => void;
+    const pending = new Promise<string>(resolve => {
+      release = resolve;
+    });
+    const chain = RunnableSequence.from([
+      RunnableLambda.from(() => pending),
+      RunnableLambda.from((value: string) => value),
+    ]);
+    try {
+      instrumentation.setTracerProvider(providers[0]);
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const first = chain.invoke('private-input');
+      instrumentation.setTracerProvider(providers[1]);
+      instrumentation.setConfig({ captureMessageContent: 'none' });
+      release('private-output');
+      expect(await first).toBe('private-output');
+      await workflow().invoke('private-input');
+      for (const exporter of exporters)
+        expect(exporter.getFinishedSpans()).toHaveLength(1);
+      expect(
+        JSON.parse(
+          String(
+            exporters[0].getFinishedSpans()[0].attributes[
+              'gen_ai.output.messages'
+            ]
+          )
+        )
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'private-output' }],
+        },
+      ]);
+      expect(
+        exporters[1].getFinishedSpans()[0].attributes['gen_ai.output.messages']
+      ).toBeUndefined();
+      expect(
+        exporters[1].getFinishedSpans()[0].attributes['gen_ai.input.messages']
+      ).toBeUndefined();
+    } finally {
+      release('private-output');
+      instrumentation.setTracerProvider(trace.getTracerProvider());
+      await Promise.all(providers.map(provider => provider.shutdown()));
     }
   });
 

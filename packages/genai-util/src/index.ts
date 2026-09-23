@@ -11,6 +11,7 @@
  * If your instrumentation requires an unexported function, type, or class from this library:
  * 1. Add the specific named export to this file in your instrumentation PR.
  * 2. Ensure the API is generic across GenAI libraries, not tailored to a single SDK.
+ * 3. Remove the temporary "packages/genai-util" entry override from the root `knip.jsonc` file.
  *
  * @example
  * ```typescript
@@ -21,22 +22,3 @@
  * export * from './semconv';
  * ```
  */
-
-export type {
-  BlobPart,
-  ChatMessage,
-  InputMessages,
-  MessagePart,
-  OutputMessages,
-} from './types';
-export { formatInputMessages, formatOutputMessages } from './utils';
-export { BaseInvocation } from './invocations/base';
-export { TelemetryHandler } from './handler';
-export {
-  ATTR_GEN_AI_CONVERSATION_ID,
-  ATTR_GEN_AI_INPUT_MESSAGES,
-  ATTR_GEN_AI_OPERATION_NAME,
-  ATTR_GEN_AI_OUTPUT_MESSAGES,
-  ATTR_GEN_AI_WORKFLOW_NAME,
-  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-} from './semconv';
