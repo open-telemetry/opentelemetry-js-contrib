@@ -25,6 +25,7 @@ import { LangChainInstrumentationConfig } from './types';
 import { isRecord, messages } from './content';
 import { LangChainWorkflowInvocation } from './workflow';
 
+const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 
 function instrumentModuleInstances<T extends object>(
@@ -94,13 +95,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   protected init() {
     return [
       new InstrumentationNodeModuleDefinition(
-        '@langchain/core',
+        MODULE_NAME,
         SUPPORTED_VERSIONS,
         undefined,
         undefined,
         ['cjs', 'js'].map(extension =>
           instrumentModuleInstances(
-            `@langchain/core/dist/runnables/base.${extension}`,
+            `${MODULE_NAME}/dist/runnables/base.${extension}`,
             (module: typeof Runnables) => {
               for (const cls of [module.RunnableSequence, module.RunnableMap]) {
                 this._wrap(cls.prototype, 'invoke', this._wrapper());

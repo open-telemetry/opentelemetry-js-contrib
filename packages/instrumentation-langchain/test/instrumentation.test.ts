@@ -9,6 +9,7 @@ import { diag, DiagLogLevel } from '@opentelemetry/api';
 import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
+import { normalize } from 'node:path';
 
 describe('LangChainInstrumentation', () => {
   let instrumentation: LangChainInstrumentation;
@@ -37,6 +38,16 @@ describe('LangChainInstrumentation', () => {
       }
     }
     const instance = new TestInstrumentation({ enabled: false });
+    expect(instance.instrumentationName).toBe(
+      '@opentelemetry/instrumentation-langchain'
+    );
+    expect(instance.definitions.map(definition => definition.name)).toEqual([
+      '@langchain/core',
+    ]);
+    expect(instance.definitions[0].files.map(file => file.name)).toEqual([
+      normalize('@langchain/core/dist/runnables/base.cjs'),
+      normalize('@langchain/core/dist/runnables/base.js'),
+    ]);
     const file = instance.definitions[0].files.find(file =>
       file.name.endsWith('base.cjs')
     )!;
