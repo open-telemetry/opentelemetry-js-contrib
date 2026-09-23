@@ -42,7 +42,6 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
-  getErrorType,
   getRequestOptionsAttributes,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
@@ -314,9 +313,13 @@ export class InferenceInvocation extends BaseInvocation {
 
   /**
    * Build the metric attributes shared by all metrics recorded for this invocation.
+   *
+   * Caller-supplied metric attributes ({@link _metricAttributes}) are applied first so
+   * that the semantic convention dimensions always win.
    */
-  private _getMetricAttributes(error?: unknown): Attributes {
+  private _getMetricAttributes(errorType?: string): Attributes {
     const metricAttrs: Attributes = {
+      ...this._metricAttributes,
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
     };
@@ -332,17 +335,17 @@ export class InferenceInvocation extends BaseInvocation {
     if (this._serverPort !== undefined) {
       metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
     }
-    if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
+    if (errorType) {
+      metricAttrs[ATTR_ERROR_TYPE] = errorType;
     }
     return metricAttrs;
   }
 
   protected override _recordMetrics(
     durationSec: number,
-    error?: unknown
+    errorType?: string
   ): void {
-    const metricAttrs = this._getMetricAttributes(error);
+    const metricAttrs = this._getMetricAttributes(errorType);
 
     // The invocation context is passed explicitly: metrics are recorded while the
     // invocation's context may no longer be active, and exemplars must still point
@@ -366,31 +369,4 @@ export class InferenceInvocation extends BaseInvocation {
   protected override _emitContentEvent(_endTime?: HrTime): void {
     // No-op until Logs/Events API is stable in JS.
   }
-
-  // protected override _runCompletionHook(
-  //   durationSec: number,
-  //   error?: Error
-  // ): void {
-  //   const result: CompletionResult = {
-  //     span: this._span,
-  //     providerName: this._providerName,
-  //     operationName: this._operationName,
-  //     requestModel: this._requestModel,
-  //     responseModel: this._responseModel,
-  //     responseId: this._responseId,
-  //     finishReasons: this._finishReasons,
-  //     usage: this._usage,
-  //     durationSeconds: durationSec,
-  //     inputMessages: this._inputMessages,
-  //     outputMessages: this._outputMessages,
-  //     systemInstructions: this._systemInstructions,
-  //     error,
-  //     attributes: this._customAttributes,
-  //   };
-
-  //   // Execute asynchronously in background
-  //   void this._handler
-  //     .getCompletionHookManager()
-  //     .execute(result, this._handler.getDiag());
-  // }
 }

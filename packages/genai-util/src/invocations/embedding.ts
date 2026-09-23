@@ -20,7 +20,6 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
 import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
-import { getErrorType } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -158,9 +157,10 @@ export class EmbeddingInvocation extends BaseInvocation {
 
   protected override _recordMetrics(
     durationSec: number,
-    error?: unknown
+    errorType?: string
   ): void {
     const metricAttrs: Attributes = {
+      ...this._metricAttributes,
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
     };
@@ -176,8 +176,8 @@ export class EmbeddingInvocation extends BaseInvocation {
         metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
       }
     }
-    if (error) {
-      metricAttrs[ATTR_ERROR_TYPE] = getErrorType(error);
+    if (errorType) {
+      metricAttrs[ATTR_ERROR_TYPE] = errorType;
     }
 
     // The invocation context is passed explicitly: metrics are recorded while the
@@ -188,7 +188,7 @@ export class EmbeddingInvocation extends BaseInvocation {
       metricAttrs,
       this._context
     );
-    if (this._usage && !error) {
+    if (this._usage && !errorType) {
       this._handler.recordTokenUsage(this._usage, metricAttrs, this._context);
     }
   }
