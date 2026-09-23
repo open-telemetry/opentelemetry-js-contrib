@@ -107,10 +107,9 @@ export interface BaseInvocationOptions {
  *   invocation.stop();
  *   return response;
  * } catch (error) {
- *   invocation.fail({
- *     statusDescription: 'Failed to complete chat request',
- *     exception: error instanceof Error ? error : undefined,
- *   });
+ *   invocation.fail(
+ *     error instanceof Error ? error : { errorType: '_OTHER' }
+ *   );
  *   throw error;
  * }
  * ```
@@ -261,8 +260,8 @@ export abstract class BaseInvocation {
    * never thrown at the caller, so calling this from a `catch` block cannot replace the
    * application's own error; the span is ended either way.
    *
-   * @param error Error details conforming to OpenTelemetry conventions (specifying a
-   *   predictable, non-sensitive status description, optional error type, and optional exception),
+   * @param error Error details describing the failure (either an `InvocationError` with
+   *   predictable, non-sensitive status description and/or error type),
    *   or an `Error` instance.
    * @param endTime End time of the invocation, or `undefined` to use the current time.
    */
@@ -309,7 +308,7 @@ export abstract class BaseInvocation {
           resolvedErrorType = getErrorType(error);
         } else {
           statusDescription = error.statusDescription;
-          resolvedErrorType = error.errorType ?? getErrorType(error.exception);
+          resolvedErrorType = error.errorType ?? '_OTHER';
         }
 
         errorType = resolvedErrorType;

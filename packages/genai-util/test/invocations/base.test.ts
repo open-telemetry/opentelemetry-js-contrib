@@ -180,12 +180,11 @@ describe('BaseInvocation', () => {
   it('should handle fail lifecycle with error and double fail protection', () => {
     const inv = new CustomInvocation('custom-fail-span', handler);
 
-    const testError = new Error('Test failure');
-    inv.fail({ statusDescription: 'Test failure', exception: testError });
+    inv.fail({ statusDescription: 'Test failure', errorType: 'Error' });
     // Double fail should be a no-op
     inv.fail({
       statusDescription: 'Failure Type #2',
-      exception: new Error('Second failure'),
+      errorType: 'Error',
     });
 
     // Verify the extension points ran exactly once with error and duration
@@ -206,7 +205,7 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].events.length, 0);
   });
 
-  it('should handle custom explicit endTime array and errors without exception', () => {
+  it('should handle custom explicit endTime array and errors without errorType', () => {
     const inv = new CustomInvocation('custom-endtime-span', handler);
 
     const customEndTime: HrTime = [1000, 500000000];
@@ -226,13 +225,32 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].events.length, 0);
   });
 
-  it('should prioritize explicit errorType over exception type when provided', () => {
+  it('should support explicit errorType without statusDescription', () => {
     const inv = new CustomInvocation('explicit-error-type-span', handler);
+
+    inv.fail({
+      errorType: 'rate_limit_exceeded',
+    });
+
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'rate_limit_exceeded'
+    );
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'rate_limit_exceeded'
+    );
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should support both explicit errorType and statusDescription', () => {
+    const inv = new CustomInvocation('explicit-both-span', handler);
 
     inv.fail({
       statusDescription: 'Rate limit hit',
       errorType: 'rate_limit_exceeded',
-      exception: new Error('Too many requests'),
     });
 
     assert.strictEqual(
@@ -412,7 +430,7 @@ describe('BaseInvocation', () => {
       });
 
       inv.setMetricAttribute('added.later', 'value');
-      inv.fail({ statusDescription: 'boom', exception: new Error('boom') });
+      inv.fail({ statusDescription: 'boom', errorType: 'Error' });
 
       assert.deepStrictEqual(callerAttributes, {
         'gen_ai.provider.name': 'openai',
@@ -426,7 +444,7 @@ describe('BaseInvocation', () => {
 
       inv.fail({
         statusDescription: 'Test failure',
-        exception: new Error('Test failure'),
+        errorType: 'Error',
       });
 
       // The conventions define `error.type` on some metrics only, so it must not be in
@@ -771,7 +789,7 @@ describe('BaseInvocation', () => {
       assert.doesNotThrow(() =>
         inv.fail({
           statusDescription: 'upstream failure',
-          exception: new RangeError('upstream failure'),
+          errorType: 'RangeError',
         })
       );
 
