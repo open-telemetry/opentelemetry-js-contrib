@@ -15,6 +15,7 @@ import {
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
+  ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
@@ -73,7 +74,10 @@ describe('EmbeddingInvocation', () => {
     // `stop()` leaves the span status UNSET: only failures set an explicit status.
     assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
 
-    assert.strictEqual(invocation.getResponseModel(), 'text-embedding-3-small');
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
+      'text-embedding-3-small'
+    );
 
     const { resourceMetrics } = await ctx.metricReader.collect();
     const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
@@ -200,8 +204,6 @@ describe('EmbeddingInvocation', () => {
       dimensionCount: 512,
     });
 
-    assert.deepStrictEqual(inv1.getEncodingFormats(), ['float', 'base64']);
-    assert.strictEqual(inv1.getDimensionCount(), 512);
     inv1.stop();
 
     // Test 2: configured via setters
@@ -212,8 +214,6 @@ describe('EmbeddingInvocation', () => {
 
     inv2.setEncodingFormats(['binary']);
     inv2.setDimensionCount(1024);
-    assert.deepStrictEqual(inv2.getEncodingFormats(), ['binary']);
-    assert.strictEqual(inv2.getDimensionCount(), 1024);
     inv2.stop();
 
     const spans = ctx.memoryExporter.getFinishedSpans();

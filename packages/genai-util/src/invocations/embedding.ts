@@ -86,8 +86,6 @@ export class EmbeddingInvocation extends BaseInvocation {
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
   private _responseModel?: string;
-  private _dimensionCount?: number;
-  private _encodingFormats?: string[];
   private _usage?: TokenUsage;
 
   /**
@@ -108,8 +106,6 @@ export class EmbeddingInvocation extends BaseInvocation {
     this._operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS;
     this._requestModel = options.requestModel;
-    this._dimensionCount = options.dimensionCount;
-    this._encodingFormats = options.encodingFormats;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
   }
@@ -120,28 +116,14 @@ export class EmbeddingInvocation extends BaseInvocation {
     return this;
   }
 
-  public getResponseModel(): string | undefined {
-    return this._responseModel;
-  }
-
   public setDimensionCount(count: number): this {
-    this._dimensionCount = count;
     this._span.setAttribute(ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT, count);
     return this;
   }
 
-  public getDimensionCount(): number | undefined {
-    return this._dimensionCount;
-  }
-
   public setEncodingFormats(formats: string[]): this {
-    this._encodingFormats = formats;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_ENCODING_FORMATS, formats);
     return this;
-  }
-
-  public getEncodingFormats(): string[] | undefined {
-    return this._encodingFormats;
   }
 
   public setUsage(usage: TokenUsage): this {
