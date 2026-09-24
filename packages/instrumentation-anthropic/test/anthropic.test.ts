@@ -17,7 +17,6 @@ import { expect } from 'expect';
 import { type Definition, back as nockBack } from 'nock';
 import * as nock from 'nock';
 import * as path from 'node:path';
-import { execFileSync } from 'node:child_process';
 
 const model = 'claude-haiku-4-5-20251001';
 const input = 'Reply with exactly two words: Hello telemetry';
@@ -62,20 +61,97 @@ function createRecordingClient(): Anthropic {
 
 const mockClient = new Anthropic({ apiKey: 'testing', maxRetries: 0 });
 
+const requestBody = {
+  model,
+  max_tokens: 16,
+  messages: [{ role: 'user' as const, content: input }],
+};
+
+/**
+ * Cassettes authored by hand, for responses the real API will not produce on
+ * demand. They are always replayed, never recorded: a recording run would
+ * either overwrite them with a successful response or fail outright, and the
+ * clients that use them carry a placeholder key.
+ */
+const SYNTHETIC_CASSETTES = new Set([
+  'anthropic-messages-create-truncated-body.json',
+  'anthropic-messages-create-rate-limited.json',
+  'anthropic-messages-create-bedrock.json',
+  'anthropic-messages-create-vertex-regional.json',
+  'anthropic-messages-create-vertex-global.json',
+  'anthropic-messages-stream-sse-error.json',
+  'anthropic-messages-stream-incomplete.json',
+  'anthropic-messages-stream-rate-limited.json',
+  'anthropic-messages-stream-complete.json',
+  'anthropic-messages-concurrent-streams.json',
+]);
+
+/**
+ * Replay a recording for the duration of `fn`. Every HTTP interaction in this
+ * suite goes through a cassette so the scenarios stay reproducible offline;
+ * recordings for responses the real API will not produce on demand (a
+ * truncated body, an SSE `error` event, a premature end) are authored by hand
+ * in the same format.
+ */
+async function withCassette<T>(
+  name: string,
+  fn: () => Promise<T>,
+  options: { delayBodyMs?: number } = {}
+): Promise<T> {
+  const mode = nockBack.currentMode;
+  if (SYNTHETIC_CASSETTES.has(name)) {
+    nockBack.setMode('lockdown');
+  }
+  try {
+    const { nockDone } = await nockBack(name, {
+      afterRecord: sanitizeRecordings,
+      // A recording stores what the server said, not how slowly it said it, so
+      // transfer timing is applied to the replayed interceptors instead.
+      after: scope => {
+        const { delayBodyMs } = options;
+        if (delayBodyMs === undefined) return;
+        // `interceptors` is not in nock's type definitions.
+        const { interceptors } = scope as unknown as {
+          interceptors: { delayBody(ms: number): unknown }[];
+        };
+        interceptors.forEach(interceptor => interceptor.delayBody(delayBodyMs));
+      },
+    });
+    try {
+      return await fn();
+    } finally {
+      nockDone();
+    }
+  } finally {
+    nockBack.setMode(mode);
+  }
+}
+
 describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
-  // An explicitly requested mode wins, so `NOCK_BACK_MODE=update` can refresh
-  // existing recordings. Otherwise: `record` to capture missing ones when an
-  // API key is available, and `lockdown` in CI, since the default `dryrun`
-  // calls `enableNetConnect()` and would let a stale fixture silently reach
-  // the real API.
+  // `record` captures cassettes that are missing and `update` replaces ones
+  // that exist; both need a real key, and running them without one would
+  // overwrite good recordings with failures, so they are refused outright.
+  // Otherwise `lockdown`, since the default `dryrun` calls `enableNetConnect()`
+  // and would let a stale cassette silently reach the real API.
   const requestedMode = process.env.NOCK_BACK_MODE as
     | Parameters<typeof nockBack.setMode>[0]
     | undefined;
-  nockBack.setMode(
-    requestedMode ?? (process.env.ANTHROPIC_API_KEY ? 'record' : 'lockdown')
-  );
+  const isRecordingMode =
+    requestedMode === 'record' || requestedMode === 'update';
+  const missingKey = isRecordingMode && !process.env.ANTHROPIC_API_KEY;
+  // Reported from a hook rather than thrown here, so mocha shows the reason
+  // instead of failing to load the file.
+  before(function () {
+    if (missingKey) {
+      throw new Error(
+        `NOCK_BACK_MODE=${requestedMode} requires ANTHROPIC_API_KEY. ` +
+          'Without it the run would replace the recordings with failed requests.'
+      );
+    }
+  });
+  nockBack.setMode(missingKey ? 'lockdown' : (requestedMode ?? 'lockdown'));
 
   beforeEach(() => {
     resetMemoryExporter();
@@ -203,28 +279,13 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('leaves the response body readable for asResponse', async () => {
-    const body = {
-      id: 'msg_01234567890',
-      type: 'message',
-      role: 'assistant',
-      model,
-      content: [{ type: 'text', text: 'Hello telemetry' }],
-      stop_reason: 'end_turn',
-      usage: { input_tokens: 10, output_tokens: 3 },
-    };
-    nock('https://api.anthropic.com').post('/v1/messages').reply(200, body);
-
-    const response = await mockClient.messages
-      .create({
-        model,
-        max_tokens: 16,
-        messages: [{ role: 'user', content: input }],
-      })
-      .asResponse();
+    const response = await withCassette('anthropic-messages-create.json', () =>
+      createRecordingClient().messages.create(requestBody).asResponse()
+    );
 
     // The instrumentation must not have consumed the body already.
     expect(response.bodyUsed).toBe(false);
-    expect(await response.json()).toEqual(body);
+    expect((await response.json()).id).toMatch(/^msg_/);
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
@@ -233,19 +294,9 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('records errors raised while reading the response body', async () => {
-    nock('https://api.anthropic.com')
-      .post('/v1/messages')
-      .reply(200, '{"id": "msg_01234', {
-        'content-type': 'application/json',
-      });
-
-    await expect(
-      mockClient.messages.create({
-        model,
-        max_tokens: 16,
-        messages: [{ role: 'user', content: input }],
-      })
-    ).rejects.toThrow();
+    await withCassette('anthropic-messages-create-truncated-body.json', () =>
+      expect(mockClient.messages.create(requestBody)).rejects.toThrow()
+    );
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
@@ -255,24 +306,11 @@ describe('Anthropic instrumentation', function () {
 
   it('keeps the span open until the response body has been read', async () => {
     const bodyDelayMs = 200;
-    nock('https://api.anthropic.com')
-      .post('/v1/messages')
-      .delayBody(bodyDelayMs)
-      .reply(200, {
-        id: 'msg_01234567890',
-        type: 'message',
-        role: 'assistant',
-        model,
-        content: [{ type: 'text', text: 'Hello telemetry' }],
-        stop_reason: 'end_turn',
-        usage: { input_tokens: 10, output_tokens: 3 },
-      });
-
-    await mockClient.messages.create({
-      model,
-      max_tokens: 16,
-      messages: [{ role: 'user', content: input }],
-    });
+    await withCassette(
+      'anthropic-messages-create.json',
+      () => createRecordingClient().messages.create(requestBody),
+      { delayBodyMs: bodyDelayMs }
+    );
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
@@ -283,20 +321,15 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('records body errors when the caller consumes the promise late', async () => {
-    nock('https://api.anthropic.com')
-      .post('/v1/messages')
-      .reply(200, '{"id": "msg_01234', {
-        'content-type': 'application/json',
-      });
-
-    const pending = mockClient.messages.create({
-      model,
-      max_tokens: 16,
-      messages: [{ role: 'user', content: input }],
-    });
-    // The response (and its headers) arrive before the caller subscribes.
-    await new Promise(resolve => setTimeout(resolve, 150));
-    await expect(pending).rejects.toThrow();
+    await withCassette(
+      'anthropic-messages-create-truncated-body.json',
+      async () => {
+        const pending = mockClient.messages.create(requestBody);
+        // The response (and its headers) arrive before the caller subscribes.
+        await new Promise(resolve => setTimeout(resolve, 150));
+        await expect(pending).rejects.toThrow();
+      }
+    );
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
@@ -373,44 +406,31 @@ describe('Anthropic instrumentation', function () {
     {
       title: 'Bedrock',
       baseURL: 'https://bedrock-runtime.us-east-1.amazonaws.com',
+      cassette: 'anthropic-messages-create-bedrock.json',
       expected: 'aws.bedrock',
     },
     {
       title: 'regional Vertex',
       baseURL: 'https://us-east5-aiplatform.googleapis.com/v1',
+      cassette: 'anthropic-messages-create-vertex-regional.json',
       expected: 'gcp.vertex_ai',
     },
     {
       title: 'global Vertex',
       baseURL: 'https://aiplatform.googleapis.com/v1',
+      cassette: 'anthropic-messages-create-vertex-global.json',
       expected: 'gcp.vertex_ai',
     },
   ];
 
-  providerCases.forEach(({ title, baseURL, expected }) => {
+  providerCases.forEach(({ title, baseURL, cassette, expected }) => {
     it(`derives gen_ai.provider.name for ${title} endpoints`, async () => {
-      nock(new URL(baseURL).origin)
-        .post(/.*/)
-        .reply(200, {
-          id: 'msg_01234567890',
-          type: 'message',
-          role: 'assistant',
-          model,
-          content: [{ type: 'text', text: 'Hello telemetry' }],
-          stop_reason: 'end_turn',
-          usage: { input_tokens: 10, output_tokens: 3 },
-        });
-
       const client = new Anthropic({
         apiKey: 'testing',
         maxRetries: 0,
         baseURL,
       });
-      await client.messages.create({
-        model,
-        max_tokens: 16,
-        messages: [{ role: 'user', content: input }],
-      });
+      await withCassette(cassette, () => client.messages.create(requestBody));
 
       const spans = getTestSpans();
       expect(spans).toHaveLength(1);
@@ -418,16 +438,23 @@ describe('Anthropic instrumentation', function () {
     });
   });
 
-  it('instruments clients built from the SDK subpath export', () => {
+  it('instruments clients built from the SDK subpath export', async () => {
     // Bedrock and Vertex clients import SDK subpaths rather than the package
     // root, so the patch must not depend on the root being loaded. This runs
     // in a child process because this file has already imported the root.
-    const output = execFileSync(
-      process.execPath,
-      [path.join(__dirname, 'fixtures', 'subpath-import.js')],
-      { encoding: 'utf8' }
-    );
-    expect(JSON.parse(output)).toEqual({ wrapped: true });
+    await runTestFixture({
+      cwd: __dirname,
+      argv: ['fixtures/subpath-import.js'],
+      env: { NODE_NO_WARNINGS: '1' },
+      checkResult: err => {
+        expect(err).toBeFalsy();
+      },
+      checkCollector: (collector: TestCollector) => {
+        const spans = collector.sortedSpans;
+        expect(spans).toHaveLength(1);
+        expect(spans[0].name).toBe(`chat ${model}`);
+      },
+    });
   });
 
   it('instruments the SDK when imported as native ESM', async () => {
@@ -518,40 +545,23 @@ describe('Anthropic instrumentation', function () {
   });
 
   it('records an SSE error rather than the abort the SDK raises for it', async () => {
-    const sse = [
-      'event: message_start',
-      'data: {"type":"message_start","message":{"id":"msg_01234567890","type":"message","role":"assistant","model":"' +
-        model +
-        '","content":[],"stop_reason":null,"usage":{"input_tokens":10,"output_tokens":0}}}',
-      '',
-      'event: error',
-      'data: {"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}',
-      '',
-      '',
-    ].join('\n');
-    nock('https://api.anthropic.com').post('/v1/messages').reply(200, sse, {
-      'content-type': 'text/event-stream',
+    await withCassette('anthropic-messages-stream-sse-error.json', async () => {
+      const stream = await mockClient.messages.create({
+        ...requestBody,
+        stream: true,
+      });
+
+      // The SDK aborts its own controller before rejecting, which must not be
+      // mistaken for a user abort.
+      await expect(
+        (async () => {
+          for await (const event of stream) {
+            void event;
+          }
+        })()
+      ).rejects.toThrow();
     });
 
-    const stream = await mockClient.messages.create({
-      model,
-      max_tokens: 16,
-      messages: [{ role: 'user', content: input }],
-      stream: true,
-    });
-
-    let caught: Error | undefined;
-    try {
-      for await (const event of stream) {
-        void event;
-      }
-    } catch (err) {
-      caught = err as Error;
-    }
-
-    // The SDK aborts its own controller before rejecting, which must not be
-    // mistaken for a user abort.
-    expect(caught).toBeDefined();
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
@@ -648,21 +658,137 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
   });
 
-  it('records messages.create errors', async () => {
-    nock('https://api.anthropic.com')
-      .post('/v1/messages')
-      .reply(429, {
-        type: 'error',
-        error: { type: 'rate_limit_error', message: 'slow down' },
+  it('records an incomplete stream that fails messages.stream', async () => {
+    await withCassette(
+      'anthropic-messages-stream-incomplete.json',
+      async () => {
+        const stream = mockClient.messages.stream(requestBody);
+        // The body ends before `message_stop`, so the iterator completes
+        // normally but the helper cannot produce a final message.
+        await expect(stream.finalMessage()).rejects.toThrow();
+      }
+    );
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+  });
+
+  it('records HTTP errors from messages.stream', async () => {
+    await withCassette('anthropic-messages-stream-rate-limited.json', () =>
+      expect(
+        mockClient.messages.stream(requestBody).finalMessage()
+      ).rejects.toThrow('slow down')
+    );
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('RateLimitError');
+  });
+
+  it('records an SSE error from messages.stream', async () => {
+    await withCassette('anthropic-messages-stream-sse-error.json', () =>
+      expect(
+        mockClient.messages.stream(requestBody).finalMessage()
+      ).rejects.toThrow()
+    );
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).not.toBe('APIUserAbortError');
+  });
+
+  it('records an aborted messages.stream as a user abort', async () => {
+    await withCassette('anthropic-messages-stream-complete.json', async () => {
+      const stream = mockClient.messages.stream(requestBody);
+      stream.controller.abort();
+      await expect(stream.finalMessage()).rejects.toThrow();
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
+  });
+
+  it('creates no telemetry for a suppressed messages.stream', async () => {
+    await withCassette('anthropic-messages-stream.json', async () => {
+      const client = createRecordingClient();
+      const stream = context.with(suppressTracing(context.active()), () =>
+        client.messages.stream(requestBody)
+      );
+      const message = await stream.finalMessage();
+      expect(message.id).toMatch(/^msg_/);
+    });
+
+    expect(getTestSpans()).toHaveLength(0);
+  });
+
+  it('keeps concurrent helper calls on separate spans', async () => {
+    await withCassette(
+      'anthropic-messages-concurrent-streams.json',
+      async () => {
+        // The helper claims its span synchronously through module state, so
+        // overlapping calls must not pick up each other's.
+        const first = mockClient.messages.stream(requestBody);
+        const second = mockClient.messages.stream(requestBody);
+        const messages = await Promise.all([
+          first.finalMessage(),
+          second.finalMessage(),
+        ]);
+        expect(messages).toHaveLength(2);
+      }
+    );
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(2);
+    expect(spans.every(span => span.status.code !== SpanStatusCode.ERROR)).toBe(
+      true
+    );
+    expect(new Set(spans.map(span => span.spanContext().spanId)).size).toBe(2);
+  });
+
+  it('covers the body read when using withResponse', async () => {
+    const { data, response } = await withCassette(
+      'anthropic-messages-create.json',
+      () => createRecordingClient().messages.create(requestBody).withResponse()
+    );
+
+    // `withResponse()` parses and hands back the raw response together.
+    expect(data.id).toMatch(/^msg_/);
+    expect(response.status).toBe(200);
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+  });
+
+  it('ends the span when only one tee branch is consumed', async () => {
+    await withCassette('anthropic-messages-create-streaming.json', async () => {
+      const stream = await createRecordingClient().messages.create({
+        ...requestBody,
+        stream: true,
       });
 
-    await expect(
-      mockClient.messages.create({
-        model,
-        max_tokens: 64,
-        messages: [{ role: 'user', content: 'Hi' }],
-      })
-    ).rejects.toThrow('slow down');
+      const [left] = stream.tee();
+      for await (const event of left) {
+        void event;
+      }
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+  });
+
+  it('records messages.create errors', async () => {
+    await withCassette('anthropic-messages-create-rate-limited.json', () =>
+      expect(mockClient.messages.create(requestBody)).rejects.toThrow(
+        'slow down'
+      )
+    );
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);

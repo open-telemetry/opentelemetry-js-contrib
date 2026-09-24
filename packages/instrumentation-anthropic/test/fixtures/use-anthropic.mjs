@@ -7,7 +7,12 @@
 // build rather than its CommonJS one:
 //    node --experimental-loader=@opentelemetry/instrumentation/hook.mjs use-anthropic.mjs
 
-import { createServer } from 'node:http';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+// nock is CommonJS, so its named exports are not available to ESM.
+import nock from 'nock';
+
+const nockBack = nock.back;
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { AnthropicInstrumentation } from '../../build/src/index.js';
@@ -20,39 +25,38 @@ sdk.start();
 
 import Anthropic from '@anthropic-ai/sdk';
 
-// A local stand-in for the API, so the fixture makes a real request without
-// reaching the network.
-const server = createServer((req, res) => {
-  res.writeHead(200, { 'content-type': 'application/json' });
-  res.end(
-    JSON.stringify({
-      id: 'msg_01234567890',
-      type: 'message',
-      role: 'assistant',
-      model: 'claude-haiku-4-5-20251001',
-      content: [{ type: 'text', text: 'Hello telemetry' }],
-      stop_reason: 'end_turn',
-      usage: { input_tokens: 10, output_tokens: 3 },
-    })
-  );
-});
+// The same cassette the in-process tests replay.
+nockBack.fixtures = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'mock-responses'
+);
+nockBack.setMode('lockdown');
+// `lockdown` disables every outbound connection, including the fixture
+// collector's, so localhost is allowed back through.
+nock.enableNetConnect(host => /^(127\.0\.0\.1|localhost|\[::1\])/.test(host));
 
-await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const { port } = server.address();
+const { nockDone } = await nockBack('anthropic-messages-create.json');
+try {
+  const client = new Anthropic({ apiKey: 'testing', maxRetries: 0 });
+  const response = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 16,
+    messages: [
+      {
+        role: 'user',
+        content: 'Reply with exactly two words: Hello telemetry',
+      },
+    ],
+  });
+  process.stdout.write(JSON.stringify({ id: response.id }) + '\n');
+} finally {
+  nockDone();
+}
 
-const client = new Anthropic({
-  apiKey: 'testing',
-  maxRetries: 0,
-  baseURL: `http://127.0.0.1:${port}`,
-});
+// Let the span reach the fixture collector: the cassette is finished with, and
+// lockdown otherwise blocks the exporter too.
+nock.cleanAll();
+nock.enableNetConnect();
 
-const response = await client.messages.create({
-  model: 'claude-haiku-4-5-20251001',
-  max_tokens: 16,
-  messages: [{ role: 'user', content: 'Reply with exactly two words' }],
-});
-
-process.stdout.write(JSON.stringify({ id: response.id }) + '\n');
-
-server.close();
 await sdk.shutdown();

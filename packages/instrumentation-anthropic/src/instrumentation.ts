@@ -16,6 +16,47 @@ import type { AnthropicInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
+/**
+ * Depth of `messages.stream()` calls on the stack. The helper invokes
+ * `messages.create()` synchronously, so a non-zero depth means the span being
+ * started belongs to that helper.
+ */
+let inMessagesStreamHelper = 0;
+
+/** The state of the span the helper just started, handed to `patchedStream`. */
+let pendingHelperState: SpanState | undefined;
+
+/** Read and clear it. A function, so its declared return type survives. */
+function takePendingHelperState(): SpanState | undefined {
+  const state = pendingHelperState;
+  pendingHelperState = undefined;
+  return state;
+}
+
+/**
+ * A `MessageStream`. Its outcome is observed through `_emit`, never through
+ * `done()`/`finalMessage()` or an `error` listener: the SDK reports otherwise
+ * unhandled stream failures with `Promise.reject()` only while no terminal
+ * promise has been created and no listener is registered for the event, so
+ * either would silence the caller's own failures.
+ *
+ * `receivedMessages` carries what the helper accumulated; it being empty at
+ * `end` is the condition on which `finalMessage()` rejects.
+ */
+interface AnthropicMessageStream {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  _emit(event: string, ...args: any[]): void;
+  receivedMessages: unknown[];
+}
+
+function isMessageStream(value: unknown): value is AnthropicMessageStream {
+  const candidate = value as AnthropicMessageStream;
+  return (
+    typeof candidate?._emit === 'function' &&
+    Array.isArray(candidate?.receivedMessages)
+  );
+}
+
 /** The shared `resources/messages/messages` module, whichever entry point loaded it. */
 interface MessagesModule {
   Messages: { prototype: Record<string, unknown> };
@@ -37,6 +78,13 @@ interface SpanState {
    * the controller as ordinary cleanup, which must not read as a cancellation.
    */
   closing: boolean;
+  /**
+   * Set when the call was made by `messages.stream()`. The helper keeps
+   * consuming after the raw stream ends — accumulating events into a final
+   * message — and can fail there, so its terminal promise decides the outcome
+   * instead of the iterator.
+   */
+  helperOwned: boolean;
 }
 
 interface AnthropicStream extends AsyncIterable<unknown> {
@@ -131,10 +179,16 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
               'create',
               this._getPatchedMessagesCreate()
             );
+            this._wrap(
+              moduleExports.Messages.prototype,
+              'stream',
+              this._getPatchedMessagesStream()
+            );
             return moduleExports;
           },
           (moduleExports: MessagesModule) => {
             this._unwrap(moduleExports.Messages.prototype, 'create');
+            this._unwrap(moduleExports.Messages.prototype, 'stream');
           }
         )
     );
@@ -192,7 +246,11 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           ended: false,
           awaitingNext: false,
           closing: false,
+          helperOwned: inMessagesStreamHelper > 0,
         };
+        if (state.helperOwned) {
+          pendingHelperState = state;
+        }
         const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
@@ -223,6 +281,106 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         return result;
       };
     };
+  }
+
+  /**
+   * `messages.stream()` returns a helper that keeps working after the raw
+   * stream is exhausted: it accumulates events into a final message, and
+   * rejects if the response ended before `message_stop`. The iterator sees a
+   * clean completion in that case, so the helper's own terminal promise has to
+   * decide the span's outcome.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private _getPatchedMessagesStream(): any {
+    const instrumentation = this;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (original: any) => {
+      return function patchedStream(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this: any,
+        ...args: unknown[]
+      ) {
+        if (
+          !instrumentation.isEnabled() ||
+          isTracingSuppressed(context.active())
+        ) {
+          return original.apply(this, args);
+        }
+
+        takePendingHelperState();
+        inMessagesStreamHelper++;
+        let messageStream: unknown;
+        try {
+          // The helper calls `messages.create()` synchronously, so the span is
+          // started before this returns.
+          messageStream = original.apply(this, args);
+        } finally {
+          inMessagesStreamHelper--;
+        }
+
+        const state = takePendingHelperState();
+        if (state && isMessageStream(messageStream)) {
+          instrumentation._observeMessageStream(messageStream, state);
+        } else if (state) {
+          // The helper did not hand back something we can observe; fall back to
+          // the iterator deciding, as it does for a raw stream.
+          state.helperOwned = false;
+        }
+
+        return messageStream;
+      };
+    };
+  }
+
+  /**
+   * Watch the helper's events without taking part in them.
+   *
+   * Registering a listener or awaiting `done()`/`finalMessage()` would tell the
+   * SDK that someone is handling failures, and it would stop re-raising them as
+   * unhandled rejections — so a caller that only reads stream events would
+   * lose its errors as soon as instrumentation was enabled. Wrapping `_emit`
+   * observes the same events while leaving the listener count and the terminal
+   * promises untouched.
+   */
+  private _observeMessageStream(
+    messageStream: AnthropicMessageStream,
+    state: SpanState
+  ): void {
+    const instrumentation = this;
+    let failure: unknown;
+    let failed = false;
+
+    this._wrap(messageStream, '_emit', original => {
+      return function patchedEmit(
+        this: unknown,
+        event: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ...args: any[]
+      ) {
+        if (event === 'error' || event === 'abort') {
+          failure = args[0];
+          failed = true;
+        }
+        const result = original.call(this, event, ...args);
+        if (event === 'end') {
+          if (failed) {
+            instrumentation._endSpanWithError(state, failure);
+          } else if (messageStream.receivedMessages.length === 0) {
+            // The stream ended before `message_stop`, so the helper cannot
+            // produce a final message and `finalMessage()` will reject.
+            instrumentation._endSpanWithError(
+              state,
+              new Error(
+                'stream ended without producing a Message with role=assistant'
+              )
+            );
+          } else {
+            instrumentation._endSpan(state);
+          }
+        }
+        return result;
+      };
+    });
   }
 
   /**
@@ -301,7 +459,12 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // leave the span open forever, since it is only ended from the iterator.
     const signal = stream.controller?.signal;
     if (signal) {
-      if (signal.aborted && !state.awaitingNext && !state.closing) {
+      if (
+        signal.aborted &&
+        !state.awaitingNext &&
+        !state.closing &&
+        !state.helperOwned
+      ) {
         this._endSpanWithAbort(state);
         return;
       }
@@ -314,7 +477,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // while `next()` is outstanding is left to the iterator. An abort
           // while the iterator is suspended is the caller cancelling, and may
           // be the last thing that ever happens to this stream.
-          if (!state.awaitingNext && !state.closing) {
+          if (!state.awaitingNext && !state.closing && !state.helperOwned) {
             this._endSpanWithAbort(state);
           }
         },
@@ -347,7 +510,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         // and that call can still deliver a buffered event. The abort listener
         // has already fired by now, so nothing else would ever end the span if
         // the caller stops reading after this event.
-        if (signal?.aborted) {
+        if (signal?.aborted && !state.helperOwned) {
           this._endSpanWithAbort(state);
         }
         yield next.value;
@@ -355,7 +518,11 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       // `Stream.fromSSEResponse` swallows abort errors and simply stops
       // yielding, so an aborted generation is indistinguishable from a
       // completed one without checking the signal.
-      if (signal?.aborted) {
+      // A helper stream is not finished when its events run out: the helper
+      // still has to turn them into a final message, and can fail doing so.
+      if (state.helperOwned) {
+        // `MessageStream.done()` reports the outcome.
+      } else if (signal?.aborted) {
         this._endSpanWithAbort(state);
       } else {
         this._endSpan(state);
@@ -379,7 +546,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         } finally {
           state.closing = false;
         }
-        if (abortedByCaller) {
+        if (state.helperOwned) {
+          // `MessageStream.done()` reports the outcome.
+        } else if (abortedByCaller) {
           this._endSpanWithAbort(state);
         } else {
           this._endSpan(state);

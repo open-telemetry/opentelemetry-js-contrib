@@ -1,0 +1,38 @@
+[
+  {
+    "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+    "method": "POST",
+    "path": "/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 16,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Reply with exactly two words: Hello telemetry"
+        }
+      ]
+    },
+    "status": 200,
+    "response": {
+      "id": "msg_01234567890",
+      "type": "message",
+      "role": "assistant",
+      "model": "claude-haiku-4-5-20251001",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello telemetry"
+        }
+      ],
+      "stop_reason": "end_turn",
+      "usage": {
+        "input_tokens": 10,
+        "output_tokens": 3
+      }
+    },
+    "rawHeaders": {
+      "content-type": "application/json"
+    }
+  }
+]

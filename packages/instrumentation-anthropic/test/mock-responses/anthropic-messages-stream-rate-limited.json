@@ -1,0 +1,29 @@
+[
+  {
+    "scope": "https://api.anthropic.com:443",
+    "method": "POST",
+    "path": "/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 16,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Reply with exactly two words: Hello telemetry"
+        }
+      ],
+      "stream": true
+    },
+    "status": 429,
+    "response": {
+      "type": "error",
+      "error": {
+        "type": "rate_limit_error",
+        "message": "slow down"
+      }
+    },
+    "rawHeaders": {
+      "content-type": "application/json"
+    }
+  }
+]
