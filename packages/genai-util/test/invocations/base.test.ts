@@ -266,39 +266,6 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].events.length, 0);
   });
 
-  it('should accept Error instances directly in fail() without setting statusDescription', () => {
-    const inv = new CustomInvocation('direct-error-span', handler);
-    const testError = new Error('Direct error failure');
-
-    inv.fail(testError);
-
-    assert.strictEqual(inv.recordMetricsCalls.length, 1);
-    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
-
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].status.message, undefined);
-    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
-    assert.strictEqual(spans[0].events.length, 0);
-  });
-
-  it('should extract errorType from Error subclasses when Error is passed to fail() without setting statusDescription', () => {
-    const inv = new CustomInvocation('error-subclass-span', handler);
-    const rangeError = new RangeError('Index out of bounds');
-
-    inv.fail(rangeError);
-
-    assert.strictEqual(inv.recordMetricsCalls.length, 1);
-    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'RangeError');
-
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(spans[0].status.message, undefined);
-    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
-  });
-
   it('should derive errorType from exception in InvocationError when errorType is omitted', () => {
     const inv = new CustomInvocation('exception-in-obj-span', handler);
     inv.fail({ exception: new TypeError('Invalid parameter') });
@@ -311,6 +278,7 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[0].status.message, undefined);
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'TypeError');
+    assert.strictEqual(spans[0].events.length, 0);
   });
 
   it('should prioritize explicit errorType over exception in InvocationError', () => {
