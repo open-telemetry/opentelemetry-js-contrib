@@ -254,10 +254,6 @@ pkg:instrumentation-winston:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-winston/**
-pkg:plugin-react-load:
-  - changed-files:
-      - any-glob-to-any-file:
-          - packages/plugin-react-load/**
 pkg:propagator-aws-xray:
   - changed-files:
       - any-glob-to-any-file:
