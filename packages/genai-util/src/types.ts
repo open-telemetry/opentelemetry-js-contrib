@@ -424,7 +424,7 @@ export interface GenAIInstrumentationConfig {
  *
  * @experimental This type is experimental and subject to change.
  */
-export type InvocationError = {
+export interface InvocationError {
   /**
    * The underlying exception that caused the invocation to fail, if available.
    *
@@ -452,4 +452,4 @@ export type InvocationError = {
    * If omitted, the span status description is left unset to prevent leaking sensitive or high-cardinality error messages.
    */
   statusDescription?: string;
-};
+}

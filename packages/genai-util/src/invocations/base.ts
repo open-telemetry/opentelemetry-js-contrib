@@ -114,7 +114,9 @@ export interface BaseInvocationOptions {
  *     });
  *   } else {
  *     // Non-API errors (e.g., local networking bugs or code typos)
- *     invocation.fail(error);
+ *     invocation.fail({
+ *       exception: error instanceof Error ? error : undefined,
+ *     });
  *   }
  *   throw error;
  * }
@@ -266,15 +268,12 @@ export abstract class BaseInvocation {
    * never thrown at the caller, so calling this from a `catch` block cannot replace the
    * application's own error; the span is ended either way.
    *
-   * @param error Error details describing the failure (either an `InvocationError` with
-   *   predictable, non-sensitive status description and/or error type),
-   *   or an `Error` instance.
+   * @param error Error details describing the failure (an `InvocationError` with
+   *   predictable, non-sensitive status description and/or error type).
    * @param endTime End time of the invocation, or `undefined` to use the current time.
    */
-  public fail(error: InvocationError | Error, endTime?: TimeInput): void {
-    const invocationError: InvocationError =
-      error instanceof Error ? { exception: error } : error;
-    this._end(endTime, invocationError);
+  public fail(error: InvocationError, endTime?: TimeInput): void {
+    this._end(endTime, error);
   }
 
   /**
