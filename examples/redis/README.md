@@ -1,46 +1,25 @@
 # Overview
 
-OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+This is a simple example that demonstrates tracing of the `redis` package.
 
-This is a simple example that demonstrates tracing calls to a Redis cache via an Express API. The example
-shows key aspects of tracing such as
+- [lib/server.cjs](./lib/server.cjs) is an Express-based HTTP server that exposes Redis commands.
+- [lib/client.cjs](./lib/client.cjs) calls the HTTP service to *set* a value in Redis, and then *get* it back.
+- [telemetry.mjs](./telemetry.mjs) sets up an OpenTelemetry SDK with instrumentations for modules used in this example.
 
-- Root Span (on Client)
-- Child Span (on Client)
-- Child Span from a Remote Parent (on Server)
-- SpanContext Propagation (from Client to Server)
-- Span Attributes
+## Running the example
 
-## Installation
+Install dependencies:
 
 ```sh
-cd examples/redis
+git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
+cd opentelemetry-js-contrib/examples/redis
 npm install
 ```
 
-Start Jaeger in Docker for receiving tracing data (see [the Jaeger docs](https://www.jaegertracing.io/docs/2.0/getting-started/#in-docker) for more details about running Jaeger):
-
-```bash
-docker run --rm --name jaeger \
-  -p 5778:5778 \
-  -p 16686:16686 \
-  -p 4317:4317 \
-  -p 4318:4318 \
-  -p 9411:9411 \
-  jaegertracing/jaeger:2.0.0 \
-  --set receivers.otlp.protocols.http.endpoint=0.0.0.0:4318 \
-  --set receivers.otlp.protocols.grpc.endpoint=0.0.0.0:4317
-```
-
-(Note: Any backend for visualizing observability data will do, as long as it supports ingesting OTLP. This example just happens to use Jaeger.)
-
-
-## Run the Application
-
-Start redis via docker:
+Start Redis; and a [Jaeger](https://www.jaegertracing.io/) server for collecting and visually tracing data. (Note: Any backend for visualizing observability data will do, as long as it supports ingesting OTLP. This example just happens to use Jaeger.)
 
 ```sh
-npm run docker:start
+npm run docker:up   # see docker-compose.yml
 ```
 
 Run the server:
@@ -55,15 +34,17 @@ Run the client:
 npm run client
 ```
 
-Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
+Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-redis-client"), click "Find Traces", then click on a trace to view it.
 
-<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.jpg?raw=true"/></p>
+<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.png?raw=true"/></p>
+
+
+## Clean up
 
 Cleanup docker when done:
 
 ```sh
-# from this directory
-npm run docker:stop
+npm run docker:down
 ```
 
 ## Useful links

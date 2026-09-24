@@ -14,6 +14,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
+import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 
 // Uncomment for OTel SDK diagnostic information.
 // import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
@@ -38,7 +39,9 @@ registerInstrumentations({
   instrumentations: [
     new HttpInstrumentation(),
     new ExpressInstrumentation(),
-    new RedisInstrumentation()
+    new RedisInstrumentation(),
+    // Node.js fetch() is implemented via the `undici` module.
+    new UndiciInstrumentation(),
   ],
   tracerProvider,
 });
