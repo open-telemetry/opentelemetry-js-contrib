@@ -215,9 +215,6 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
-      return;
-    }
     this._operationDurationHistogram.record(
       durationSeconds,
       attributes,
@@ -320,9 +317,6 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
-      return;
-    }
     this._executeToolDurationHistogram.record(
       durationSeconds,
       attributes,

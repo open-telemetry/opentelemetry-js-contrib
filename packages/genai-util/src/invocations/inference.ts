@@ -58,9 +58,10 @@ function buildInitialAttributes(
   contentCaptureMode: ContentCaptureMode
 ): Attributes {
   const attrs: Attributes = {
+    ...options.attributes,
+    ...getRequestOptionsAttributes(options.requestOptions),
     [ATTR_GEN_AI_PROVIDER_NAME]: options.providerName,
     [ATTR_GEN_AI_OPERATION_NAME]: operationName,
-    ...options.attributes,
   };
 
   if (options.requestModel) {
@@ -77,8 +78,6 @@ function buildInitialAttributes(
       attrs[ATTR_SERVER_PORT] = options.serverPort;
     }
   }
-
-  Object.assign(attrs, getRequestOptionsAttributes(options.requestOptions));
 
   if (contentCaptureMode === 'span_only') {
     if (options.systemInstructions) {
