@@ -17,7 +17,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm run test -- --watch-extensions ts --watch",
-    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha --config .mocharc.js --require '@opentelemetry/contrib-test-utils'",
     "test-all-versions": "tav",
     "test:collector": "node test/collector/run.cjs",
     "version:update": "node ../../scripts/version-update.js",

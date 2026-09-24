@@ -19,6 +19,11 @@ npm install --save @opentelemetry/instrumentation-langchain
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions `>=1.0.0 <2`
 - LangChain 1.x requires Node.js 20 or later.
 
+The package test command selects SDK suites before importing them. On Node.js
+18 it runs only SDK-independent configuration and module-registration tests and
+reports that SDK suites are skipped. On Node.js 20+ it runs the full suite,
+including real CommonJS and ESM loading.
+
 ## Usage
 
 ```js

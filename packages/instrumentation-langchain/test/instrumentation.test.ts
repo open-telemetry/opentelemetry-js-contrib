@@ -9,7 +9,9 @@ import { diag, DiagLogLevel } from '@opentelemetry/api';
 import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
-import { normalize } from 'node:path';
+import { join, normalize } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { runInNewContext } from 'node:vm';
 
 describe('LangChainInstrumentation', () => {
   let instrumentation: LangChainInstrumentation;
@@ -27,6 +29,40 @@ describe('LangChainInstrumentation', () => {
     diag.disable();
     if (previous === undefined) delete process.env[key];
     else process.env[key] = previous;
+  });
+
+  it('selects SDK suites before loading tests only on supported Node versions', () => {
+    const source = readFileSync(join(__dirname, '..', '.mocharc.js'), 'utf8');
+    for (const version of [
+      '18.19.0',
+      '18.20.8',
+      '20.6.0',
+      '20.20.2',
+      '24.21.0',
+    ]) {
+      const result = { exports: { spec: '', require: [], timeout: 0 } };
+      const log = sinon.spy();
+      const rootConfig = {
+        require: ['ts-node/register/transpile-only'],
+        timeout: 4000,
+      };
+      runInNewContext(source, {
+        module: result,
+        process: { versions: { node: version } },
+        console: { log },
+        require: (name: string) => {
+          expect(name).toBe('../../.mocharc.json');
+          return rootConfig;
+        },
+      });
+      const supported = Number(version.split('.')[0]) >= 20;
+      expect(result.exports.spec).toBe(
+        supported ? 'test/**/*.test.ts' : 'test/instrumentation.test.ts'
+      );
+      expect(result.exports.require).toBe(rootConfig.require);
+      expect(result.exports.timeout).toBe(rootConfig.timeout);
+      expect(log.called).toBe(!supported);
+    }
   });
 
   it('patches every loaded module copy without touching streaming methods', () => {
