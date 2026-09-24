@@ -3,7 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { trace, SpanKind, Attributes, context, propagation } from '@opentelemetry/api';
+import {
+  trace,
+  SpanKind,
+  Attributes,
+  context,
+  propagation,
+} from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import {
   Sampler,
@@ -17,9 +23,16 @@ import {
   ATTR_SERVICE_NAME,
   ATTR_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
-import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 
@@ -33,10 +46,17 @@ export const setupTracing = (serviceName: string) => {
     sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
   });
   trace.setGlobalTracerProvider(tracerProvider);
-  context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
-  propagation.setGlobalPropagator(new CompositePropagator({
-    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
-  }));
+  context.setGlobalContextManager(
+    new AsyncLocalStorageContextManager().enable()
+  );
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [
+        new W3CTraceContextPropagator(),
+        new W3CBaggagePropagator(),
+      ],
+    })
+  );
 
   registerInstrumentations({
     tracerProvider,

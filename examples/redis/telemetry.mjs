@@ -6,8 +6,15 @@
 import { context, propagation, trace } from '@opentelemetry/api';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
-import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { BatchSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -31,9 +38,11 @@ const tracerProvider = new TracerProvider({
 });
 trace.setGlobalTracerProvider(tracerProvider);
 context.setGlobalContextManager(new AsyncLocalStorageContextManager().enable());
-propagation.setGlobalPropagator(new CompositePropagator({
-  propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
-}));
+propagation.setGlobalPropagator(
+  new CompositePropagator({
+    propagators: [new W3CTraceContextPropagator(), new W3CBaggagePropagator()],
+  })
+);
 
 registerInstrumentations({
   instrumentations: [

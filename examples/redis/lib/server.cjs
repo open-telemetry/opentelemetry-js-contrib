@@ -12,7 +12,7 @@ const app = express();
 // Setup routes *asynchronously* to allow Redis client to connect first.
 async function setupRoutes() {
   const redisClient = await createClient({ url: 'redis://localhost:6379' })
-    .on("error", (err) => console.log("Redis Client Error", err))
+    .on('error', err => console.log('Redis Client Error', err))
     .connect();
 
   /**

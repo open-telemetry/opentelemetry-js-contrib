@@ -27,7 +27,7 @@ async function setThenGet() {
 // To group the two `fetch()` calls together into one trace, we can manually
 // create a parent span.
 const tracer = trace.getTracer('example-redis-client');
-tracer.startActiveSpan('setThenGet', async (span) => {
+tracer.startActiveSpan('setThenGet', async span => {
   try {
     await setThenGet();
   } catch (err) {
@@ -40,4 +40,3 @@ tracer.startActiveSpan('setThenGet', async (span) => {
     console.log(`  http://localhost:16686/trace/${span.spanContext().traceId}`);
   }
 });
-
