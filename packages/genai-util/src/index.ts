@@ -11,6 +11,7 @@
  * If your instrumentation requires an unexported function, type, or class from this library:
  * 1. Add the specific named export to this file in your instrumentation PR.
  * 2. Ensure the API is generic across GenAI libraries, not tailored to a single SDK.
+ * 3. Remove the temporary "packages/genai-util" entry override from the root `knip.jsonc` file.
  *
  * @example
  * ```typescript

@@ -117,6 +117,11 @@ with their original span and content setting. Disabling instrumentation does not
 abandon in-flight spans. `setMeterProvider` remains supported by the instrumentation
 base, but workflows do not create metric instruments or record client metrics.
 
+This workflow-only phase intentionally does not depend on `@opentelemetry/genai-util`.
+Adoption of its concrete workflow API is deferred to a follow-up once that API is
+ready. Public GenAI utility exports and system-instruction handling are outside
+the scope of this phase.
+
 Failed operations record `error.type` (the error name, or `_OTHER`) and ERROR
 status, but never the original error message, stack or exception event, even
 when content capture is enabled. SDK errors and returned objects/Promises are
