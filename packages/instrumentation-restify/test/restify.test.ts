@@ -75,6 +75,7 @@ const useHandler: restify.RequestHandler = (req, res, next) => {
 };
 const getHandler: restify.RequestHandler = (req, res, next) => {
   res.send({ route: req?.params?.param });
+  return next();
 };
 const throwError: restify.RequestHandler = (req, res, next) => {
   throw new AppError('NOK');
@@ -83,8 +84,11 @@ const returnError: restify.RequestHandler = (req, res, next) => {
   next(new AppError('NOK'));
 };
 
-const createServer = async (setupRoutes?: Function) => {
-  const server = restify.createServer();
+const createServer = async (
+  setupRoutes?: Function,
+  options?: restify.ServerOptions
+) => {
+  const server = restify.createServer(options);
 
   if (typeof setupRoutes === 'function') {
     setupRoutes(server);
@@ -404,6 +408,89 @@ describe('Restify Instrumentation', () => {
           assert.strictEqual(span.attributes['restify.name'], 'asyncHandler');
           assertIsVersion(span.attributes['restify.version']);
         }
+      } finally {
+        testLocalServer.close();
+      }
+    });
+
+    it('should keep span open until next is called for callback-style async handlers', async () => {
+      const { promise: work, resolve: resolveWork } = defer();
+      const { promise: started, resolve: resolveStarted } = defer();
+      let status = 'uninit';
+
+      const callbackHandler: restify.RequestHandler = (req, res, next) => {
+        status = 'started';
+        resolveStarted();
+
+        work.then(() => {
+          status = 'done';
+          res.send({ route: req?.params?.param });
+          next();
+        });
+      };
+
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.get('/route/:param', callbackHandler);
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        const requestPromise = httpRequest
+          .get(`http://localhost:${testLocalPort}/route/hello`)
+          .then(res => {
+            assert.strictEqual(res, '{"route":"hello"}');
+          });
+
+        assert.strictEqual(status, 'uninit');
+        await started;
+
+        assert.strictEqual(status, 'started');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+        resolveWork();
+        await requestPromise;
+
+        assert.strictEqual(status, 'done');
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
+
+        const span = memoryExporter.getFinishedSpans()[0];
+        assert.notStrictEqual(span, undefined);
+        assert.strictEqual(span.attributes['http.route'], '/route/:param');
+        assert.strictEqual(span.attributes['restify.method'], 'get');
+        assert.strictEqual(span.attributes['restify.type'], 'request_handler');
+        assert.strictEqual(span.attributes['restify.name'], 'callbackHandler');
+        assertIsVersion(span.attributes['restify.version']);
+      } finally {
+        resolveWork();
+        testLocalServer.close();
+      }
+    });
+
+    it('should end span when async next.ifError is called', async () => {
+      if (!semver.satisfies(LIB_VERSION, '>=5 <7')) {
+        return;
+      }
+
+      const serverOptions = {
+        handleUncaughtExceptions: true,
+      } as restify.ServerOptions & {
+        handleUncaughtExceptions: boolean;
+      };
+
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.get('/async-error', (req, res, next) => {
+          setTimeout(() => {
+            next.ifError(new Error('async error'));
+          }, 10);
+        });
+      }, serverOptions);
+
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        await httpRequest.get(`http://localhost:${testLocalPort}/async-error`);
+
+        assert.strictEqual(memoryExporter.getFinishedSpans().length, 1);
       } finally {
         testLocalServer.close();
       }
