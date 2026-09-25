@@ -3,8 +3,6 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
 
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
-
 ## Installation
 
 ```bash
@@ -14,27 +12,31 @@ npm install --save @opentelemetry/auto-instrumentations-web
 ## Usage
 
 ```javascript
-const { WebTracerProvider } = require('@opentelemetry/sdk-trace-web');
-const { getWebAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-web');
-const { CollectorTraceExporter } = require('@opentelemetry/exporter-collector');
-const { SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-const { ZoneContextManager } = require('@opentelemetry/context-zone');
-const { B3Propagator } = require('@opentelemetry/propagator-b3');
+import { context, propagation, trace } from '@opentelemetry/api';
+import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
+import { BatchSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ZoneContextManager } from '@opentelemetry/context-zone';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 
-const exporter = new CollectorTraceExporter({
-  serviceName: 'auto-instrumentations-web',
-});
-
-const provider = new WebTracerProvider({
+const tracerProvider = new TracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor({ exporter }),
+    new BatchSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
-provider.register({
-  contextManager: new ZoneContextManager(),
-  propagator: new B3Propagator(),
-});
+trace.setGlobalTracerProvider(tracerProvider);
+
+context.setGlobalContextManager(new ZoneContextManager().enable());
+
+const propagator = new CompositePropagator({
+    propagators: [
+      new W3CTraceContextPropagator(),
+      new W3CBaggagePropagator(),
+    ],
+  })
+);
+propagation.setGlobalPropagator(propagator);
 
 registerInstrumentations({
   instrumentations: [
@@ -63,7 +65,7 @@ registerInstrumentations({
 
 ## License
 
-APACHE 2.0 - See [LICENSE][license-url] for more information.
+Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
