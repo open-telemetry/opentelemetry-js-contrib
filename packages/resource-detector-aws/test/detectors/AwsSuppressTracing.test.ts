@@ -19,6 +19,13 @@ describe('[Integration] Internal tracing', () => {
     // For ECS detector we setup a mock URL to fetch metadata
     process.env.ECS_CONTAINER_METADATA_URI_V4 =
       'http://169.254.169.254/metadata';
+    process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs24.x';
+    process.env.AWS_REGION = 'us-east-1';
+    process.env.AWS_LAMBDA_FUNCTION_NAME = 'name';
+    process.env.AWS_LAMBDA_FUNCTION_VERSION = '1';
+    process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE = '128';
+    process.env.AWS_LAMBDA_METADATA_API = '169.254.100.1:9001';
+    process.env.AWS_LAMBDA_METADATA_TOKEN = 'test-token';
 
     const memoryExporter = new InMemorySpanExporter();
     const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
@@ -43,7 +50,7 @@ describe('[Integration] Internal tracing', () => {
       awsEc2Detector,
       awsEcsDetector,
       awsEksDetector,
-      awsLambdaDetector,
+      AwsLambdaDetector,
     } = require('../../build/src');
 
     // NOTE: the require process makes use of the fs API so spans are being exported.
@@ -56,7 +63,9 @@ describe('[Integration] Internal tracing', () => {
       awsEc2Detector,
       awsEcsDetector,
       awsEksDetector,
-      awsLambdaDetector,
+      // Opt into the availability-zone fetch so the Lambda metadata HTTP path is
+      // exercised here and asserted to not emit internal spans.
+      new AwsLambdaDetector({ fetchAvailabilityZone: true }),
     ] as ResourceDetector[];
 
     for (const d of detectors) {
@@ -76,5 +85,12 @@ describe('[Integration] Internal tracing', () => {
 
     await sdk.shutdown();
     delete process.env.ECS_CONTAINER_METADATA_URI_V4;
+    delete process.env.AWS_EXECUTION_ENV;
+    delete process.env.AWS_REGION;
+    delete process.env.AWS_LAMBDA_FUNCTION_NAME;
+    delete process.env.AWS_LAMBDA_FUNCTION_VERSION;
+    delete process.env.AWS_LAMBDA_FUNCTION_MEMORY_SIZE;
+    delete process.env.AWS_LAMBDA_METADATA_API;
+    delete process.env.AWS_LAMBDA_METADATA_TOKEN;
   }).timeout(10000);
 });
