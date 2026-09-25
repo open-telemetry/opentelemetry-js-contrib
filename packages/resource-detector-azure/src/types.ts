@@ -5,6 +5,7 @@
 
 export const AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE =
   'azure.app.service.stamp';
+export const AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE = 'azure.resource_group.name';
 export const CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE = 'cloud.resource_id';
 export const REGION_NAME = 'REGION_NAME';
 export const WEBSITE_HOME_STAMPNAME = 'WEBSITE_HOME_STAMPNAME';
