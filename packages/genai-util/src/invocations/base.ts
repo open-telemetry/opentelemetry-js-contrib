@@ -24,6 +24,7 @@ import {
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { TelemetryHandler } from '../handler';
 import { getErrorType } from '../utils';
+import { InvocationError } from '../types';
 
 /**
  * Options shared by all GenAI invocations.
@@ -106,7 +107,17 @@ export interface BaseInvocationOptions {
  *   invocation.stop();
  *   return response;
  * } catch (error) {
- *   invocation.fail(error);
+ *   if (error instanceof OpenAI.APIError) {
+ *     invocation.fail({
+ *       errorType: error.type,
+ *       statusDescription: getLowCardinalityStatus(error),
+ *     });
+ *   } else {
+ *     // Non-API errors (e.g., local networking bugs or code typos)
+ *     invocation.fail({
+ *       exception: error instanceof Error ? error : undefined,
+ *     });
+ *   }
  *   throw error;
  * }
  * ```
@@ -256,9 +267,13 @@ export abstract class BaseInvocation {
    * invocation's telemetry are logged through the handler's diagnostic logger and are
    * never thrown at the caller, so calling this from a `catch` block cannot replace the
    * application's own error; the span is ended either way.
+   *
+   * @param error Error details describing the failure (an `InvocationError` with
+   *   predictable, non-sensitive status description and/or error type).
+   * @param endTime End time of the invocation, or `undefined` to use the current time.
    */
-  public fail(error: unknown, endTime?: TimeInput): void {
-    this._end(endTime, { error });
+  public fail(error: InvocationError, endTime?: TimeInput): void {
+    this._end(endTime, error);
   }
 
   /**
@@ -270,11 +285,9 @@ export abstract class BaseInvocation {
    * {@link fail} from its own error path.
    *
    * @param endTime End time of the invocation, or `undefined` to use the current time.
-   * @param failure The failure to record, or `undefined` for a successful invocation.
-   *   Boxed because `error` is `unknown` and may legitimately be `undefined`, so a bare
-   *   optional parameter could not distinguish success from a failure with no value.
+   * @param error The error to record, or `undefined` for a successful invocation.
    */
-  private _end(endTime?: TimeInput, failure?: { error: unknown }): void {
+  private _end(endTime?: TimeInput, error?: InvocationError): void {
     if (this._isEnded) {
       return;
     }
@@ -292,27 +305,25 @@ export abstract class BaseInvocation {
       );
       let errorType: string | undefined;
 
-      if (failure) {
+      if (error) {
         // The span's error state is recorded before the subclass hooks run so that a hook
         // that throws cannot leave a failed invocation reported as a span without an error
         // status.
-        errorType = getErrorType(failure.error);
-        const errorMessage =
-          failure.error instanceof Error
-            ? failure.error.message
-            : typeof failure.error === 'string'
-              ? failure.error
-              : String(failure.error);
+        const statusDescription: string | undefined = error.statusDescription;
+        errorType = error.errorType ?? getErrorType(error.exception);
 
         this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-        this._span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: errorMessage,
-        });
+        this._span.setStatus(
+          statusDescription !== undefined
+            ? {
+                code: SpanStatusCode.ERROR,
+                message: statusDescription,
+              }
+            : { code: SpanStatusCode.ERROR }
+        );
       }
 
       this._recordMetrics(durationSec, errorType);
-
       this._emitContentEvent(endHr);
     } catch (err) {
       // Reached when a subclass hook or error introspection throws. Telemetry is
