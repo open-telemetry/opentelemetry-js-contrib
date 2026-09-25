@@ -11,6 +11,7 @@ import {
 } from '../../src';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
@@ -20,12 +21,15 @@ import {
   ATTR_SERVICE_INSTANCE_ID,
 } from '../../src/semconv';
 import { detectResources } from '@opentelemetry/resources';
-import { AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE } from '../../src/types';
+import {
+  AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE,
+  AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE,
+} from '../../src/types';
 
 describe('AzureFunctionsDetector', () => {
   let originalEnv: NodeJS.ProcessEnv;
   beforeEach(() => {
-    originalEnv = process.env;
+    originalEnv = { ...process.env };
   });
 
   afterEach(() => {
@@ -51,6 +55,11 @@ describe('AzureFunctionsDetector', () => {
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-service');
+    assert.strictEqual(attributes[ATTR_CLOUD_ACCOUNT_ID], 'test-owner-name');
+    assert.strictEqual(
+      attributes[AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE],
+      'test-resource-group'
+    );
     assert.strictEqual(attributes[ATTR_CLOUD_PROVIDER], 'azure');
     assert.strictEqual(attributes[ATTR_CLOUD_PLATFORM], 'azure.functions');
     assert.strictEqual(attributes[ATTR_CLOUD_REGION], 'test-region');
@@ -91,8 +100,44 @@ describe('AzureFunctionsDetector', () => {
     assert.ok(resource);
     const attributes = resource.attributes;
     assert.strictEqual(
+      attributes[ATTR_CLOUD_ACCOUNT_ID],
+      expectedWebsiteOwnerName
+    );
+    assert.strictEqual(
       attributes['cloud.resource_id'],
       `/subscriptions/${expectedWebsiteOwnerName}/resourceGroups/${process.env.WEBSITE_RESOURCE_GROUP}/providers/Microsoft.Web/sites/${process.env.WEBSITE_SITE_NAME}`
+    );
+  });
+
+  it('should omit the resource group attribute when its environment variable is missing', () => {
+    process.env.WEBSITE_SITE_NAME = 'test-service';
+    process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
+    process.env.WEBSITE_OWNER_NAME = 'test-owner-name';
+    delete process.env.WEBSITE_RESOURCE_GROUP;
+
+    const resource = detectResources({ detectors: [azureFunctionsDetector] });
+    const attributes = resource.attributes;
+    assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-service');
+    assert.strictEqual(attributes[ATTR_CLOUD_ACCOUNT_ID], 'test-owner-name');
+    assert.strictEqual(
+      attributes[AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE],
+      undefined
+    );
+  });
+
+  it('should omit the account id when its environment variable is missing', () => {
+    process.env.WEBSITE_SITE_NAME = 'test-service';
+    process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
+    process.env.WEBSITE_RESOURCE_GROUP = 'test-resource-group';
+    delete process.env.WEBSITE_OWNER_NAME;
+
+    const resource = detectResources({ detectors: [azureFunctionsDetector] });
+    const attributes = resource.attributes;
+    assert.strictEqual(attributes[ATTR_SERVICE_NAME], 'test-service');
+    assert.strictEqual(attributes[ATTR_CLOUD_ACCOUNT_ID], undefined);
+    assert.strictEqual(
+      attributes[AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE],
+      'test-resource-group'
     );
   });
 });
