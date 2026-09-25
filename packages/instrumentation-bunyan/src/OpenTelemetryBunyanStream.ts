@@ -117,8 +117,8 @@ export class OpenTelemetryBunyanStream {
    *   Resource attributes, respectively. This code cannot change the
    *   LoggerProvider's `resource`, so getting the OpenTelemetry equivalents
    *   depends on the user using relevant OpenTelemetry resource detectors.
-   *   "examples/telemetry.js" shows using HostDetector and ProcessDetector for
-   *   this.
+   *   "examples/bunyan/telemetry.js" shows using HostDetector and
+   *   ProcessDetector for this.
    * - The Bunyan `name` field *could* naturally map to OpenTelemetry's
    *   `service.name` resource attribute. However, that is debatable, as some
    *   users might use `name` more like a log4j logger name.

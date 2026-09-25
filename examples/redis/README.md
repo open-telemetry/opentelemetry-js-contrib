@@ -1,108 +1,56 @@
 # Overview
 
-OpenTelemetry Redis Instrumentation allows the user to automatically collect trace data and export them to the backend of choice (we can use Zipkin or Jaeger for this example), to give observability to distributed systems.
+This is a simple example that demonstrates tracing of the `redis` package.
 
-This is a simple example that demonstrates tracing calls to a Redis cache via an Express API. The example
-shows key aspects of tracing such as
+- [lib/server.cjs](./lib/server.cjs) is an Express-based HTTP server that exposes Redis commands.
+- [lib/client.cjs](./lib/client.cjs) calls the HTTP service to *set* a value in Redis, and then *get* it back.
+- [telemetry.mjs](./telemetry.mjs) sets up an OpenTelemetry SDK with instrumentations for modules used in this example.
 
-- Root Span (on Client)
-- Child Span (on Client)
-- Child Span from a Remote Parent (on Server)
-- SpanContext Propagation (from Client to Server)
-- Span Events
-- Span Attributes
+## Running the example
 
-## Installation
+Install dependencies:
 
 ```sh
-# from this directory
+git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
+cd opentelemetry-js-contrib/examples/redis
 npm install
 ```
 
-Setup [Zipkin Tracing](https://zipkin.io/pages/quickstart.html)
-or
-Setup [Jaeger Tracing](https://www.jaegertracing.io/docs/latest/getting-started/#all-in-one)
+Start Redis; and a [Jaeger](https://www.jaegertracing.io/) server for collecting and visually tracing data. (Note: Any backend for visualizing observability data will do, as long as it supports ingesting OTLP. This example just happens to use Jaeger.)
 
-## Run the Application
+```sh
+npm run docker:up   # see docker-compose.yml
+```
 
-### Zipkin
+Run the server:
 
-- Start redis via docker
+```sh
+npm run server
+```
 
-   ```sh
-   # from this directory
-   npm run docker:start
-   ```
+Run the client:
 
-- Run the server
+```sh
+npm run client
+```
 
-   ```sh
-   # from this directory
-   $ npm run zipkin:server
-   ```
+Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-redis-client"), click "Find Traces", then click on a trace to view it.
 
-- Run the client
+<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.png?raw=true"/></p>
 
-   ```sh
-   # from this directory
-   npm run zipkin:client
-   ```
 
-- Cleanup docker
+## Clean up
 
-   ```sh
-   # from this directory
-   npm run docker:stop
-   ```
+Cleanup docker when done:
 
-#### Zipkin UI
-
-After a short time, the generated traces should be available in the Zipkin UI.
-Visit <http://localhost:9411/zipkin> and click the "RUN QUERY" button to view
-recent traces, then click "SHOW" on a given trace.
-
-<p align="center"><img alt="Zipkin UI with trace" src="./images/zipkin.jpg?raw=true"/></p>
-
-### Jaeger
-
-- Start redis via docker
-
-   ```sh
-   # from this directory
-   npm run docker:start
-   ```
-
-- Run the server
-
-   ```sh
-   # from this directory
-   $ npm run otlp:server
-   ```
-
-- Run the client
-
-   ```sh
-   # from this directory
-   npm run otlp:client
-   ```
-
-- Cleanup docker
-
-   ```sh
-   # from this directory
-   npm run docker:stop
-   ```
-
-#### Jaeger UI
-
-Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "example-express-client"), click "Find Traces", then click on a trace to view it.
-
-<p align="center"><img alt="Jaeger UI with trace" src="images/jaeger.jpg?raw=true"/></p>
+```sh
+npm run docker:down
+```
 
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node>
+- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-sdk-node>
 
 ## LICENSE
 

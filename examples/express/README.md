@@ -7,7 +7,6 @@ shows key aspects of tracing such as
 
 - Root Span (on Client)
 - Child Span (on Client)
-- Span Events
 - Span Attributes
 
 ## Installation
@@ -52,7 +51,7 @@ Visit the Jaeger UI at <http://localhost:16686/search>, select a service (e.g. "
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
-- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node>
+- For more information on OpenTelemetry for Node.js, visit: <https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-sdk-node>
 
 ## LICENSE
 
