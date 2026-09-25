@@ -111,8 +111,6 @@ registerInstrumentations({
 })
 ```
 
-See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
-
 ## Document Load Instrumentation Options
 
 The document load instrumentation plugin has few options available to choose from. You can set the following:

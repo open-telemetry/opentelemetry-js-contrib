@@ -103,10 +103,6 @@ Notice that all span data only reflects the invocation on the first element. Tha
 
 Downstream spans in the context of all resolvers will be child of the first span.
 
-## Examples
-
-Can be found [in the examples directory](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/graphql)
-
 ## Semantic Conventions
 
 This package does not currently generate any attributes from semantic conventions.
