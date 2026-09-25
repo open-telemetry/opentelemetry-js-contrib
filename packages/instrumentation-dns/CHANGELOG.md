@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.65.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.65.0...instrumentation-dns-v0.65.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* **instrumentation-dns:** preserve promisified lookup result ([#3706](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3706)) ([f5685ea](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f5685ea68ca9fa1223cb4cd4a7b47df1a31a1a04))
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-dns-v0.64.0...instrumentation-dns-v0.65.0) (2026-08-31)
 
 
