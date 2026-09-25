@@ -19,8 +19,21 @@
       "schedule": ["before 3am on Monday"]
     },
     {
+      "matchUpdateTypes": ["major"],
       "matchCategories": ["ci"],
       "schedule": ["before 3am on Monday"]
+    },
+    {
+      "matchCategories": ["docker"],
+      "separateMajorMinor": true,
+      "separateMultipleMajor": true
+    },
+    {
+      "description": "Wait 3 years for automated major docker updates",
+      "dependencyDashboardCategory": "Testing Docker service",
+      "matchUpdateTypes": ["major"],
+      "matchCategories": ["docker"],
+      "minimumReleaseAge": "1095 days",
     },
     {
       "matchPackageNames": ["@opentelemetry/api"],
