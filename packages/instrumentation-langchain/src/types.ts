@@ -6,9 +6,8 @@ import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface LangChainInstrumentationConfig extends InstrumentationConfig {
   /**
-   * Set to true to enable capture of content data, such as prompt and
-   * completion content, tool call function arguments, etc. By default, this is
-   * `false` to avoid possible exposure of sensitive data.
+   * Set to 'span_only' to capture prompt and completion content on spans.
+   * Defaults to 'none' to avoid possible exposure of sensitive data.
    */
-  captureMessageContent?: boolean;
+  captureMessageContent?: 'span_only' | 'none';
 }
