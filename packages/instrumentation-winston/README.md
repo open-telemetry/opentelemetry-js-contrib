@@ -57,9 +57,10 @@ logger.info('foobar');
 
 | Option                  | Type              | Description                                                                                                                                                |
 |-------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
-| `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
+| `disableLogSending`     | `boolean`                        | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
+| `logSeverity`           | `SeverityNumber`                 | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
+| `severityMapping`       | `Record<string, SeverityNumber>` | Custom mapping of Winston log level names to OpenTelemetry `SeverityNumber`.                                                                               |
+| `disableLogCorrelation` | `boolean`                        | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false.         |
 
 ### Log sending
@@ -155,6 +156,41 @@ const logger = winston.createLogger({
 > // ...
 > const logger = winston.createLogger(...);
 > ```
+
+### OpenTelemetry Log Levels & Severity Mapping
+
+#### OpenTelemetry Log Levels
+
+You can import `otelLogLevels` to configure Winston with native OpenTelemetry log levels (`fatal`, `error`, `warn`, `info`, `debug`, `trace`):
+
+```js
+const { otelLogLevels } = require('@opentelemetry/instrumentation-winston');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  levels: otelLogLevels, // { fatal: 0, error: 1, warn: 2, info: 3, debug: 4, trace: 5 }
+  level: 'info',
+  transports: [new winston.transports.Console()],
+});
+```
+
+#### Custom Severity Mapping
+
+For projects using custom Winston log levels, you can configure `severityMapping` on `WinstonInstrumentation`:
+
+```js
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
+
+new WinstonInstrumentation({
+  severityMapping: {
+    emergency: SeverityNumber.FATAL,
+    alert: SeverityNumber.ERROR,
+    notice: SeverityNumber.INFO,
+  },
+  logSeverity: SeverityNumber.INFO,
+});
+```
 
 ## Semantic Conventions
 
