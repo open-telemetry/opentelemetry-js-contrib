@@ -6,7 +6,6 @@
 import * as assert from 'assert';
 import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
@@ -439,7 +438,6 @@ describe('GenAI Utils', () => {
         presencePenalty: 0.6,
         choiceCount: 3,
         seed: 42,
-        encodingFormats: ['text', 'json'],
         stream: true,
         reasoningLevel: 'high',
       });
@@ -454,16 +452,25 @@ describe('GenAI Utils', () => {
         [ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY]: 0.6,
         [ATTR_GEN_AI_REQUEST_CHOICE_COUNT]: 3,
         [ATTR_GEN_AI_REQUEST_SEED]: 42,
-        [ATTR_GEN_AI_REQUEST_ENCODING_FORMATS]: ['text', 'json'],
         [ATTR_GEN_AI_REQUEST_STREAM]: true,
         [ATTR_GEN_AI_REQUEST_REASONING_LEVEL]: 'high',
       });
     });
 
-    it('should ignore empty stopSequences and encodingFormats arrays', () => {
+    it('should only set stream attribute when stream is true and omit when false or undefined', () => {
+      assert.deepStrictEqual(getRequestOptionsAttributes({ stream: true }), {
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+      });
+      assert.deepStrictEqual(
+        getRequestOptionsAttributes({ stream: false }),
+        {}
+      );
+      assert.deepStrictEqual(getRequestOptionsAttributes({}), {});
+    });
+
+    it('should ignore empty stopSequences array', () => {
       const result = getRequestOptionsAttributes({
         stopSequences: [],
-        encodingFormats: [],
       });
       assert.deepStrictEqual(result, {});
     });
