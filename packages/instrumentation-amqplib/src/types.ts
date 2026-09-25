@@ -88,11 +88,32 @@ export interface AmqplibInstrumentationConfig extends InstrumentationConfig {
 
   /** option to use a span link for the consume message instead of continuing a trace */
   useLinksForConsume?: boolean;
+
+  /**
+   * Capture the `messaging.rabbitmq.cluster.name` span attribute, populated from the
+   * broker's reported `cluster_name` server property. Not yet part of
+   * `@opentelemetry/semantic-conventions` (see `ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME`'s
+   * doc comment in `./semconv`), and not every broker reports one, so this is opt-in.
+   *
+   * Default is false
+   */
+  captureClusterName?: boolean;
+
+  /**
+   * Capture the `messaging.rabbitmq.vhost.name` span attribute, populated from the
+   * connection's virtual host. Not yet part of `@opentelemetry/semantic-conventions`
+   * (see `ATTR_MESSAGING_RABBITMQ_VHOST_NAME`'s doc comment in `./semconv`).
+   *
+   * Default is false
+   */
+  captureVhostName?: boolean;
 }
 
 export const DEFAULT_CONFIG: AmqplibInstrumentationConfig = {
   consumeTimeoutMs: 1000 * 60, // 1 minute
   useLinksForConsume: false,
+  captureClusterName: false,
+  captureVhostName: false,
 };
 
 // The following types are vendored from `@types/amqplib@0.10.1` - commit SHA: 4205e03127692a40b4871709a7134fe4e2ed5510
