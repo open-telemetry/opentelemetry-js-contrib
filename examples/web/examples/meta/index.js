@@ -5,43 +5,40 @@
 
 'use strict';
 
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { getWebAutoInstrumentations } from '@opentelemetry/auto-instrumentations-web';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-const providerWithZone = new WebTracerProvider({
-  resource: resourceFromAttributes({
+const tracerProvider = new TracerProvider({
+  resource: defaultResource().merge(resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'web-service-meta',
-  }),
+  })),
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
     new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
-
-providerWithZone.register({
-  contextManager: new ZoneContextManager(),
-  propagator: new B3Propagator(),
-});
-const instrumentations = getWebAutoInstrumentations({
-  '@opentelemetry/instrumentation-xml-http-request': {
-    ignoreUrls: [/localhost/],
-    propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
-  },
-});
+trace.setGlobalTracerProvider(tracerProvider);
+context.setGlobalContextManager(new ZoneContextManager().enable());
+propagation.setGlobalPropagator(new B3Propagator());
 
 registerInstrumentations({
-  instrumentations,
-  tracerProvider: providerWithZone,
+  instrumentations: getWebAutoInstrumentations({
+    '@opentelemetry/instrumentation-xml-http-request': {
+      ignoreUrls: [/localhost/],
+      propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
+    },
+  })
 });
 
 let lastButtonId = 0;

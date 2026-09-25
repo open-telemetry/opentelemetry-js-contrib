@@ -5,34 +5,33 @@
 
 'use strict';
 
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-const providerWithZone = new WebTracerProvider({
-  resource: resourceFromAttributes({
+const tracerProvider = new TracerProvider({
+  resource: defaultResource().merge(resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'web-service-ui',
-  }),
+  })),
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
     new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
-
-providerWithZone.register({
-  contextManager: new ZoneContextManager(),
-  propagator: new B3Propagator(),
-});
+trace.setGlobalTracerProvider(tracerProvider);
+context.setGlobalContextManager(new ZoneContextManager().enable());
+propagation.setGlobalPropagator(new B3Propagator());
 
 registerInstrumentations({
   instrumentations: [
@@ -42,7 +41,6 @@ registerInstrumentations({
       propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
     }),
   ],
-  tracerProvider: providerWithZone,
 });
 
 let lastButtonId = 0;
