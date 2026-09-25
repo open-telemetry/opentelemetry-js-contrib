@@ -154,6 +154,7 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 ## Supported instrumentations
 
 - [@opentelemetry/instrumentation-amqplib](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-amqplib)
+- [@opentelemetry/instrumentation-anthropic](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-anthropic)
 - [@opentelemetry/instrumentation-aws-lambda](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-lambda)
 - [@opentelemetry/instrumentation-aws-sdk](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-sdk)
 - [@opentelemetry/instrumentation-bunyan](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-bunyan)
