@@ -23,6 +23,7 @@
   "packages/instrumentation-cucumber": "0.38.0",
   "packages/instrumentation-dataloader": "0.39.0",
   "packages/instrumentation-fs": "0.41.0",
+  "packages/instrumentation-ibmmq": "0.1.0",
   "packages/instrumentation-kafkajs": "0.31.0",
   "packages/instrumentation-lru-memoizer": "0.66.0",
   "packages/instrumentation-mongoose": "0.68.0",
