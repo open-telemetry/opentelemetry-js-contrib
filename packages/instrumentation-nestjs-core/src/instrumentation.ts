@@ -25,12 +25,10 @@ import { AttributeNames, NestType } from './enums';
 
 const supportedVersions = ['>=4.0.0 <13'];
 
-// The files patched by this instrumentation. Since NestJS 12 the package is
-// published as ESM, see `loadPatchedFiles`.
+// The files patched by this instrumentation.
 const NEST_FACTORY_FILE = '@nestjs/core/nest-factory.js';
 const ROUTER_EXECUTION_CONTEXT_FILE =
   '@nestjs/core/router/router-execution-context.js';
-const FIRST_ESM_MAJOR = 12;
 
 export class NestInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
@@ -45,11 +43,7 @@ export class NestInstrumentation extends InstrumentationBase {
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       NestInstrumentation.COMPONENT,
-      supportedVersions,
-      (moduleExports: any, moduleVersion?: string) => {
-        this.loadPatchedFiles(moduleVersion);
-        return moduleExports;
-      }
+      supportedVersions
     );
 
     module.files.push(
@@ -58,32 +52,6 @@ export class NestInstrumentation extends InstrumentationBase {
     );
 
     return module;
-  }
-
-  /**
-   * NestJS 12 publishes `@nestjs/core` as ESM. When a CommonJS application
-   * `require()`s it, Node.js evaluates the package's internal files with the
-   * ESM loader, so they never pass through the `require` hook and the file
-   * patches registered in `init()` would not run. Requiring the two patched
-   * files here routes them through the hook. The ESM loader has already
-   * cached them, so the same class prototypes get wrapped.
-   *
-   * ESM applications load these files through the ESM loader hook instead,
-   * where the file patches apply directly.
-   *
-   * The files are resolved from the application's lookup paths, not from this
-   * package's, so that layouts which do not hoist `@nestjs/core` (pnpm) work.
-   */
-  private loadPatchedFiles(moduleVersion?: string) {
-    const major = Number(moduleVersion?.split('.')[0]);
-    if (!(major >= FIRST_ESM_MAJOR)) {
-      return;
-    }
-    const paths = [...(require.main?.paths ?? []), ...module.paths];
-    for (const file of [NEST_FACTORY_FILE, ROUTER_EXECUTION_CONTEXT_FILE]) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      require(require.resolve(file, { paths }));
-    }
   }
 
   getNestFactoryFileInstrumentation(versions: string[]) {
