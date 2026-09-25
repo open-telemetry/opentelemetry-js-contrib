@@ -21,13 +21,18 @@ import {
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { defaultResource, resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
 const tracerProvider = new TracerProvider({
-  resource: defaultResource().merge(resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'web-service-dl',
-  })),
+  resource: defaultResource().merge(
+    resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'web-service-dl',
+    })
+  ),
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
     new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
