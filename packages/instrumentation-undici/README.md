@@ -74,6 +74,7 @@ Attributes collected:
 | `http.response.status_code`    | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).                                |
 | `network.peer.address`         | Peer address of the network connection - IP address or Unix domain socket name.                            |
 | `network.peer.port`            | Peer port number of the network connection.                                                                |
+| `network.protocol.version`     | The version of the network protocol being used.                                                            |
 | `server.address`               | Server domain name, IP address or Unix domain socket name.                                                 |
 | `server.port`                  | Server port number.                                                                                        |
 | `url.full`                     | Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). |
