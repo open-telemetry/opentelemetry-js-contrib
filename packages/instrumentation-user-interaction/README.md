@@ -3,11 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for *user interactions* for Web applications, which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
-
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+This module provides automatic instrumentation for *user interactions* for Web applications.
 
 This module can work either with [zone-js] or without it, with [zone-js] and ZoneContextManager it will fully support the async operations. Without [zone-js] it will still work but with limited support.
 If you use Angular or [@opentelemetry/context-zone] you will have [zone-js] included.
@@ -23,22 +19,29 @@ npm install --save @opentelemetry/instrumentation-user-interaction
 ### Initialize
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { context, propagation, trace } from '@opentelemetry/api';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
-import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ZoneContextManager } from '@opentelemetry/context-zone';
 // or if you already have zone.js
 // import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 
-const provider = new WebTracerProvider({
-  contextManager: new ZoneContextManager(),
+const tracerProvider = new TracerProvider({
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
-
-provider.register();
+trace.setGlobalTracerProvider(tracerProvider);
+context.setGlobalContextManager(new ZoneContextManager().enable());
+const propagator = new CompositePropagator({
+  propagators: [
+    new W3CTraceContextPropagator(),
+    new W3CBaggagePropagator(),
+  ],
+});
+propagation.setGlobalPropagator(propagator);
 
 registerInstrumentations({
   instrumentations: [
@@ -110,7 +113,6 @@ registerInstrumentations({
 ```js
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-
 
 // ...general opentelemetry configuration
 

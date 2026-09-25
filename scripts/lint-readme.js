@@ -70,16 +70,3 @@ if (!currentReadmeContent.includes(badgesToVerify)) {
     `README.md badges are not valid. Please add the following text to the README.md file:\n\n${badgesToVerify}`
   );
 }
-
-if (isWeb) {
-  const distText = `If total installation size is not constrained, it is recommended to use the [\`@opentelemetry/auto-instrumentations-web\`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [\`@opentelemetry/sdk-trace-web\`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
-
-Compatible with OpenTelemetry JS API and SDK \`1.0+\`.
-`;
-
-  if (!currentReadmeContent.includes(distText)) {
-    throw new Error(
-      `README.md dist text is not valid. Please add the following text to the README.md file:\n\n${distText}`
-    );
-  }
-}
