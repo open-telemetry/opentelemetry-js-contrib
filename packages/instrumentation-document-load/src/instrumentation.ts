@@ -108,7 +108,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
             addSpanNetworkEvents(
               fetchSpan,
               entries,
-              this.getConfig().ignoreNetworkEvents
+              this.getConfig().ignoreNetworkEvents,
+              true
             );
             this._addCustomAttributesOnSpan(
               fetchSpan,
