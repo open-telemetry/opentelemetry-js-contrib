@@ -182,7 +182,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         }
         let state: WorkflowState | undefined;
         try {
-          // LangGraph's internal node/channel sequences are not user workflows.
+          // LangGraph sets omitSequenceTags on internal node/channel-writer
+          // sequences (e.g. PregelNode.getNode()) to omit seq:step:* callback tags.
+          // Skip these internal adapters rather than reporting them as workflows.
           if (!('omitSequenceTags' in this && this.omitSequenceTags === true)) {
             const tracer = self.tracer;
             const capture =
