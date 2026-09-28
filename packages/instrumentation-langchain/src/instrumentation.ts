@@ -128,11 +128,15 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _patchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
-      this._wrap(cls.prototype, 'invoke', this._wrapper());
+      this._wrap(cls.prototype, 'invoke', this._createInvokeOrBatchWrapper());
     }
     // Sequence has an optimized batch; Map's inherited batch invokes
     // each item separately and is already covered by its invoke patch.
-    this._wrap(module.RunnableSequence.prototype, 'batch', this._wrapper(true));
+    this._wrap(
+      module.RunnableSequence.prototype,
+      'batch',
+      this._createInvokeOrBatchWrapper(true)
+    );
   }
 
   private _unpatchRunnables(module: typeof Runnables) {
@@ -142,7 +146,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unwrap(module.RunnableSequence.prototype, 'batch');
   }
 
-  private _wrapper(batch = false) {
+  private _createInvokeOrBatchWrapper(batch = false) {
     const self = this;
     return <T extends Runnables.Runnable, A extends unknown[], R>(
       original: (this: T, ...args: A) => R
