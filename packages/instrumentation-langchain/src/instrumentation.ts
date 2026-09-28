@@ -189,7 +189,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             const tracer = self.tracer;
             const capture =
               self.getConfig().captureMessageContent === 'span_only';
-            const attributes = self._attributes(
+            const attributes = self._generateWorkflowAttributes(
               this,
               args[0],
               args[1],
@@ -245,7 +245,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
    * Builds workflow and conversation attributes from the runnable and options,
    * adding input messages only when content capture is enabled.
    */
-  private _attributes(
+  private _generateWorkflowAttributes(
     target: Runnables.Runnable,
     input: unknown,
     options: unknown,
