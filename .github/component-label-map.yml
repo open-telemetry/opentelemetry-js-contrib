@@ -334,7 +334,6 @@ pkg-status:unmaintained:
           - packages/instrumentation-koa/**
           - packages/instrumentation-memcached/**
           - packages/instrumentation-mysql/**
-          - packages/instrumentation-restify/**
           - packages/instrumentation-router/**
           - packages/propagator-aws-xray-lambda/**
           - packages/propagator-ot-trace/**
