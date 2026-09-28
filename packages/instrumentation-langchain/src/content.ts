@@ -26,6 +26,10 @@ interface Message {
   parts: MessagePart[];
 }
 
+/**
+ * Serializes normalized GenAI messages to JSON, encoding binary content as
+ * base64. Logs and returns undefined if serialization fails.
+ */
 function serializeMessages(
   value: Message[],
   diag: DiagLogger
@@ -53,20 +57,34 @@ function serializeMessages(
   }
 }
 
+/**
+ * Narrows non-null, non-array objects for inspecting LangChain message fields.
+ */
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
 
+/**
+ * Identifies LangChain messages by their _getType method without requiring a
+ * runtime import of the SDK.
+ */
 function isMessage(value: unknown): value is BaseMessage {
   return isRecord(value) && typeof value._getType === 'function';
 }
 
+/**
+ * Identifies LangChain prompt values that can produce a chat-message history.
+ */
 function isPromptValue(
   value: unknown
 ): value is Pick<BasePromptValueInterface, 'toChatMessages'> {
   return isRecord(value) && typeof value.toChatMessages === 'function';
 }
 
+/**
+ * Validates standard base64 characters, optional padding, and unused trailing
+ * bits in linear time and constant space, including for large binary payloads.
+ */
 function validBase64(value: string): boolean {
   let length = value.length;
   while (length > 0 && value.charCodeAt(length - 1) === 61) length--;
@@ -97,6 +115,10 @@ function validBase64(value: string): boolean {
       : true;
 }
 
+/**
+ * Decodes validated base64 into binary content. Logs and returns undefined for
+ * non-string or invalid input rather than using Buffer's permissive decoding.
+ */
 function decodeBase64(
   value: unknown,
   diag: DiagLogger
@@ -108,6 +130,10 @@ function decodeBase64(
   return Buffer.from(value, 'base64');
 }
 
+/**
+ * Converts an image URL to a GenAI URI part, or a base64 image data URL to a
+ * binary blob part. Logs and omits malformed or unsupported data URLs.
+ */
 function imagePart(url: string, diag: DiagLogger): MessagePart | undefined {
   if (!/^data:/i.test(url)) {
     return { type: 'uri', modality: 'image', uri: url };
@@ -137,6 +163,10 @@ function imagePart(url: string, diag: DiagLogger): MessagePart | undefined {
   };
 }
 
+/**
+ * Maps a LangChain content block to a GenAI message part, preserving unmapped
+ * provider-specific fields. Invalid binary content is logged and omitted.
+ */
 function part(value: unknown, diag: DiagLogger): MessagePart | undefined {
   if (!isRecord(value)) {
     return { type: 'text', content: String(value) };
@@ -229,12 +259,21 @@ function part(value: unknown, diag: DiagLogger): MessagePart | undefined {
   };
 }
 
+/**
+ * Normalizes content blocks in order, excluding parts rejected as invalid.
+ */
 function normalizeParts(values: unknown[], diag: DiagLogger): MessagePart[] {
   return values
     .map(value => part(value, diag))
     .filter((value): value is MessagePart => value !== undefined);
 }
 
+/**
+ * Converts LangChain strings, prompt values, messages, histories, and
+ * input/output wrappers to GenAI messages. Normalizes roles and tool calls,
+ * using defaultRole only for a standalone string and retaining binary content.
+ * Returns undefined when no messages can be extracted; SDK methods may throw.
+ */
 function normalizeMessages(
   value: unknown,
   diag: DiagLogger,
@@ -333,6 +372,10 @@ function normalizeMessages(
   return result.length ? result : undefined;
 }
 
+/**
+ * Guards message normalization so SDK or content errors are logged and return
+ * undefined instead of escaping into the instrumented application.
+ */
 function parseMessages(
   value: unknown,
   diag: DiagLogger,
@@ -346,6 +389,10 @@ function parseMessages(
   }
 }
 
+/**
+ * Parses invocation input into structured GenAI messages, assigning standalone
+ * strings the user role. Returns undefined if normalization fails or is empty.
+ */
 export function parseInputMessages(
   value: unknown,
   diag: DiagLogger
@@ -353,6 +400,11 @@ export function parseInputMessages(
   return parseMessages(value, diag, 'user');
 }
 
+/**
+ * Parses invocation output into structured GenAI messages, assigning standalone
+ * strings the assistant role. Explicit message roles remain unchanged apart
+ * from human/ai aliases; failed or empty normalization returns undefined.
+ */
 export function parseOutputMessages(
   value: unknown,
   diag: DiagLogger
@@ -360,6 +412,11 @@ export function parseOutputMessages(
   return parseMessages(value, diag, 'assistant');
 }
 
+/**
+ * Produces JSON for a GenAI input/output messages attribute, assigning
+ * standalone strings defaultRole. Returns undefined if parsing or
+ * serialization fails or no messages are found.
+ */
 export function messages(
   value: unknown,
   diag: DiagLogger,
@@ -370,6 +427,12 @@ export function messages(
   return serializeMessages(parsed, diag);
 }
 
+/**
+ * Serializes batch results as one GenAI output-message array, parsing each
+ * result independently rather than treating the batch as a conversation.
+ * Unparseable results are skipped; non-array input or serialization errors
+ * are logged and return undefined.
+ */
 export function batchOutputMessages(
   value: unknown,
   diag: DiagLogger
@@ -388,6 +451,11 @@ export function batchOutputMessages(
   return serializeMessages(parsed, diag);
 }
 
+/**
+ * Converts LangChain or provider function-call metadata to a GenAI tool-call
+ * part. Parses JSON arguments when possible, logging and retaining the original
+ * string when they are not valid JSON.
+ */
 function toolCallPart(
   call: Record<string, unknown>,
   diag: DiagLogger
