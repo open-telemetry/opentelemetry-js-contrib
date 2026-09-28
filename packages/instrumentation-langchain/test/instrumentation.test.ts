@@ -7,6 +7,10 @@ import { LangChainInstrumentation } from '../src';
 import type { LangChainInstrumentationConfig } from '../src';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import {
+  getTestSpans,
+  resetMemoryExporter,
+} from '@opentelemetry/contrib-test-utils';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
 import { join, normalize } from 'node:path';
@@ -133,14 +137,20 @@ describe('LangChainInstrumentation', () => {
       for (let cycle = 0; cycle < 2; cycle++) {
         instance.enable();
         instance.enable();
+        resetMemoryExporter();
         for (const [index, copy] of modules.entries()) {
-          expect(copy.RunnableSequence.prototype.invoke).not.toBe(
+          file.patch(copy);
+          file.patch(copy);
+          expect(copy.RunnableSequence.prototype.invoke).toHaveProperty(
+            '__original',
             originals[index].invoke
           );
-          expect(copy.RunnableSequence.prototype.batch).not.toBe(
+          expect(copy.RunnableSequence.prototype.batch).toHaveProperty(
+            '__original',
             originals[index].batch
           );
-          expect(copy.RunnableMap.prototype.invoke).not.toBe(
+          expect(copy.RunnableMap.prototype.invoke).toHaveProperty(
+            '__original',
             originals[index].map
           );
           expect(copy.RunnableSequence.prototype.stream).toBe(
@@ -151,7 +161,11 @@ describe('LangChainInstrumentation', () => {
           );
           const result = { answer: 'same object' };
           expect(new copy.RunnableSequence().invoke(result)).toBe(result);
+          const batch = [result];
+          expect(new copy.RunnableSequence().batch(batch)).toBe(batch);
+          expect(new copy.RunnableMap().invoke(result)).toBe(result);
         }
+        expect(getTestSpans()).toHaveLength(modules.length * 3);
         instance.disable();
         instance.disable();
         for (const [index, copy] of modules.entries()) {

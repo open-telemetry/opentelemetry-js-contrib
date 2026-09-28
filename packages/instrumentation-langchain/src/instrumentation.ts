@@ -19,6 +19,7 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
+  isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_GEN_AI_CONVERSATION_ID,
@@ -45,12 +46,15 @@ interface WorkflowState {
   ended: boolean;
 }
 
+/**
+ * Tracks all loaded CJS/ESM module copies, including those loaded while
+ * disabled, so each copy is patched or unpatched together.
+ */
 function createTrackedModuleFile<T extends object>(
   name: string,
   patch: (module: T) => void,
   unpatch: (module: T) => void
 ): InstrumentationNodeModuleFile {
-  // Track both CJS/ESM copies, including copies loaded while disabled.
   const instances = new Set<T>();
   const file = new InstrumentationNodeModuleFile(
     name,
@@ -95,6 +99,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     });
   }
 
+  /**
+   * Validates the content-capture mode, defaulting to no capture and warning
+   * when an unsupported value is supplied.
+   */
   private _captureMode(
     value: unknown
   ): NonNullable<LangChainInstrumentationConfig['captureMessageContent']> {
@@ -126,12 +134,21 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     ];
   }
 
+  /**
+   * Wraps sequence and map invocations, plus the sequence-specific batch path.
+   */
   private _patchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
+      if (isWrapped(cls.prototype.invoke)) {
+        this._unwrap(cls.prototype, 'invoke');
+      }
       this._wrap(cls.prototype, 'invoke', this._createInvokeOrBatchWrapper());
     }
     // Sequence has an optimized batch; Map's inherited batch invokes
     // each item separately and is already covered by its invoke patch.
+    if (isWrapped(module.RunnableSequence.prototype.batch)) {
+      this._unwrap(module.RunnableSequence.prototype, 'batch');
+    }
     this._wrap(
       module.RunnableSequence.prototype,
       'batch',
@@ -139,6 +156,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     );
   }
 
+  /**
+   * Restores the runnable methods wrapped by this instrumentation.
+   */
   private _unpatchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
       this._unwrap(cls.prototype, 'invoke');
@@ -146,6 +166,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unwrap(module.RunnableSequence.prototype, 'batch');
   }
 
+  /**
+   * Creates a wrapper that runs a workflow in its span context and observes
+   * completion while preserving the original return value or thrown error.
+   */
   private _createInvokeOrBatchWrapper(batch = false) {
     const self = this;
     return <T extends Runnables.Runnable, A extends unknown[], R>(
@@ -215,6 +239,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       };
   }
 
+  /**
+   * Builds workflow and conversation attributes from the runnable and options,
+   * adding input messages only when content capture is enabled.
+   */
   private _attributes(
     target: Runnables.Runnable,
     input: unknown,
@@ -251,6 +279,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return attributes;
   }
 
+  /**
+   * Reads an own configuration value without invoking getters, warning and
+   * omitting accessor-backed properties to avoid affecting SDK behavior.
+   */
   private _configValue(value: unknown, key: string): unknown {
     if (!isRecord(value)) return undefined;
     // The SDK owns reading its options. Observing accessors here can change
@@ -265,6 +297,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return descriptor?.value;
   }
 
+  /**
+   * Ends a workflow span once, recording failure details or opt-in output
+   * content and logging telemetry errors without disrupting the application.
+   */
   private _end(
     state: WorkflowState,
     output?: unknown,
