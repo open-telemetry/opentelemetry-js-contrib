@@ -30,12 +30,11 @@ trace.setGlobalTracerProvider(tracerProvider);
 context.setGlobalContextManager(new ZoneContextManager().enable());
 
 const propagator = new CompositePropagator({
-    propagators: [
-      new W3CTraceContextPropagator(),
-      new W3CBaggagePropagator(),
-    ],
-  })
-);
+  propagators: [
+    new W3CTraceContextPropagator(),
+    new W3CBaggagePropagator(),
+  ],
+});
 propagation.setGlobalPropagator(propagator);
 
 registerInstrumentations({
