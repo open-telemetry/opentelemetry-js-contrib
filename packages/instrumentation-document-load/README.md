@@ -3,9 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for *document load* for Web applications, which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
+This module provides automatic instrumentation for *document load* for Web applications.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -18,28 +16,29 @@ npm install --save @opentelemetry/instrumentation-document-load
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
+import { StackContextManager} from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 
-const provider = new WebTracerProvider({
+const provider = new TracerProvider({
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
 
-provider.register({
-  propagator: new CompositePropagator({
+context.setGlobalContextManager(new StackContextManager().enable());
+
+const propagator = new CompositePropagator({
     propagators: [
-      new B3Propagator(),
       new W3CTraceContextPropagator(),
+      new W3CBaggagePropagator(),
     ],
-  }),
-});
+  })
+);
+propagation.setGlobalPropagator(propagator);
 
 registerInstrumentations({
   instrumentations: [
@@ -52,7 +51,6 @@ registerInstrumentations({
     }),
   ],
 });
-
 ```
 
 ## Optional: Send a trace parent from your server
