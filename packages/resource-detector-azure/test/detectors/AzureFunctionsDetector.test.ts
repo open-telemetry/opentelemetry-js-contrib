@@ -140,6 +140,100 @@ describe('AzureFunctionsDetector', () => {
       'test-resource-group'
     );
   });
+
+  describe('faas.instance', () => {
+    const detectFunctionInstance = (instanceEnv: {
+      WEBSITE_INSTANCE_ID?: string;
+      WEBSITE_POD_NAME?: string;
+      CONTAINER_NAME?: string;
+    }) => {
+      process.env.WEBSITE_SITE_NAME = 'test-service';
+      process.env.FUNCTIONS_EXTENSION_VERSION = '~4';
+      delete process.env.WEBSITE_INSTANCE_ID;
+      delete process.env.WEBSITE_POD_NAME;
+      delete process.env.CONTAINER_NAME;
+      Object.assign(process.env, instanceEnv);
+
+      const resource = detectResources({ detectors: [azureFunctionsDetector] });
+      return resource.attributes[ATTR_FAAS_INSTANCE];
+    };
+
+    it('should use WEBSITE_INSTANCE_ID alone', () => {
+      assert.strictEqual(
+        detectFunctionInstance({ WEBSITE_INSTANCE_ID: 'test-instance-id' }),
+        'test-instance-id'
+      );
+    });
+
+    it('should use WEBSITE_POD_NAME alone', () => {
+      assert.strictEqual(
+        detectFunctionInstance({ WEBSITE_POD_NAME: 'test-pod-name' }),
+        'test-pod-name'
+      );
+    });
+
+    it('should use CONTAINER_NAME alone', () => {
+      assert.strictEqual(
+        detectFunctionInstance({ CONTAINER_NAME: 'test-container-name' }),
+        'test-container-name'
+      );
+    });
+
+    it('should prefer WEBSITE_INSTANCE_ID over WEBSITE_POD_NAME and CONTAINER_NAME', () => {
+      assert.strictEqual(
+        detectFunctionInstance({
+          WEBSITE_INSTANCE_ID: 'test-instance-id',
+          WEBSITE_POD_NAME: 'test-pod-name',
+          CONTAINER_NAME: 'test-container-name',
+        }),
+        'test-instance-id'
+      );
+    });
+
+    it('should prefer WEBSITE_POD_NAME over CONTAINER_NAME', () => {
+      assert.strictEqual(
+        detectFunctionInstance({
+          WEBSITE_POD_NAME: 'test-pod-name',
+          CONTAINER_NAME: 'test-container-name',
+        }),
+        'test-pod-name'
+      );
+    });
+
+    it('should skip empty values', () => {
+      assert.strictEqual(
+        detectFunctionInstance({
+          WEBSITE_INSTANCE_ID: '',
+          WEBSITE_POD_NAME: 'test-pod-name',
+          CONTAINER_NAME: 'test-container-name',
+        }),
+        'test-pod-name'
+      );
+      assert.strictEqual(
+        detectFunctionInstance({
+          WEBSITE_INSTANCE_ID: '',
+          WEBSITE_POD_NAME: '',
+          CONTAINER_NAME: 'test-container-name',
+        }),
+        'test-container-name'
+      );
+    });
+
+    it('should omit the attribute when all values are empty', () => {
+      assert.strictEqual(
+        detectFunctionInstance({
+          WEBSITE_INSTANCE_ID: '',
+          WEBSITE_POD_NAME: '',
+          CONTAINER_NAME: '',
+        }),
+        undefined
+      );
+    });
+
+    it('should omit the attribute when none are set', () => {
+      assert.strictEqual(detectFunctionInstance({}), undefined);
+    });
+  });
 });
 
 it('should detect azure functions if websiteSku is defined as FlexConsumption', () => {
