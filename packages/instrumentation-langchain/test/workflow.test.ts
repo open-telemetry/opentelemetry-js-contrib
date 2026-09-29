@@ -95,6 +95,126 @@ describe('LangChain non-streaming workflows', () => {
     });
   });
 
+  for (const boundary of ['sequence invoke', 'sequence batch', 'map invoke']) {
+    it(`omits generated workflow names for unnamed ${boundary}`, async () => {
+      if (boundary === 'sequence invoke') {
+        expect(await identity().invoke('input')).toBe('input');
+      } else if (boundary === 'sequence batch') {
+        expect(await identity().batch(['one', 'two'])).toEqual(['one', 'two']);
+      } else {
+        const map = RunnableMap.from({
+          answer: RunnableLambda.from((value: string) => value),
+        });
+        expect(await map.invoke('input')).toEqual({ answer: 'input' });
+      }
+      expect(getTestSpans()).toHaveLength(1);
+      const span = getTestSpans()[0];
+      expect(span.name).toBe('invoke_workflow');
+      expect(span.kind).toBe(SpanKind.INTERNAL);
+      expect(span.attributes).toEqual({
+        'gen_ai.operation.name': 'invoke_workflow',
+      });
+    });
+  }
+
+  it('preserves explicit runnable names and runName precedence', async () => {
+    const sequence = RunnableSequence.from(
+      [
+        RunnableLambda.from((value: string) => value),
+        RunnableLambda.from((value: string) => value),
+      ],
+      { name: 'application-sequence' }
+    );
+    const map = RunnableMap.from({
+      answer: RunnableLambda.from((value: string) => value),
+    });
+    map.name = 'application-map';
+    await sequence.invoke('input');
+    await map.invoke('input');
+    await sequence.withConfig({ runName: 'configured-name' }).invoke('input');
+    await sequence.withConfig({ runName: 'configured-name' }).invoke('input', {
+      runName: 'supplied-name',
+    });
+    await sequence.batch(['input'], { runName: 'batch-name' });
+    expect(
+      getTestSpans().map(span => [
+        span.name,
+        span.attributes['gen_ai.workflow.name'],
+      ])
+    ).toEqual([
+      ['invoke_workflow application-sequence', 'application-sequence'],
+      ['invoke_workflow application-map', 'application-map'],
+      ['invoke_workflow configured-name', 'configured-name'],
+      ['invoke_workflow supplied-name', 'supplied-name'],
+      ['invoke_workflow batch-name', 'batch-name'],
+    ]);
+  });
+
+  for (const value of ['', ' \t ', null, 42, false, {}]) {
+    it(`ignores empty or invalid application names (${JSON.stringify(value)})`, async () => {
+      const sequence = identity();
+      const options = Object.defineProperty({}, 'runName', {
+        value,
+        enumerable: true,
+      });
+      sequence.name = 'application-name';
+      expect(await sequence.invoke('input', options)).toBe('input');
+      expect(getTestSpans()[0].name).toBe('invoke_workflow application-name');
+      expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
+        'application-name'
+      );
+      Object.defineProperty(sequence, 'name', { value });
+      expect(await sequence.invoke('input', options)).toBe('input');
+      expect(getTestSpans()[1].name).toBe('invoke_workflow');
+      expect(
+        getTestSpans()[1].attributes['gen_ai.workflow.name']
+      ).toBeUndefined();
+    });
+  }
+
+  it('preserves the spelling of an explicit non-blank workflow name', async () => {
+    await identity().invoke('input', { runName: '  application name  ' });
+    expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
+      '  application name  '
+    );
+    expect(getTestSpans()[0].name).toBe('invoke_workflow   application name  ');
+  });
+
+  for (const runName of [undefined, 'explicit-run']) {
+    it(`does not add runnable name getter or getName calls (runName=${runName})`, async () => {
+      const run = async (enabled: boolean) => {
+        const sequence = identity();
+        const name = sinon.spy(() => 'accessor-name');
+        Object.defineProperty(sequence, 'name', { get: name });
+        const getName = sinon.spy(sequence, 'getName');
+        if (enabled) instrumentation.enable();
+        else instrumentation.disable();
+        const result = await sequence.invoke('input', { runName });
+        return {
+          result,
+          nameReads: name.callCount,
+          getNameCalls: getName.callCount,
+        };
+      };
+      const { warn } = diagnostics();
+      const baseline = await run(false);
+      expect(await run(true)).toEqual(baseline);
+      expect(getTestSpans()).toHaveLength(1);
+      expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
+        runName
+      );
+      expect(getTestSpans()[0].name).toBe(
+        runName ? `invoke_workflow ${runName}` : 'invoke_workflow'
+      );
+      expect(
+        warn.calledWith(
+          sinon.match.string,
+          'LangChain: omitting accessor-backed configuration attribute'
+        )
+      ).toBe(runName === undefined);
+    });
+  }
+
   it('does not instrument standalone lambdas, prompts, parsers or model calls', async () => {
     await RunnableLambda.from((value: string) => value).invoke('test');
     await PromptTemplate.fromTemplate('{text}').invoke({ text: 'test' });
@@ -398,9 +518,8 @@ describe('LangChain non-streaming workflows', () => {
     });
     const spans = getTestSpans();
     expect(spans).toHaveLength(3);
-    const parent = spans.find(
-      s => s.attributes['gen_ai.workflow.name'] === 'RunnableMap'
-    )!;
+    const parent = spans.find(s => s.name === 'invoke_workflow')!;
+    expect(parent.attributes['gen_ai.workflow.name']).toBeUndefined();
     for (const child of spans.filter(s => s !== parent))
       expect(child.parentSpanContext?.spanId).toBe(parent.spanContext().spanId);
   });

@@ -294,7 +294,8 @@ async function exercise(provider) {
           capture,
           async () => assert.deepEqual(await invoke(true), baseline),
           span => {
-            assert.equal(span.name, 'invoke_workflow RunnableSequence');
+            assert.equal(span.name, 'invoke_workflow');
+            assert.equal(span.attributes['gen_ai.workflow.name'], undefined);
             assert.equal(span.attributes['gen_ai.conversation.id'], undefined);
           },
           { baseline, instrumented: baseline }

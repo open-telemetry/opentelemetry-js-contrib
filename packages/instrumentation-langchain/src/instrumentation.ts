@@ -263,14 +263,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     ].find(
       (value): value is string => typeof value === 'string' && value.length > 0
     );
-    const runName = this._configValue(options, 'runName');
+    let name = this._configValue(options, 'runName');
+    if (typeof name !== 'string' || name.trim().length === 0)
+      name = this._configValue(target, 'name');
     const attributes: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-      [ATTR_GEN_AI_WORKFLOW_NAME]:
-        typeof runName === 'string'
-          ? runName
-          : (target.name ?? target.getName()),
     };
+    if (typeof name === 'string' && name.trim().length > 0)
+      attributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
     if (conversation !== undefined)
       attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
     if (capture) {

@@ -78,7 +78,10 @@ Streaming methods retain their original behavior without workflow stream telemet
 Provider inference remains the responsibility of provider-specific instrumentation.
 Workflows emit spans only, not `gen_ai.client.*` metrics or content events.
 
-Span names use the effective SDK `runName`, runnable name, or `getName()`.
+`gen_ai.workflow.name` uses a non-blank application-provided `runName`, then an
+explicitly assigned runnable name. Empty, whitespace-only and non-string names
+are treated as unavailable. Unnamed workflows omit this attribute and use the
+span name `invoke_workflow`, without falling back to a generated class name.
 `gen_ai.conversation.id` uses the first non-empty string from
 `configurable.thread_id`, `configurable.session_id`,
 `configurable.conversation_id`, `metadata.session_id`, `metadata.thread_id`,
@@ -87,8 +90,9 @@ The SDK applies `withConfig` defaults before the instrumented invocation;
 per-input batch configurations are left unchanged, without inventing one shared
 conversation ID or name for the entire batch.
 Configuration observation reads only own data properties. Accessor-backed
-`runName`, `metadata`, `configurable` and conversation aliases are omitted with
-content-free diagnostics, without invoking getters or changing SDK options.
+`runName`, runnable `name`, `metadata`, `configurable` and conversation aliases
+are omitted with content-free diagnostics, without invoking getters or changing
+SDK options.
 
 ## Configuration Options
 

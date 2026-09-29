@@ -70,9 +70,10 @@ describe('LangChain workflow regressions', () => {
         assert.equal(baseline.reads, 1);
         assert.equal(baseline.result, 1);
         assert.equal(getTestSpans().length, 1);
+        assert.equal(getTestSpans()[0].name, 'invoke_workflow');
         assert.equal(
-          getTestSpans()[0].name,
-          'invoke_workflow RunnableSequence'
+          getTestSpans()[0].attributes['gen_ai.workflow.name'],
+          undefined
         );
         assert.equal(
           getTestSpans()[0].attributes['gen_ai.conversation.id'],
