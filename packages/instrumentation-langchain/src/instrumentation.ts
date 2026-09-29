@@ -11,9 +11,16 @@ import {
   SpanStatusCode,
   type Attributes,
   type Context,
+  type Histogram,
+  type HrTime,
   type Span,
 } from '@opentelemetry/api';
-import { isTracingSuppressed } from '@opentelemetry/core';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToSeconds,
+  isTracingSuppressed,
+} from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   InstrumentationBase,
@@ -28,6 +35,7 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
 /** @knipignore */
@@ -41,6 +49,9 @@ const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 interface WorkflowState {
   span: Span;
   context: Context;
+  startTime: HrTime;
+  durationHistogram: Histogram | undefined;
+  metricAttributes: Attributes;
   capture: boolean;
   batch: boolean;
   ended: boolean;
@@ -80,6 +91,8 @@ function createTrackedModuleFile<T extends object>(
 }
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
+  declare private _workflowDuration: Histogram | undefined;
+
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
     const env =
@@ -97,6 +110,26 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       ...config,
       captureMessageContent: this._captureMode(config.captureMessageContent),
     });
+  }
+
+  override _updateMetricInstruments() {
+    try {
+      this._workflowDuration = this.meter.createHistogram(
+        METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
+        {
+          description: 'Records duration of GenAI workflow.',
+          unit: 's',
+          advice: {
+            explicitBucketBoundaries: [
+              1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200,
+            ],
+          },
+        }
+      );
+    } catch {
+      this._workflowDuration = undefined;
+      this._diag.warn('LangChain: could not create workflow duration metric');
+    }
   }
 
   /**
@@ -210,6 +243,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       // Skip these internal adapters rather than reporting them as workflows.
       if (!('omitSequenceTags' in target && target.omitSequenceTags === true)) {
         const tracer = this.tracer;
+        const durationHistogram = this._workflowDuration;
         const capture = this.getConfig().captureMessageContent === 'span_only';
         const attributes = this._generateWorkflowAttributes(
           target,
@@ -219,14 +253,21 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         );
         const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
         const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
+        const metricAttributes: Attributes = {};
+        if (typeof name === 'string')
+          metricAttributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
+        const startTime = hrTime();
         const span = tracer.startSpan(
           name ? `${operation} ${name}` : operation,
-          { kind: SpanKind.INTERNAL, attributes },
+          { kind: SpanKind.INTERNAL, attributes, startTime },
           parent
         );
         state = {
           span,
           context: trace.setSpan(parent, span),
+          startTime,
+          durationHistogram,
+          metricAttributes,
           capture,
           batch,
           ended: false,
@@ -328,6 +369,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     failure?: { error: unknown }
   ) {
     if (state.ended) return;
+    // Freeze the end before content extraction or metric recording adds overhead.
+    const endTime = hrTime();
     state.ended = true;
     try {
       if (failure) {
@@ -339,6 +382,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         } catch {
           this._diag.warn('LangChain: could not classify operation failure');
         }
+        state.metricAttributes[ATTR_ERROR_TYPE] = name;
         state.span.setStatus({ code: SpanStatusCode.ERROR });
         state.span.setAttribute(ATTR_ERROR_TYPE, name);
       } else if (state.capture) {
@@ -352,7 +396,16 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       this._diag.warn('LangChain: could not extract operation telemetry');
     } finally {
       try {
-        state.span.end();
+        state.durationHistogram?.record(
+          hrTimeToSeconds(hrTimeDuration(state.startTime, endTime)),
+          state.metricAttributes,
+          state.context
+        );
+      } catch {
+        this._diag.warn('LangChain: could not record workflow duration');
+      }
+      try {
+        state.span.end(endTime);
       } catch {
         this._diag.warn('LangChain: could not end operation telemetry');
       }
