@@ -579,6 +579,175 @@ describe('LangChain non-streaming workflows', () => {
     expect(getTestSpans()).toHaveLength(1);
   });
 
+  for (const kind of ['sequence', 'map'] as const) {
+    it(`forwards optional invoke arguments and Promise identity for ${kind}`, async () => {
+      class SDKPromise extends Promise<unknown> {}
+      const output = { answer: 'unchanged' };
+      const result = new SDKPromise(resolve => resolve(output));
+      instrumentation.disable();
+      const prototype =
+        kind === 'sequence'
+          ? RunnableSequence.prototype
+          : RunnableMap.prototype;
+      const original = sinon.stub(prototype, 'invoke').returns(result);
+      instrumentation.enable();
+      const runnable: Runnable<unknown, unknown> =
+        kind === 'sequence'
+          ? identity()
+          : RunnableMap.from({
+              answer: RunnableLambda.from((value: unknown) => value),
+            });
+      const input = { arbitrary: ['input'] };
+      const options = {
+        runName: 'explicit',
+        metadata: { session_id: 'session' },
+      };
+      const calls: Parameters<typeof runnable.invoke>[] = [
+        [input],
+        [input, undefined],
+        [input, options],
+      ];
+      for (const args of calls) {
+        expect(runnable.invoke(...args)).toBe(result);
+        expect(await result).toBe(output);
+        expect(original.lastCall.thisValue).toBe(runnable);
+        expect(original.lastCall.args.length).toBe(args.length);
+        args.forEach((value, index) =>
+          expect(original.lastCall.args[index]).toBe(value)
+        );
+      }
+      expect(original.callCount).toBe(calls.length);
+      expect(getTestSpans()).toHaveLength(calls.length);
+    });
+  }
+
+  it('forwards batch argument tuples and preserves Promise subclass identity', async () => {
+    class SDKPromise extends Promise<unknown[]> {}
+    const output = [{ answer: 'first' }, new Error('returned SDK error')];
+    const result = new SDKPromise(resolve => resolve(output));
+    instrumentation.disable();
+    const original = sinon
+      .stub(RunnableSequence.prototype, 'batch')
+      .returns(result);
+    instrumentation.enable();
+    const runnable = identity();
+    const inputs = [{ arbitrary: 'input' }, { arbitrary: 'second' }];
+    const options = {
+      runName: 'batch-name',
+      metadata: { session_id: 'batch-session' },
+    };
+    const perInput = [
+      { runName: 'first', configurable: { thread_id: 'first-session' } },
+      { runName: 'second', configurable: { thread_id: 'second-session' } },
+    ];
+    const batchOptions = { returnExceptions: true, maxConcurrency: 2 };
+    const calls: Parameters<typeof runnable.batch>[] = [
+      [inputs],
+      [inputs, undefined],
+      [inputs, options],
+      [inputs, perInput],
+      [inputs, undefined, batchOptions],
+      [inputs, options, { returnExceptions: false }],
+      [inputs, perInput, batchOptions],
+      [inputs, undefined, undefined],
+    ];
+    for (const args of calls) {
+      expect(runnable.batch(...args)).toBe(result);
+      expect(await result).toBe(output);
+      expect(original.lastCall.thisValue).toBe(runnable);
+      expect(original.lastCall.args.length).toBe(args.length);
+      args.forEach((value, index) =>
+        expect(original.lastCall.args[index]).toBe(value)
+      );
+      const span = getTestSpans().at(-1)!;
+      expect(span.attributes['gen_ai.workflow.name']).toBe(
+        args[1] === options ? 'batch-name' : undefined
+      );
+      expect(span.attributes['gen_ai.conversation.id']).toBe(
+        args[1] === options ? 'batch-session' : undefined
+      );
+    }
+    expect(original.callCount).toBe(calls.length);
+    expect(getTestSpans()).toHaveLength(calls.length);
+  });
+
+  it('retains typed SDK outputs and returnExceptions overload behavior', async () => {
+    const failure = new TypeError('private batch failure');
+    const runnable = RunnableSequence.from<{ text: string }, string>([
+      RunnableLambda.from((input: { text: string }) => input.text),
+      RunnableLambda.from((text: string) => {
+        if (text === 'fail') throw failure;
+        return text.toUpperCase();
+      }),
+    ]);
+    const options = { maxConcurrency: 1 };
+    const invoke: Promise<string> = runnable.invoke({ text: 'one' }, options);
+    const defaultBatch: Promise<string[]> = runnable.batch([{ text: 'two' }]);
+    const successfulBatch: Promise<string[]> = runnable.batch(
+      [{ text: 'three' }],
+      [options],
+      { returnExceptions: false }
+    );
+    expect(await invoke).toBe('ONE');
+    expect(await defaultBatch).toEqual(['TWO']);
+    expect(await successfulBatch).toEqual(['THREE']);
+    const run = (enabled: boolean) => {
+      if (enabled) instrumentation.enable();
+      else instrumentation.disable();
+      const result: Promise<(string | Error)[]> = runnable.batch(
+        [{ text: 'ok' }, { text: 'fail' }],
+        options,
+        { returnExceptions: true }
+      );
+      return result;
+    };
+    const baseline = await run(false);
+    const instrumented = await run(true);
+    expect(instrumented).toEqual(baseline);
+    expect(baseline).toEqual(['OK', failure]);
+    expect(baseline[1]).toBe(failure);
+    expect(instrumented[1]).toBe(failure);
+    await expect(
+      runnable.batch([{ text: 'fail' }], options, { returnExceptions: false })
+    ).rejects.toBe(failure);
+  });
+
+  for (const synchronous of [false, true]) {
+    it(`preserves batch failures and exactly-once completion (synchronous=${synchronous})`, async () => {
+      const failure = new TypeError('private batch error');
+      instrumentation.disable();
+      const original = sinon
+        .stub(RunnableSequence.prototype, 'batch')
+        .callsFake(() => {
+          if (synchronous) throw failure;
+          return Promise.reject(failure);
+        });
+      instrumentation.enable();
+      const runnable = identity();
+      const inputs = ['input'];
+      const batchOptions = { returnExceptions: true };
+      if (synchronous) {
+        expect(() => runnable.batch(inputs, undefined, batchOptions)).toThrow(
+          failure
+        );
+      } else {
+        await expect(
+          runnable.batch(inputs, undefined, batchOptions)
+        ).rejects.toBe(failure);
+      }
+      expect(original.calledOnce).toBe(true);
+      expect(original.firstCall.thisValue).toBe(runnable);
+      expect(original.firstCall.args).toHaveLength(3);
+      expect(original.firstCall.args[0]).toBe(inputs);
+      expect(original.firstCall.args[1]).toBeUndefined();
+      expect(original.firstCall.args[2]).toBe(batchOptions);
+      expect(getTestSpans()).toHaveLength(1);
+      expect(getTestSpans()[0].status).toEqual({ code: SpanStatusCode.ERROR });
+      expect(getTestSpans()[0].attributes['error.type']).toBe('TypeError');
+      expect(getTestSpans()[0].events).toEqual([]);
+    });
+  }
+
   for (const capture of [false, true]) {
     for (const synchronous of [false, true]) {
       it(`preserves failures without message or stack (capture=${capture}, synchronous=${synchronous})`, async () => {

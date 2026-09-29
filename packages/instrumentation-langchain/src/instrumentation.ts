@@ -142,7 +142,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       if (isWrapped(cls.prototype.invoke)) {
         this._unwrap(cls.prototype, 'invoke');
       }
-      this._wrap(cls.prototype, 'invoke', this._createInvokeOrBatchWrapper());
+      this._wrap(cls.prototype, 'invoke', this._createInvokeWrapper());
     }
     // Sequence has an optimized batch; Map's inherited batch invokes
     // each item separately and is already covered by its invoke patch.
@@ -152,7 +152,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._wrap(
       module.RunnableSequence.prototype,
       'batch',
-      this._createInvokeOrBatchWrapper(true)
+      this._createBatchWrapper()
     );
   }
 
@@ -166,79 +166,98 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unwrap(module.RunnableSequence.prototype, 'batch');
   }
 
-  /**
-   * Creates a wrapper that runs a workflow in its span context and observes
-   * completion while preserving the original return value or thrown error.
-   */
-  private _createInvokeOrBatchWrapper(batch = false) {
+  private _createInvokeWrapper() {
     const self = this;
-    return <T extends Runnables.Runnable, A extends unknown[], R>(
-      original: (this: T, ...args: A) => R
+    return <T extends Runnables.Runnable, R>(
+      original: (this: T, ...args: Parameters<T['invoke']>) => R
     ) =>
-      function (this: T, ...args: A): R {
-        const parent = context.active();
-        if (!self.isEnabled() || isTracingSuppressed(parent)) {
-          return original.apply(this, args);
-        }
-        let state: WorkflowState | undefined;
-        try {
-          // LangGraph sets omitSequenceTags on internal node/channel-writer
-          // sequences (e.g. PregelNode.getNode()) to omit seq:step:* callback tags.
-          // Skip these internal adapters rather than reporting them as workflows.
-          if (!('omitSequenceTags' in this && this.omitSequenceTags === true)) {
-            const tracer = self.tracer;
-            const capture =
-              self.getConfig().captureMessageContent === 'span_only';
-            const attributes = self._generateWorkflowAttributes(
-              this,
-              args[0],
-              args[1],
-              capture
-            );
-            const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
-            const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
-            const span = tracer.startSpan(
-              name ? `${operation} ${name}` : operation,
-              { kind: SpanKind.INTERNAL, attributes },
-              parent
-            );
-            state = {
-              span,
-              context: trace.setSpan(parent, span),
-              capture,
-              batch,
-              ended: false,
-            };
-          }
-        } catch {
-          self._diag.warn('LangChain: could not start operation telemetry');
-        }
-        if (!state) return original.apply(this, args);
-        const active = state;
-        let result: R;
-        try {
-          result = context.with(active.context, () =>
-            original.apply(this, args)
-          );
-        } catch (error) {
-          self._end(active, undefined, { error });
-          throw error;
-        }
-        try {
-          if (result instanceof Promise) {
-            void result.then(
-              value => self._end(active, value),
-              error => self._end(active, undefined, { error })
-            );
-          } else {
-            self._end(active, result);
-          }
-        } catch {
-          self._diag.warn('LangChain: could not observe operation result');
-          self._end(active);
-        }
-        return result;
+      function (this: T, ...args: Parameters<T['invoke']>): R {
+        return self._traceWorkflow(this, args[0], args[1], false, () =>
+          original.apply(this, args)
+        );
       };
+  }
+
+  private _createBatchWrapper() {
+    const self = this;
+    return <T extends Runnables.RunnableSequence, R>(
+      original: (this: T, ...args: Parameters<T['batch']>) => R
+    ) =>
+      function (this: T, ...args: Parameters<T['batch']>): R {
+        return self._traceWorkflow(this, args[0], args[1], true, () =>
+          original.apply(this, args)
+        );
+      };
+  }
+
+  /**
+   * Runs a workflow in its span context and observes completion while preserving
+   * the original return value or thrown error.
+   */
+  private _traceWorkflow<R>(
+    target: Runnables.Runnable,
+    input: unknown,
+    options: Parameters<Runnables.RunnableSequence['batch']>[1],
+    batch: boolean,
+    invoke: () => R
+  ): R {
+    const parent = context.active();
+    if (!this.isEnabled() || isTracingSuppressed(parent)) return invoke();
+    let state: WorkflowState | undefined;
+    try {
+      // LangGraph sets omitSequenceTags on internal node/channel-writer
+      // sequences (e.g. PregelNode.getNode()) to omit seq:step:* callback tags.
+      // Skip these internal adapters rather than reporting them as workflows.
+      if (!('omitSequenceTags' in target && target.omitSequenceTags === true)) {
+        const tracer = this.tracer;
+        const capture = this.getConfig().captureMessageContent === 'span_only';
+        const attributes = this._generateWorkflowAttributes(
+          target,
+          input,
+          options,
+          capture
+        );
+        const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
+        const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
+        const span = tracer.startSpan(
+          name ? `${operation} ${name}` : operation,
+          { kind: SpanKind.INTERNAL, attributes },
+          parent
+        );
+        state = {
+          span,
+          context: trace.setSpan(parent, span),
+          capture,
+          batch,
+          ended: false,
+        };
+      }
+    } catch {
+      this._diag.warn('LangChain: could not start operation telemetry');
+    }
+    if (!state) return invoke();
+    const active = state;
+    let result: R;
+    try {
+      result = context.with(active.context, invoke);
+    } catch (error) {
+      this._end(active, undefined, { error });
+      throw error;
+    }
+    try {
+      if (result instanceof Promise) {
+        void result.then(
+          value => this._end(active, value),
+          error => this._end(active, undefined, { error })
+        );
+      } else {
+        this._end(active, result);
+      }
+    } catch {
+      this._diag.warn('LangChain: could not observe operation result');
+      this._end(active);
+    }
+    return result;
   }
 
   /**
