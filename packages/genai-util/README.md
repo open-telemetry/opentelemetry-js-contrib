@@ -21,7 +21,7 @@ npm install --save @opentelemetry/genai-util
 ## Features
 
 - **Semantic Conventions**: Complete constants and enumerations for OpenTelemetry GenAI semantic conventions (attributes, operation names, providers, finish reasons, token types, metrics, events).
-- **TelemetryHandler**: Central lifecycle façade managing spans, metrics, events, and completion hooks for LLM and GenAI operations.
+- **TelemetryHandler**: Central lifecycle façade managing spans, metrics, and events for LLM and GenAI operations.
 - **Invocations Lifecycle**: Structured handlers for all GenAI operations:
   - `InferenceInvocation`: Chat completions, text completions, and multimodal content generation (`chat`, `text_completion`, `generate_content`).
   - `AgentInvocation`: Agent / assistant invocations with support for both local in-process agents (`SpanKind.INTERNAL`) and remote agents (`SpanKind.CLIENT`).
@@ -41,7 +41,6 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.client.token.usage` (input & output tokens)
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
-- **Completion Hooks**: Pluggable lifecycle hooks (`CompletionHookManager`) for custom logging, evaluations, or forwarding prompts and completions to external analysis services.
 
 ---
 

@@ -28,6 +28,7 @@ import {
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
+  GEN_AI_SCHEMA_URL,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
@@ -37,6 +38,13 @@ import {
 } from '../src/semconv';
 
 describe('GenAI Semantic Conventions', () => {
+  it('should define expected schema URL', () => {
+    assert.strictEqual(
+      GEN_AI_SCHEMA_URL,
+      'https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev'
+    );
+  });
+
   it('should define expected attribute names', () => {
     assert.strictEqual(ATTR_GEN_AI_OPERATION_NAME, 'gen_ai.operation.name');
     assert.strictEqual(ATTR_GEN_AI_PROVIDER_NAME, 'gen_ai.provider.name');

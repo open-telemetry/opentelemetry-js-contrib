@@ -192,7 +192,6 @@ const baseConfig = tseslint.config(
       '**/packages/instrumentation-long-task/**/*',
       '**/packages/instrumentation-user-interaction/**/*',
       '**/packages/instrumentation-web-exception/**/*',
-      '**/packages/plugin-react-load/**/*',
     ],
     plugins: { 'baseline-js': baselinePlugin },
     extends: [

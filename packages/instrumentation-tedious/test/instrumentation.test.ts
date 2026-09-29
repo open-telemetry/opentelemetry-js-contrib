@@ -39,7 +39,7 @@ import {
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
-const host = process.env.MSSQL_HOST || '127.0.0.1';
+const host = process.env.MSSQL_HOST || 'localhost';
 const user = process.env.MSSQL_USER || 'sa';
 const password = process.env.MSSQL_PASSWORD || 'mssql_passw0rd';
 
