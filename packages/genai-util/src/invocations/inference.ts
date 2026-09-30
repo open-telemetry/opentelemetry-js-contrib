@@ -44,6 +44,7 @@ import {
   formatOutputMessages,
   formatSystemInstructions,
   getRequestOptionsAttributes,
+  mergeTokenUsage,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
@@ -200,9 +201,14 @@ export class InferenceInvocation extends BaseInvocation {
 
   /**
    * Record token usage.
+   *
+   * May be called multiple times (e.g. when a streaming provider reports input
+   * and output tokens in separate events). Only fields that are defined in
+   * `usage` are updated; previously recorded values for other fields are kept,
+   * both on the span and in the values used for the token usage metric.
    */
   public setUsage(usage: TokenUsage): this {
-    this._usage = usage;
+    this._usage = mergeTokenUsage(this._usage, usage);
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_INPUT_TOKENS,

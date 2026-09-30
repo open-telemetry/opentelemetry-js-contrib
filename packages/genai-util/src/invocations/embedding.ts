@@ -20,6 +20,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
 import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
+import { mergeTokenUsage } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -126,8 +127,12 @@ export class EmbeddingInvocation extends BaseInvocation {
     return this;
   }
 
+  /**
+   * Record token usage. Only fields that are defined in `usage` are updated;
+   * previously recorded values for other fields are kept.
+   */
   public setUsage(usage: TokenUsage): this {
-    this._usage = usage;
+    this._usage = mergeTokenUsage(this._usage, usage);
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_INPUT_TOKENS,

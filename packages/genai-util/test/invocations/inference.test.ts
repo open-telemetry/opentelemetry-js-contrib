@@ -33,6 +33,9 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  ATTR_GEN_AI_TOKEN_TYPE,
+  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -456,5 +459,42 @@ describe('InferenceInvocation', () => {
     // Metric attributes must not leak onto the span.
     const [span] = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
+  });
+
+  it('should merge usage across multiple setUsage calls on span and metrics', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'anthropic',
+      requestModel: 'claude',
+    });
+
+    // Streaming providers may report input and output tokens in separate events.
+    invocation.setUsage({ inputTokens: 10 });
+    invocation.setUsage({ outputTokens: 20, inputTokens: undefined });
+    invocation.stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 20);
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const tokenMetric = resourceMetrics.scopeMetrics[0]?.metrics.find(
+      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
+    );
+    assert.ok(tokenMetric, 'token usage metric should be recorded');
+
+    const sumByType = new Map<unknown, number>();
+    for (const dp of tokenMetric.dataPoints) {
+      const value = dp.value as { sum?: number };
+      sumByType.set(dp.attributes[ATTR_GEN_AI_TOKEN_TYPE], value.sum ?? 0);
+    }
+    assert.strictEqual(sumByType.get(GEN_AI_TOKEN_TYPE_VALUE_INPUT), 10);
+    assert.strictEqual(sumByType.get(GEN_AI_TOKEN_TYPE_VALUE_OUTPUT), 20);
   });
 });

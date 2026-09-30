@@ -26,6 +26,7 @@ import type {
   OutputMessages,
   SystemInstructionPart,
   SystemInstructions,
+  TokenUsage,
 } from './types';
 
 /**
@@ -337,4 +338,31 @@ export function getRequestOptionsAttributes(
   }
 
   return attrs;
+}
+
+/**
+ * Merge a partial token usage update into the previously recorded usage.
+ *
+ * Only fields that are defined in `update` overwrite the existing values, so
+ * usage reported incrementally (e.g. input tokens at stream start and output
+ * tokens at stream end) accumulates instead of being replaced. This mirrors the
+ * behavior of span attributes, which are only set for defined values and can
+ * never be removed once set.
+ *
+ * @param existing - Previously recorded usage, if any.
+ * @param update - New (possibly partial) usage values.
+ * @returns A new merged {@link TokenUsage} object.
+ */
+export function mergeTokenUsage(
+  existing: TokenUsage | undefined,
+  update: TokenUsage
+): TokenUsage {
+  const merged: TokenUsage = { ...existing };
+  for (const key of Object.keys(update) as (keyof TokenUsage)[]) {
+    const value = update[key];
+    if (value !== undefined) {
+      merged[key] = value;
+    }
+  }
+  return merged;
 }
