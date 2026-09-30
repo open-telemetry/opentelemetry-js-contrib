@@ -543,43 +543,98 @@ describe('LangChain application workflow boundaries', () => {
     await expectWorkflows(['invoke_workflow application-model']);
   });
 
-  it('does not report the inline agent-name adapter through the current public agent API', async function () {
-    try {
-      require.resolve('@langchain/core/utils/uuid');
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        'code' in error &&
-        error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED'
-      ) {
-        // Current transitive graph packages need this newer core subpath.
-        // The actual shipped helper is tested independently above on core1.0.
-        this.skip();
-      }
-      throw error;
+  for (const includeAgentName of [undefined, 'inline'] as const) {
+    for (const applicationWorkflow of [false, true]) {
+      it(`excludes agent model adapters but preserves application workflows (inline=${includeAgentName === 'inline'}, application=${applicationWorkflow})`, async function () {
+        try {
+          require.resolve('@langchain/core/utils/uuid');
+        } catch (error) {
+          if (
+            error instanceof Error &&
+            'code' in error &&
+            error.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED'
+          ) {
+            // Current transitive graph packages need this newer core subpath.
+            // The actual shipped helper is tested independently above on core1.0.
+            this.skip();
+          }
+          throw error;
+        }
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { createAgent }: typeof LangChain = require('langchain');
+        class AgentModel extends LocalModel {
+          override bindTools(): Runnable<
+            BaseLanguageModelInput,
+            AIMessageChunk
+          > {
+            if (!applicationWorkflow) return this;
+            return RunnableSequence.from([
+              RunnableLambda.from((input: BaseLanguageModelInput) => input),
+              this,
+            ]).withConfig({ runName: 'application-model' });
+          }
+          override async _generate() {
+            return {
+              generations: [
+                { text: 'answer', message: new AIMessageChunk('answer') },
+              ],
+            };
+          }
+        }
+        const agent = createAgent({
+          model: new AgentModel(),
+          tools: [],
+          name: 'local-agent',
+          includeAgentName,
+        });
+        const result = await agent.invoke({
+          messages: [new HumanMessage('question')],
+        });
+        assert.equal(result.messages.at(-1)?.content, 'answer');
+        await expectWorkflows(
+          applicationWorkflow ? ['invoke_workflow application-model'] : []
+        );
+      });
     }
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { createAgent }: typeof LangChain = require('langchain');
-    class AgentModel extends LocalModel {
-      override async _generate() {
-        return {
-          generations: [
-            { text: 'answer', message: new AIMessageChunk('answer') },
-          ],
-        };
-      }
-    }
-    const agent = createAgent({
-      model: new AgentModel(),
-      tools: [],
-      name: 'local-agent',
-      includeAgentName: 'inline',
-    });
-    const result = await agent.invoke({
-      messages: [new HumanMessage('question')],
-    });
-    assert.equal(result.messages.at(-1)?.content, 'answer');
-    await expectWorkflows([]);
+  }
+
+  it('classifies only compositions of exact SDK prompt objects, including disabled-time construction', async () => {
+    const module = instrumentation
+      .getModuleDefinitions()
+      .find(
+        definition => definition.name === 'langchain'
+      ) as InstrumentationNodeModuleDefinition;
+    const file = module.files.find(file => file.name.endsWith('utils.cjs'))!;
+    const helper = {
+      getPromptRunnable: () =>
+        RunnableLambda.from((value: { input: string }) => value).withConfig({
+          runName: 'same-prompt-name',
+        }),
+    };
+    file.moduleExports = helper;
+    instrumentation.disable();
+    const child = identity();
+    child.name = 'application-child';
+    const prompt = helper.getPromptRunnable();
+    const adapter = prompt.pipe(child);
+    const wrapper = RunnableBinding.prototype.pipe;
+    instrumentation.enable();
+    instrumentation.disable();
+    instrumentation.enable();
+    assert.equal(RunnableBinding.prototype.pipe, wrapper);
+    const input = { input: 'hello' };
+    assert.equal(await adapter.invoke(input), input);
+    assert.deepEqual(await adapter.batch([input]), [input]);
+    const ordinary = RunnableLambda.from((value: { input: string }) => value)
+      .withConfig({ runName: 'same-prompt-name' })
+      .pipe(child);
+    await ordinary.invoke(input);
+    await expectWorkflows([
+      'invoke_workflow application-child',
+      'invoke_workflow application-child',
+      'invoke_workflow application-child',
+      'invoke_workflow',
+    ]);
   });
 
   it('tracks adapter creation while disabled and still excludes only adapters after re-enable', async () => {

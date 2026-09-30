@@ -46,6 +46,8 @@ import { batchOutputMessages, isRecord, messages } from './content';
 import {
   isInternalWorkflow,
   isTrackingFactory,
+  markAgentPrompt,
+  markAgentPromptComposition,
   markStructuredOutput,
   markWorkflow,
   ownValue,
@@ -255,7 +257,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         SUPPORTED_VERSIONS,
         undefined,
         undefined,
-        ['cjs', 'js'].map(extension =>
+        ['cjs', 'js'].flatMap(extension => [
           createTrackedModuleFile(
             `langchain/dist/agents/withAgentName.${extension}`,
             () => {},
@@ -270,14 +272,37 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                   trackFactory(result => markWorkflow(result), this._diag)
                 );
             }
-          )
-        )
+          ),
+          createTrackedModuleFile(
+            `langchain/dist/agents/utils.${extension}`,
+            () => {},
+            () => {},
+            (module: { getPromptRunnable: (prompt: unknown) => unknown }) => {
+              if (
+                typeof module.getPromptRunnable === 'function' &&
+                !isTrackingFactory(module.getPromptRunnable)
+              ) {
+                this._wrap(
+                  module,
+                  'getPromptRunnable',
+                  trackFactory(result => markAgentPrompt(result), this._diag)
+                );
+              }
+            }
+          ),
+        ])
       ),
     ];
   }
 
   private _trackRunnableFactories(module: typeof Runnables) {
     if (!module.Runnable) return;
+    if (!isTrackingFactory(module.Runnable.prototype.pipe))
+      this._wrap(
+        module.Runnable.prototype,
+        'pipe',
+        trackFactory(markAgentPromptComposition, this._diag)
+      );
     this._trackWorkflowOwner(module.RunnableToolLike);
     if (!isTrackingFactory(module.Runnable.prototype.asTool))
       this._wrap(

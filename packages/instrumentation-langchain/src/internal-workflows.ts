@@ -10,6 +10,7 @@ import { isRecord } from './content';
 // Factory-only adapters created before tracking cannot be inferred safely.
 const internalWorkflows = new WeakSet<object>();
 const trackingWrappers = new WeakSet<object>();
+const agentPrompts = new WeakSet<object>();
 
 export function isInternalWorkflow(value: object): boolean {
   return internalWorkflows.has(value);
@@ -39,6 +40,19 @@ function unbind(value: unknown): unknown {
 export function markWorkflow(value: unknown): void {
   const runnable = unbind(value);
   if (isRecord(runnable)) internalWorkflows.add(runnable);
+}
+
+export function markAgentPrompt(value: unknown): void {
+  if (isRecord(value)) agentPrompts.add(value);
+}
+
+export function markAgentPromptComposition(
+  result: unknown,
+  receiver: unknown
+): void {
+  // Early LangChain 1.x composes this SDK-owned prompt with the model.
+  // Track only that outer pipeline, not arbitrary application pipe calls.
+  if (isRecord(receiver) && agentPrompts.has(receiver)) markWorkflow(result);
 }
 
 export function markStructuredOutput(
