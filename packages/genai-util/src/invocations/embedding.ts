@@ -5,7 +5,6 @@
 
 import { SpanKind, type Attributes } from '@opentelemetry/api';
 import {
-  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -99,6 +98,7 @@ export class EmbeddingInvocation extends BaseInvocation {
     super(getEmbeddingSpanName(options), handler, {
       kind: SpanKind.CLIENT,
       attributes: buildInitialAttributes(options),
+      metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
     });
@@ -142,12 +142,14 @@ export class EmbeddingInvocation extends BaseInvocation {
     return this;
   }
 
-  protected override _recordMetrics(
-    durationSec: number,
-    errorType?: string
-  ): void {
+  /**
+   * Semantic convention dimensions shared by all metrics recorded for this invocation.
+   *
+   * Caller-supplied metric attributes override these; see
+   * {@link BaseInvocation._getMetricAttributes}.
+   */
+  protected override _getSemconvMetricAttributes(): Attributes {
     const metricAttrs: Attributes = {
-      ...this._metricAttributes,
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
     };
@@ -163,9 +165,14 @@ export class EmbeddingInvocation extends BaseInvocation {
         metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
       }
     }
-    if (errorType) {
-      metricAttrs[ATTR_ERROR_TYPE] = errorType;
-    }
+    return metricAttrs;
+  }
+
+  protected override _recordMetrics(
+    durationSec: number,
+    errorType?: string
+  ): void {
+    const metricAttrs = this._getMetricAttributes(errorType);
 
     // The invocation context is passed explicitly: metrics are recorded while the
     // invocation's context may no longer be active, and exemplars must still point

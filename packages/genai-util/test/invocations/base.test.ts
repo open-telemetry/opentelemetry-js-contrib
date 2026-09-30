@@ -106,6 +106,11 @@ describe('BaseInvocation', () => {
       });
     }
 
+    protected override _getSemconvMetricAttributes(): Attributes {
+      this.hookOrder.push('_getSemconvMetricAttributes');
+      return {};
+    }
+
     protected override _emitContentEvent(endTime?: HrTime): void {
       this.hookOrder.push('_emitContentEvent');
       this.emitContentEventCalls.push({ endTime });
@@ -152,6 +157,9 @@ describe('BaseInvocation', () => {
     // _emitContentEvent is optional and defaults to a no-op.
     class MinimalInvocation extends BaseInvocation {
       protected override _recordMetrics(): void {}
+      protected override _getSemconvMetricAttributes(): Attributes {
+        return {};
+      }
     }
 
     const inv = new MinimalInvocation('minimal-span', handler, {
@@ -446,52 +454,70 @@ describe('BaseInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
     });
 
-    it('should let subclasses seed metric attributes and emit them on metrics', async () => {
+    it('should let caller metric attributes override the semantic convention dimensions of subclasses', async () => {
       class MetricRecordingInvocation extends BaseInvocation {
+        private _responseModel?: string;
+
         constructor(
           handlerArg: TelemetryHandler,
           options: Partial<BaseInvocationOptions> = {}
         ) {
           super('metric-recording-span', handlerArg, {
             kind: SpanKind.CLIENT,
-            metricAttributes: {
-              // The concrete invocation contributes its semantic convention dimensions;
-              // caller-supplied values are merged last so that they win.
-              'gen_ai.operation.name': 'chat',
-              'gen_ai.request.model': 'default-model',
-              ...options.metricAttributes,
-            },
+            metricAttributes: options.metricAttributes,
           });
         }
 
         public setResponseModel(model: string): void {
-          this._metricAttributes['gen_ai.response.model'] = model;
+          this._responseModel = model;
         }
 
-        protected override _recordMetrics(durationSec: number): void {
+        protected override _getSemconvMetricAttributes(): Attributes {
+          const attrs: Attributes = {
+            'gen_ai.operation.name': 'chat',
+            'gen_ai.request.model': 'default-model',
+          };
+          if (this._responseModel) {
+            attrs['gen_ai.response.model'] = this._responseModel;
+          }
+          return attrs;
+        }
+
+        protected override _recordMetrics(
+          durationSec: number,
+          errorType?: string
+        ): void {
+          const metricAttrs = this._getMetricAttributes(errorType);
           this._handler.recordOperationDuration(
             durationSec,
-            this._metricAttributes,
+            metricAttrs,
             this._context
           );
           this._handler.recordTokenUsage(
             { inputTokens: 10, outputTokens: 5 },
-            this._metricAttributes,
+            metricAttrs,
             this._context
           );
         }
       }
 
       const inv = new MetricRecordingInvocation(handler, {
-        metricAttributes: { 'gen_ai.request.model': 'gpt-4' },
+        metricAttributes: {
+          'gen_ai.request.model': 'gpt-4',
+          [ATTR_ERROR_TYPE]: 'caller-value',
+        },
       });
       inv.setResponseModel('gpt-4-0613');
-      inv.stop();
+      // Overrides a dimension the subclass only learns after the invocation starts.
+      inv.setMetricAttribute('gen_ai.response.model', 'gpt-4-normalized');
+      inv.fail(new RangeError('boom'));
 
       const expectedAttributes = {
         'gen_ai.operation.name': 'chat',
         'gen_ai.request.model': 'gpt-4',
-        'gen_ai.response.model': 'gpt-4-0613',
+        'gen_ai.response.model': 'gpt-4-normalized',
+        // `error.type` always reflects the resolved failure.
+        [ATTR_ERROR_TYPE]: 'RangeError',
       };
 
       const metrics = (
@@ -740,6 +766,10 @@ describe('BaseInvocation', () => {
         if (this._failIn === 'content') {
           throw HookFailureInvocation.CONTENT_ERROR;
         }
+      }
+
+      protected override _getSemconvMetricAttributes(): Attributes {
+        return {};
       }
 
       protected override _onInvocationEnd(): void {

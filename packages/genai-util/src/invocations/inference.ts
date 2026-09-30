@@ -6,7 +6,6 @@
 import { SpanKind, type Attributes, type HrTime } from '@opentelemetry/api';
 import { hrTime, hrTimeDuration, hrTimeToSeconds } from '@opentelemetry/core';
 import {
-  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
@@ -155,6 +154,7 @@ export class InferenceInvocation extends BaseInvocation {
         operationName,
         contentCaptureMode
       ),
+      metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
     });
@@ -320,14 +320,13 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Build the metric attributes shared by all metrics recorded for this invocation.
+   * Semantic convention dimensions shared by all metrics recorded for this invocation.
    *
-   * Caller-supplied metric attributes ({@link _metricAttributes}) are applied first so
-   * that the semantic convention dimensions always win.
+   * Caller-supplied metric attributes override these; see
+   * {@link BaseInvocation._getMetricAttributes}.
    */
-  private _getMetricAttributes(errorType?: string): Attributes {
+  protected override _getSemconvMetricAttributes(): Attributes {
     const metricAttrs: Attributes = {
-      ...this._metricAttributes,
       [ATTR_GEN_AI_PROVIDER_NAME]: this._providerName,
       [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
     };
@@ -342,9 +341,6 @@ export class InferenceInvocation extends BaseInvocation {
     }
     if (this._serverPort !== undefined) {
       metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
-    }
-    if (errorType) {
-      metricAttrs[ATTR_ERROR_TYPE] = errorType;
     }
     return metricAttrs;
   }

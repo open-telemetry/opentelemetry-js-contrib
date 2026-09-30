@@ -358,9 +358,32 @@ export interface InferenceRequestOptions {
 // ============================================================================
 
 /**
+ * Options shared by all invocation types.
+ *
+ * This is the caller-facing counterpart of `BaseInvocationOptions`, which is the
+ * contract between a concrete invocation and its base class: the span kind is chosen
+ * by the concrete invocation, and `parentContext` is passed to the base class as
+ * `context`.
+ */
+interface CommonInvocationOptions {
+  /** Parent context for the span. Defaults to the currently active context. */
+  parentContext?: Context;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
+  /**
+   * Custom metric attributes, recorded on this invocation's metrics only. They override
+   * the semantic convention dimensions the invocation would otherwise report (except
+   * `error.type`) and must be low cardinality.
+   */
+  metricAttributes?: Attributes;
+  /** Start time of the invocation. Defaults to the time the invocation is created. */
+  startTime?: TimeInput;
+}
+
+/**
  * Options for starting an inference invocation.
  */
-export interface InferenceInvocationOptions {
+export interface InferenceInvocationOptions extends CommonInvocationOptions {
   /** Name of the provider (e.g. 'openai', 'anthropic', 'aws.bedrock'). */
   providerName: string;
   /** Operation name (e.g. 'chat', 'text_completion', 'generate_content'). Defaults to 'chat'. */
@@ -375,22 +398,16 @@ export interface InferenceInvocationOptions {
   systemInstructions?: SystemInstructions;
   /** Conversation / session / thread ID. */
   conversationId?: string;
-  /** Parent context for the span. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
   /** Server address (e.g. hostname). */
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
-  /** Start time of the invocation. Defaults to the time the invocation is created. */
-  startTime?: TimeInput;
 }
 
 /**
  * Options for starting an embedding invocation.
  */
-export interface EmbeddingInvocationOptions {
+export interface EmbeddingInvocationOptions extends CommonInvocationOptions {
   /** Name of the provider. */
   providerName: string;
   /** Operation name (e.g. 'embedding', 'generate_content'). Defaults to 'embeddings'. */
@@ -401,22 +418,16 @@ export interface EmbeddingInvocationOptions {
   encodingFormats?: string[];
   /** Number of dimensions the resulting output embeddings should have (`gen_ai.embeddings.dimension.count`). */
   dimensionCount?: number;
-  /** Parent context. */
-  parentContext?: Context;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
   /** Server address. */
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
-  /** Start time of the invocation. Defaults to the time the invocation is created. */
-  startTime?: TimeInput;
 }
 
 /**
  * Options for starting a tool execution invocation.
  */
-export interface ToolInvocationOptions {
+export interface ToolInvocationOptions extends CommonInvocationOptions {
   /** Name of the tool being executed (`gen_ai.tool.name`). */
   toolName: string;
   /**
@@ -433,14 +444,8 @@ export interface ToolInvocationOptions {
   toolArguments?: unknown;
   /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
   conversationId?: string;
-  /** Parent context. */
-  parentContext?: Context;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
   agentName?: string;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
-  /** Start time of the invocation. Defaults to the time the invocation is created. */
-  startTime?: TimeInput;
 }
 
 /**

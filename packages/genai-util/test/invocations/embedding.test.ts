@@ -240,7 +240,7 @@ describe('EmbeddingInvocation', () => {
     );
   });
 
-  it('should record caller-supplied metric attributes on every metric it emits', async () => {
+  it('should record caller-supplied metric attributes on every metric, overriding semantic convention dimensions', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test-instrumentation',
       instrumentationVersion: '1.0.0',
@@ -251,6 +251,7 @@ describe('EmbeddingInvocation', () => {
     const invocation = handler.startEmbedding({
       providerName: 'openai',
       requestModel: 'text-embedding-3-small',
+      metricAttributes: { [ATTR_GEN_AI_REQUEST_MODEL]: 'normalized' },
     });
     invocation.setMetricAttribute('custom.metric.attr', 'metric-value');
     invocation.setUsage({ inputTokens: 10 });
@@ -266,25 +267,37 @@ describe('EmbeddingInvocation', () => {
       ].sort()
     );
 
-    // The metric attribute bag owned by `BaseInvocation` must reach every metric: an
-    // implementation that builds its dimensions from scratch turns the public
-    // `setMetricAttribute` into a silent no-op.
+    // Every metric must be recorded through `_getMetricAttributes`: one that builds its
+    // attributes from scratch would drop the caller's values.
     for (const metric of metrics) {
-      for (const dataPoint of metric.dataPoints) {
+      for (const { attributes } of metric.dataPoints) {
+        const name = metric.descriptor.name;
         assert.strictEqual(
-          dataPoint.attributes['custom.metric.attr'],
+          attributes['custom.metric.attr'],
           'metric-value',
-          `${metric.descriptor.name} dropped a caller-supplied metric attribute`
+          name
         );
         assert.strictEqual(
-          dataPoint.attributes[ATTR_GEN_AI_OPERATION_NAME],
-          GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS
+          attributes[ATTR_GEN_AI_REQUEST_MODEL],
+          'normalized',
+          name
+        );
+        // Dimensions the caller did not override keep their semantic convention value.
+        assert.strictEqual(
+          attributes[ATTR_GEN_AI_OPERATION_NAME],
+          GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+          name
         );
       }
     }
 
-    // Metric attributes must not leak onto the span.
+    // Metric attributes must not leak onto the span, which keeps the semantic
+    // convention values.
     const [span] = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_REQUEST_MODEL],
+      'text-embedding-3-small'
+    );
   });
 });

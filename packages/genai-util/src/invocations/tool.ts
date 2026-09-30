@@ -4,7 +4,6 @@
  */
 
 import { SpanKind, type Attributes, type HrTime } from '@opentelemetry/api';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
@@ -113,6 +112,7 @@ export class ToolInvocation extends BaseInvocation {
         operationName,
         contentCaptureMode
       ),
+      metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
     });
@@ -145,19 +145,13 @@ export class ToolInvocation extends BaseInvocation {
   }
 
   /**
-   * Record `gen_ai.execute_tool.duration`.
-   *
-   * Dimensions follow the metric definition: `gen_ai.tool.name` (required),
-   * `error.type` (on failure), and `gen_ai.agent.name` / `gen_ai.tool.type` when known.
-   * Caller-supplied metric attributes are applied first so that the semantic convention
-   * dimensions always win.
+   * Semantic convention dimensions for `gen_ai.execute_tool.duration`:
+   * `gen_ai.tool.name` (required) and `gen_ai.agent.name` / `gen_ai.tool.type` when
+   * known. Caller-supplied metric attributes override these; see
+   * {@link BaseInvocation._getMetricAttributes}.
    */
-  protected override _recordMetrics(
-    durationSec: number,
-    errorType?: string
-  ): void {
+  protected override _getSemconvMetricAttributes(): Attributes {
     const metricAttrs: Attributes = {
-      ...this._metricAttributes,
       [ATTR_GEN_AI_TOOL_NAME]: this._toolName,
     };
     if (this._agentName) {
@@ -166,9 +160,17 @@ export class ToolInvocation extends BaseInvocation {
     if (this._toolType) {
       metricAttrs[ATTR_GEN_AI_TOOL_TYPE] = this._toolType;
     }
-    if (errorType) {
-      metricAttrs[ATTR_ERROR_TYPE] = errorType;
-    }
+    return metricAttrs;
+  }
+
+  /**
+   * Record `gen_ai.execute_tool.duration`, with `error.type` on failure.
+   */
+  protected override _recordMetrics(
+    durationSec: number,
+    errorType?: string
+  ): void {
+    const metricAttrs = this._getMetricAttributes(errorType);
 
     // The invocation context is passed explicitly: metrics are recorded while the
     // invocation's context may no longer be active, and exemplars must still point
