@@ -32,6 +32,7 @@ import {
 } from '../semconv';
 import type {
   ContentCaptureMode,
+  FinishReason,
   InferenceInvocationOptions,
   InputMessages,
   OutputMessages,
@@ -189,8 +190,10 @@ export class InferenceInvocation extends BaseInvocation {
   /**
    * Set finish reasons for the response choices.
    */
-  public setFinishReasons(reasons: string[] | string): this {
-    const arr = Array.isArray(reasons) ? reasons : [reasons];
+  public setFinishReasons(
+    reasons: readonly FinishReason[] | FinishReason
+  ): this {
+    const arr = typeof reasons === 'string' ? [reasons] : [...reasons];
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
     return this;
   }

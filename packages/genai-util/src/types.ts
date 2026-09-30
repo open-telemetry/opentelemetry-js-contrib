@@ -36,7 +36,7 @@ export type FinishReason =
   | 'tool_call'
   | 'compaction'
   | 'error'
-  | string;
+  | (string & {});
 
 /**
  * Role of the message sender in a chat conversation.
