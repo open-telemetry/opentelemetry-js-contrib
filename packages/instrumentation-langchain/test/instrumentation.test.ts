@@ -83,10 +83,19 @@ describe('LangChainInstrumentation', () => {
     );
     expect(instance.definitions.map(definition => definition.name)).toEqual([
       '@langchain/core',
+      'langchain',
     ]);
     expect(instance.definitions[0].files.map(file => file.name)).toEqual([
       normalize('@langchain/core/dist/runnables/base.cjs'),
+      normalize('@langchain/core/dist/runnables/history.cjs'),
+      normalize('@langchain/core/dist/runnables/passthrough.cjs'),
+      normalize('@langchain/core/dist/language_models/chat_models.cjs'),
+      normalize('@langchain/core/dist/language_models/structured_output.cjs'),
       normalize('@langchain/core/dist/runnables/base.js'),
+      normalize('@langchain/core/dist/runnables/history.js'),
+      normalize('@langchain/core/dist/runnables/passthrough.js'),
+      normalize('@langchain/core/dist/language_models/chat_models.js'),
+      normalize('@langchain/core/dist/language_models/structured_output.js'),
     ]);
     const file = instance.definitions[0].files.find(file =>
       file.name.endsWith('base.cjs')

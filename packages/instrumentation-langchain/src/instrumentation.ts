@@ -38,10 +38,20 @@ import {
   METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
+import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
+import {
+  isInternalWorkflow,
+  isTrackingFactory,
+  markStructuredOutput,
+  markWorkflow,
+  ownValue,
+  trackFactory,
+  trackOwnedWorkflow,
+} from './internal-workflows';
 
 const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
@@ -64,7 +74,8 @@ interface WorkflowState {
 function createTrackedModuleFile<T extends object>(
   name: string,
   patch: (module: T) => void,
-  unpatch: (module: T) => void
+  unpatch: (module: T) => void,
+  track?: (module: T) => void
 ): InstrumentationNodeModuleFile {
   const instances = new Set<T>();
   const file = new InstrumentationNodeModuleFile(
@@ -72,7 +83,10 @@ function createTrackedModuleFile<T extends object>(
     SUPPORTED_VERSIONS,
     (module: T) => {
       instances.add(module);
-      for (const instance of instances) patch(instance);
+      for (const instance of instances) {
+        track?.(instance);
+        patch(instance);
+      }
       return module;
     },
     () => {
@@ -85,6 +99,9 @@ function createTrackedModuleFile<T extends object>(
     set: (module: T) => {
       exports = module;
       instances.add(module);
+      // Factory identity hooks stay active while disabled, without telemetry.
+      // Otherwise adapters created during disable cannot be identified later.
+      track?.(module);
     },
   });
   return file;
@@ -149,13 +166,82 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   protected init() {
-    const files = ['cjs', 'js'].map(extension =>
+    const files = ['cjs', 'js'].flatMap(extension => [
       createTrackedModuleFile(
         `${MODULE_NAME}/dist/runnables/base.${extension}`,
         (module: typeof Runnables) => this._patchRunnables(module),
-        (module: typeof Runnables) => this._unpatchRunnables(module)
-      )
-    );
+        (module: typeof Runnables) => this._unpatchRunnables(module),
+        (module: typeof Runnables) => this._trackRunnableFactories(module)
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/runnables/history.${extension}`,
+        () => {},
+        () => {},
+        (module: Pick<typeof Runnables, 'RunnableWithMessageHistory'>) =>
+          this._trackWorkflowOwner(module.RunnableWithMessageHistory)
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/runnables/passthrough.${extension}`,
+        () => {},
+        () => {},
+        (module: typeof Runnables) => {
+          if (!isTrackingFactory(module.RunnablePassthrough.assign))
+            this._wrap(
+              module.RunnablePassthrough,
+              'assign',
+              trackFactory(
+                result => markWorkflow(ownValue(result, 'mapper')),
+                this._diag
+              )
+            );
+        }
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/language_models/chat_models.${extension}`,
+        () => {},
+        () => {},
+        (module: { BaseChatModel: typeof BaseChatModel }) => {
+          if (
+            !isTrackingFactory(
+              module.BaseChatModel.prototype.withStructuredOutput
+            )
+          )
+            this._wrap(
+              module.BaseChatModel.prototype,
+              'withStructuredOutput',
+              trackFactory(
+                (result, _receiver, args) =>
+                  markStructuredOutput(result, ownValue(args[1], 'includeRaw')),
+                this._diag
+              )
+            );
+        }
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/language_models/structured_output.${extension}`,
+        () => {},
+        () => {},
+        (module: {
+          assembleStructuredOutputPipeline: (
+            llm: unknown,
+            parser: unknown,
+            includeRaw?: boolean,
+            runName?: string
+          ) => unknown;
+        }) => {
+          if (!isTrackingFactory(module.assembleStructuredOutputPipeline))
+            this._wrap(
+              module,
+              'assembleStructuredOutputPipeline',
+              trackFactory(
+                (result, _receiver, args) =>
+                  markStructuredOutput(result, args[2]),
+                this._diag
+              )
+            );
+        }
+      ),
+    ]);
     return [
       new InstrumentationNodeModuleDefinition(
         MODULE_NAME,
@@ -164,7 +250,81 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         undefined,
         files
       ),
+      new InstrumentationNodeModuleDefinition(
+        'langchain',
+        SUPPORTED_VERSIONS,
+        undefined,
+        undefined,
+        ['cjs', 'js'].map(extension =>
+          createTrackedModuleFile(
+            `langchain/dist/agents/withAgentName.${extension}`,
+            () => {},
+            () => {},
+            (module: {
+              withAgentName: (model: unknown, mode: unknown) => unknown;
+            }) => {
+              if (!isTrackingFactory(module.withAgentName))
+                this._wrap(
+                  module,
+                  'withAgentName',
+                  trackFactory(result => markWorkflow(result), this._diag)
+                );
+            }
+          )
+        )
+      ),
     ];
+  }
+
+  private _trackRunnableFactories(module: typeof Runnables) {
+    if (!module.Runnable) return;
+    this._trackWorkflowOwner(module.RunnableToolLike);
+    if (!isTrackingFactory(module.Runnable.prototype.asTool))
+      this._wrap(
+        module.Runnable.prototype,
+        'asTool',
+        trackFactory(
+          result => markWorkflow(ownValue(result, 'bound')),
+          this._diag
+        )
+      );
+    if (!isTrackingFactory(module.Runnable.prototype.assign))
+      this._wrap(
+        module.Runnable.prototype,
+        'assign',
+        trackFactory(
+          result => markWorkflow(ownValue(ownValue(result, 'last'), 'mapper')),
+          this._diag
+        )
+      );
+    if (!isTrackingFactory(module.RunnableBinding.prototype.withConfig))
+      this._wrap(
+        module.RunnableBinding.prototype,
+        'withConfig',
+        trackFactory((result, receiver) => {
+          if (receiver instanceof module.RunnableToolLike) {
+            // ToolLike.withConfig constructs a new adapter around the old one.
+            markWorkflow(ownValue(receiver, 'bound'));
+            markWorkflow(ownValue(result, 'bound'));
+          }
+        }, this._diag)
+      );
+  }
+
+  private _trackWorkflowOwner(
+    owner: (abstract new (...args: never[]) => object) & {
+      prototype: Pick<Runnables.Runnable<unknown, unknown>, 'invoke' | 'batch'>;
+    }
+  ) {
+    for (const method of ['invoke', 'batch'] as const) {
+      if (!isTrackingFactory(owner.prototype[method])) {
+        this._wrap(
+          owner.prototype,
+          method,
+          trackOwnedWorkflow(owner, this._diag)
+        );
+      }
+    }
   }
 
   /**
@@ -235,7 +395,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     invoke: () => R
   ): R {
     const parent = context.active();
-    if (!this.isEnabled() || isTracingSuppressed(parent)) return invoke();
+    if (
+      !this.isEnabled() ||
+      isTracingSuppressed(parent) ||
+      isInternalWorkflow(target)
+    )
+      return invoke();
     let state: WorkflowState | undefined;
     try {
       // LangGraph sets omitSequenceTags on internal node/channel-writer
