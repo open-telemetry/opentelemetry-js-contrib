@@ -14,6 +14,7 @@ import {
 import { hrTimeToNanoseconds } from '@opentelemetry/core';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  ATTR_ERROR_TYPE,
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
@@ -37,6 +38,7 @@ export const assertSpan = (
     reqHeaders?: Headers | IncomingHttpHeaders;
     path?: string | null;
     query?: string | null;
+    errorType?: string;
     forceStatus?: SpanStatus;
     noNetPeer?: boolean; // we don't expect net peer info when request throw before being sent
     error?: Exception;
@@ -69,6 +71,14 @@ export const assertSpan = (
       span.attributes[ATTR_URL_QUERY],
       validations.query,
       `attributes['${ATTR_URL_QUERY}'] is correct`
+    );
+  }
+
+  if (validations.errorType) {
+    assert.strictEqual(
+      span.attributes[ATTR_ERROR_TYPE],
+      validations.errorType,
+      `attributes['${ATTR_ERROR_TYPE}'] is correct`
     );
   }
 
@@ -117,6 +127,15 @@ export const assertSpan = (
       isStatusUnset ? SpanStatusCode.UNSET : SpanStatusCode.ERROR,
       'span `status.code` is correct'
     );
+
+    // error.type accompanies an error status, carrying the status code
+    if (httpStatusCode !== undefined) {
+      assert.strictEqual(
+        span.attributes[ATTR_ERROR_TYPE],
+        isStatusUnset ? undefined : String(httpStatusCode),
+        `attributes['${ATTR_ERROR_TYPE}'] is correct`
+      );
+    }
   }
 
   assert.ok(span.endTime, 'must be finished');

@@ -8,7 +8,6 @@ import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
@@ -39,7 +38,7 @@ describe('UserInteractionInstrumentation', () => {
     let contextManager: ZoneContextManager;
     let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
-    let webTracerProvider: WebTracerProvider;
+    let tracerProvider: tracing.TracerProvider;
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
@@ -54,7 +53,7 @@ describe('UserInteractionInstrumentation', () => {
       );
 
       registerInstrumentations({
-        tracerProvider: webTracerProvider,
+        tracerProvider,
         instrumentations: [
           userInteractionInstrumentation,
           new XMLHttpRequestInstrumentation(),
@@ -82,14 +81,14 @@ describe('UserInteractionInstrumentation', () => {
 
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
-      webTracerProvider = new WebTracerProvider({
+      tracerProvider = new tracing.TracerProvider({
         spanProcessors: [
           new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
         ],
       });
-      webTracerProvider.register({
-        contextManager,
-      });
+      trace.setGlobalTracerProvider(tracerProvider);
+      context.setGlobalContextManager(contextManager);
+      // A global propagator is not necessary for tests in this file.
 
       registerTestInstrumentations();
 
