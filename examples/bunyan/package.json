@@ -11,7 +11,7 @@
     "url": "git+ssh://git@github.com/open-telemetry/opentelemetry-js.git"
   },
   "engines": {
-    "node": "^18.19.0 || >=20.6.0"
+    "node": ">=22.15.0"
   },
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
