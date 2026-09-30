@@ -233,10 +233,10 @@ export class InferenceInvocation extends BaseInvocation {
         usage.cacheReadTokens
       );
     }
-    if (usage.cacheCreationTokens !== undefined) {
+    if (usage.cacheWriteTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
-        usage.cacheCreationTokens
+        usage.cacheWriteTokens
       );
     }
     return this;

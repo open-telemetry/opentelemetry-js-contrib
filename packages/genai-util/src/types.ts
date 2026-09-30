@@ -317,8 +317,6 @@ export interface TokenUsage {
   cacheReadTokens?: number;
   /** Number of tokens written to prompt cache (`gen_ai.usage.cache_write.input_tokens`). */
   cacheWriteTokens?: number;
-  /** Number of tokens written to prompt cache (alias for `cacheWriteTokens`). */
-  cacheCreationTokens?: number;
   /** Total tokens (convenience sum, not recorded as span attribute per semconv). */
   totalTokens?: number;
 }

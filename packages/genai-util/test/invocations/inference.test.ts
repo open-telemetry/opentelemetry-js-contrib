@@ -87,7 +87,7 @@ describe('InferenceInvocation', () => {
       outputTokens: 20,
       reasoningTokens: 5,
       cacheReadTokens: 15,
-      cacheCreationTokens: 8,
+      cacheWriteTokens: 8,
     });
     invocation.addOutputMessages([
       {
