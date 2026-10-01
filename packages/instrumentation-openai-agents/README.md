@@ -40,9 +40,6 @@ process.once('beforeExit', async () => {
 });
 ```
 
-The instrumentation is also enabled by default when using
-[`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node).
-
 ### Instrumented SDK entry points
 
 All of the following use the same SDK trace processor and produce the same
