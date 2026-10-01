@@ -171,7 +171,10 @@ describe('InferenceInvocation', () => {
       ],
     });
 
-    const testError = new Error('Rate limit exceeded');
+    const testError = {
+      statusDescription: 'Rate limit exceeded',
+      errorType: 'Error',
+    };
     invocation.fail(testError);
 
     const spans = ctx.memoryExporter.getFinishedSpans();

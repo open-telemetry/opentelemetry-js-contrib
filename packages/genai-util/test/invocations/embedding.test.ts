@@ -106,7 +106,10 @@ describe('EmbeddingInvocation', () => {
       serverPort: 443,
     });
     embInv.setUsage({ inputTokens: 100 });
-    embInv.fail(new Error('Embedding rate limit exceeded'));
+    embInv.fail({
+      exception: new Error('Embedding rate limit exceeded'),
+      statusDescription: 'Embedding rate limit exceeded',
+    });
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);

@@ -204,7 +204,10 @@ describe('ToolInvocation', () => {
       toolArguments: { expr: '1/0' },
     });
     toolInv.setAttribute('custom', 'val');
-    toolInv.fail(new Error('Division by zero'));
+    toolInv.fail({
+      exception: new Error('invalid operation'),
+      statusDescription: 'Division by zero',
+    });
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -262,7 +265,7 @@ describe('ToolInvocation', () => {
       // A caller may optimistically record a partial result and only discover the
       // failure afterwards; the attribute must not survive that.
       inv.setResult({ value: 42 });
-      inv.fail(new RangeError('Division by zero'));
+      inv.fail({ exception: new RangeError('Division by zero') });
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(
@@ -281,7 +284,7 @@ describe('ToolInvocation', () => {
       const inv = createHandler().startTool({ toolName: 'calculator' });
 
       inv.setResult({ value: 42 });
-      inv.fail(new Error('boom'));
+      inv.fail({ exception: new Error('boom') });
 
       // Suppression applies to the recorded attribute, not to the in-memory value that
       // completion hooks and callers may still inspect.
@@ -461,7 +464,7 @@ describe('ToolInvocation', () => {
 
     handler
       .startTool({ toolName: 'calculator' })
-      .fail(new RangeError('Division by zero'));
+      .fail({ exception: new RangeError('Division by zero') });
 
     const { resourceMetrics } = await ctx.metricReader.collect();
     const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
