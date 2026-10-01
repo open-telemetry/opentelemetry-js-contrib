@@ -15,11 +15,9 @@ import {
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_RESPONSE_MODEL,
-  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../semconv';
-import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
-import { mergeTokenUsage } from '../utils';
+import type { EmbeddingInvocationOptions } from '../types';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
@@ -86,7 +84,6 @@ export class EmbeddingInvocation extends BaseInvocation {
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
   private _responseModel?: string;
-  private _usage?: TokenUsage;
 
   /**
    * Start an embedding invocation, creating and starting the underlying span.
@@ -124,21 +121,6 @@ export class EmbeddingInvocation extends BaseInvocation {
 
   public setEncodingFormats(formats: string[]): this {
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_ENCODING_FORMATS, formats);
-    return this;
-  }
-
-  /**
-   * Record token usage. Only fields that are defined in `usage` are updated;
-   * previously recorded values for other fields are kept.
-   */
-  public setUsage(usage: TokenUsage): this {
-    this._usage = mergeTokenUsage(this._usage, usage);
-    if (usage.inputTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-        usage.inputTokens
-      );
-    }
     return this;
   }
 
@@ -182,8 +164,5 @@ export class EmbeddingInvocation extends BaseInvocation {
       metricAttrs,
       this._context
     );
-    if (this._usage && !errorType) {
-      this._handler.recordTokenUsage(this._usage, metricAttrs, this._context);
-    }
   }
 }

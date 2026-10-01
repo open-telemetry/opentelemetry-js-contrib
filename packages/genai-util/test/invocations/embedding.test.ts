@@ -16,11 +16,9 @@ import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_RESPONSE_MODEL,
-  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../../src/semconv';
 import {
@@ -55,7 +53,6 @@ describe('EmbeddingInvocation', () => {
     });
 
     invocation.setResponseModel('text-embedding-3-small');
-    invocation.setUsage({ inputTokens: 50 });
     invocation.stop();
 
     const spans = ctx.memoryExporter.getFinishedSpans();
@@ -70,7 +67,6 @@ describe('EmbeddingInvocation', () => {
     );
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
     assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
-    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
     // `stop()` leaves the span status UNSET: only failures set an explicit status.
     assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
 
@@ -84,14 +80,10 @@ describe('EmbeddingInvocation', () => {
     const durationMetric = metrics.find(
       m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
     );
-    const tokenMetric = metrics.find(
-      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
-    );
     assert.ok(durationMetric);
-    assert.ok(tokenMetric);
   });
 
-  it('should record operation duration with error type and suppress token metrics on failure', async () => {
+  it('should mark span as error and record operation duration with error type on failure', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test-instrumentation',
       instrumentationVersion: '1.0.0',
@@ -105,7 +97,6 @@ describe('EmbeddingInvocation', () => {
       serverAddress: 'api.openai.com',
       serverPort: 443,
     });
-    embInv.setUsage({ inputTokens: 100 });
     embInv.fail({
       exception: new Error('Embedding rate limit exceeded'),
       statusDescription: 'Embedding rate limit exceeded',
@@ -125,9 +116,6 @@ describe('EmbeddingInvocation', () => {
     const durationMetric = metrics.find(
       m => m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION
     );
-    const tokenMetric = metrics.find(
-      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
-    );
 
     assert.ok(durationMetric);
     const dataPoint = durationMetric.dataPoints[0];
@@ -145,8 +133,6 @@ describe('EmbeddingInvocation', () => {
     );
     // The metric must report the same `error.type` as the span, not `_OTHER`.
     assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], 'Error');
-
-    assert.strictEqual(tokenMetric, undefined);
   });
 
   it('should format span name correctly when requestModel is omitted or provided', () => {
@@ -257,17 +243,13 @@ describe('EmbeddingInvocation', () => {
       metricAttributes: { [ATTR_GEN_AI_REQUEST_MODEL]: 'normalized' },
     });
     invocation.setMetricAttribute('custom.metric.attr', 'metric-value');
-    invocation.setUsage({ inputTokens: 10 });
     invocation.stop();
 
     const { resourceMetrics } = await ctx.metricReader.collect();
     const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
     assert.deepStrictEqual(
       metrics.map(m => m.descriptor.name).sort(),
-      [
-        METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-        METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-      ].sort()
+      [METRIC_GEN_AI_CLIENT_OPERATION_DURATION].sort()
     );
 
     // Every metric must be recorded through `_getMetricAttributes`: one that builds its
