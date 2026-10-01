@@ -1,5 +1,19 @@
 "@nestjs/core":
   - versions:
+      include: ">=12.0.0 <13"
+      mode: latest-minors
+    # NestJS 12 is published as ESM and requires Node.js v20.19 or v22.12+
+    # (the versions that can `require()` ESM modules).
+    # https://docs.nestjs.com/migration-guide
+    node: "^20.19.0 || >=22.12.0"
+    peerDependencies:
+        - "@nestjs/common@^12.0.0"
+        - "@nestjs/platform-express@^12.0.0"
+        - "reflect-metadata@^0.2.0"
+        - "rxjs@^7.1.0"
+    commands: npm run test
+
+  - versions:
       include: ">=11.0.0 <12"
       mode: latest-minors
     # NestJS 11 requires Node.js v20 or later.
