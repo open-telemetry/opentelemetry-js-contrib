@@ -22,9 +22,9 @@ import {
 registerInstrumentationTesting(new AmqplibInstrumentation());
 import * as amqp from 'amqplib';
 import {
-  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
-  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
   ATTR_MESSAGING_SYSTEM,
+  ATTR_RABBITMQ_CLUSTER_NAME,
+  ATTR_RABBITMQ_VHOST_NAME,
 } from '../src/semconv';
 import {
   ATTR_SERVER_ADDRESS,
@@ -184,11 +184,8 @@ describe('amqplib instrumentation connection', () => {
         );
         const [publishSpan] = getTestSpans();
 
-        expect(
-          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]
-        ).toEqual('/');
-        const clusterName =
-          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME];
+        expect(publishSpan.attributes[ATTR_RABBITMQ_VHOST_NAME]).toEqual('/');
+        const clusterName = publishSpan.attributes[ATTR_RABBITMQ_CLUSTER_NAME];
         expect(typeof clusterName).toEqual('string');
         expect(clusterName).not.toEqual('');
       } finally {
@@ -208,9 +205,7 @@ describe('amqplib instrumentation connection', () => {
         );
         const [publishSpan] = getTestSpans();
 
-        expect(
-          publishSpan.attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME]
-        ).toEqual('/');
+        expect(publishSpan.attributes[ATTR_RABBITMQ_VHOST_NAME]).toEqual('/');
       } finally {
         await conn.close();
       }

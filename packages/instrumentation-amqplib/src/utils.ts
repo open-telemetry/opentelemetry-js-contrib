@@ -16,9 +16,9 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
-  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
   ATTR_MESSAGING_SYSTEM,
+  ATTR_RABBITMQ_CLUSTER_NAME,
+  ATTR_RABBITMQ_VHOST_NAME,
 } from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
@@ -144,7 +144,7 @@ export const getConnectionAttributesFromServer = (
   // only RabbitMQ brokers report a cluster name in the connection handshake
   const clusterName = conn.serverProperties['cluster_name'];
   if (clusterName) {
-    attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME] = clusterName;
+    attributes[ATTR_RABBITMQ_CLUSTER_NAME] = clusterName;
   }
 
   return attributes;
@@ -187,7 +187,7 @@ export const getConnectionAttributesFromUrl = (
       extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
     );
 
-    attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] =
+    attributes[ATTR_RABBITMQ_VHOST_NAME] =
       connectOptions?.vhost || DEFAULT_VHOST;
   } else {
     const censoredUrl = censorPassword(url);
@@ -229,7 +229,7 @@ export const getConnectionAttributesFromUrl = (
         )
       );
 
-      attributes[ATTR_MESSAGING_RABBITMQ_VHOST_NAME] = getVhostFromUrlPath(
+      attributes[ATTR_RABBITMQ_VHOST_NAME] = getVhostFromUrlPath(
         urlParts.pathname
       );
     } catch (err) {

@@ -105,8 +105,8 @@ Attributes collected:
 | `messaging.protocol`              | The name of the transport protocol.                                    |
 | `messaging.protocol_version`      | The version of the transport protocol.                                 |
 | `messaging.system`                | A string identifying the messaging system.                             |
-| `messaging.rabbitmq.vhost.name`   | The name of the RabbitMQ virtual host the connection is bound to.      |
-| `messaging.rabbitmq.cluster.name` | The name of the RabbitMQ cluster, as reported by the broker.           |
+| `rabbitmq.vhost.name`             | The name of the RabbitMQ virtual host the connection is bound to.      |
+| `rabbitmq.cluster.name`           | The name of the RabbitMQ cluster, as reported by the broker.           |
 | `messaging.url`                   | The connection string.                                                 |
 | `server.address`                  | Remote hostname.                                                       |
 | `server.port`                     | Remote port number.                                                    |

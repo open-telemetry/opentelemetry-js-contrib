@@ -39,8 +39,7 @@ export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_RABBITMQ_VHOST_NAME =
-  'messaging.rabbitmq.vhost.name' as const;
+export const ATTR_RABBITMQ_VHOST_NAME = 'rabbitmq.vhost.name' as const;
 
 /**
  * The name of the RabbitMQ cluster the connection is established with, as
@@ -50,5 +49,4 @@ export const ATTR_MESSAGING_RABBITMQ_VHOST_NAME =
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME =
-  'messaging.rabbitmq.cluster.name' as const;
+export const ATTR_RABBITMQ_CLUSTER_NAME = 'rabbitmq.cluster.name' as const;
