@@ -146,10 +146,9 @@ export class InferenceInvocation extends BaseInvocation {
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
     this._contentCaptureMode = handler.getContentCaptureMode();
-    this._inputMessages =
-      options.inputMessages && options.inputMessages.length > 0
-        ? [...options.inputMessages]
-        : undefined;
+    this._inputMessages = options.inputMessages
+      ? [...options.inputMessages]
+      : undefined;
     this._systemInstructions = options.systemInstructions;
   }
 
@@ -173,9 +172,7 @@ export class InferenceInvocation extends BaseInvocation {
   /**
    * Set finish reasons for the response choices.
    */
-  public setFinishReasons(
-    reasons: readonly FinishReason[] | FinishReason
-  ): this {
+  public setFinishReasons(reasons: readonly FinishReason[]): this {
     const arr = typeof reasons === 'string' ? [reasons] : [...reasons];
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
     return this;
@@ -231,9 +228,6 @@ export class InferenceInvocation extends BaseInvocation {
    * the invocation ends.
    */
   public addInputMessages(messages: InputMessages): this {
-    if (messages.length === 0) {
-      return this;
-    }
     (this._inputMessages ??= []).push(...messages);
     return this;
   }
@@ -245,9 +239,6 @@ export class InferenceInvocation extends BaseInvocation {
    * the invocation ends.
    */
   public addOutputMessages(messages: OutputMessages): this {
-    if (messages.length === 0) {
-      return this;
-    }
     (this._outputMessages ??= []).push(...messages);
     return this;
   }

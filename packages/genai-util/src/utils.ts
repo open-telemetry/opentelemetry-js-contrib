@@ -116,7 +116,7 @@ function serializeMessageReplacer(
 export function formatInputMessages(
   messages?: InputMessages
 ): string | undefined {
-  if (!messages) {
+  if (!messages || messages.length === 0) {
     return undefined;
   }
   try {
@@ -135,7 +135,7 @@ export function formatInputMessages(
 export function formatOutputMessages(
   messages?: OutputMessages
 ): string | undefined {
-  if (!messages) {
+  if (!messages || messages.length === 0) {
     return undefined;
   }
   try {

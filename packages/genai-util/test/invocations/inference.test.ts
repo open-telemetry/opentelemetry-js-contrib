@@ -361,6 +361,56 @@ describe('InferenceInvocation', () => {
     );
   });
 
+  it('should omit message attributes when only empty message arrays are provided', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      contentCaptureMode: 'span_only',
+    });
+
+    const inv = handler.startInference({
+      providerName: 'openai',
+      inputMessages: [],
+    });
+    inv.addInputMessages([]);
+    inv.addOutputMessages([]);
+    inv.stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_INPUT_MESSAGES], undefined);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES], undefined);
+  });
+
+  it('should not mutate the caller-supplied inputMessages array', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      contentCaptureMode: 'span_only',
+    });
+
+    const inputMessages = [
+      {
+        role: 'user' as const,
+        parts: [{ type: 'text' as const, content: 'first' }],
+      },
+    ];
+    const inv = handler.startInference({
+      providerName: 'openai',
+      inputMessages,
+    });
+    inv.addInputMessages([
+      {
+        role: 'user',
+        parts: [{ type: 'text', content: 'second' }],
+      },
+    ]);
+    inv.stop();
+
+    assert.strictEqual(inputMessages.length, 1);
+  });
+
   it('should handle comprehensive request options and system instructions', () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test-instrumentation',

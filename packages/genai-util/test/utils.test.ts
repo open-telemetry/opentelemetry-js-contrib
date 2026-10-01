@@ -76,6 +76,7 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatInputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatInputMessages(undefined), undefined);
+      assert.strictEqual(formatInputMessages([]), undefined);
 
       // BlobPart handling with Uint8Array base64 encoding
       const blobPart: BlobPart = {
@@ -177,6 +178,7 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatOutputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatOutputMessages(undefined), undefined);
+      assert.strictEqual(formatOutputMessages([]), undefined);
 
       const blobPart: BlobPart = {
         type: 'blob',
