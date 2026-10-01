@@ -52,11 +52,12 @@ import { BaseInvocation } from './base';
  * Build the span attributes that are known when the inference span is started.
  *
  * These are passed to the span at creation time so that they are visible to samplers.
+ * Content attributes (system instructions, input/output messages) are intentionally
+ * excluded: they are serialized once when the invocation ends.
  */
 function buildInitialAttributes(
   options: InferenceInvocationOptions,
-  operationName: string,
-  contentCaptureMode: ContentCaptureMode
+  operationName: string
 ): Attributes {
   const attrs: Attributes = {
     ...options.attributes,
@@ -77,22 +78,6 @@ function buildInitialAttributes(
     attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
     if (options.serverPort !== undefined) {
       attrs[ATTR_SERVER_PORT] = options.serverPort;
-    }
-  }
-
-  if (contentCaptureMode === 'span_only') {
-    if (options.systemInstructions) {
-      const formatted = formatSystemInstructions(options.systemInstructions);
-      if (formatted) {
-        attrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = formatted;
-      }
-    }
-
-    if (options.inputMessages && options.inputMessages.length > 0) {
-      const formatted = formatInputMessages(options.inputMessages);
-      if (formatted) {
-        attrs[ATTR_GEN_AI_INPUT_MESSAGES] = formatted;
-      }
     }
   }
 
@@ -134,6 +119,7 @@ export class InferenceInvocation extends BaseInvocation {
   private _usage?: TokenUsage;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
+  private _systemInstructions?: SystemInstructions;
   private _firstChunkTime?: HrTime;
 
   /**
@@ -145,15 +131,10 @@ export class InferenceInvocation extends BaseInvocation {
   constructor(handler: TelemetryHandler, options: InferenceInvocationOptions) {
     const operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_CHAT;
-    const contentCaptureMode = handler.getContentCaptureMode();
 
     super(getInferenceSpanName(operationName, options.requestModel), handler, {
       kind: SpanKind.CLIENT,
-      attributes: buildInitialAttributes(
-        options,
-        operationName,
-        contentCaptureMode
-      ),
+      attributes: buildInitialAttributes(options, operationName),
       metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
@@ -164,11 +145,12 @@ export class InferenceInvocation extends BaseInvocation {
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-    this._contentCaptureMode = contentCaptureMode;
+    this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages =
       options.inputMessages && options.inputMessages.length > 0
         ? [...options.inputMessages]
         : undefined;
+    this._systemInstructions = options.systemInstructions;
   }
 
   /**
@@ -244,46 +226,39 @@ export class InferenceInvocation extends BaseInvocation {
 
   /**
    * Add input messages to the invocation.
+   *
+   * May be called multiple times; messages are accumulated and serialized once when
+   * the invocation ends.
    */
   public addInputMessages(messages: InputMessages): this {
-    this._inputMessages = [...(this._inputMessages ?? []), ...messages];
-
-    if (this._contentCaptureMode === 'span_only') {
-      const formatted = formatInputMessages(this._inputMessages);
-      if (formatted) {
-        this._span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, formatted);
-      }
+    if (messages.length === 0) {
+      return this;
     }
-
+    (this._inputMessages ??= []).push(...messages);
     return this;
   }
 
   /**
    * Add output messages to the invocation.
+   *
+   * May be called multiple times; messages are accumulated and serialized once when
+   * the invocation ends.
    */
   public addOutputMessages(messages: OutputMessages): this {
-    this._outputMessages = [...(this._outputMessages ?? []), ...messages];
-
-    if (this._contentCaptureMode === 'span_only') {
-      const formatted = formatOutputMessages(this._outputMessages);
-      if (formatted) {
-        this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, formatted);
-      }
+    if (messages.length === 0) {
+      return this;
     }
-
+    (this._outputMessages ??= []).push(...messages);
     return this;
   }
 
   /**
-   * Set system instructions.
+   * Set system instructions, replacing any previously set value.
+   *
+   * Serialized once when the invocation ends.
    */
   public setSystemInstructions(instructions: SystemInstructions): this {
-    if (this._contentCaptureMode === 'span_only') {
-      const formatted = formatSystemInstructions(instructions);
-      if (formatted) {
-        this._span.setAttribute(ATTR_GEN_AI_SYSTEM_INSTRUCTIONS, formatted);
-      }
-    }
+    this._systemInstructions = instructions;
     return this;
   }
 
@@ -372,5 +347,41 @@ export class InferenceInvocation extends BaseInvocation {
    */
   protected override _emitContentEvent(_endTime?: HrTime): void {
     // No-op until Logs/Events API is stable in JS.
+  }
+
+  /**
+   * Serialize the invocation's content onto the span.
+   *
+   * All content, including content supplied at start, is serialized once here rather
+   * than on every `add*` / `set*` call, since messages may be added repeatedly and
+   * only the final value is exported.
+   */
+  protected override _onInvocationEnd(
+    _endTime: HrTime,
+    _errorType?: string
+  ): void {
+    if (this._contentCaptureMode !== 'span_only') {
+      return;
+    }
+
+    const systemInstructions = formatSystemInstructions(
+      this._systemInstructions
+    );
+    if (systemInstructions) {
+      this._span.setAttribute(
+        ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
+        systemInstructions
+      );
+    }
+
+    const inputMessages = formatInputMessages(this._inputMessages);
+    if (inputMessages) {
+      this._span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, inputMessages);
+    }
+
+    const outputMessages = formatOutputMessages(this._outputMessages);
+    if (outputMessages) {
+      this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
+    }
   }
 }

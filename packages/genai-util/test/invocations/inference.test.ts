@@ -288,6 +288,75 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(spansSpan[0].events.length, 0);
   });
 
+  it('should serialize start-time and later content once at end', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      contentCaptureMode: 'span_only',
+    });
+
+    const first = {
+      role: 'user' as const,
+      parts: [{ type: 'text' as const, content: 'first' }],
+    };
+    const second = {
+      role: 'user' as const,
+      parts: [{ type: 'text' as const, content: 'second' }],
+    };
+    const third = {
+      role: 'user' as const,
+      parts: [{ type: 'text' as const, content: 'third' }],
+    };
+    const out1 = {
+      role: 'assistant' as const,
+      parts: [{ type: 'text' as const, content: 'a' }],
+      finish_reason: 'stop' as const,
+    };
+    const out2 = {
+      role: 'assistant' as const,
+      parts: [{ type: 'text' as const, content: 'b' }],
+      finish_reason: 'stop' as const,
+    };
+
+    const inv = handler.startInference({
+      providerName: 'openai',
+      systemInstructions: [{ type: 'text', content: 'initial' }],
+      inputMessages: [first],
+    });
+
+    // Content, including content supplied at start, is not serialized until end.
+    const liveAttrs = (inv as any)._span.attributes;
+    assert.strictEqual(liveAttrs[ATTR_GEN_AI_INPUT_MESSAGES], undefined);
+    assert.strictEqual(liveAttrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS], undefined);
+
+    inv.addInputMessages([second]);
+    inv.addInputMessages([third]);
+    inv.addOutputMessages([out1]);
+    inv.addOutputMessages([out2]);
+    inv.setSystemInstructions([{ type: 'text', content: 'updated' }]);
+
+    assert.strictEqual(liveAttrs[ATTR_GEN_AI_INPUT_MESSAGES], undefined);
+    assert.strictEqual(liveAttrs[ATTR_GEN_AI_OUTPUT_MESSAGES], undefined);
+    assert.strictEqual(liveAttrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS], undefined);
+
+    inv.stop();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_INPUT_MESSAGES],
+      JSON.stringify([first, second, third])
+    );
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
+      JSON.stringify([out1, out2])
+    );
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS],
+      JSON.stringify([{ type: 'text', content: 'updated' }])
+    );
+  });
+
   it('should handle comprehensive request options and system instructions', () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test-instrumentation',
