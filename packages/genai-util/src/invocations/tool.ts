@@ -136,11 +136,11 @@ export class ToolInvocation extends BaseInvocation {
     return this;
   }
 
-  public getToolArguments(): unknown | undefined {
+  public getToolArguments(): unknown {
     return this._toolArguments;
   }
 
-  public getResult(): unknown | undefined {
+  public getResult(): unknown {
     return this._result;
   }
 
