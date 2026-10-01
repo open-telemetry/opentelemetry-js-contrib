@@ -32,6 +32,7 @@ import {
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   ATTR_GEN_AI_TOKEN_TYPE,
   GEN_AI_TOKEN_TYPE_VALUE_INPUT,
@@ -388,7 +389,7 @@ describe('InferenceInvocation', () => {
 
     inv.setAttribute('custom.key', 'custom.val');
     inv.setAttributes({ 'another.key': 'val2' });
-    inv.recordStreamChunk('chunk');
+    inv.recordStreamChunk();
     inv.stop();
 
     const spans = ctx.memoryExporter.getFinishedSpans();
@@ -473,6 +474,46 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(
       spans[1].attributes[ATTR_GEN_AI_REQUEST_STREAM],
       undefined
+    );
+  });
+
+  it('should record time to first chunk once and time per output chunk for each later chunk', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({ providerName: 'openai' });
+    invocation.recordStreamChunk();
+    invocation.recordStreamChunk();
+    invocation.recordStreamChunk();
+    invocation.stop();
+    // Chunks after the invocation has ended are ignored.
+    invocation.recordStreamChunk();
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      typeof span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+      'number'
+    );
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const histogramCount = (name: string) => {
+      const metric = metrics.find(m => m.descriptor.name === name);
+      return (metric?.dataPoints[0]?.value as { count: number } | undefined)
+        ?.count;
+    };
+    assert.strictEqual(
+      histogramCount(METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK),
+      1
+    );
+    assert.strictEqual(
+      histogramCount(METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK),
+      2
     );
   });
 

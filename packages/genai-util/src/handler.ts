@@ -285,7 +285,11 @@ export class TelemetryHandler {
   /**
    * Record time per output chunk metric for streaming responses.
    *
-   * @param durationSeconds - Average time between output chunks, in seconds.
+   * Called once per output chunk after the first, with the time elapsed since the
+   * previous chunk.
+   *
+   * @param durationSeconds - Time elapsed between this chunk and the previous one, in
+   *   seconds.
    * @param attributes - Metric attributes.
    * @param context - Context used to associate an exemplar with the
    *   measurement. Defaults to the currently active context.

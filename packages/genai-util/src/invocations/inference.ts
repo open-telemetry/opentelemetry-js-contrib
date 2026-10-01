@@ -120,7 +120,7 @@ export class InferenceInvocation extends BaseInvocation {
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstructions;
-  private _firstChunkTime?: HrTime;
+  private _lastChunkTime?: HrTime;
 
   /**
    * Start an inference invocation, creating and starting the underlying span.
@@ -271,25 +271,35 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Helper for stream chunks recording. On first chunk, marks stream request and records TTFT metric.
+   * Record one streamed output chunk arriving.
+   *
+   * The first call marks the request as streaming and records time-to-first-chunk
+   * (measured from the invocation start); each later call records the gap since the
+   * previous chunk as time-per-output-chunk. Calls after the invocation has ended are
+   * ignored.
    */
-  public recordStreamChunk(_chunk?: unknown): this {
-    if (!this._firstChunkTime) {
-      this._firstChunkTime = hrTime();
-      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
-      const ttftSec = hrTimeToSeconds(
-        hrTimeDuration(this._startTime, this._firstChunkTime)
-      );
-      this._span.setAttribute(
-        ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
-        ttftSec
-      );
+  public recordStreamChunk(): this {
+    if (this._isEnded) {
+      return this;
+    }
 
-      this._handler.recordTimeToFirstChunk(
-        ttftSec,
-        this._getMetricAttributes(),
-        this._context
-      );
+    const now = hrTime();
+    const isFirstChunk = this._lastChunkTime === undefined;
+    const gap = Math.max(
+      0,
+      hrTimeToSeconds(
+        hrTimeDuration(this._lastChunkTime ?? this._startTime, now)
+      )
+    );
+    this._lastChunkTime = now;
+    const attrs = this._getMetricAttributes();
+
+    if (isFirstChunk) {
+      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+      this._span.setAttribute(ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK, gap);
+      this._handler.recordTimeToFirstChunk(gap, attrs, this._context);
+    } else {
+      this._handler.recordTimePerOutputChunk(gap, attrs, this._context);
     }
     return this;
   }
