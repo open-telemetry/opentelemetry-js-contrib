@@ -5,9 +5,34 @@
 
 import * as assert from 'assert';
 import { TelemetryHandler, type TelemetryHandlerOptions } from '../src/handler';
-import { SpanKind, context, diag, type DiagLogger } from '@opentelemetry/api';
+import {
+  SpanKind,
+  context,
+  diag,
+  type Attributes,
+  type DiagLogger,
+} from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { GEN_AI_SCHEMA_URL } from '../src/semconv';
+import {
+  DataPointType,
+  type MetricData,
+  type MetricReader,
+} from '@opentelemetry/sdk-metrics';
+import {
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_SCHEMA_URL,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+} from '../src/semconv';
 import {
   createTestTelemetryContext,
   type TestTelemetryContext,
@@ -28,6 +53,45 @@ function createHandler(
     instrumentationVersion: TEST_INSTRUMENTATION_VERSION,
     ...options,
   });
+}
+
+/** Collect the metrics recorded so far, keyed by instrument name. */
+async function collectMetricsByName(
+  metricReader: MetricReader
+): Promise<Map<string, MetricData>> {
+  const { resourceMetrics } = await metricReader.collect();
+  return new Map(
+    resourceMetrics.scopeMetrics
+      .flatMap(sm => sm.metrics)
+      .map(metric => [metric.descriptor.name, metric])
+  );
+}
+
+/** Return the attributes, count and sum of each data point of a histogram. */
+function histogramPoints(
+  metric: MetricData | undefined
+): Array<{ attributes: Attributes; count: number; sum?: number }> {
+  assert.ok(metric?.dataPointType === DataPointType.HISTOGRAM);
+  return metric.dataPoints.map(({ attributes, value }) => ({
+    attributes,
+    count: value.count,
+    sum: value.sum,
+  }));
+}
+
+/**
+ * Return the attributes and value of each data point of a counter, sorted by
+ * token modality.
+ */
+function counterPoints(
+  metric: MetricData | undefined
+): Array<[Attributes, number]> {
+  assert.ok(metric?.dataPointType === DataPointType.SUM);
+  const modalityOf = (attributes: Attributes) =>
+    String(attributes[ATTR_GEN_AI_TOKEN_MODALITY]);
+  return metric.dataPoints
+    .map(({ attributes, value }): [Attributes, number] => [attributes, value])
+    .sort(([a], [b]) => modalityOf(a).localeCompare(modalityOf(b)));
 }
 
 describe('TelemetryHandler', () => {
@@ -118,8 +182,8 @@ describe('TelemetryHandler', () => {
 
     // Valid recordings
     handler.recordOperationDuration(1.23, { 'gen_ai.system': 'openai' });
-    handler.recordTokenUsage(
-      { inputTokens: 10, outputTokens: 25 },
+    handler.recordInferenceTokenUsage(
+      { inputTokens: { text: 10 }, outputTokens: { text: 25 } },
       { 'gen_ai.system': 'openai' }
     );
     handler.recordTimeToFirstChunk(0.45, { 'gen_ai.system': 'openai' });
@@ -137,10 +201,132 @@ describe('TelemetryHandler', () => {
     handler.recordTimePerOutputChunk(Infinity);
 
     // Boundary/partial token usage values
-    handler.recordTokenUsage({ inputTokens: 10 }); // only input tokens
-    handler.recordTokenUsage({ outputTokens: 20 }); // only output tokens
-    handler.recordTokenUsage({ inputTokens: -5, outputTokens: -10 }); // negative tokens ignored
-    handler.recordTokenUsage(undefined as any); // undefined usage ignored
+    handler.recordInferenceTokenUsage({ inputTokens: { text: 10 } }); // only input tokens
+    handler.recordInferenceTokenUsage({ outputTokens: { text: 20 } }); // only output tokens
+    handler.recordInferenceTokenUsage({
+      inputTokens: { text: -5 },
+      outputTokens: { text: -10 },
+    }); // negative tokens ignored
+    handler.recordInferenceTokenUsage(undefined as any); // undefined usage ignored
+  });
+
+  describe('recordTokenUsage', () => {
+    const attributes: Attributes = {
+      'gen_ai.operation.name': 'chat',
+      'gen_ai.provider.name': 'gcp.gemini',
+    };
+    const withModality = (modality: string): Attributes => ({
+      ...attributes,
+      [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+    });
+
+    it('should record input and output tokens once on the operation histograms, without a modality', async () => {
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage(
+        {
+          inputOperationTokens: 300,
+          outputOperationTokens: 40,
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ attributes, count: 1, sum: 300 }]
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ attributes, count: 1, sum: 40 }]
+      );
+    });
+
+    it('should split the usage counters by modality', async () => {
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage(
+        {
+          inputTokens: { text: 100, image: 150 },
+          outputTokens: { text: 40, audio: 0 },
+          cacheReadTokens: { text: 60 },
+          cacheWriteTokens: { text: 20, audio: 50 },
+          reasoningTokens: { text: 300, unknown: 50 },
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+        ),
+        [
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE), 150],
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 100],
+        ]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 40]]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS
+          )
+        ),
+        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 60]]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS
+          )
+        ),
+        [
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO), 50],
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 20],
+        ]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
+          )
+        ),
+        [
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 300],
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN), 50],
+        ]
+      );
+    });
+
+    it('should skip missing, zero and negative token counts', async () => {
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage({}, attributes);
+      handler.recordInferenceTokenUsage(
+        {
+          inputTokens: { text: 0 },
+          outputTokens: { text: -10 },
+          cacheReadTokens: { text: 0 },
+          cacheWriteTokens: { text: -1 },
+          reasoningTokens: { text: 0 },
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      const dataPointCount = [...metrics.values()].reduce(
+        (count, metric) => count + metric.dataPoints.length,
+        0
+      );
+      assert.strictEqual(dataPointCount, 0);
+    });
   });
 
   it('should resolve content capture mode with correct priority', () => {

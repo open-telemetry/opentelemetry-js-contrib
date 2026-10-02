@@ -36,6 +36,7 @@ import type {
   InputMessages,
   OutputMessages,
   SystemInstructions,
+  TokenCountsByModality,
   TokenUsage,
 } from '../types';
 import {
@@ -184,38 +185,38 @@ export class InferenceInvocation extends BaseInvocation {
    * May be called multiple times (e.g. when a streaming provider reports input
    * and output tokens in separate events). Only fields that are defined in
    * `usage` are updated; previously recorded values for other fields are kept,
-   * both on the span and in the values used for the token usage metric.
+   * both on the span and in the values used for the token usage metrics.
    */
   public setUsage(usage: TokenUsage): this {
     this._usage = mergeTokenUsage(this._usage, usage);
     if (usage.inputTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-        usage.inputTokens
+        this.sumTokenCountsAcrossModalities(usage.inputTokens)
       );
     }
     if (usage.outputTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-        usage.outputTokens
+        this.sumTokenCountsAcrossModalities(usage.outputTokens)
       );
     }
     if (usage.reasoningTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
-        usage.reasoningTokens
+        this.sumTokenCountsAcrossModalities(usage.reasoningTokens)
       );
     }
     if (usage.cacheReadTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
-        usage.cacheReadTokens
+        this.sumTokenCountsAcrossModalities(usage.cacheReadTokens)
       );
     }
     if (usage.cacheWriteTokens !== undefined) {
       this._span.setAttribute(
         ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
-        usage.cacheWriteTokens
+        this.sumTokenCountsAcrossModalities(usage.cacheWriteTokens)
       );
     }
     return this;
@@ -325,18 +326,21 @@ export class InferenceInvocation extends BaseInvocation {
     durationSec: number,
     errorType?: string
   ): void {
-    const metricAttrs = this._getMetricAttributes(errorType);
-
     // The invocation context is passed explicitly: metrics are recorded while the
     // invocation's context may no longer be active, and exemplars must still point
     // at the invocation span.
     this._handler.recordOperationDuration(
       durationSec,
-      metricAttrs,
+      this._getMetricAttributes(errorType),
       this._context
     );
     if (this._usage) {
-      this._handler.recordTokenUsage(this._usage, metricAttrs, this._context);
+      // Token metrics do not define `error.type`, even for failed operations.
+      this._handler.recordInferenceTokenUsage(
+        this._usage,
+        this._getMetricAttributes(),
+        this._context
+      );
     }
   }
 
@@ -384,5 +388,17 @@ export class InferenceInvocation extends BaseInvocation {
     if (outputMessages) {
       this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
     }
+  }
+
+  private sumTokenCountsAcrossModalities(
+    tokenCounts: TokenCountsByModality
+  ): number {
+    let sum = 0;
+    for (const count of Object.values(tokenCounts)) {
+      if (count !== undefined && count > 0) {
+        sum += count;
+      }
+    }
+    return sum;
   }
 }

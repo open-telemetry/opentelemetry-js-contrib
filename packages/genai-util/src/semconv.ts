@@ -217,12 +217,13 @@ export const ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS =
   'gen_ai.usage.cache_write.input_tokens' as const;
 
 /**
- * The type of token being counted in metric instruments.
+ * The modality of the tokens being counted.
+ * When the provider does not break usage down by modality and the modality cannot be reliably determined, instrumentations SHOULD report the tokens under the unknown modality.
  *
- * @example input
- * @example output
+ * @example audio
+ * @example unknown
  */
-export const ATTR_GEN_AI_TOKEN_TYPE = 'gen_ai.token.type' as const;
+export const ATTR_GEN_AI_TOKEN_MODALITY = 'gen_ai.token.modality' as const;
 
 /**
  * The chat history provided to the model as an input.
@@ -437,9 +438,11 @@ export const GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI =
 export const GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY = 'perplexity' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_X_AI = 'x_ai' as const;
 
-// Token Types
-export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
-export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
+// Token Modalities
+export const GEN_AI_TOKEN_MODALITY_VALUE_AUDIO = 'audio' as const;
+export const GEN_AI_TOKEN_MODALITY_VALUE_IMAGE = 'image' as const;
+export const GEN_AI_TOKEN_MODALITY_VALUE_TEXT = 'text' as const;
+export const GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN = 'unknown' as const;
 
 // Finish Reasons
 export const GEN_AI_FINISH_REASON_VALUE_STOP = 'stop' as const;
@@ -475,8 +478,20 @@ export const GEN_AI_TOOL_TYPE_VALUE_DATASTORE = 'datastore' as const;
 
 export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
   'gen_ai.client.operation.duration' as const;
-export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
-  'gen_ai.client.token.usage' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS =
+  'gen_ai.client.inference.operation.output_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS =
+  'gen_ai.client.inference.operation.input_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS =
+  'gen_ai.client.inference.usage.input_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS =
+  'gen_ai.client.inference.usage.output_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.client.inference.usage.cache_read.input_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS =
+  'gen_ai.client.inference.usage.cache_write.input_tokens' as const;
+export const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS =
+  'gen_ai.client.inference.usage.reasoning.output_tokens' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
   'gen_ai.client.operation.time_to_first_chunk' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =

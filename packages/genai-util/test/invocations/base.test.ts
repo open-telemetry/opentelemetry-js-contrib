@@ -28,9 +28,15 @@ import {
 } from '../../src/invocations/base';
 import type { InvocationError } from '../../src/types';
 import {
-  ATTR_GEN_AI_TOKEN_TYPE,
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -614,8 +620,13 @@ describe('BaseInvocation', () => {
             metricAttrs,
             this._context
           );
-          this._handler.recordTokenUsage(
-            { inputTokens: 10, outputTokens: 5 },
+          this._handler.recordInferenceTokenUsage(
+            {
+              inputTokens: { text: 10, image: 5 },
+              outputTokens: { text: 5, audio: 3 },
+              inputOperationTokens: 20,
+              outputOperationTokens: 10,
+            },
             metricAttrs,
             this._context
           );
@@ -654,17 +665,38 @@ describe('BaseInvocation', () => {
         ...expectedAttributes,
       });
 
-      // The per-measurement token type must not leak back onto the other measurements.
-      const tokenUsage = metrics.find(
-        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
-      );
-      assert.ok(tokenUsage);
+      // The per-measurement token modality must not leak back onto the other
+      // measurements, including the token histograms recorded after a counter.
+      const attributesOf = (name: string) =>
+        metrics
+          .find(m => m.descriptor.name === name)
+          ?.dataPoints.map(dp => dp.attributes);
+      for (const name of [
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+      ]) {
+        assert.deepStrictEqual(attributesOf(name), [expectedAttributes], name);
+      }
+      // order of array matters - it is deterministic
+      const withModality = (modality: string): Attributes => ({
+        ...expectedAttributes,
+        [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+      });
       assert.deepStrictEqual(
-        tokenUsage.dataPoints.map(dp => dp.attributes),
+        attributesOf(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS),
         [
-          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'input' },
-          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'output' },
-        ]
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT),
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE),
+        ],
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS
+      );
+      assert.deepStrictEqual(
+        attributesOf(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS),
+        [
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT),
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO),
+        ],
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS
       );
     });
   });

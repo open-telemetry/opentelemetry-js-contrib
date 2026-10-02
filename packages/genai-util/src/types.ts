@@ -49,6 +49,18 @@ export type Role = 'system' | 'user' | 'assistant' | 'tool' | string;
 export type Modality = 'image' | 'video' | 'audio' | 'document' | string;
 
 /**
+ * The modality of the tokens being counted (`gen_ai.token.modality`).
+ *
+ * A custom value MAY be used when none of the well-known values applies.
+ */
+export type TokenModality = 'audio' | 'image' | 'text' | 'unknown';
+
+/**
+ * Token counts keyed by modality, e.g. `{ text: 100, image: 200 }`.
+ */
+export type TokenCountsByModality = Partial<Record<TokenModality, number>>;
+
+/**
  * Classification of tool utilized by an agent.
  *
  * Corresponds to `gen_ai.tool.type`.
@@ -289,36 +301,29 @@ export type OutputMessages = OutputMessage[];
 export type SystemInstructions = SystemInstructionPart[];
 
 /**
- * Token usage counts for a request per OpenTelemetry SemConv.
+ * Token usage of a single inference operation, as reported by the provider.
  *
- * All fields are optional and MUST be left `undefined` when the provider did
- * not return usage data (for example, when a request fails before any tokens
- * are billed). Do not substitute `0` for missing values: the
- * `gen_ai.client.token.usage` histogram uses explicit bucket boundaries that
- * start at 1, so recording `0` on failed requests adds data points that skew
- * the distribution and its computed averages.
+ * The span attributes and the token metrics are all derived from these
+ * values, so they stay consistent. Prefer billable counts when the provider
+ * reports both used and billable tokens. Leave fields `undefined` when they
+ * were not reported; do not default to `0`, which would skew the token
+ * distributions.
  */
 export interface TokenUsage {
-  /**
-   * Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`).
-   * Leave `undefined` when the provider did not report input token usage;
-   * do not default to `0`.
-   */
-  inputTokens?: number;
-  /**
-   * Number of tokens in the completion / output (`gen_ai.usage.output_tokens`).
-   * Leave `undefined` when the provider did not report output token usage;
-   * do not default to `0`.
-   */
-  outputTokens?: number;
-  /** Number of tokens used for model reasoning / thinking (`gen_ai.usage.reasoning.output_tokens`). */
-  reasoningTokens?: number;
-  /** Number of cached tokens read from prompt cache (`gen_ai.usage.cache_read.input_tokens`). */
-  cacheReadTokens?: number;
-  /** Number of tokens written to prompt cache (`gen_ai.usage.cache_write.input_tokens`). */
-  cacheWriteTokens?: number;
-  /** Total tokens (convenience sum, not recorded as span attribute per semconv). */
-  totalTokens?: number;
+  /** The number of input (prompt) tokens used per inference operation. */
+  inputTokens?: TokenCountsByModality;
+  /** The number of output (completion) tokens used per inference operation. */
+  outputTokens?: TokenCountsByModality;
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`). */
+  reasoningTokens?: TokenCountsByModality;
+  /** Number of cached tokens read from prompt cache (`gen_ai.client_inference.usage.cache_read.input_tokens`). */
+  cacheReadTokens?: TokenCountsByModality;
+  /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`). */
+  cacheWriteTokens?: TokenCountsByModality;
+  /** The number of input (prompt) tokens used per inference operation. */
+  inputOperationTokens?: number;
+  /** The number of output (completion) tokens used per inference operation. */
+  outputOperationTokens?: number;
 }
 
 /**

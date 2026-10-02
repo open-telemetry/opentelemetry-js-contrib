@@ -359,10 +359,22 @@ export function mergeTokenUsage(
 ): TokenUsage {
   const merged: TokenUsage = { ...existing };
   for (const key of Object.keys(update) as (keyof TokenUsage)[]) {
-    const value = update[key];
-    if (value !== undefined) {
-      merged[key] = value;
-    }
+    setIfDefined(merged, key, update[key]);
   }
   return merged;
+}
+
+/**
+ * Assign `value` to `target[key]` unless it is `undefined`.
+ *
+ * The generic key keeps the assignment type-safe across fields of different types.
+ */
+function setIfDefined<K extends keyof TokenUsage>(
+  target: TokenUsage,
+  key: K,
+  value: TokenUsage[K]
+): void {
+  if (value !== undefined) {
+    target[key] = value;
+  }
 }

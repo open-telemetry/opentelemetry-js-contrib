@@ -388,7 +388,7 @@ export abstract class BaseInvocation {
    *
    * Record with the attributes returned by {@link _getMetricAttributes}, passing
    * `errorType` for metrics that define the `error.type` dimension. Add any
-   * per-measurement dimension (e.g. `gen_ai.token.type`) to a copy so that it does not
+   * per-measurement dimension (e.g. `gen_ai.token.modality`) to a copy so that it does not
    * leak into the invocation's other measurements. Pass `this._context` to the
    * recording call so that exemplars are associated with the invocation span.
    *

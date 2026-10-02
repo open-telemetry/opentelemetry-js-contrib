@@ -10,6 +10,11 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
+import {
+  DataPointType,
+  type MetricData,
+  type MetricReader,
+} from '@opentelemetry/sdk-metrics';
 import { TelemetryHandler } from '../../src/handler';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -33,10 +38,13 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-  ATTR_GEN_AI_TOKEN_TYPE,
-  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -84,11 +92,11 @@ describe('InferenceInvocation', () => {
     invocation.setResponseId('chatcmpl-123');
     invocation.setFinishReasons(['stop']);
     invocation.setUsage({
-      inputTokens: 10,
-      outputTokens: 20,
-      reasoningTokens: 5,
-      cacheReadTokens: 15,
-      cacheWriteTokens: 8,
+      inputTokens: { text: 10 },
+      outputTokens: { text: 20 },
+      reasoningTokens: { text: 5 },
+      cacheReadTokens: { text: 15 },
+      cacheWriteTokens: { text: 8 },
     });
     invocation.addOutputMessages([
       {
@@ -592,7 +600,10 @@ describe('InferenceInvocation', () => {
       'custom.metric.attr': 'metric-value',
     });
     invocation.recordStreamChunk();
-    invocation.setUsage({ inputTokens: 10, outputTokens: 20 });
+    invocation.setUsage({
+      inputTokens: { text: 10 },
+      outputTokens: { text: 20 },
+    });
     invocation.stop();
 
     const { resourceMetrics } = await ctx.metricReader.collect();
@@ -602,7 +613,8 @@ describe('InferenceInvocation', () => {
       [
         METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
         METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
-        METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
       ].sort()
     );
 
@@ -660,31 +672,139 @@ describe('InferenceInvocation', () => {
     });
 
     const invocation = handler.startInference({
-      providerName: 'anthropic',
-      requestModel: 'claude',
+      providerName: 'gcp.gemini',
+      requestModel: 'gemini-2.5-flash',
     });
 
     // Streaming providers may report input and output tokens in separate events.
-    invocation.setUsage({ inputTokens: 10 });
-    invocation.setUsage({ outputTokens: 20, inputTokens: undefined });
+    invocation.setUsage({
+      inputTokens: { text: 100, image: 200 },
+      inputOperationTokens: 300,
+    });
+    invocation.setUsage({
+      outputTokens: { text: 50 },
+      outputOperationTokens: 50,
+      inputTokens: undefined,
+    });
     invocation.stop();
 
     const [span] = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
-    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 20);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 300);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 50);
 
-    const { resourceMetrics } = await ctx.metricReader.collect();
-    const tokenMetric = resourceMetrics.scopeMetrics[0]?.metrics.find(
-      m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
+    const metrics = await collectMetricsByName(ctx.metricReader);
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+      ),
+      {
+        [GEN_AI_TOKEN_MODALITY_VALUE_TEXT]: 100,
+        [GEN_AI_TOKEN_MODALITY_VALUE_IMAGE]: 200,
+      }
     );
-    assert.ok(tokenMetric, 'token usage metric should be recorded');
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+      ),
+      { [GEN_AI_TOKEN_MODALITY_VALUE_TEXT]: 50 }
+    );
+    // The histograms are not split by modality.
+    assert.deepStrictEqual(
+      histogramPoints(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+      ),
+      [{ count: 1, sum: 300 }]
+    );
+    assert.deepStrictEqual(
+      histogramPoints(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+      ),
+      [{ count: 1, sum: 50 }]
+    );
+  });
 
-    const sumByType = new Map<unknown, number>();
-    for (const dp of tokenMetric.dataPoints) {
-      const value = dp.value as { sum?: number };
-      sumByType.set(dp.attributes[ATTR_GEN_AI_TOKEN_TYPE], value.sum ?? 0);
+  it('should not record error.type on token metrics when inference fails', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    // E.g. a stream that reported usage before it was interrupted.
+    invocation.setUsage({
+      inputTokens: { text: 10 },
+      outputTokens: { text: 5 },
+      inputOperationTokens: 30,
+      outputOperationTokens: 20,
+    });
+    invocation.fail({
+      errorType: 'Error',
+      statusDescription: 'Stream aborted',
+    });
+
+    const metrics = await collectMetricsByName(ctx.metricReader);
+    assert.deepStrictEqual(
+      [...metrics.keys()].sort(),
+      [
+        METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+      ].sort()
+    );
+    for (const [name, metric] of metrics) {
+      // Only the duration metric defines `error.type`.
+      const expectedErrorType =
+        name === METRIC_GEN_AI_CLIENT_OPERATION_DURATION ? 'Error' : undefined;
+      for (const { attributes } of metric.dataPoints) {
+        assert.strictEqual(
+          attributes[ATTR_ERROR_TYPE],
+          expectedErrorType,
+          name
+        );
+      }
     }
-    assert.strictEqual(sumByType.get(GEN_AI_TOKEN_TYPE_VALUE_INPUT), 10);
-    assert.strictEqual(sumByType.get(GEN_AI_TOKEN_TYPE_VALUE_OUTPUT), 20);
   });
 });
+
+/** Collect the metrics recorded so far, keyed by instrument name. */
+async function collectMetricsByName(
+  metricReader: MetricReader
+): Promise<Map<string, MetricData>> {
+  const { resourceMetrics } = await metricReader.collect();
+  return new Map(
+    resourceMetrics.scopeMetrics
+      .flatMap(sm => sm.metrics)
+      .map(metric => [metric.descriptor.name, metric])
+  );
+}
+
+/** Return the count and sum of each data point of a histogram metric. */
+function histogramPoints(
+  metric: MetricData | undefined
+): Array<{ count: number; sum?: number }> {
+  assert.ok(metric?.dataPointType === DataPointType.HISTOGRAM);
+  return metric.dataPoints.map(({ value }) => ({
+    count: value.count,
+    sum: value.sum,
+  }));
+}
+
+/** Return the value of each data point of a counter, keyed by token modality. */
+function counterValuesByModality(
+  metric: MetricData | undefined
+): Record<string, number> {
+  assert.ok(metric?.dataPointType === DataPointType.SUM);
+  return Object.fromEntries(
+    metric.dataPoints.map(({ attributes, value }) => [
+      String(attributes[ATTR_GEN_AI_TOKEN_MODALITY]),
+      value,
+    ])
+  );
+}
