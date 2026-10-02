@@ -26,6 +26,7 @@ import type {
   OutputMessages,
   SystemInstructionPart,
   SystemInstructions,
+  TokenCountsByModality,
   TokenUsage,
 } from './types';
 
@@ -377,4 +378,28 @@ function setIfDefined<K extends keyof TokenUsage>(
   if (value !== undefined) {
     target[key] = value;
   }
+}
+
+/**
+ * Sum the defined, non-negative counts across modalities.
+ *
+ * Returns `undefined` when no such count exists, so that a missing value is
+ * never treated as `0`. Negative counts are ignored; an explicit `0` is kept.
+ *
+ * @param tokenCounts - Token counts keyed by modality, if any.
+ * @returns The total, or `undefined` if there is nothing to sum.
+ */
+export function sumTokenCountsAcrossModalities(
+  tokenCounts: TokenCountsByModality | undefined
+): number | undefined {
+  if (!tokenCounts) {
+    return undefined;
+  }
+  let sum: number | undefined;
+  for (const count of Object.values(tokenCounts)) {
+    if (count !== undefined && count >= 0) {
+      sum = (sum ?? 0) + count;
+    }
+  }
+  return sum;
 }

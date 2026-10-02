@@ -37,6 +37,7 @@ import type {
   OutputMessages,
   SystemInstructions,
   TokenCountsByModality,
+  TokenModality,
   TokenUsage,
 } from '../types';
 import {
@@ -45,6 +46,7 @@ import {
   formatSystemInstructions,
   getRequestOptionsAttributes,
   mergeTokenUsage,
+  sumTokenCountsAcrossModalities,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
@@ -184,41 +186,17 @@ export class InferenceInvocation extends BaseInvocation {
    *
    * May be called multiple times (e.g. when a streaming provider reports input
    * and output tokens in separate events). Only fields that are defined in
-   * `usage` are updated; previously recorded values for other fields are kept,
-   * both on the span and in the values used for the token usage metrics.
+   * `usage` are updated; previously recorded values for other fields are kept.
+   * The span attributes and the token usage metrics are both derived from the
+   * merged usage once, when the invocation ends, so they always agree.
+   *
+   * Note (applied to the merged usage when the invocation ends):
+   * If `usage` TokenUsage does not contain inputTokens, it is inferred using the cache read tokens and cache write tokens.
+   * If `usage` TokenUsage does not contain outputTokens, it is inferred using the reasoning tokens.
+   * If `usage` TokenUsage already contains inputTokens and outputTokens, they are not modified.
    */
   public setUsage(usage: TokenUsage): this {
     this._usage = mergeTokenUsage(this._usage, usage);
-    if (usage.inputTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-        this.sumTokenCountsAcrossModalities(usage.inputTokens)
-      );
-    }
-    if (usage.outputTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-        this.sumTokenCountsAcrossModalities(usage.outputTokens)
-      );
-    }
-    if (usage.reasoningTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
-        this.sumTokenCountsAcrossModalities(usage.reasoningTokens)
-      );
-    }
-    if (usage.cacheReadTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
-        this.sumTokenCountsAcrossModalities(usage.cacheReadTokens)
-      );
-    }
-    if (usage.cacheWriteTokens !== undefined) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
-        this.sumTokenCountsAcrossModalities(usage.cacheWriteTokens)
-      );
-    }
     return this;
   }
 
@@ -355,7 +333,11 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Serialize the invocation's content onto the span.
+   * Finalize token usage and serialize the invocation's content onto the span.
+   *
+   * Token usage is finalized here (before `_recordMetrics` runs) so that the
+   * span attributes and the token metrics are derived from the same merged and
+   * inferred usage.
    *
    * All content, including content supplied at start, is serialized once here rather
    * than on every `add*` / `set*` call, since messages may be added repeatedly and
@@ -365,6 +347,11 @@ export class InferenceInvocation extends BaseInvocation {
     _endTime: HrTime,
     _errorType?: string
   ): void {
+    if (this._usage) {
+      this._usage = this.inferMissingTokenCounts(this._usage);
+      this.setUsageAttributes(this._usage);
+    }
+
     if (this._contentCaptureMode !== 'span_only') {
       return;
     }
@@ -390,15 +377,84 @@ export class InferenceInvocation extends BaseInvocation {
     }
   }
 
-  private sumTokenCountsAcrossModalities(
-    tokenCounts: TokenCountsByModality
-  ): number {
-    let sum = 0;
-    for (const count of Object.values(tokenCounts)) {
-      if (count !== undefined && count > 0) {
-        sum += count;
+  /**
+   * Set the `gen_ai.usage.*` span attributes for every field defined in `usage`.
+   *
+   * An attribute is only set when the field contains at least one defined,
+   * non-negative count. An explicitly reported `0` is recorded; `undefined` is
+   * never treated as `0`.
+   */
+  private setUsageAttributes(usage: TokenUsage): void {
+    this.setUsageAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, usage.inputTokens);
+    this.setUsageAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, usage.outputTokens);
+    this.setUsageAttribute(
+      ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+      usage.reasoningTokens
+    );
+    this.setUsageAttribute(
+      ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+      usage.cacheReadTokens
+    );
+    this.setUsageAttribute(
+      ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
+      usage.cacheWriteTokens
+    );
+  }
+
+  private setUsageAttribute(
+    key: string,
+    tokenCounts: TokenCountsByModality | undefined
+  ): void {
+    const total = sumTokenCountsAcrossModalities(tokenCounts);
+    if (total !== undefined) {
+      this._span.setAttribute(key, total);
+    }
+  }
+
+  /**
+   * Add up the positive counts of each modality across `countsList`.
+   *
+   * Returns `undefined` when there is no positive count, so that an inferred
+   * value never introduces a `0` that the caller did not report.
+   */
+  private combineTokenCounts(
+    ...countsList: (TokenCountsByModality | undefined)[]
+  ): TokenCountsByModality | undefined {
+    let combined: TokenCountsByModality | undefined;
+    for (const counts of countsList) {
+      if (!counts) continue;
+      for (const [modality, val] of Object.entries(counts)) {
+        if (val !== undefined && val > 0) {
+          combined = combined ?? {};
+          const key = modality as TokenModality;
+          combined[key] = (combined[key] ?? 0) + val;
+        }
       }
     }
-    return sum;
+    return combined;
+  }
+
+  /**
+   * Return a copy of `usage` with `inputTokens` and `outputTokens` inferred if
+   * not already defined. The caller-supplied object is not modified.
+   */
+  private inferMissingTokenCounts(usage: TokenUsage): TokenUsage {
+    const result: TokenUsage = { ...usage };
+    if (result.inputTokens === undefined) {
+      const combinedInput = this.combineTokenCounts(
+        result.cacheReadTokens,
+        result.cacheWriteTokens
+      );
+      if (combinedInput !== undefined) {
+        result.inputTokens = combinedInput;
+      }
+    }
+    if (result.outputTokens === undefined) {
+      const inferredOutput = this.combineTokenCounts(result.reasoningTokens);
+      if (inferredOutput !== undefined) {
+        result.outputTokens = inferredOutput;
+      }
+    }
+    return result;
   }
 }

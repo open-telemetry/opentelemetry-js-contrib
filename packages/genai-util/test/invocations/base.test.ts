@@ -624,8 +624,6 @@ describe('BaseInvocation', () => {
             {
               inputTokens: { text: 10, image: 5 },
               outputTokens: { text: 5, audio: 3 },
-              inputOperationTokens: 20,
-              outputOperationTokens: 10,
             },
             metricAttrs,
             this._context

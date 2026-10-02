@@ -177,39 +177,6 @@ describe('TelemetryHandler', () => {
     assert.strictEqual(scopeMetric.scope.schemaUrl, GEN_AI_SCHEMA_URL);
   });
 
-  it('should record metrics and handle boundary values when meterProvider is configured', () => {
-    const handler = createHandler({ meterProvider: ctx.meterProvider });
-
-    // Valid recordings
-    handler.recordOperationDuration(1.23, { 'gen_ai.system': 'openai' });
-    handler.recordInferenceTokenUsage(
-      { inputTokens: { text: 10 }, outputTokens: { text: 25 } },
-      { 'gen_ai.system': 'openai' }
-    );
-    handler.recordTimeToFirstChunk(0.45, { 'gen_ai.system': 'openai' });
-    handler.recordTimePerOutputChunk(0.12, { 'gen_ai.system': 'openai' });
-
-    // Boundary/invalid duration values should be ignored without error
-    handler.recordOperationDuration(-1);
-    handler.recordOperationDuration(NaN);
-    handler.recordOperationDuration(Infinity);
-    handler.recordTimeToFirstChunk(-1);
-    handler.recordTimeToFirstChunk(NaN);
-    handler.recordTimeToFirstChunk(Infinity);
-    handler.recordTimePerOutputChunk(-1);
-    handler.recordTimePerOutputChunk(NaN);
-    handler.recordTimePerOutputChunk(Infinity);
-
-    // Boundary/partial token usage values
-    handler.recordInferenceTokenUsage({ inputTokens: { text: 10 } }); // only input tokens
-    handler.recordInferenceTokenUsage({ outputTokens: { text: 20 } }); // only output tokens
-    handler.recordInferenceTokenUsage({
-      inputTokens: { text: -5 },
-      outputTokens: { text: -10 },
-    }); // negative tokens ignored
-    handler.recordInferenceTokenUsage(undefined as any); // undefined usage ignored
-  });
-
   describe('recordTokenUsage', () => {
     const attributes: Attributes = {
       'gen_ai.operation.name': 'chat',
@@ -224,8 +191,8 @@ describe('TelemetryHandler', () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
-          inputOperationTokens: 300,
-          outputOperationTokens: 40,
+          inputTokens: { text: 300 },
+          outputTokens: { text: 40 },
         },
         attributes
       );
@@ -243,6 +210,54 @@ describe('TelemetryHandler', () => {
         ),
         [{ attributes, count: 1, sum: 40 }]
       );
+    });
+
+    it('should record the sum across modalities on the operation histograms', async () => {
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage(
+        {
+          inputTokens: { text: 100, image: 200, audio: -5 },
+          outputTokens: { text: 30, audio: 12 },
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ attributes, count: 1, sum: 300 }]
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ attributes, count: 1, sum: 42 }]
+      );
+    });
+
+    it('should not infer input or output tokens from cache or reasoning tokens', async () => {
+      // Inference is the responsibility of InferenceInvocation, not the handler.
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage(
+        {
+          cacheReadTokens: { text: 60 },
+          cacheWriteTokens: { text: 20 },
+          reasoningTokens: { text: 30 },
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      for (const name of [
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+      ]) {
+        assert.strictEqual(metrics.get(name)?.dataPoints.length ?? 0, 0, name);
+      }
     });
 
     it('should split the usage counters by modality', async () => {
@@ -308,6 +323,8 @@ describe('TelemetryHandler', () => {
 
     it('should skip missing, zero and negative token counts', async () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
+
+      handler.recordInferenceTokenUsage(undefined as any, attributes);
       handler.recordInferenceTokenUsage({}, attributes);
       handler.recordInferenceTokenUsage(
         {

@@ -54,6 +54,7 @@ import type {
   TokenUsage,
   ToolInvocationOptions,
 } from './types';
+import { sumTokenCountsAcrossModalities } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -260,6 +261,12 @@ export class TelemetryHandler {
    * `gen_ai.client.inference.usage.*` counters split by `gen_ai.token.modality`
    * Missing, zero and negative counts are skipped.
    *
+   * Intended to be called by {@link InferenceInvocation} when the invocation
+   * ends, with usage whose missing `inputTokens` / `outputTokens` have already
+   * been inferred (from cache and reasoning tokens respectively). This method
+   * does not infer them itself: if they are missing, the input / output
+   * histograms and counters are not recorded.
+   *
    * @param usage - Token counts of the operation.
    * @param attributes - Metric attributes. Token metrics do not define
    *   `error.type`, so leave it out even when the operation failed.
@@ -274,18 +281,24 @@ export class TelemetryHandler {
     if (!usage) {
       return;
     }
+    const totalInputTokensAcrossModalities = sumTokenCountsAcrossModalities(
+      usage.inputTokens
+    );
+    const totalOutputTokensAcrossModalities = sumTokenCountsAcrossModalities(
+      usage.outputTokens
+    );
 
-    if (isPositiveCount(usage.inputOperationTokens)) {
+    if (isPositiveCount(totalInputTokensAcrossModalities)) {
       this._inputTokenOperationHistogram.record(
-        usage.inputOperationTokens,
+        totalInputTokensAcrossModalities,
         attributes,
         context
       );
     }
 
-    if (isPositiveCount(usage.outputOperationTokens)) {
+    if (isPositiveCount(totalOutputTokensAcrossModalities)) {
       this._outputTokenOperationHistogram.record(
-        usage.outputOperationTokens,
+        totalOutputTokensAcrossModalities,
         attributes,
         context
       );

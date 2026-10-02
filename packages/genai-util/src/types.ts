@@ -310,9 +310,9 @@ export type SystemInstructions = SystemInstructionPart[];
  * distributions.
  */
 export interface TokenUsage {
-  /** The number of input (prompt) tokens used per inference operation. */
+  /** The number of input (prompt) tokens used per inference operation. This includes tokens from cache reads and writes. */
   inputTokens?: TokenCountsByModality;
-  /** The number of output (completion) tokens used per inference operation. */
+  /** The number of output (completion) tokens used per inference operation. This includes reasoning tokens. */
   outputTokens?: TokenCountsByModality;
   /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`). */
   reasoningTokens?: TokenCountsByModality;
@@ -320,10 +320,6 @@ export interface TokenUsage {
   cacheReadTokens?: TokenCountsByModality;
   /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`). */
   cacheWriteTokens?: TokenCountsByModality;
-  /** The number of input (prompt) tokens used per inference operation. */
-  inputOperationTokens?: number;
-  /** The number of output (completion) tokens used per inference operation. */
-  outputOperationTokens?: number;
 }
 
 /**

@@ -43,8 +43,6 @@ import {
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_TOKEN_MODALITY,
-  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
-  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -615,6 +613,8 @@ describe('InferenceInvocation', () => {
         METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
       ].sort()
     );
 
@@ -677,15 +677,9 @@ describe('InferenceInvocation', () => {
     });
 
     // Streaming providers may report input and output tokens in separate events.
-    invocation.setUsage({
-      inputTokens: { text: 100, image: 200 },
-      inputOperationTokens: 300,
-    });
-    invocation.setUsage({
-      outputTokens: { text: 50 },
-      outputOperationTokens: 50,
-      inputTokens: undefined,
-    });
+    invocation.setUsage({ inputTokens: { text: 100, image: 200 } });
+    // An explicitly undefined field must not erase the previously reported value.
+    invocation.setUsage({ outputTokens: { text: 50 }, inputTokens: undefined });
     invocation.stop();
 
     const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -693,22 +687,20 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 50);
 
     const metrics = await collectMetricsByName(ctx.metricReader);
+    // The usage counters are split by modality...
     assert.deepStrictEqual(
       counterValuesByModality(
         metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
       ),
-      {
-        [GEN_AI_TOKEN_MODALITY_VALUE_TEXT]: 100,
-        [GEN_AI_TOKEN_MODALITY_VALUE_IMAGE]: 200,
-      }
+      { text: 100, image: 200 }
     );
     assert.deepStrictEqual(
       counterValuesByModality(
         metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
       ),
-      { [GEN_AI_TOKEN_MODALITY_VALUE_TEXT]: 50 }
+      { text: 50 }
     );
-    // The histograms are not split by modality.
+    // ...while the operation histograms record the total once.
     assert.deepStrictEqual(
       histogramPoints(
         metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
@@ -739,8 +731,6 @@ describe('InferenceInvocation', () => {
     invocation.setUsage({
       inputTokens: { text: 10 },
       outputTokens: { text: 5 },
-      inputOperationTokens: 30,
-      outputOperationTokens: 20,
     });
     invocation.fail({
       errorType: 'Error',
@@ -770,6 +760,265 @@ describe('InferenceInvocation', () => {
         );
       }
     }
+  });
+
+  describe('token usage finalization', () => {
+    const TOKEN_METRICS = [
+      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+    ];
+
+    const startInference = (contentCaptureMode?: 'none' | 'span_only') =>
+      new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+        contentCaptureMode,
+      }).startInference({ providerName: 'openai', requestModel: 'gpt-4o' });
+
+    const dataPointCount = (metric: MetricData | undefined) =>
+      metric?.dataPoints.length ?? 0;
+
+    it('should infer inputTokens from cache read and write tokens, per modality', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        cacheReadTokens: { text: 100 },
+        cacheWriteTokens: { text: 50, image: 20 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 170);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS],
+        100
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS],
+        70
+      );
+
+      // Metrics are derived from the same inferred usage as the span.
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+        ),
+        { text: 150, image: 20 }
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 170 }]
+      );
+    });
+
+    it('should infer outputTokens from reasoning tokens', async () => {
+      const invocation = startInference();
+      invocation.setUsage({ reasoningTokens: { text: 45 } });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 45);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
+        45
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        { text: 45 }
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 45 }]
+      );
+    });
+
+    it('should not modify reported inputTokens and outputTokens', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokens: { text: 500 },
+        outputTokens: { text: 250 },
+        cacheReadTokens: { text: 100 },
+        cacheWriteTokens: { text: 50 },
+        reasoningTokens: { text: 30 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 500);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 250);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 500 }]
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 250 }]
+      );
+    });
+
+    it('should not let a later cache or reasoning-only update overwrite reported tokens', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokens: { text: 10 },
+        outputTokens: { text: 20 },
+      });
+      invocation.setUsage({
+        cacheReadTokens: { text: 5 },
+        reasoningTokens: { text: 3 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 20);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+        ),
+        { text: 10 }
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        { text: 20 }
+      );
+    });
+
+    it('should not record undefined token counts on the span or the metrics', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokens: {},
+        outputTokens: { text: undefined },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.ok(!(ATTR_GEN_AI_USAGE_INPUT_TOKENS in span.attributes));
+      assert.ok(!(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS in span.attributes));
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      for (const name of TOKEN_METRICS) {
+        assert.strictEqual(dataPointCount(metrics.get(name)), 0, name);
+      }
+    });
+
+    it('should record an explicit 0 on the span but not on the metrics', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokens: { text: 0 },
+        outputTokens: { text: 0 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 0);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 0);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      for (const name of TOKEN_METRICS) {
+        assert.strictEqual(dataPointCount(metrics.get(name)), 0, name);
+      }
+    });
+
+    it('should not infer a 0 that was not reported', () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        cacheReadTokens: { text: 0 },
+        reasoningTokens: { text: 0 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      // The explicitly reported zeros are kept...
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS],
+        0
+      );
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
+        0
+      );
+      // ...but no input / output value is inferred from them.
+      assert.ok(!(ATTR_GEN_AI_USAGE_INPUT_TOKENS in span.attributes));
+      assert.ok(!(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS in span.attributes));
+    });
+
+    it('should ignore negative token counts on the span', () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokens: { text: -5 },
+        outputTokens: { text: 10, image: -3 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.ok(!(ATTR_GEN_AI_USAGE_INPUT_TOKENS in span.attributes));
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 10);
+    });
+
+    it('should not mutate the caller-supplied usage object', () => {
+      const invocation = startInference();
+      const usage = {
+        cacheReadTokens: { text: 5 },
+        reasoningTokens: { text: 3 },
+      };
+      invocation.setUsage(usage);
+      invocation.stop();
+
+      assert.deepStrictEqual(usage, {
+        cacheReadTokens: { text: 5 },
+        reasoningTokens: { text: 3 },
+      });
+    });
+
+    it('should set usage attributes on failure even when content capture is disabled', async () => {
+      const invocation = startInference('none');
+      invocation.setUsage({
+        cacheReadTokens: { text: 8 },
+        reasoningTokens: { text: 4 },
+      });
+      invocation.fail({ errorType: 'Error' });
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 8);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 4);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 8 }]
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 4 }]
+      );
+    });
   });
 });
 
