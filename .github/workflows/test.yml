@@ -88,17 +88,19 @@ jobs:
           name: compile-cache-${{ github.run_number }}
           path: .nx
       # Note: see comment in the compile job
-      - name: Set base and head commits
-        run: |
-          if [ "${{github.event_name}}" == "push" ]; then
-            echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
-            echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
-          else
-            echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
-            echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
-          fi
-      - name: Compile (Delta)
-        run: npm run compile:ci:affected
+      # - name: Set base and head commits
+      #   run: |
+      #     if [ "${{github.event_name}}" == "push" ]; then
+      #       echo "NX_BASE=origin/main~1" >> "$GITHUB_ENV"
+      #       echo "NX_HEAD=origin/main" >> "$GITHUB_ENV"
+      #     else
+      #       echo "NX_BASE=origin/main" >> "$GITHUB_ENV"
+      #       echo "NX_HEAD=HEAD" >> "$GITHUB_ENV"
+      #     fi
+      # - name: Compile (Delta)
+      #   run: npm run compile:ci:affected
+      - name: Compile
+        run: npm run compile
       - name: Unit tests (Browser - Delta)
         if: ${{ matrix.node == '24' }}
         run: npm run test:browser:ci:affected
