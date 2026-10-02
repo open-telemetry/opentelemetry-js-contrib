@@ -8,6 +8,7 @@ import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import {
   ATTR_FAAS_MAX_MEMORY,
   ATTR_FAAS_INSTANCE,
+  ATTR_CLOUD_ACCOUNT_ID,
   ATTR_CLOUD_PROVIDER,
   CLOUD_PROVIDER_VALUE_AZURE,
   ATTR_CLOUD_PLATFORM,
@@ -16,19 +17,48 @@ import {
   ATTR_PROCESS_PID,
 } from '../semconv';
 import {
+  AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE,
   WEBSITE_SITE_NAME,
   WEBSITE_INSTANCE_ID,
+  WEBSITE_POD_NAME,
+  CONTAINER_NAME,
   FUNCTIONS_MEM_LIMIT,
   REGION_NAME,
+  WEBSITE_RESOURCE_GROUP,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../types';
-import { getAzureResourceUri, isAzureFunction } from '../utils';
+import {
+  getAzureResourceUri,
+  getAzureSubscriptionId,
+  isAzureFunction,
+} from '../utils';
 
 const AZURE_FUNCTIONS_ATTRIBUTE_ENV_VARS = {
+  [AZURE_RESOURCE_GROUP_NAME_ATTRIBUTE]: WEBSITE_RESOURCE_GROUP,
   [ATTR_SERVICE_NAME]: WEBSITE_SITE_NAME,
-  [ATTR_FAAS_INSTANCE]: WEBSITE_INSTANCE_ID,
   [ATTR_FAAS_MAX_MEMORY]: FUNCTIONS_MEM_LIMIT,
 };
+
+/**
+ * Same order as the Functions host's GetInstanceId(): WEBSITE_INSTANCE_ID on
+ * Windows Consumption, Elastic Premium, and Dedicated plans, then
+ * WEBSITE_POD_NAME and CONTAINER_NAME on Linux and Flex Consumption plans.
+ */
+const AZURE_FUNCTIONS_INSTANCE_ID_ENV_VARS = [
+  WEBSITE_INSTANCE_ID,
+  WEBSITE_POD_NAME,
+  CONTAINER_NAME,
+];
+
+function getFunctionInstanceId(): string | undefined {
+  for (const envVar of AZURE_FUNCTIONS_INSTANCE_ID_ENV_VARS) {
+    const value = process.env[envVar];
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+}
 
 /**
  * The AzureFunctionsDetector can be used to detect if a process is running in Azure Functions
@@ -45,7 +75,7 @@ class AzureFunctionsDetector implements ResourceDetector {
      * If the function version is not present, we check for the website sku to determine if it is a function.
      */
     if (serviceName && isAzureFunction()) {
-      const functionInstance = process.env[WEBSITE_INSTANCE_ID];
+      const functionInstance = getFunctionInstanceId();
       const functionMemLimit = process.env[FUNCTIONS_MEM_LIMIT];
 
       attributes = {
@@ -78,6 +108,14 @@ class AzureFunctionsDetector implements ResourceDetector {
         attributes = {
           ...attributes,
           ...{ [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: azureResourceUri },
+        };
+      }
+
+      const subscriptionId = getAzureSubscriptionId();
+      if (subscriptionId) {
+        attributes = {
+          ...attributes,
+          [ATTR_CLOUD_ACCOUNT_ID]: subscriptionId,
         };
       }
 
