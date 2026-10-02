@@ -2,6 +2,7 @@
   "extends": "../../tsconfig.base",
   "compilerOptions": {
     "rootDir": ".",
+    "skipLibCheck": true,
     "outDir": "build"
   },
   "include": [
