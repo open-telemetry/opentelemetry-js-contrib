@@ -2,8 +2,21 @@
   "name": "@opentelemetry/instrumentation-runtime-node",
   "version": "0.35.0",
   "description": "OpenTelemetry instrumentation for Node.js Performance measurement API",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
@@ -11,8 +24,8 @@
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-runtime-node#readme",
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "clean": "rimraf dist build",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-runtime-node",
     "prepublishOnly": "npm run compile",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
@@ -30,11 +43,9 @@
     "opentelemetry"
   ],
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
+    "README.md",
     "LICENSE",
-    "README.md"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"

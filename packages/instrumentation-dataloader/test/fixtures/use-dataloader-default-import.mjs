@@ -10,7 +10,7 @@ import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 import * as crypto from 'crypto';
 
-import { DataloaderInstrumentation } from '../../build/src/index.js';
+import { DataloaderInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-dataloader',

@@ -1438,7 +1438,7 @@ describe('mysql2', () => {
       // - `await import('../src/index.js')` does not work because when running
       //   the test files from "./test/", instead of from "./build/test/", there
       //   *isn't* a "index.js" file at that relative path.
-      // - `await import('../build/src/index.js')` does not work because that
+      // - `await import('../dist/index.mjs')` does not work because that
       //   is a different module, hence mismatched `MySQL2Instrumentation` types.
       // We fallback to using `require`. This is what the emitted JS used when
       // tsconfig was target=ES2017,module=commonjs. It also matches the
@@ -1447,12 +1447,14 @@ describe('mysql2', () => {
       // (IMO, a better solution for a clean test of `mysql2/promise` would
       // be to use out-of-process testing as provided by `runTestFixture` in
       // contrib-test-utils.)
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { MySQL2Instrumentation } = require('../src');
       instrumentation = new MySQL2Instrumentation();
       instrumentation.enable();
       instrumentation.disable();
 
       // createConnection = (await import('mysql2/promise')).createConnection;
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
       createConnection = require('mysql2/promise').createConnection;
 
       if (!shouldTest) {
