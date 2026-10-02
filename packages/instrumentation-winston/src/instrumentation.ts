@@ -22,6 +22,7 @@ import type {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { otelLogLevels } from './otel-levels';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
@@ -338,16 +339,14 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     }
 
     function isOtelLevels(arg: any): boolean {
-      return (
-        arg &&
-        Object.keys(arg).length === 6 &&
-        arg.fatal !== undefined &&
-        arg.error !== undefined &&
-        arg.warn !== undefined &&
-        arg.info !== undefined &&
-        arg.debug !== undefined &&
-        arg.trace !== undefined
-      );
+      if (!arg || typeof arg !== 'object') {
+        return false;
+      }
+      const keys = Object.keys(arg);
+      if (keys.length !== 6) {
+        return false;
+      }
+      return keys.every(key => arg[key] === otelLogLevels[key]);
     }
 
     function isCliLevels(arg: any): boolean {

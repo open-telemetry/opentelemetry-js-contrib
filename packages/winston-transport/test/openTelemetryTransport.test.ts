@@ -579,7 +579,11 @@ describe('OpenTelemetryTransportV3', () => {
       });
       const sym = Symbol.for('level');
       transport.log(
-        { message: 'catastrophic', level: 'catastrophic', [sym]: 'catastrophic' },
+        {
+          message: 'catastrophic',
+          level: 'catastrophic',
+          [sym]: 'catastrophic',
+        },
         callback
       );
       transport.log(

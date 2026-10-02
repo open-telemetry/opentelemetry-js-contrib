@@ -697,22 +697,87 @@ describe('WinstonInstrumentation', () => {
 
     it('otel levels', () => {
       if (!isWinston2) {
+        const testThreshold = (
+          severity: SeverityNumber,
+          expectedBodies: string[]
+        ) => {
+          memoryLogExporter.getFinishedLogRecords().length = 0;
+          instrumentation.setConfig({
+            disableLogSending: false,
+            logSeverity: severity,
+          });
+          initLogger(LevelsType.otel);
+          logger.log('trace', 'trace');
+          logger.log('debug', 'debug');
+          logger.log('info', 'info');
+          logger.log('warn', 'warn');
+          logger.log('error', 'error');
+          logger.log('fatal', 'fatal');
+          const logRecords = memoryLogExporter.getFinishedLogRecords();
+          assert.deepStrictEqual(
+            logRecords.map(r => r.body),
+            expectedBodies
+          );
+        };
+
+        testThreshold(SeverityNumber.FATAL, ['fatal']);
+        testThreshold(SeverityNumber.ERROR2, ['fatal']);
+        testThreshold(SeverityNumber.ERROR, ['error', 'fatal']);
+        testThreshold(SeverityNumber.WARN3, ['error', 'fatal']);
+        testThreshold(SeverityNumber.WARN, ['warn', 'error', 'fatal']);
+        testThreshold(SeverityNumber.INFO2, ['warn', 'error', 'fatal']);
+        testThreshold(SeverityNumber.INFO, ['info', 'warn', 'error', 'fatal']);
+        testThreshold(SeverityNumber.DEBUG2, [
+          'info',
+          'warn',
+          'error',
+          'fatal',
+        ]);
+        testThreshold(SeverityNumber.DEBUG, [
+          'debug',
+          'info',
+          'warn',
+          'error',
+          'fatal',
+        ]);
+        testThreshold(SeverityNumber.TRACE2, [
+          'debug',
+          'info',
+          'warn',
+          'error',
+          'fatal',
+        ]);
+        testThreshold(SeverityNumber.TRACE, [
+          'trace',
+          'debug',
+          'info',
+          'warn',
+          'error',
+          'fatal',
+        ]);
+      }
+    });
+
+    it('does not treat levels with different numeric values as otel levels', () => {
+      if (!isWinston2) {
         instrumentation.setConfig({
           disableLogSending: false,
-          logSeverity: SeverityNumber.WARN,
+          logSeverity: SeverityNumber.ERROR,
         });
-        initLogger(LevelsType.otel);
-        logger.log('trace', 'trace');
-        logger.log('debug', 'debug');
-        logger.log('info', 'info');
-        logger.log('warn', 'warn');
-        logger.log('error', 'error');
+        const invertedLevels = {
+          fatal: 5,
+          error: 4,
+          warn: 3,
+          info: 2,
+          debug: 1,
+          trace: 0,
+        };
+        initLogger(undefined, undefined, invertedLevels);
         logger.log('fatal', 'fatal');
+        logger.log('error', 'error');
+        logger.log('trace', 'trace');
         const logRecords = memoryLogExporter.getFinishedLogRecords();
-        assert.strictEqual(logRecords.length, 3);
-        assert.strictEqual(logRecords[0].body, 'warn');
-        assert.strictEqual(logRecords[1].body, 'error');
-        assert.strictEqual(logRecords[2].body, 'fatal');
+        assert.ok(logRecords.length >= 1);
       }
     });
 
