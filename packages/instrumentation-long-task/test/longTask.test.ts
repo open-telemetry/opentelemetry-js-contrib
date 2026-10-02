@@ -2,7 +2,7 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { trace } from '@opentelemetry/api';
+import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, hrTimeToNanoseconds } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
@@ -71,7 +71,32 @@ describe('LongTaskInstrumentation', () => {
     deregister();
     sandbox.restore();
     exportSpy.restore();
+    diag.disable();
     trace.disable();
+  });
+
+  it('should warn that the instrumentation is deprecated', () => {
+    const warn = sandbox.spy();
+    diag.setLogger(
+      {
+        error() {},
+        warn,
+        info() {},
+        debug() {},
+        verbose() {},
+      },
+      DiagLogLevel.WARN
+    );
+
+    const instrumentation = new LongTaskInstrumentation({ enabled: false });
+
+    assert.ok(
+      warn.calledWithExactly(
+        '@opentelemetry/instrumentation-long-task is deprecated. Use instrumentation based on the Long Animation Frames API when available.'
+      )
+    );
+    assert.strictEqual(warn.callCount, 1);
+    instrumentation.disable();
   });
 
   it('should report long taking tasks', async () => {
