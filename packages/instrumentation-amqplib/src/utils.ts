@@ -15,7 +15,11 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { ATTR_MESSAGING_SYSTEM } from './semconv';
+import {
+  ATTR_MESSAGING_SYSTEM,
+  ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME,
+  ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+} from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -94,6 +98,12 @@ const getHostname = (hostnameFromUrl: string | undefined): string => {
   return hostnameFromUrl || 'localhost';
 };
 
+const getVhost = (vhostFromUrl: string | undefined | null): string => {
+  // Mirrors amqplib's own defaulting in lib/connect.js's openFrames:
+  // empty/missing vhost defaults to '/', otherwise it's percent-decoded.
+  return vhostFromUrl ? decodeURIComponent(vhostFromUrl) : '/';
+};
+
 const extractConnectionAttributeOrLog = (
   url: string | amqp.Options.Connect,
   attributeKey: string,
@@ -114,20 +124,28 @@ const extractConnectionAttributeOrLog = (
 };
 
 export const getConnectionAttributesFromServer = (
-  conn: amqp.Connection
+  conn: amqp.Connection,
+  captureClusterName: boolean
 ): Attributes => {
+  const attributes: Attributes = {};
   const product = conn.serverProperties.product?.toLowerCase?.();
   if (product) {
-    return {
-      [ATTR_MESSAGING_SYSTEM]: product,
-    };
-  } else {
-    return {};
+    attributes[ATTR_MESSAGING_SYSTEM] = product;
   }
+  if (captureClusterName) {
+    // Experimental — not yet in @opentelemetry/semantic-conventions, see
+    // ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME's doc comment in ./semconv.
+    const clusterName = conn.serverProperties['cluster_name'];
+    if (clusterName) {
+      attributes[ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME] = clusterName;
+    }
+  }
+  return attributes;
 };
 
 export const getConnectionAttributesFromUrl = (
-  url: string | amqp.Options.Connect
+  url: string | amqp.Options.Connect,
+  captureVhostName: boolean
 ): Attributes => {
   const attributes: Attributes = {
     [ATTR_MESSAGING_PROTOCOL_VERSION]: '0.9.1', // this is the only protocol supported by the instrumented library
@@ -162,6 +180,21 @@ export const getConnectionAttributesFromUrl = (
       attributes,
       extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
     );
+
+    if (captureVhostName) {
+      // Experimental — not yet in @opentelemetry/semantic-conventions, see
+      // ATTR_MESSAGING_RABBITMQ_VHOST_NAME's doc comment in ./semconv.
+      const vhost = getVhost(connectOptions?.vhost);
+      Object.assign(
+        attributes,
+        extractConnectionAttributeOrLog(
+          url,
+          ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+          vhost,
+          'vhost'
+        )
+      );
+    }
   } else {
     const censoredUrl = censorPassword(url);
     attributes[ATTR_MESSAGING_URL] = censoredUrl;
@@ -201,6 +234,24 @@ export const getConnectionAttributesFromUrl = (
           'port'
         )
       );
+
+      if (captureVhostName) {
+        // Experimental — not yet in @opentelemetry/semantic-conventions, see
+        // ATTR_MESSAGING_RABBITMQ_VHOST_NAME's doc comment in ./semconv.
+        // Mirrors amqplib's own lib/connect.js: parts.pathname.substr(1).
+        const vhost = getVhost(
+          urlParts.pathname ? urlParts.pathname.substring(1) : null
+        );
+        Object.assign(
+          attributes,
+          extractConnectionAttributeOrLog(
+            censoredUrl,
+            ATTR_MESSAGING_RABBITMQ_VHOST_NAME,
+            vhost,
+            'vhost'
+          )
+        );
+      }
     } catch (err) {
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',
