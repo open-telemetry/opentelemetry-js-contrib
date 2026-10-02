@@ -50,7 +50,7 @@
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/contrib-test-utils": "^0.69.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
-    "joi": "17.12.2"
+    "joi": "17.13.6"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.9.0",
