@@ -256,6 +256,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         const onResponseEnded = () => {
           if (spanHasEnded === false) {
             spanHasEnded = true;
+            const currentMax = res.getMaxListeners();
+            if (currentMax !== 0) {
+              res.setMaxListeners(Math.max(currentMax - 1, 1));
+            }
             span.end();
           }
         };
@@ -282,7 +286,13 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
             if (spanHasEnded === false) {
               spanHasEnded = true;
-              req.res?.removeListener('close', onResponseEnded);
+              if (req.res) {
+                req.res.removeListener('close', onResponseEnded);
+                const currentMax = req.res.getMaxListeners();
+                if (currentMax !== 0) {
+                  req.res.setMaxListeners(Math.max(currentMax - 1, 1));
+                }
+              }
               span.end();
             }
             if (!(req.route && isError) && isLayerPathStored) {
@@ -319,6 +329,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
            * event to handle the later case.
            */
           if (!spanHasEnded) {
+            const currentMax = res.getMaxListeners();
+            if (currentMax !== 0) {
+              res.setMaxListeners(currentMax + 1);
+            }
             res.once('close', onResponseEnded);
           }
         }
