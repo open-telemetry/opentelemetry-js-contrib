@@ -1,23 +1,13 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
+import * as diagch from 'diagnostics_channel';
 
 import { context, propagation } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import {
   AggregationTemporality,
   DataPointType,
@@ -28,6 +18,7 @@ import {
   ATTR_ERROR_TYPE,
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_RESPONSE_STATUS_CODE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_SCHEME,
@@ -43,7 +34,7 @@ describe('UndiciInstrumentation metrics tests', function () {
   const protocol = 'http';
   const hostname = 'localhost';
   const mockServer = new MockServer();
-  const provider = new NodeTracerProvider();
+  const provider = new TracerProvider();
   const metricsMemoryExporter = new InMemoryMetricExporter(
     AggregationTemporality.DELTA
   );
@@ -73,6 +64,12 @@ describe('UndiciInstrumentation metrics tests', function () {
       if (req.url === '/error') {
         // Simulate an error
         res.destroy();
+        return;
+      }
+      const status = req.url?.match(/^\/status\/(\d+)/);
+      if (status) {
+        res.statusCode = Number(status[1]);
+        res.end();
         return;
       }
       // Return a valid response always
@@ -137,16 +134,25 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], 'localhost');
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
       assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 200);
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
+      );
     });
 
-    it('should have error.type in "http.client.request.duration" metric', async () => {
-      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/error`;
+    it('should use error code as error.type in "http.client.request.duration" metric', async () => {
+      const request: any = {
+        method: 'GET',
+        origin: `${protocol}://${hostname}:${mockServer.port}`,
+        path: '/error',
+        headers: [],
+      };
+      const error = Object.assign(new Error(''), {
+        code: 'UND_ERR_SOCKET',
+      });
 
-      try {
-        await fetch(fetchUrl);
-      } catch (err) {
-        // Expected error, do nothing
-      }
+      diagch.channel('undici:request:create').publish({ request });
+      diagch.channel('undici:request:error').publish({ request, error });
 
       await metricReader.collectAndExport();
       const resourceMetrics = metricsMemoryExporter.getMetrics();
@@ -172,9 +178,42 @@ describe('UndiciInstrumentation metrics tests', function () {
       assert.strictEqual(metricAttributes[ATTR_HTTP_REQUEST_METHOD], 'GET');
       assert.strictEqual(metricAttributes[ATTR_SERVER_ADDRESS], hostname);
       assert.strictEqual(metricAttributes[ATTR_SERVER_PORT], mockServer.port);
-      assert.ok(
-        metricAttributes[ATTR_ERROR_TYPE],
-        `the metric contains "${ATTR_ERROR_TYPE}" attribute if request failed`
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], 'UND_ERR_SOCKET');
+    });
+
+    it('should use the status code as error.type in "http.client.request.duration" metric', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/status/500`;
+      await fetch(fetchUrl);
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const metrics = resourceMetrics[0].scopeMetrics[0].metrics;
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 500);
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], '500');
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
+      );
+    });
+
+    it('should not set error.type for a successful response', async () => {
+      const fetchUrl = `${protocol}://${hostname}:${mockServer.port}/status/204`;
+      await fetch(fetchUrl);
+
+      await metricReader.collectAndExport();
+      const resourceMetrics = metricsMemoryExporter.getMetrics();
+      const metrics = resourceMetrics[0].scopeMetrics[0].metrics;
+      assert.strictEqual(metrics[0].dataPoints.length, 1);
+
+      const metricAttributes = metrics[0].dataPoints[0].attributes;
+      assert.strictEqual(metricAttributes[ATTR_HTTP_RESPONSE_STATUS_CODE], 204);
+      assert.strictEqual(metricAttributes[ATTR_ERROR_TYPE], undefined);
+      assert.strictEqual(
+        metricAttributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '1.1'
       );
     });
   });

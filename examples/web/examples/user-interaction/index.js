@@ -1,49 +1,42 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 'use strict';
 
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { UserInteractionInstrumentation } from '@opentelemetry/instrumentation-user-interaction';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { B3Propagator } from '@opentelemetry/propagator-b3';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-const providerWithZone = new WebTracerProvider({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'web-service-ui',
-  }),
+const tracerProvider = new TracerProvider({
+  resource: defaultResource().merge(
+    resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'web-service-ui',
+    })
+  ),
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
-    new SimpleSpanProcessor(new OTLPTraceExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+    new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
-
-providerWithZone.register({
-  contextManager: new ZoneContextManager(),
-  propagator: new B3Propagator(),
-});
+trace.setGlobalTracerProvider(tracerProvider);
+context.setGlobalContextManager(new ZoneContextManager().enable());
+propagation.setGlobalPropagator(new B3Propagator());
 
 registerInstrumentations({
   instrumentations: [
@@ -53,7 +46,6 @@ registerInstrumentations({
       propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
     }),
   ],
-  tracerProvider: providerWithZone,
 });
 
 let lastButtonId = 0;

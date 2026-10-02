@@ -29,8 +29,9 @@ import { NodeSDK, logs } from '@opentelemetry/sdk-node';
 import { ALLOW_ALL_BAGGAGE_KEYS, BaggageLogRecordProcessor } from '@opentelemetry/baggage-log-record-processor';
 
 const logRecordProcessor = [
-  new logs.SimpleLogRecordProcessor(
-    new logs.ConsoleLogRecordExporter()),
+  new logs.SimpleLogRecordProcessor({
+    exporter: new logs.ConsoleLogRecordExporter()
+  }),
   new BaggageLogRecordProcessor(ALLOW_ALL_BAGGAGE_KEYS)];
 
 const sdk = new NodeSDK({

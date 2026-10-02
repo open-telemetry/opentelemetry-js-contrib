@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -21,8 +10,6 @@ import {
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_HTTP_REQUEST_METHOD,
@@ -34,10 +21,16 @@ import type { RouterExecutionContext } from '@nestjs/core/router/router-executio
 import type { Controller } from '@nestjs/common/interfaces';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { ATTR_HTTP_METHOD, ATTR_HTTP_URL } from './semconv';
 import { AttributeNames, NestType } from './enums';
 
-const supportedVersions = ['>=4.0.0 <12'];
+const supportedVersions = ['>=4.0.0 <13'];
+
+// The files patched by this instrumentation. Since NestJS 12 the package is
+// published as ESM, see `loadPatchedFiles`.
+const NEST_FACTORY_FILE = '@nestjs/core/nest-factory.js';
+const ROUTER_EXECUTION_CONTEXT_FILE =
+  '@nestjs/core/router/router-execution-context.js';
+const FIRST_ESM_MAJOR = 12;
 
 export class NestInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
@@ -45,20 +38,18 @@ export class NestInstrumentation extends InstrumentationBase {
     component: NestInstrumentation.COMPONENT,
   };
 
-  private _semconvStability: SemconvStability;
-
   constructor(config: InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._semconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   init() {
     const module = new InstrumentationNodeModuleDefinition(
       NestInstrumentation.COMPONENT,
-      supportedVersions
+      supportedVersions,
+      (moduleExports: any, moduleVersion?: string) => {
+        this.loadPatchedFiles(moduleVersion);
+        return moduleExports;
+      }
     );
 
     module.files.push(
@@ -69,9 +60,35 @@ export class NestInstrumentation extends InstrumentationBase {
     return module;
   }
 
+  /**
+   * NestJS 12 publishes `@nestjs/core` as ESM. When a CommonJS application
+   * `require()`s it, Node.js evaluates the package's internal files with the
+   * ESM loader, so they never pass through the `require` hook and the file
+   * patches registered in `init()` would not run. Requiring the two patched
+   * files here routes them through the hook. The ESM loader has already
+   * cached them, so the same class prototypes get wrapped.
+   *
+   * ESM applications load these files through the ESM loader hook instead,
+   * where the file patches apply directly.
+   *
+   * The files are resolved from the application's lookup paths, not from this
+   * package's, so that layouts which do not hoist `@nestjs/core` (pnpm) work.
+   */
+  private loadPatchedFiles(moduleVersion?: string) {
+    const major = Number(moduleVersion?.split('.')[0]);
+    if (!(major >= FIRST_ESM_MAJOR)) {
+      return;
+    }
+    const paths = [...(require.main?.paths ?? []), ...module.paths];
+    for (const file of [NEST_FACTORY_FILE, ROUTER_EXECUTION_CONTEXT_FILE]) {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require(require.resolve(file, { paths }));
+    }
+  }
+
   getNestFactoryFileInstrumentation(versions: string[]) {
     return new InstrumentationNodeModuleFile(
-      '@nestjs/core/nest-factory.js',
+      NEST_FACTORY_FILE,
       versions,
       (NestFactoryStatic: any, moduleVersion?: string) => {
         this.ensureWrapped(
@@ -89,17 +106,13 @@ export class NestInstrumentation extends InstrumentationBase {
 
   getRouterExecutionContextFileInstrumentation(versions: string[]) {
     return new InstrumentationNodeModuleFile(
-      '@nestjs/core/router/router-execution-context.js',
+      ROUTER_EXECUTION_CONTEXT_FILE,
       versions,
       (RouterExecutionContext: any, moduleVersion?: string) => {
         this.ensureWrapped(
           RouterExecutionContext.RouterExecutionContext.prototype,
           'create',
-          createWrapCreateHandler(
-            this.tracer,
-            moduleVersion,
-            this._semconvStability
-          )
+          createWrapCreateHandler(this.tracer, moduleVersion)
         );
         return RouterExecutionContext;
       },
@@ -159,8 +172,7 @@ function createWrapNestFactoryCreate(
 
 function createWrapCreateHandler(
   tracer: api.Tracer,
-  moduleVersion: string | undefined,
-  semconvStability: SemconvStability
+  moduleVersion: string | undefined
 ) {
   return function wrapCreateHandler(
     original: RouterExecutionContext['create']
@@ -196,14 +208,8 @@ function createWrapCreateHandler(
           [AttributeNames.CONTROLLER]: instanceName,
           [AttributeNames.CALLBACK]: callbackName,
         };
-        if (semconvStability & SemconvStability.OLD) {
-          attributes[ATTR_HTTP_METHOD] = req.method;
-          attributes[ATTR_HTTP_URL] = req.originalUrl || req.url;
-        }
-        if (semconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
-          attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
-        }
+        attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
+        attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
         const span = tracer.startSpan(spanName, { attributes });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 

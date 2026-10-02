@@ -1,20 +1,7 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
-
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 import {
   Attributes,
@@ -23,24 +10,17 @@ import {
   SpanStatusCode,
   trace,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import type * as Memcached from 'memcached';
 import * as assert from 'assert';
 import { MemcachedInstrumentation } from '../src';
 import { ATTR_EXCEPTION_MESSAGE } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_MEMCACHED,
-  DB_SYSTEM_NAME_VALUE_MEMCACHED,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_OPERATION,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_MEMCACHED } from '../src/semconv';
 import {
   ATTR_DB_SYSTEM_NAME,
   ATTR_DB_OPERATION_NAME,
@@ -61,11 +41,6 @@ const CONFIG = {
 };
 
 const ATTRIBUTES: Attributes = {
-  // Old semconv
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MEMCACHED,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  // Stable semconv
   [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_MEMCACHED,
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
@@ -89,8 +64,8 @@ const VALUE = '_test_value_';
 const shouldTest = process.env.RUN_MEMCACHED_TESTS;
 
 describe('memcached@2.x', () => {
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('default');
   instrumentation.setTracerProvider(provider);
@@ -211,7 +186,7 @@ describe('memcached@2.x', () => {
         } catch (e) {
           done(e);
         }
-      }, 25);
+      }, 200);
     });
 
     it('should return to parent context in callback', done => {
@@ -276,81 +251,6 @@ describe('memcached@2.x', () => {
       ]);
     });
   });
-
-  describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-    // Restore OTEL_SEMCONV_STABILITY_OPT_IN after we are done.
-    const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-    after(() => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
-      await client.setPromise(KEY, VALUE, 10);
-      const value = await client.getPromise(KEY);
-
-      assert.strictEqual(value, VALUE);
-      const instrumentationSpans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(instrumentationSpans.length, 2);
-
-      const span = instrumentationSpans[1]; // get operation
-      // old `db.*`
-      assert.strictEqual(
-        span.attributes[ATTR_DB_SYSTEM],
-        DB_SYSTEM_VALUE_MEMCACHED
-      );
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], 'get');
-      // stable `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], undefined);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], undefined);
-
-      // old `net.*`
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], CONFIG.host);
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], CONFIG.port);
-      // stable `net.*`
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], undefined);
-      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], undefined);
-
-      client.end();
-    });
-
-    it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-      (instrumentation as any)._setSemconvStabilityFromEnv();
-
-      const client = getClient(`${CONFIG.host}:${CONFIG.port}`, { retries: 0 });
-      await client.setPromise(KEY, VALUE, 10);
-      const value = await client.getPromise(KEY);
-
-      assert.strictEqual(value, VALUE);
-      const instrumentationSpans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(instrumentationSpans.length, 2);
-
-      const span = instrumentationSpans[1]; // get operation
-      // old `db.*`
-      assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], undefined);
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], undefined);
-      // stable `db.*`
-      assert.strictEqual(
-        span.attributes[ATTR_DB_SYSTEM_NAME],
-        DB_SYSTEM_NAME_VALUE_MEMCACHED
-      );
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], 'get');
-
-      // old `net.*`
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], undefined);
-      assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], undefined);
-      // stable `net.*`
-      assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], CONFIG.host);
-      assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-
-      client.end();
-    });
-  });
 });
 
 const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
@@ -379,19 +279,16 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         assert.strictEqual(span.attributes[attr], ATTRIBUTES[attr]);
       }
 
-      // Verify db.operation (old) and db.operation.name (stable)
-      assert.strictEqual(span.attributes[ATTR_DB_OPERATION], expected.op);
+      // Verify db.operation.name (stable)
       assert.strictEqual(span.attributes[ATTR_DB_OPERATION_NAME], expected.op);
 
-      // Verify db.statement (old) and db.query.text (stable) if statement is expected
+      // Verify db.query.text (stable) if statement is expected
       if (expected.statement !== undefined) {
-        assert.strictEqual(span.attributes['db.statement'], expected.statement);
         assert.strictEqual(
           span.attributes[ATTR_DB_QUERY_TEXT],
           expected.statement
         );
       } else {
-        assert.strictEqual(span.attributes['db.statement'], undefined);
         assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], undefined);
       }
 

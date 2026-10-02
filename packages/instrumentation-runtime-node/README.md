@@ -4,13 +4,15 @@
 [![Apache License][license-image]][license-image]
 
 This module provides automatic metric instrumentation that exposes measurements from the [Performance measurement APIs](https://nodejs.org/api/perf_hooks.html) (i.e. `perf_hooks`).
-While currently it is limited to metrics, it may be modified to produce other signals in the future.
+It can also emit OpenTelemetry logs for uncaught exceptions.
+When a configured logger provider exposes `forceFlush()` (for example, the SDK
+`LoggerProvider`), this instrumentation calls it immediately after emitting the
+uncaught-exception log record as a best-effort attempt to reduce log loss on
+process termination.
 
 ## Supported Versions
 
-- Node.js `>=14.10`
-
-<!-- - 14.6.0 - this package uses _private properties_ -->
+- Node.js `>=22.15.0`
 
 ## Example
 
@@ -50,11 +52,7 @@ Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should 
 nodejs_performance_event_loop_utilization 0.010140079547955264
 ```
 
-> Metrics will only be exported after it has collected two ELU readings (at least approximately `RuntimeNodeInstrumentationConfig.monitoringPrecision` milliseconds after initialization). Otherwise, you may see:
->
-> ```txt
-> # no registered metrics
-> ```
+> On the very first metrics collection the event loop utilization and time metrics may report zero or near-zero values while the instrumentation establishes a baseline.
 
 ### Options
 
@@ -62,7 +60,42 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 | name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
 |---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `10`    | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
+| [`monitoringPrecision`](./src/types.ts) | `int` | millisecond | `10`    | The resolution in milliseconds for the event loop delay histogram (`perf_hooks.monitorEventLoopDelay`). A smaller value gives finer-grained delay samples at the cost of more overhead. Has no effect on event loop utilization or time metrics. |
+| [`captureUncaughtException`](./src/types.ts) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
+| [`applyCustomExceptionAttributes`](./src/types.ts) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
+
+## Semantic Conventions
+
+This instrumentation emits metrics defined in the experimental `@opentelemetry/semantic-conventions` (`^1.29.0`) for the `nodejs` and `v8js` runtime namespaces.
+
+### Metrics collected
+
+| Metric | Short Description |
+|---|---|
+| `nodejs.eventloop.time` | Cumulative duration the event loop has been in each state |
+| `nodejs.eventloop.utilization` | Event loop utilization ratio (0.0–1.0) |
+| `nodejs.eventloop.delay.min` | Minimum event loop delay |
+| `nodejs.eventloop.delay.max` | Maximum event loop delay |
+| `nodejs.eventloop.delay.mean` | Mean event loop delay |
+| `nodejs.eventloop.delay.stddev` | Standard deviation of event loop delay |
+| `nodejs.eventloop.delay.p50` | 50th-percentile event loop delay |
+| `nodejs.eventloop.delay.p90` | 90th-percentile event loop delay |
+| `nodejs.eventloop.delay.p99` | 99th-percentile event loop delay |
+| `v8js.gc.duration` | Garbage Collection pause duration by type |
+| `v8js.memory.heap.space.size` | Total pre-allocated size of a heap space |
+| `v8js.memory.heap.used` | Used heap memory in a heap space |
+| `v8js.memory.heap.space.available_size` | Available size in a heap space |
+| `v8js.memory.heap.space.physical_size` | Committed (physical) size of a heap space |
+| `v8js.resource.active` | Count of active resources keeping the event loop alive |
+
+### Attributes collected
+
+| Attribute | Short Description |
+|---|---|
+| `nodejs.eventloop.state` | State of the event loop (`active`, `idle`) |
+| `v8js.gc.type` | Type of Garbage Collection (`major`, `minor`, `incremental`, `weakcb`) |
+| `v8js.heap.space.name` | Name of the V8 heap space |
+| `v8js.resource.type` | Type of active resource |
 
 ## Useful links
 

@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sql-common-v0.41.2...sql-common-v0.42.0) (2026-06-11)
+
+
+### Features
+
+* **instrumentation-pg:** propagate context using set application_name ([#3454](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3454)) ([0a1f464](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0a1f4648ceb11d9a2a8b4bccab4b8a2a28546b09))
+
 ## [0.41.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sql-common-v0.41.1...sql-common-v0.41.2) (2025-09-29)
 
 

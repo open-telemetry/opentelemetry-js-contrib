@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -20,31 +9,23 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   isWrapped,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
   ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
   ATTR_DB_QUERY_TEXT,
+  ATTR_DB_RESPONSE_STATUS_CODE,
+  ATTR_DB_STORED_PROCEDURE_NAME,
   ATTR_DB_SYSTEM_NAME,
+  ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_MSSQL,
-  ATTR_DB_NAME,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
 import type * as tedious from 'tedious';
 import { TediousInstrumentationConfig } from './types';
-import { getSpanName, once } from './utils';
+import { getOperationName, getSpanName, once } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -86,31 +67,16 @@ function setDatabase(this: ApproxConnection, databaseName: string) {
 
 export class TediousInstrumentation extends InstrumentationBase<TediousInstrumentationConfig> {
   static readonly COMPONENT = 'tedious';
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
 
   constructor(config: TediousInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected init() {
     return [
       new InstrumentationNodeModuleDefinition(
         TediousInstrumentation.COMPONENT,
-        ['>=1.11.0 <20'],
+        ['>=1.11.0 <21'],
         (moduleExports: typeof tedious) => {
           const ConnectionPrototype: any = moduleExports.Connection.prototype;
           for (const method of PATCHED_METHODS) {
@@ -236,41 +202,44 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
         })(request);
 
         const attributes: api.Attributes = {};
-        if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MSSQL;
-          attributes[ATTR_DB_NAME] = databaseName;
-          // >=4 uses `authentication` object; older versions just userName and password pair
-          attributes[ATTR_DB_USER] =
-            this.config?.userName ??
-            this.config?.authentication?.options?.userName;
-          attributes[ATTR_DB_STATEMENT] = sql;
-          attributes[ATTR_DB_SQL_TABLE] = request.table;
+
+        // db.namespace: for named instances include the instance name as a
+        // prefix separated by "|" per the SQL Server semconv spec.
+        // https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
+        const instanceName = this.config?.options?.instanceName;
+        const dbNamespace =
+          instanceName && databaseName
+            ? `${instanceName}|${databaseName}`
+            : databaseName;
+        attributes[ATTR_DB_NAMESPACE] = dbNamespace;
+        attributes[ATTR_DB_SYSTEM_NAME] =
+          DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+        attributes[ATTR_DB_QUERY_TEXT] = sql;
+        attributes[ATTR_DB_COLLECTION_NAME] = request.table;
+
+        const operationName = getOperationName(operation);
+        if (operationName !== undefined) {
+          attributes[ATTR_DB_OPERATION_NAME] = operationName;
         }
-        if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
-          // The OTel spec for "db.namespace" discusses handling for connection
-          // to MSSQL "named instances". This isn't currently supported.
-          //    https://opentelemetry.io/docs/specs/semconv/database/sql-server/#:~:text=%5B1%5D%20db%2Enamespace
-          attributes[ATTR_DB_NAMESPACE] = databaseName;
-          attributes[ATTR_DB_SYSTEM_NAME] =
-            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
-          attributes[ATTR_DB_QUERY_TEXT] = sql;
-          attributes[ATTR_DB_COLLECTION_NAME] = request.table;
-          // See https://opentelemetry.io/docs/specs/semconv/database/sql-server/#spans
-          // TODO(3290): can `db.response.status_code` be added?
-          // TODO(3290): is `operation` correct for `db.operation.name`
-          // TODO(3290): can `db.query.summary` reliably be calculated?
-          // TODO(3290): `db.stored_procedure.name`
+
+        // db.stored_procedure.name: available directly from sqlTextOrProcedure
+        // when callProcedure is used.
+        if (operation === 'callProcedure' && sql) {
+          attributes[ATTR_DB_STORED_PROCEDURE_NAME] = sql;
         }
-        if (thisPlugin._netSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_NET_PEER_NAME] = this.config?.server;
-          attributes[ATTR_NET_PEER_PORT] = this.config?.options?.port;
-        }
-        if (thisPlugin._netSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
-          attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
-        }
+
+        attributes[ATTR_SERVER_ADDRESS] = this.config?.server;
+        attributes[ATTR_SERVER_PORT] = this.config?.options?.port;
+
+        const spanCollection =
+          operation === 'callProcedure' ? sql : request.table;
         const span = thisPlugin.tracer.startSpan(
-          getSpanName(operation, databaseName, sql, request.table),
+          getSpanName(
+            operationName,
+            dbNamespace,
+            spanCollection,
+            DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER
+          ),
           {
             kind: api.SpanKind.CLIENT,
             attributes,
@@ -291,7 +260,17 @@ export class TediousInstrumentation extends InstrumentationBase<TediousInstrumen
               code: api.SpanStatusCode.ERROR,
               message: err.message,
             });
-            // TODO(3290): set `error.type` attribute?
+
+            const errorType = err?.constructor?.name ?? 'Error';
+            span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+            // db.response.status_code carries the SQL Server error number when
+            // present, otherwise the Tedious error code string.
+            const statusCode =
+              err.number != null ? String(err.number) : err.code;
+            if (statusCode) {
+              span.setAttribute(ATTR_DB_RESPONSE_STATUS_CODE, statusCode);
+            }
           }
           span.end();
         });

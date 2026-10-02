@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 export const AZURE_APP_SERVICE_STAMP_RESOURCE_ATTRIBUTE =
@@ -53,6 +42,10 @@ export const AKS_CLUSTER_RESOURCE_ID = 'CLUSTER_RESOURCE_ID';
 
 // AKS ConfigMap file path (mounted from aks-cluster-metadata ConfigMap in kube-public)
 export const AKS_METADATA_FILE_PATH = '/etc/kubernetes/aks-cluster-metadata';
+
+// The single key of the aks-cluster-metadata ConfigMap. When the ConfigMap is
+// mounted as a volume, Kubernetes creates a file with this name holding the raw value.
+export const AKS_CLUSTER_RESOURCE_ID_KEY = 'clusterResourceId';
 
 export interface AksClusterMetadata {
   name?: string;

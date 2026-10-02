@@ -1,42 +1,20 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as semver from 'semver';
 import { context, trace, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
-import {
-  DB_SYSTEM_VALUE_MYSQL,
-  ATTR_DB_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { MySQL2Instrumentation, MySQL2InstrumentationConfig } from '../src';
-
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
 
 const LIB_VERSION = testUtils.getPackageVersion('mysql2');
 const port = Number(process.env.MYSQL_PORT) || 33306;
@@ -111,8 +89,8 @@ describe('mysql2', () => {
   describe('callback API', () => {
     let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
-    const provider = new BasicTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    const provider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
     });
 
     let connection: Connection;
@@ -224,7 +202,7 @@ describe('mysql2', () => {
           query.on('end', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
-            assert.strictEqual(spans[0].attributes[ATTR_DB_STATEMENT], sql);
+            assert.strictEqual(spans[0].attributes[ATTR_DB_QUERY_TEXT], sql);
             done();
           });
         });
@@ -242,7 +220,7 @@ describe('mysql2', () => {
             const spans = memoryExporter.getFinishedSpans();
             assert.strictEqual(spans[0].name, 'SELECT');
             assert.strictEqual(
-              spans[0].attributes[ATTR_DB_STATEMENT],
+              spans[0].attributes[ATTR_DB_QUERY_TEXT],
               query.sql
             );
             done();
@@ -442,80 +420,6 @@ describe('mysql2', () => {
             });
           });
         });
-      });
-    });
-
-    describe('various values of OTEL_SEMCONV_STABILITY_OPT_IN', () => {
-      // Restore OTEL_SEMCONV_STABILITY_OPT_IN after we are done.
-      const _origOptInEnv = process.env.OTEL_SEMCONV_STABILITY_OPT_IN;
-      after(() => {
-        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = _origOptInEnv;
-        (instrumentation as any)._setSemconvStabilityFromEnv();
-      });
-
-      const sql = 'SELECT 1+1 as solution';
-      const queryAndGetSpan = (): Promise<ReadableSpan> => {
-        return new Promise(resolve => {
-          const span = provider.getTracer('default').startSpan('test span');
-          context.with(trace.setSpan(context.active(), span), () => {
-            connection.query(sql, (err, res: RowDataPacket[]) => {
-              const spans = memoryExporter.getFinishedSpans();
-              assert.strictEqual(spans.length, 1);
-              resolve(spans[0]);
-            });
-          });
-        });
-      };
-
-      it('OTEL_SEMCONV_STABILITY_OPT_IN=(empty)', async () => {
-        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = '';
-        (instrumentation as any)._setSemconvStabilityFromEnv();
-
-        const { attributes } = await queryAndGetSpan();
-
-        // old `db.*`
-        assert.strictEqual(attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
-        assert.strictEqual(attributes[ATTR_DB_NAME], database);
-        assert.strictEqual(attributes[ATTR_DB_USER], user);
-        assert.strictEqual(attributes[ATTR_DB_STATEMENT], format(sql));
-        // stable `db.*`
-        assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], undefined);
-        assert.strictEqual(attributes[ATTR_DB_NAMESPACE], undefined);
-        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], undefined);
-
-        // old `net.*`
-        assert.strictEqual(attributes[ATTR_NET_PEER_NAME], host);
-        assert.strictEqual(attributes[ATTR_NET_PEER_PORT], port);
-        // stable `net.*`
-        assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], undefined);
-        assert.strictEqual(attributes[ATTR_SERVER_PORT], undefined);
-      });
-
-      it('OTEL_SEMCONV_STABILITY_OPT_IN=http,database', async () => {
-        process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http,database';
-        (instrumentation as any)._setSemconvStabilityFromEnv();
-
-        const { attributes } = await queryAndGetSpan();
-
-        // old `db.*`
-        assert.strictEqual(attributes[ATTR_DB_SYSTEM], undefined);
-        assert.strictEqual(attributes[ATTR_DB_STATEMENT], undefined);
-        assert.strictEqual(attributes[ATTR_DB_NAME], undefined);
-        assert.strictEqual(attributes[ATTR_DB_USER], undefined);
-        // stable `db.*`
-        assert.strictEqual(
-          attributes[ATTR_DB_SYSTEM_NAME],
-          DB_SYSTEM_NAME_VALUE_MYSQL
-        );
-        assert.strictEqual(attributes[ATTR_DB_NAMESPACE], database);
-        assert.strictEqual(attributes[ATTR_DB_QUERY_TEXT], format(sql));
-
-        // old `net.*`
-        assert.strictEqual(attributes[ATTR_NET_PEER_NAME], undefined);
-        assert.strictEqual(attributes[ATTR_NET_PEER_PORT], undefined);
-        // stable `net.*`
-        assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], host);
-        assert.strictEqual(attributes[ATTR_SERVER_PORT], port);
       });
     });
 
@@ -1509,8 +1413,8 @@ describe('mysql2', () => {
 
     let contextManager: AsyncLocalStorageContextManager;
     const memoryExporter = new InMemorySpanExporter();
-    const provider = new BasicTracerProvider({
-      spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+    const provider = new TracerProvider({
+      spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
     });
     let connection: ConnectionAsync;
     let rootConnection: ConnectionAsync;
@@ -1652,21 +1556,12 @@ function assertSpan(
   values?: any,
   errorMessage?: string
 ) {
-  // Assert both old and stable `db.*` semconv.
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MYSQL);
-  assert.strictEqual(span.attributes[ATTR_DB_NAME], database);
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
-  assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], format(sql, values));
   assert.strictEqual(
     span.attributes[ATTR_DB_SYSTEM_NAME],
     DB_SYSTEM_NAME_VALUE_MYSQL
   );
   assert.strictEqual(span.attributes[ATTR_DB_NAMESPACE], database);
   assert.strictEqual(span.attributes[ATTR_DB_QUERY_TEXT], format(sql, values));
-
-  // Assert both old and stable `net.*` semconv.
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
   assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], host);
   assert.strictEqual(span.attributes[ATTR_SERVER_PORT], port);
 

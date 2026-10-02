@@ -15,7 +15,6 @@ This package:
 - Registers a global memory exporter which can be referenced in test to access span.
 - Make sure there is only a single instance of an instrumentation class that is used across different `.spec.ts` files so patching is consistent, deterministic and idiomatic.
 - Reset the memory exporter before each test, so spans do not leak from one test to another.
-- Optionally - export the test traces to Jaeger for convenience while debugging and developing.
 
 By using this package, testing instrumentation code can be shorter, and good practices for writing tests are more easily applied.
 
@@ -38,7 +37,6 @@ As command line argument option to mocha:
 ```js
     "scripts": {
         "test": "mocha --require @opentelemetry/contrib-test-utils",
-        "test:jaeger": "OTEL_EXPORTER_JAEGER_AGENT_HOST=localhost mocha --require @opentelemetry/contrib-test-utils",
     },
 ``
 

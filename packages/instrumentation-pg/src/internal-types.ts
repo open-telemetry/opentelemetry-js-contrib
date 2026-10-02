@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import type * as pgTypes from 'pg';
@@ -67,6 +56,7 @@ export const EVENT_LISTENERS_SET = Symbol(
 );
 
 export interface PgPoolExtended extends pgPoolTypes<pgTypes.Client> {
+  ending: boolean;
   options: PgPoolOptionsParams;
   [EVENT_LISTENERS_SET]?: boolean; // flag to identify if the event listeners for instrumentation have been set
 }

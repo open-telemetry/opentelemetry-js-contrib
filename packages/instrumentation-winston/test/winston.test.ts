@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { SeverityNumber, logs } from '@opentelemetry/api-logs';
@@ -23,9 +12,9 @@ import {
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';
@@ -35,15 +24,15 @@ import type { Winston2Logger, Winston3Logger } from '../src/internal-types';
 import { WinstonInstrumentation } from '../src';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 const tracer = provider.getTracer('default');
 context.setGlobalContextManager(new AsyncLocalStorageContextManager());
 
 const memoryLogExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(memoryLogExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memoryLogExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -79,6 +68,12 @@ describe('WinstonInstrumentation', () => {
     switch (formatType) {
       case 'colorize':
         format = winston.format.colorize();
+        break;
+      case 'errors':
+        format = winston.format.combine(
+          winston.format.errors({ stack: true }),
+          winston.format.json()
+        );
         break;
       case 'none':
       case undefined:
@@ -148,12 +143,12 @@ describe('WinstonInstrumentation', () => {
     const logRecords = memoryLogExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
     const { traceId, spanId, traceFlags } = span.spanContext();
-    assert.strictEqual(logRecords[0]['attributes']['trace_id'], traceId);
-    assert.strictEqual(logRecords[0]['attributes']['span_id'], spanId);
-    assert.strictEqual(
-      logRecords[0]['attributes']['trace_flags'],
-      `0${traceFlags.toString(16)}`
-    );
+    assert.strictEqual(logRecords[0].spanContext?.traceId, traceId);
+    assert.strictEqual(logRecords[0].spanContext?.spanId, spanId);
+    assert.strictEqual(logRecords[0].spanContext?.traceFlags, traceFlags);
+    assert.strictEqual(logRecords[0].attributes['trace_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['span_id'], undefined);
+    assert.strictEqual(logRecords[0].attributes['trace_flags'], undefined);
     assert.strictEqual(kMessage, logRecords[0].body, kMessage);
     return logRecords;
   }
@@ -230,6 +225,54 @@ describe('WinstonInstrumentation', () => {
       }
     });
 
+    it('preserves span context across queued log records', async () => {
+      if (!isWinston2) {
+        const winston = require('winston');
+        class BlockingTransport extends Writable {
+          constructor() {
+            super({ objectMode: true, highWaterMark: 1 });
+          }
+
+          override _write(
+            _chunk: unknown,
+            _encoding: BufferEncoding,
+            callback: (error?: Error | null) => void
+          ) {
+            setImmediate(callback);
+          }
+
+          log(_info: unknown, callback: () => void) {
+            callback();
+          }
+        }
+
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        logger = winston.createLogger({
+          transports: [new BlockingTransport()],
+        });
+
+        logger.info('outside span');
+
+        const span = tracer.startSpan('abc');
+        context.with(trace.setSpan(context.active(), span), () => {
+          logger.info(kMessage);
+        });
+        span.end();
+
+        await new Promise<void>(resolve => setImmediate(resolve));
+
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 2);
+        assert.strictEqual(logRecords[0].spanContext, undefined);
+        const { traceId, spanId, traceFlags } = span.spanContext();
+        assert.strictEqual(logRecords[1].spanContext?.traceId, traceId);
+        assert.strictEqual(logRecords[1].spanContext?.spanId, spanId);
+        assert.strictEqual(logRecords[1].spanContext?.traceFlags, traceFlags);
+      }
+    });
+
     it('emit LogRecord with extra attibutes', () => {
       if (!isWinston2) {
         instrumentation.setConfig({
@@ -252,6 +295,51 @@ describe('WinstonInstrumentation', () => {
           logRecords[0].attributes['extraAttribute2'],
           'attributeValue2'
         );
+      }
+    });
+
+    it('serializes Error metadata attributes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger();
+        const failure = new TypeError('boom');
+
+        logger.log('info', kMessage, { failure });
+
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.deepStrictEqual(logRecords[0].attributes['failure'], {
+          name: 'TypeError',
+          message: 'boom',
+          stack: failure.stack,
+        });
+      }
+    });
+
+    it('emit LogRecord with exception attributes', () => {
+      if (!isWinston2) {
+        instrumentation.setConfig({
+          disableLogSending: false,
+        });
+        initLogger(undefined, 'errors');
+
+        (logger as any).error(new Error('boom'));
+        const logRecords = memoryLogExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].body, 'boom');
+        assert.strictEqual(
+          logRecords[0].attributes['exception.message'],
+          'boom'
+        );
+        assert.strictEqual(logRecords[0].attributes['exception.type'], 'Error');
+        assert.ok(
+          typeof logRecords[0].attributes['exception.stacktrace'] === 'string'
+        );
+        assert.strictEqual(logRecords[0].attributes['stack'], undefined);
+
+        initLogger();
       }
     });
 

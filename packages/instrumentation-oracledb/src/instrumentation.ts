@@ -1,18 +1,7 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -20,7 +9,8 @@ import {
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
 import type * as oracleDBTypes from 'oracledb';
-import { OracleInstrumentationConfig } from './types';
+import type { OracleInstrumentationConfig } from './types';
+import { setMetricInstruments } from './metricUtils';
 import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandler';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -32,10 +22,14 @@ export class OracleInstrumentation extends InstrumentationBase {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
+  override _updateMetricInstruments(): void {
+    setMetricInstruments(this.meter);
+  }
+
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      ['>= 6.7 < 7'],
+      ['>= 6.7 < 8'],
       (moduleExports: typeof oracleDBTypes) => {
         if (!moduleExports) {
           return;
@@ -70,8 +64,6 @@ export class OracleInstrumentation extends InstrumentationBase {
 
   override setConfig(config: OracleInstrumentationConfig = {}) {
     super.setConfig(config);
-
-    // update the config in OracleTelemetryTraceHandler obj.
     this._tmHandler?.setInstrumentConfig(this._config);
   }
 }

@@ -1,6 +1,79 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.34.0...instrumentation-runtime-node-v0.35.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.33.0...instrumentation-runtime-node-v0.34.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-runtime-node:** remove deprecated v8js.memory.heap.limit metric ([#3632](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3632))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+* **instrumentation-runtime-node:** remove deprecated v8js.memory.heap.limit metric ([#3632](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3632)) ([f698292](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f69829245952b95f5d1827b0a6cee67499f85bc6))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.32.0...instrumentation-runtime-node-v0.33.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+* **instrumentation-runtime-node:** add active resource gauge ([#3361](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3361)) ([f3d38e2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f3d38e25cdb7a158a47c24fc344cb4e9c6f24252))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.31.0...instrumentation-runtime-node-v0.32.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** use finer GC duration buckets ([#3537](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3537)) ([275725f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/275725f27b4c9fecf8d731a94eb06df1616fe164))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.30.0...instrumentation-runtime-node-v0.31.0) (2026-05-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-runtime-node:** align v8js.memory.heap.* metrics with semconv #3481 ([#3405](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3405))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+* **instrumentation-runtime-node:** align v8js.memory.heap.* metrics with semconv [#3481](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3481) ([#3405](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3405)) ([e574282](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e5742823d89ade1edf6239ebc646d42ce0952f66))
+* **instrumentation-runtime-node:** emit logs for uncaught exceptions ([#3379](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3379)) ([248ebf0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/248ebf07ddd9a54b4b64db98bf8f8f65a5c00d64))
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.29.0...instrumentation-runtime-node-v0.30.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.28.0...instrumentation-runtime-node-v0.29.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.27.0...instrumentation-runtime-node-v0.28.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
 ## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.26.0...instrumentation-runtime-node-v0.27.0) (2026-03-25)
 
 

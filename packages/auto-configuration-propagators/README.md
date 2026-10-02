@@ -33,7 +33,6 @@ The specification defines a list of [known propagators][env-var-url] for the `OT
 - "baggage": [W3C Baggage](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-core)
 - "b3": [B3 Single](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-propagator-b3)
 - "b3multi": [B3 Multi](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-propagator-b3)
-- "jaeger": [Jaeger](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-propagator-jaeger)
 - "xray": [AWS X-Ray (third party)](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/propagator-aws-xray)
 - "xray-lambda": [AWS X-Ray Lambda (third party)](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/propagator-aws-xray-lambda)
 - "ottrace": [OT Trace (third party)](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/propagator-ot-trace)

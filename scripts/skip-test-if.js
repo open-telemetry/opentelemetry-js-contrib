@@ -1,30 +1,19 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * This script can be used with `mocha --require ...` to support skipping
  * tests if the current version of Node.js is too old or too new.  For example,
- * say a package's unit tests cannot run with Node.js 14, but the CI unit tests
+ * say a package's unit tests cannot run with Node.js 22, but the CI unit tests
  * run all package tests with that version.
  *
  * 1. Change this in "package.json":
  *      "test": "nyc mocha ...",
  *    to one of these:
- *      "test": "SKIP_TEST_IF_NODE_OLDER_THAN=18 nyc mocha --require '../../scripts/skip-test-if.js' ...",
- *      "test": "SKIP_TEST_IF_NODE_NEWER_THAN=22 nyc mocha --require '../../scripts/skip-test-if.js' ...",
+ *      "test": "SKIP_TEST_IF_NODE_OLDER_THAN=22 nyc mocha --require '../../scripts/skip-test-if.js' ...",
+ *      "test": "SKIP_TEST_IF_NODE_NEWER_THAN=24 nyc mocha --require '../../scripts/skip-test-if.js' ...",
  *    where `SKIP_TEST_IF_NODE_{OLDER|NEWER}_THAN` indicates a Node.js *major*
  *    version number.
  *

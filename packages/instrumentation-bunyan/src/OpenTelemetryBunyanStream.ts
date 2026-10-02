@@ -1,23 +1,18 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { logs, SeverityNumber, Logger } from '@opentelemetry/api-logs';
+import {
+  logs,
+  SeverityNumber,
+  Logger,
+  type LogRecord,
+} from '@opentelemetry/api-logs';
 import type { LogLevelString } from 'bunyan';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 const DEFAULT_INSTRUMENTATION_SCOPE_NAME = PACKAGE_NAME;
 const DEFAULT_INSTRUMENTATION_SCOPE_VERSION = PACKAGE_VERSION;
@@ -122,8 +117,8 @@ export class OpenTelemetryBunyanStream {
    *   Resource attributes, respectively. This code cannot change the
    *   LoggerProvider's `resource`, so getting the OpenTelemetry equivalents
    *   depends on the user using relevant OpenTelemetry resource detectors.
-   *   "examples/telemetry.js" shows using HostDetector and ProcessDetector for
-   *   this.
+   *   "examples/bunyan/telemetry.js" shows using HostDetector and
+   *   ProcessDetector for this.
    * - The Bunyan `name` field *could* naturally map to OpenTelemetry's
    *   `service.name` resource attribute. However, that is debatable, as some
    *   users might use `name` more like a log4j logger name.
@@ -135,12 +130,14 @@ export class OpenTelemetryBunyanStream {
       time,
       level,
       msg,
+      err,
       v, // eslint-disable-line @typescript-eslint/no-unused-vars
       hostname, // eslint-disable-line @typescript-eslint/no-unused-vars
       pid, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
+      [ATTR_OTEL_EVENT_NAME]: eventName,
       ...fields
     } = rec;
     let timestamp = undefined;
@@ -149,14 +146,23 @@ export class OpenTelemetryBunyanStream {
     } else {
       fields.time = time; // Expose non-Date "time" field on attributes.
     }
-    const otelRec = {
+    const normalizedEventName =
+      typeof eventName === 'string' ? eventName : undefined;
+
+    const otelRec: LogRecord = {
       timestamp,
       observedTimestamp: timestamp,
       severityNumber: severityNumberFromBunyanLevel(level),
       severityText: nameFromLevel[level],
       body: msg,
       attributes: fields,
+      ...(normalizedEventName !== undefined
+        ? { eventName: normalizedEventName }
+        : {}),
     };
+    if (err !== undefined) {
+      otelRec.exception = err;
+    }
     this._otelLogger.emit(otelRec);
   }
 }

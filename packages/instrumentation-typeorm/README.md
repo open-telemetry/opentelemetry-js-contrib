@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`typeorm`](https://www.npmjs.com/package/typeorm) package, which may be loaded using the [`@opentelemetry/instrumentation`](https://github.com/open-telemetry/opentelemetry-js/tree/main/experimental/packages/opentelemetry-instrumentation) package.
 
-If total installation size is not constrained, it is recommended to use [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API `^1.3.0` and SDK `2.0+`.
 
@@ -17,25 +17,26 @@ npm install --save @opentelemetry/instrumentation-typeorm
 
 ## Supported versions
 
-- [`typeorm`](https://www.npmjs.com/package/typeorm) versions `>=0.3.0 <1`
+- [`typeorm`](https://www.npmjs.com/package/typeorm) versions `>=0.3.0 <2`
 
 ## Usage
 
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
+
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { TypeormInstrumentation } = require('@opentelemetry/instrumentation-typeorm');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new TypeormInstrumentation({
       // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Instrumentation Options

@@ -25,14 +25,15 @@ npm install --save @opentelemetry/id-generator-aws-xray
 In the [global tracer configuration file](https://opentelemetry.io/docs/instrumentation/js/getting-started/nodejs/#setup), configure the following:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { AWSXRayIdGenerator } = require('@opentelemetry/id-generator-aws-xray');
 
-const tracerConfig = {
+const sdk = new NodeSDK({
   idGenerator: new AWSXRayIdGenerator(),
-  resources: resources
-};
-const tracerProvider = new NodeTracerProvider(tracerConfig);
+  // ...
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Trace ID Details

@@ -1,6 +1,78 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.65.0...instrumentation-user-interaction-v0.66.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** compute the XPath inside the span creation try/catch ([#3636](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3636)) ([5179edc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5179edc04c4978d7881f56fe12b56ecc9db8668a))
+* **instrumentation-user-interaction:** preserve bare event listener calls ([#3653](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3653)) ([00db003](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/00db003a3f7a61f5bc57d84a08e43526881ad497))
+
+## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.64.0...instrumentation-user-interaction-v0.65.0) (2026-07-23)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+
+
+### Bug Fixes
+
+* **instrumentation-user-interaction:** use WeakMap for per-element listener bookkeeping ([#3576](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3576)) ([87c3da8](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/87c3da816f64a42ef3bd489cdb785a955d171aa8))
+
+## [0.64.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.63.0...instrumentation-user-interaction-v0.64.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+## [0.63.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.62.0...instrumentation-user-interaction-v0.63.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+## [0.62.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.61.0...instrumentation-user-interaction-v0.62.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+## [0.61.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.60.0...instrumentation-user-interaction-v0.61.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+
+## [0.60.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.59.0...instrumentation-user-interaction-v0.60.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+
+## [0.59.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.58.0...instrumentation-user-interaction-v0.59.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+
+### Bug Fixes
+
+* **instr-user-interaction:** avoid wrapping/unwrapping browser APIs multiple times ([#3459](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3459)) ([6d0205c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6d0205c71b639df5ea612d723a0a54ef788fd399))
+
 ## [0.58.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-user-interaction-v0.57.0...instrumentation-user-interaction-v0.58.0) (2026-03-25)
 
 

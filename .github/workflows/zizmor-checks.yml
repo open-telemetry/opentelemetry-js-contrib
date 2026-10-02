@@ -1,0 +1,21 @@
+# Zizmor can be run locally:
+#   zizmor --gh-token $(gh auth token) .github/workflows
+# Sometimes there are automatic fixes to findings:
+#   zizmor --gh-token $(gh auth token) --fix=all .github/workflows
+name: Zizmor GitHub Actions Security Analysis
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  zizmor:
+    name: Zizmor Security Analysis
+    permissions:
+      contents: read # for actions/checkout
+      security-events: write # for zizmor to upload SARIF results
+    uses: open-telemetry/shared-workflows/.github/workflows/zizmor.yml@62d5939b47144252763c5ff9fffe8c20d76cd806 # v0.4.0

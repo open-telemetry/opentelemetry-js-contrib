@@ -1,20 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { InstrumentationBase, isWrapped } from '@opentelemetry/instrumentation';
+import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import type { LogRecord } from '@opentelemetry/api-logs';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 /** @knipignore */
@@ -51,6 +40,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   // any possible confusion with the `_enabled` field used on the *Node.js*
   // InstrumentationBase class.
   declare private _isEnabled: boolean;
+  declare private _isHistoryPatched: boolean;
 
   /**
    *
@@ -171,8 +161,9 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       ((window as any).navigation as EventTarget);
 
     // Only patch history API if Navigation API is not available
-    if (!navigationApi) {
+    if (!navigationApi && !this._isHistoryPatched) {
       this._patchHistoryApi();
+      this._isHistoryPatched = true;
     }
 
     // Always listen for page load
@@ -214,7 +205,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     }
     this._isEnabled = false;
 
-    this._unpatchHistoryApi();
     if (this._onLoadHandler) {
       document.removeEventListener('DOMContentLoaded', this._onLoadHandler);
       this._onLoadHandler = undefined;
@@ -246,6 +236,9 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     const plugin = this;
     return (original: any) => {
       return function patchHistoryMethod(this: History, ...args: unknown[]) {
+        if (!plugin._isEnabled) {
+          return original.apply(this, args);
+        }
         const result = original.apply(this, args);
         const currentUrl = location.href;
         if (currentUrl !== plugin._lastUrl) {
@@ -267,13 +260,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       this._patchHistoryMethod('replaceState')
     );
     this._wrap(history, 'pushState', this._patchHistoryMethod('pushState'));
-  }
-  /**
-   * unpatch the history api methods
-   */
-  _unpatchHistoryApi() {
-    if (isWrapped(history.replaceState)) this._unwrap(history, 'replaceState');
-    if (isWrapped(history.pushState)) this._unwrap(history, 'pushState');
   }
 
   /**

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   context,
@@ -28,8 +17,6 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import {
   ATTR_DB_COLLECTION_NAME,
@@ -41,17 +28,12 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_MONGODB_COLLECTION,
-  ATTR_DB_NAME,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
   DB_SYSTEM_NAME_VALUE_MONGODB,
-  DB_SYSTEM_VALUE_MONGODB,
-  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
 } from './semconv';
 import { MongoDBInstrumentationConfig, CommandResult } from './types';
 import {
@@ -76,26 +58,11 @@ const DEFAULT_CONFIG: MongoDBInstrumentationConfig = {
 
 /** mongodb instrumentation plugin for OpenTelemetry */
 export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
-  declare private _connectionsUsage: UpDownCounter;
+  declare private _connectionsCount: UpDownCounter;
   declare private _poolName: string;
 
   constructor(config: MongoDBInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   override setConfig(config: MongoDBInstrumentationConfig = {}) {
@@ -103,8 +70,8 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   override _updateMetricInstruments() {
-    this._connectionsUsage = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
@@ -114,12 +81,13 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   /**
-   * Convenience function for updating the `db.client.connections.usage` metric.
-   * The name "count" comes from the eventual replacement for this metric per
-   * https://opentelemetry.io/docs/specs/semconv/non-normative/db-migration/#database-client-connection-count
+   * Convenience function for updating the `db.client.connection.count` metric.
    */
   private _connCountAdd(n: number, poolName: string, state: string) {
-    this._connectionsUsage?.add(n, { 'pool.name': poolName, state });
+    this._connectionsCount?.add(n, {
+      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+      [ATTR_DB_CLIENT_CONNECTION_STATE]: state,
+    });
   }
 
   init() {
@@ -297,11 +265,23 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
         if (nSessionsBeforeAcquire === nSessionsAfterAcquire) {
           //no session in the pool. a new session was created and used
-          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
+          instrumentation._connCountAdd(
+            1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_USED
+          );
         } else if (nSessionsBeforeAcquire - 1 === nSessionsAfterAcquire) {
           //a session was already in the pool. remove it from the pool and use it.
-          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
-          instrumentation._connCountAdd(1, instrumentation._poolName, 'used');
+          instrumentation._connCountAdd(
+            -1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+          );
+          instrumentation._connCountAdd(
+            1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_USED
+          );
         }
         return session;
       };
@@ -314,8 +294,16 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       return function patchRelease(this: any, session: ServerSession) {
         const cmdPromise = original.call(this, session);
 
-        instrumentation._connCountAdd(-1, instrumentation._poolName, 'used');
-        instrumentation._connCountAdd(1, instrumentation._poolName, 'idle');
+        instrumentation._connCountAdd(
+          -1,
+          instrumentation._poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_USED
+        );
+        instrumentation._connCountAdd(
+          1,
+          instrumentation._poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+        );
         return cmdPromise;
       };
     };
@@ -946,36 +934,16 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   ): Attributes {
     const attributes: Attributes = {};
 
-    if (this._dbSemconvStability & SemconvStability.OLD) {
-      attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MONGODB;
-      attributes[ATTR_DB_NAME] = dbName;
-      attributes[ATTR_DB_MONGODB_COLLECTION] = dbCollection;
-      attributes[ATTR_DB_OPERATION] = operation;
-      attributes[ATTR_DB_CONNECTION_STRING] =
-        `mongodb://${host}:${port}/${dbName}`;
-    }
-    if (this._dbSemconvStability & SemconvStability.STABLE) {
-      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
-      attributes[ATTR_DB_NAMESPACE] = dbName;
-      attributes[ATTR_DB_OPERATION_NAME] = operation;
-      attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
-    }
+    attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
+    attributes[ATTR_DB_NAMESPACE] = dbName;
+    attributes[ATTR_DB_OPERATION_NAME] = operation;
+    attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
 
     if (host && port) {
-      if (this._netSemconvStability & SemconvStability.OLD) {
-        attributes[ATTR_NET_PEER_NAME] = host;
-      }
-      if (this._netSemconvStability & SemconvStability.STABLE) {
-        attributes[ATTR_SERVER_ADDRESS] = host;
-      }
+      attributes[ATTR_SERVER_ADDRESS] = host;
       const portNumber = parseInt(port, 10);
       if (!isNaN(portNumber)) {
-        if (this._netSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_NET_PEER_PORT] = portNumber;
-        }
-        if (this._netSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_SERVER_PORT] = portNumber;
-        }
+        attributes[ATTR_SERVER_PORT] = portNumber;
       }
     }
 
@@ -990,12 +958,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       safeExecuteInTheMiddle(
         () => {
           const query = dbStatementSerializer(commandObj);
-          if (this._dbSemconvStability & SemconvStability.OLD) {
-            attributes[ATTR_DB_STATEMENT] = query;
-          }
-          if (this._dbSemconvStability & SemconvStability.STABLE) {
-            attributes[ATTR_DB_QUERY_TEXT] = query;
-          }
+          attributes[ATTR_DB_QUERY_TEXT] = query;
         },
         err => {
           if (err) {
@@ -1010,19 +973,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
   }
 
   private _spanNameFromAttrs(attributes: Attributes): string {
-    let spanName;
-    if (this._dbSemconvStability & SemconvStability.STABLE) {
-      // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
-      spanName =
-        [
-          attributes[ATTR_DB_OPERATION_NAME],
-          attributes[ATTR_DB_COLLECTION_NAME],
-        ]
-          .filter(attr => attr)
-          .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
-    } else {
-      spanName = `mongodb.${attributes[ATTR_DB_OPERATION] || 'command'}`;
-    }
+    // https://opentelemetry.io/docs/specs/semconv/database/database-spans/#name
+    const spanName =
+      [attributes[ATTR_DB_OPERATION_NAME], attributes[ATTR_DB_COLLECTION_NAME]]
+        .filter(attr => attr)
+        .join(' ') || DB_SYSTEM_NAME_VALUE_MONGODB;
     return spanName;
   }
 
@@ -1107,7 +1062,11 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
         }
 
         if (commandType === 'endSessions') {
-          instrumentation._connCountAdd(-1, instrumentation._poolName, 'idle');
+          instrumentation._connCountAdd(
+            -1,
+            instrumentation._poolName,
+            DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+          );
         }
       }
 

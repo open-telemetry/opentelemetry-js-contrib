@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   Span,
@@ -40,8 +29,6 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
 import type {
   MiddlewareStack,
@@ -58,7 +45,6 @@ import {
 } from './utils';
 import { propwrap } from './propwrap';
 import { RequestMetadata } from './services/ServiceExtension';
-import { ATTR_HTTP_STATUS_CODE } from './semconv';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
@@ -73,19 +59,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   // need declare since initialized in callbacks from super constructor
   declare private servicesExtensions: ServicesExtensions;
 
-  private _httpSemconvStability: SemconvStability;
-  private _dbSemconvStability: SemconvStability;
-
   constructor(config: AwsSdkInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._httpSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected init(): InstrumentationModuleDefinition[] {
@@ -117,6 +92,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     // As of @smithy/middleware-stack@2.1.0 `constructStack` is only available
     // as a getter, so we cannot use `this._wrap()`.
     const self = this;
+
     const v3SmithyMiddlewareStack = new InstrumentationNodeModuleDefinition(
       '@smithy/middleware-stack',
       ['>=2.0.0'],
@@ -133,6 +109,21 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
       }
     );
 
+    // Patch for @smithy/core >= 3.24.0: Client class moved from @smithy/smithy-client
+    // into @smithy/core/client bundle. We need to patch Client.prototype.send there too.
+    const v3SmithyCoreClientFile = new InstrumentationNodeModuleFile(
+      '@smithy/core/dist-cjs/submodules/client/index.js',
+      ['>=3.24.0'],
+      this.patchV3SmithyClient.bind(this),
+      this.unpatchV3SmithyClient.bind(this)
+    );
+    const v3SmithyCore = new InstrumentationNodeModuleDefinition(
+      '@smithy/core',
+      ['>=3.24.0'],
+      undefined,
+      undefined,
+      [v3SmithyCoreClientFile]
+    );
     const v3SmithyClient = new InstrumentationNodeModuleDefinition(
       '@aws-sdk/smithy-client',
       ['^3.1.0'],
@@ -151,6 +142,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     return [
       v3MiddlewareStack,
       v3SmithyMiddlewareStack,
+      v3SmithyCore,
       v3SmithyClient,
       v3NewSmithyClient,
     ];
@@ -170,11 +162,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     return moduleExports;
   }
 
-  protected patchV3SmithyClient(moduleExports: any) {
+  protected patchV3SmithyClient(moduleExports: any, moduleVersion?: string) {
     this._wrap(
       moduleExports.Client.prototype,
       'send',
-      this._getV3SmithyClientSendPatch.bind(this)
+      this._getV3SmithyClientSendPatch.bind(this, moduleVersion)
     );
     return moduleExports;
   }
@@ -287,14 +279,17 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
   }
 
   private _getV3SmithyClientSendPatch(
+    moduleVersion: string | undefined,
     original: (...args: unknown[]) => Promise<any>
   ) {
+    const self = this;
     return function send(
       this: any,
       command: V3PluginCommand,
       ...args: unknown[]
     ): Promise<any> {
       command[V3_CLIENT_CONFIG_KEY] = this.config;
+      self.patchV3MiddlewareStack(moduleVersion, this.middlewareStack);
       return original.apply(this, [command, ...args]);
     };
   }
@@ -313,16 +308,20 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
     // 'clone' and 'concat' functions are internally calling 'constructStack' which is in same
     // module, thus not patched, and we need to take care of it specifically.
-    this._wrap(
-      middlewareStackToPatch,
-      'clone',
-      this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
-    );
-    this._wrap(
-      middlewareStackToPatch,
-      'concat',
-      this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
-    );
+    if (!isWrapped(middlewareStackToPatch.clone)) {
+      this._wrap(
+        middlewareStackToPatch,
+        'clone',
+        this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
+      );
+    }
+    if (!isWrapped(middlewareStackToPatch.concat)) {
+      this._wrap(
+        middlewareStackToPatch,
+        'concat',
+        this._getV3MiddlewareStackClonePatch.bind(this, moduleVersion)
+      );
+    }
   }
 
   private _getV3MiddlewareStackClonePatch(
@@ -378,8 +377,7 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
         const requestMetadata = self.servicesExtensions.requestPreSpanHook(
           normalizedRequest,
           self.getConfig(),
-          self._diag,
-          self._dbSemconvStability
+          self._diag
         );
         const startTime = hrTime();
         const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
@@ -421,15 +419,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   const httpStatusCode =
                     response.output?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._httpSemconvStability & SemconvStability.OLD) {
-                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
-                    }
-                    if (self._httpSemconvStability & SemconvStability.STABLE) {
-                      span.setAttribute(
-                        ATTR_HTTP_RESPONSE_STATUS_CODE,
-                        httpStatusCode
-                      );
-                    }
+                    span.setAttribute(
+                      ATTR_HTTP_RESPONSE_STATUS_CODE,
+                      httpStatusCode
+                    );
                   }
 
                   const extendedRequestId =
@@ -468,15 +461,10 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
 
                   const httpStatusCode = err?.$metadata?.httpStatusCode;
                   if (httpStatusCode) {
-                    if (self._httpSemconvStability & SemconvStability.OLD) {
-                      span.setAttribute(ATTR_HTTP_STATUS_CODE, httpStatusCode);
-                    }
-                    if (self._httpSemconvStability & SemconvStability.STABLE) {
-                      span.setAttribute(
-                        ATTR_HTTP_RESPONSE_STATUS_CODE,
-                        httpStatusCode
-                      );
-                    }
+                    span.setAttribute(
+                      ATTR_HTTP_RESPONSE_STATUS_CODE,
+                      httpStatusCode
+                    );
                   }
 
                   const extendedRequestId = err?.extendedRequestId;

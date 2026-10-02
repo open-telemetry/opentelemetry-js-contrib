@@ -1,5 +1,7 @@
 # OpenTelemetry Host Metrics for Node.js
 
+> **Deprecated:** This package is deprecated. Use [`@opentelemetry/instrumentation-host-metrics`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-host-metrics) instead, which implements the standard `InstrumentationBase` interface and integrates with `@opentelemetry/auto-instrumentations-node`.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
 

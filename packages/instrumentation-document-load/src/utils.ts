@@ -1,21 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { Span } from '@opentelemetry/api';
-import { otperformance } from '@opentelemetry/core';
 import {
   hasKey,
   PerformanceEntries,
@@ -26,9 +14,9 @@ import { EventNames } from './enums/EventNames';
 
 export const getPerformanceNavigationEntries = (): PerformanceEntries => {
   const entries: PerformanceEntries = {};
-  const performanceNavigationTiming = (
-    otperformance as unknown as Performance
-  ).getEntriesByType?.('navigation')[0] as PerformanceEntries;
+  const performanceNavigationTiming = performance.getEntriesByType?.(
+    'navigation'
+  )[0] as PerformanceEntries;
 
   if (performanceNavigationTiming) {
     const keys = Object.values(PTN);
@@ -42,7 +30,10 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
     });
   } else {
     // // fallback to previous version
-    const perf: typeof otperformance & PerformanceLegacy = otperformance;
+    const perf: Performance & PerformanceLegacy = performance as Performance &
+      PerformanceLegacy;
+    // PerformanceTiming is required for legacy browser support.
+    // eslint-disable-next-line baseline-js/use-baseline
     const performanceTiming = perf.timing;
     if (performanceTiming) {
       const keys = Object.values(PTN);
@@ -50,7 +41,7 @@ export const getPerformanceNavigationEntries = (): PerformanceEntries => {
         if (hasKey(performanceTiming, key)) {
           const value = performanceTiming[key];
           if (typeof value === 'number') {
-            entries[key] = value;
+            entries[key as keyof PerformanceEntries] = value;
           }
         }
       });
@@ -66,9 +57,7 @@ const performancePaintNames = {
 };
 
 export const addSpanPerformancePaintEvents = (span: Span) => {
-  const performancePaintTiming = (
-    otperformance as unknown as Performance
-  ).getEntriesByType?.('paint');
+  const performancePaintTiming = performance.getEntriesByType?.('paint');
   if (performancePaintTiming) {
     performancePaintTiming.forEach(({ name, startTime }) => {
       if (hasKey(performancePaintNames, name)) {

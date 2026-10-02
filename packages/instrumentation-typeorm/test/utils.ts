@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors, Aspecto
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as typeorm from 'typeorm';
 
@@ -33,8 +22,19 @@ export class User {
   }
 }
 
+// typeorm@1.0.0 removed the `sqlite` (sqlite3) driver in favor of
+// `better-sqlite3`, so pick whichever driver the installed typeorm supports.
+export const sqliteDriverType: 'sqlite' | 'better-sqlite3' = (() => {
+  try {
+    require.resolve('typeorm/driver/sqlite/SqliteDriver');
+    return 'sqlite';
+  } catch {
+    return 'better-sqlite3';
+  }
+})();
+
 export const defaultOptions: any = {
-  type: 'sqlite',
+  type: sqliteDriverType,
   database: ':memory:',
   dropSchema: true,
   synchronize: true,

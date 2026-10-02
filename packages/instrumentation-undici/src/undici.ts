@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as diagch from 'diagnostics_channel';
 import { URL } from 'url';
@@ -45,6 +34,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_FULL,
@@ -368,10 +358,13 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const config = this.getConfig();
     const { span } = record;
-    const { remoteAddress, remotePort } = socket;
+    const { remoteAddress, remotePort, alpnProtocol } = socket;
     const spanAttributes: Attributes = {
       [ATTR_NETWORK_PEER_ADDRESS]: remoteAddress,
       [ATTR_NETWORK_PEER_PORT]: remotePort,
+      // undici only ever offers `http/1.1` and, with `allowH2`, `h2` as ALPN
+      // protocols; a connection that negotiated neither is HTTP/1.1.
+      [ATTR_NETWORK_PROTOCOL_VERSION]: alpnProtocol === 'h2' ? '2' : '1.1',
     };
 
     // After hooks have been processed (which may modify request headers)
@@ -391,6 +384,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     span.setAttributes(spanAttributes);
+    record.attributes = Object.assign(record.attributes, spanAttributes);
   }
 
   // This is the 3rd message we get for each request and it's fired when the server
@@ -407,9 +401,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const { span, attributes } = record;
+    const isError = response.statusCode >= 400;
     const spanAttributes: Attributes = {
       [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
+
+    if (isError) {
+      spanAttributes[ATTR_ERROR_TYPE] = String(response.statusCode);
+    }
 
     const config = this.getConfig();
 
@@ -443,10 +442,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     span.setAttributes(spanAttributes);
     span.setStatus({
-      code:
-        response.statusCode >= 400
-          ? SpanStatusCode.ERROR
-          : SpanStatusCode.UNSET,
+      code: isError ? SpanStatusCode.ERROR : SpanStatusCode.UNSET,
     });
     record.attributes = Object.assign(attributes, spanAttributes);
   }
@@ -458,7 +454,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (!record) {
       return;
     }
-
     const { span, attributes, startTime } = record;
 
     // End the span
@@ -484,22 +479,36 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const { span, attributes, startTime } = record;
 
-    // NOTE: in `undici@6.3.0` when request aborted the error type changes from
-    // a custom error (`RequestAbortedError`) to a built-in `DOMException` carrying
-    // some differences:
-    // - `code` is from DOMEXception (ABORT_ERR: 20)
-    // - `message` changes
-    // - stacktrace is smaller and contains node internal frames
-    span.recordException(error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error.message,
-    });
-    span.end();
-    this._recordFromReq.delete(request);
+    // Per OTel HTTP spec: if the request was intentionally cancelled via an
+    // AbortController signal, it SHOULD NOT be treated as an error.
+    // Span status should be left unset and error.type should not be set.
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client
+    const isAbort =
+      error.name === 'AbortError' ||
+      (typeof DOMException !== 'undefined' &&
+        error instanceof DOMException &&
+        error.code === DOMException.ABORT_ERR);
 
-    // Record metrics (with the error)
-    attributes[ATTR_ERROR_TYPE] = error.message;
+    if (isAbort) {
+      span.end();
+    } else {
+      // error.type must be a low-cardinality class of error per semconv, and an
+      // empty value collapses into a duplicate series on Prometheus-based
+      // exporters. Use the error code/name, never the free-form, possibly empty
+      // message.
+      const errorType = error.code || error.name || 'Error';
+      attributes[ATTR_ERROR_TYPE] = errorType;
+      span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+      span.recordException(error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      });
+      span.end();
+    }
+
+    this._recordFromReq.delete(request);
     this.recordRequestDuration(attributes, startTime);
   }
 
@@ -514,6 +523,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       ATTR_SERVER_PORT,
       ATTR_URL_SCHEME,
       ATTR_ERROR_TYPE,
+      ATTR_NETWORK_PROTOCOL_VERSION,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {

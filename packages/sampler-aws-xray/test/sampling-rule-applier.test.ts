@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // Includes work from:
@@ -19,17 +8,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Attributes } from '@opentelemetry/api';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_SERVICE_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_HTTP_REQUEST_METHOD,
+  ATTR_URL_FULL,
+  ATTR_URL_PATH,
+} from '@opentelemetry/semantic-conventions';
 import {
   resourceFromAttributes,
   emptyResource,
 } from '@opentelemetry/resources';
 import {
   ATTR_AWS_LAMBDA_INVOKED_ARN,
-  ATTR_HTTP_HOST,
-  ATTR_HTTP_METHOD,
-  ATTR_HTTP_TARGET,
-  ATTR_HTTP_URL,
   ATTR_CLOUD_PLATFORM,
 } from './../src/semconv';
 
@@ -55,10 +46,10 @@ describe('SamplingRuleApplier', () => {
     });
 
     const attr: Attributes = {
-      [ATTR_HTTP_TARGET]: '/target',
-      [ATTR_HTTP_METHOD]: 'method',
-      [ATTR_HTTP_URL]: 'url',
-      [ATTR_HTTP_HOST]: 'host',
+      [ATTR_URL_PATH]: '/target',
+      [ATTR_HTTP_REQUEST_METHOD]: 'method',
+      [ATTR_URL_FULL]: 'url',
+      [ATTR_SERVER_ADDRESS]: 'host',
       ['foo']: 'bar',
       ['abc']: '1234',
     };
@@ -86,11 +77,11 @@ describe('SamplingRuleApplier', () => {
     });
 
     const attributes: Attributes = {
-      [ATTR_HTTP_HOST]: 'localhost',
-      [ATTR_HTTP_METHOD]: 'GET',
+      [ATTR_SERVER_ADDRESS]: 'localhost',
+      [ATTR_HTTP_REQUEST_METHOD]: 'GET',
       [ATTR_AWS_LAMBDA_INVOKED_ARN]:
         'arn:aws:lambda:us-west-2:123456789012:function:my-function',
-      [ATTR_HTTP_URL]: 'http://127.0.0.1:5000/helloworld',
+      [ATTR_URL_FULL]: 'http://127.0.0.1:5000/helloworld',
       ['abc']: '123',
       ['def']: '456',
       ['ghi']: '789',
@@ -104,8 +95,8 @@ describe('SamplingRuleApplier', () => {
     const ruleApplier = new SamplingRuleApplier(rule);
 
     expect(ruleApplier.matches(attributes, resource)).toEqual(true);
-    delete attributes[ATTR_HTTP_URL];
-    attributes[ATTR_HTTP_TARGET] = '/helloworld';
+    delete attributes[ATTR_URL_FULL];
+    attributes[ATTR_URL_PATH] = '/helloworld';
     expect(ruleApplier.matches(attributes, resource)).toEqual(true);
   });
   it('testApplierWildCardAttributesMatchesSpanAttributes', () => {
@@ -171,9 +162,9 @@ describe('SamplingRuleApplier', () => {
     );
 
     const attributes: Attributes = {
-      [ATTR_HTTP_HOST]: 'localhost',
-      [ATTR_HTTP_METHOD]: 'GET',
-      [ATTR_HTTP_URL]: 'http://127.0.0.1:5000/helloworld',
+      [ATTR_SERVER_ADDRESS]: 'localhost',
+      [ATTR_HTTP_REQUEST_METHOD]: 'GET',
+      [ATTR_URL_FULL]: 'http://127.0.0.1:5000/helloworld',
     };
 
     expect(ruleApplier.matches(attributes, emptyResource())).toEqual(true);
@@ -232,7 +223,7 @@ describe('SamplingRuleApplier', () => {
     );
 
     const attributes: Attributes = {
-      [ATTR_HTTP_URL]: 'https://somerandomurl.com/somerandompath',
+      [ATTR_URL_FULL]: 'https://somerandomurl.com/somerandompath',
     };
     const resource = emptyResource();
 

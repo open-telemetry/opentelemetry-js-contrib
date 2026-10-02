@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { context, Span, SpanOptions } from '@opentelemetry/api';
@@ -144,6 +133,7 @@ export class ConnectInstrumentation extends InstrumentationBase {
       const span = instrumentation._startSpan(routeName, middleWare);
       instrumentation._diag.debug('start span', spanName);
       let spanFinished = false;
+      let listenerAttached = false;
 
       function finishSpan() {
         if (!spanFinished) {
@@ -155,13 +145,30 @@ export class ConnectInstrumentation extends InstrumentationBase {
             `span ${(span as any).name} - already finished`
           );
         }
-        res.removeListener('close', finishSpan);
+        if (listenerAttached) {
+          res.removeListener('close', finishSpan);
+        }
       }
 
-      res.addListener('close', finishSpan);
       arguments[nextArgIdx] = instrumentation._patchNext(next, finishSpan);
 
-      return (middleWare as any).apply(this, arguments);
+      // Attach the fallback 'close' listener only after the middleware
+      // returns, and only if the span hasn't already finished. When
+      // middleware calls next() synchronously, finishSpan already ran by
+      // this point, so spanFinished is true and no listener is attached at
+      // all — this is what avoids listener accumulation across many
+      // synchronous middleware layers. For async middleware (or middleware
+      // that ends the response itself without calling next), the span
+      // isn't finished yet, so we attach a one-time fallback that finishes
+      // it when the response closes.
+      try {
+        return (middleWare as any).apply(this, arguments);
+      } finally {
+        if (!spanFinished && !listenerAttached) {
+          listenerAttached = true;
+          res.once('close', finishSpan);
+        }
+      }
     }
 
     Object.defineProperty(patchedMiddleware, 'length', {

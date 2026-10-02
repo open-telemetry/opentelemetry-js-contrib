@@ -1,34 +1,24 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { DnsInstrumentation } from '../../src';
 import * as dns from 'dns';
 import * as utils from '../utils/utils';
 import { assertSpan } from '../utils/assertSpan';
 import { SpanStatusCode } from '@opentelemetry/api';
+import { promisify } from 'util';
 
 const memoryExporter = new InMemorySpanExporter();
-const provider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+const provider = new TracerProvider({
+  spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
 });
 
 describe('dns.lookup()', () => {
@@ -84,6 +74,19 @@ describe('dns.lookup()', () => {
   });
 
   describe('with no options param', () => {
+    it('should preserve the result shape when promisified', async () => {
+      const hostname = 'google.com';
+      const { address, family } = await promisify(dns.lookup)(hostname);
+
+      assert.ok(address);
+      assert.ok(family);
+
+      const spans = memoryExporter.getFinishedSpans();
+      const [span] = spans;
+      assert.strictEqual(spans.length, 1);
+      assertSpan(span, { addresses: [{ address, family }], hostname });
+    });
+
     it('should export a valid span', done => {
       const hostname = 'google.com';
       dns.lookup(hostname, (err, address, family) => {

@@ -1,24 +1,13 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-// By default, tests run with both old and stable semconv. Some test cases
-// specifically test the various values of OTEL_SEMCONV_STABILITY_OPT_IN.
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'http/dup,database/dup';
-
 import { MongoDBInstrumentation } from '../src';
+import {
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
+} from '../src/semconv';
 
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { TestMetricReader } from '@opentelemetry/contrib-test-utils';
@@ -84,7 +73,7 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     done();
   });
 
-  it('Should add connection usage metrics', async () => {
+  it('Should add connection count metrics', async () => {
     const insertData = [{ a: 1 }, { a: 2 }, { a: 3 }];
     await collection.insertMany(insertData);
     await collection.deleteMany({});
@@ -109,28 +98,34 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     assert.strictEqual(metrics[0].descriptor.unit, '{connection}');
     assert.strictEqual(
       metrics[0].descriptor.name,
-      'db.client.connections.usage'
+      'db.client.connection.count'
     );
 
     // Checking dataPoints
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['db.client.connection.state'],
+      DB_CLIENT_CONNECTION_STATE_VALUE_USED
+    );
+    assert.strictEqual(
+      dataPoints[0].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
 
     assert.strictEqual(dataPoints[1].value, 1);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['db.client.connection.state'],
+      DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+    );
+    assert.strictEqual(
+      dataPoints[1].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });
 
-  it('Should add disconnection usage metrics', async () => {
+  it('Should add disconnection count metrics', async () => {
     await client.close();
 
     const result = await reader.collect();
@@ -154,15 +149,21 @@ describe('MongoDBInstrumentation-Metrics-v4+', () => {
     const dataPoints = metrics[0].dataPoints;
     assert.strictEqual(dataPoints.length, 2);
     assert.strictEqual(dataPoints[0].value, 0);
-    assert.strictEqual(dataPoints[0].attributes['state'], 'used');
     assert.strictEqual(
-      dataPoints[0].attributes['pool.name'],
+      dataPoints[0].attributes['db.client.connection.state'],
+      DB_CLIENT_CONNECTION_STATE_VALUE_USED
+    );
+    assert.strictEqual(
+      dataPoints[0].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
     assert.strictEqual(dataPoints[1].value, 0);
-    assert.strictEqual(dataPoints[1].attributes['state'], 'idle');
     assert.strictEqual(
-      dataPoints[1].attributes['pool.name'],
+      dataPoints[1].attributes['db.client.connection.state'],
+      DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+    );
+    assert.strictEqual(
+      dataPoints[1].attributes['db.client.connection.pool.name'],
       `mongodb://${HOST}:${PORT}/${DB_NAME}`
     );
   });

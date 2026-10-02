@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation of the [`winston`](https://www.npmjs.com/package/winston) module to inject trace-context into Winston log records (log correlation) and to send Winston logging to the OpenTelemetry Logging SDK (log sending). It may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation of the [`winston`](https://www.npmjs.com/package/winston) module to inject trace-context into Winston log records (log correlation) and to send Winston logging to the OpenTelemetry Logging SDK (log sending).
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -24,37 +24,30 @@ Log sending: [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const logsAPI = require('@opentelemetry/api-logs');
-const {
-    LoggerProvider,
-    SimpleLogRecordProcessor,
-    ConsoleLogRecordExporter,
-} = require('@opentelemetry/sdk-logs');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace');
+const { SimpleLogRecordProcessor, ConsoleLogRecordExporter } = require('@opentelemetry/sdk-logs');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const tracerProvider = new NodeTracerProvider();
-tracerProvider.register();
-
-// To start a logger, you first need to initialize the Logger provider.
-// Add a processor to export log record.
-const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
+const sdk = new NodeSDK({
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+  logRecordProcessors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
+  ],
+  instrumentations: [
+    new WinstonInstrumentation({
+      // See below for Winston instrumentation options.
+    }),
+  ]
 });
-logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
-
-registerInstrumentations({
-    instrumentations: [
-        new WinstonInstrumentation({
-            // See below for Winston instrumentation options.
-        }),
-    ],
-});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 const winston = require('winston');
 const logger = winston.createLogger({
-    transports: [new winston.transports.Console()],
+  transports: [new winston.transports.Console()],
 })
 logger.info('foobar');
 // {"message":"foobar","trace_id":"e21c7a95fff34e04f77c7bd518779621","span_id":"b7589a981fde09f4","trace_flags":"01", ...}
@@ -72,6 +65,12 @@ logger.info('foobar');
 ### Log sending
 
 Winston Logger will automatically send log records to the OpenTelemetry Logs SDK if not explicitly disabled in config and @opentelemetry/winston-transport npm package is installed in the project. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+
+When a Winston log call is made in an active span, the instrumentation preserves
+that context for log sending even if Winston processes the transport
+asynchronously. The OpenTelemetry LogRecord uses its native trace context fields;
+the `trace_id`, `span_id`, and `trace_flags` fields added for log correlation are
+not duplicated as LogRecord attributes.
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
@@ -110,22 +109,22 @@ OpenTelemetry Logs SDK. It can be used directly when configuring a Winston logge
 For example:
 
 ```js
-const logsAPI = require('@opentelemetry/api-logs');
-const {
-    LoggerProvider,
-    SimpleLogRecordProcessor,
-    ConsoleLogRecordExporter,
-} = require('@opentelemetry/sdk-logs');
+const { SimpleSpanProcessor, ConsoleSpanExporter } = require('@opentelemetry/sdk-trace');
+const { SimpleLogRecordProcessor, ConsoleLogRecordExporter } = require('@opentelemetry/sdk-logs');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
 const winston = require('winston');
 
-
-// To start a logger, you first need to initialize the Logger provider.
-// Add a processor to export log record
-const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())],
+const sdk = new NodeSDK({
+  spanProcessors: [
+    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+  ],
+  logRecordProcessors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
+  ],
 });
-logsAPI.logs.setGlobalLoggerProvider(loggerProvider);
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 const logger = winston.createLogger({
   level: 'info',
@@ -137,18 +136,18 @@ const logger = winston.createLogger({
 ```
 
 > [!IMPORTANT]
-> Logs will be **duplicated** if `OpenTelemetryTransportV3` is explicitly added as a Winston logger transport **and** `@opentelemetry/instrumentation-winston` is active with the [Log sending](#log-sending) feature (the default). If you are both using `OpenTelemetryTransportV3` and instrumentation-winston, be sure to either disable instrumentation-winston completely, or disable its Log sending feature (`disableLogSending: false`). For example:
+> Logs will be **duplicated** if `OpenTelemetryTransportV3` is explicitly added as a Winston logger transport **and** `@opentelemetry/instrumentation-winston` is active with the [Log sending](#log-sending) feature (the default). If you are both using `OpenTelemetryTransportV3` and instrumentation-winston, be sure to either disable instrumentation-winston completely, or disable its Log sending feature (`disableLogSending: true`). For example:
 >
 > ```js
 > const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
-> const { registerInstrumentations } = require('@opentelemetry/instrumentation');
-> registerInstrumentations({
->     instrumentations: [
->       new WinstonInstrumentation({
->         disableLogSending: true
->       }),
->     ],
+>
+> const sdk = new NodeSDK({
+>   instrumentations: [
+>     new WinstonInstrumentation({ disableLogSending: true })
+>   ]
 > });
+> // ...
+>
 > const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
 > // Winston import must be after the WinstonInstrumentation creation
 > const winston = require('winston');

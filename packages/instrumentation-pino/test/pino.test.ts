@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as assert from 'assert';
@@ -22,19 +11,26 @@ import * as sinon from 'sinon';
 import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
-import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
+import {
+  ATTR_EXCEPTION_MESSAGE,
+  ATTR_EXCEPTION_STACKTRACE,
+  ATTR_EXCEPTION_TYPE,
+  ATTR_OTEL_EVENT_NAME,
+  ATTR_SERVICE_NAME,
+} from '@opentelemetry/semantic-conventions';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
   InMemoryLogRecordExporter,
 } from '@opentelemetry/sdk-logs';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   runTestFixture,
   TestCollector,
@@ -45,10 +41,12 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from '../src/version';
 
 import type { pino as Pino } from 'pino';
 
-const tracerProvider = new NodeTracerProvider({
-  spanProcessors: [new SimpleSpanProcessor(new InMemorySpanExporter())],
+context.setGlobalContextManager(new AsyncLocalStorageContextManager());
+const tracerProvider = new TracerProvider({
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() }),
+  ],
 });
-tracerProvider.register();
 const tracer = tracerProvider.getTracer('default');
 
 // Setup LoggerProvider for "log sending" tests.
@@ -58,7 +56,7 @@ const resource = resourceFromAttributes({
 const memExporter = new InMemoryLogRecordExporter();
 const loggerProvider = new LoggerProvider({
   resource,
-  processors: [new SimpleLogRecordProcessor(memExporter)],
+  processors: [new SimpleLogRecordProcessor({ exporter: memExporter })],
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 
@@ -547,6 +545,37 @@ describe('PinoInstrumentation', () => {
       assert.strictEqual(logRecords[2].body, 'second msg at trace');
     });
 
+    it('emits exceptions using the Logs API "exception" field', () => {
+      const err = new TypeError('boom');
+      logger.error(err, 'error happened');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'error happened');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_TYPE], 'TypeError');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_MESSAGE], 'boom');
+      assert.ok(rec.attributes[ATTR_EXCEPTION_STACKTRACE]);
+
+      // The original pino error field should not be emitted as a regular attribute.
+      assert.strictEqual(rec.attributes.err, undefined);
+    });
+
+    it('uses custom errorKey with the Logs API "exception" field', () => {
+      logger = pino({ errorKey: 'myErr' }, stream);
+      logger.error(new Error('custom key error'), 'error with custom key');
+
+      const logRecords = memExporter.getFinishedLogRecords();
+      const rec = logRecords[logRecords.length - 1];
+      assert.strictEqual(rec.body, 'error with custom key');
+      assert.strictEqual(rec.attributes[ATTR_EXCEPTION_TYPE], 'Error');
+      assert.strictEqual(
+        rec.attributes[ATTR_EXCEPTION_MESSAGE],
+        'custom key error'
+      );
+      assert.ok(rec.attributes[ATTR_EXCEPTION_STACKTRACE]);
+      assert.strictEqual(rec.attributes.myErr, undefined);
+    });
+
     it('emits log records from child logger at lower level', () => {
       const logRecords = memExporter.getFinishedLogRecords();
 
@@ -810,6 +839,80 @@ describe('PinoInstrumentation', () => {
       sinon.assert.calledOnce(writeSpy);
       const pinoRec = JSON.parse(writeSpy.firstCall.args[0].toString());
       assert.equal((pinoRec as any).mymsg, 'using messageKey');
+    });
+
+    describe('otel.event.name support', () => {
+      let eventLogger: Pino.Logger;
+
+      beforeEach(() => {
+        instrumentation.setConfig({});
+        memExporter.getFinishedLogRecords().length = 0;
+        eventLogger = pino({ level: 'debug' });
+      });
+
+      it('sets eventName on the LogRecord when otel.event.name is present', () => {
+        eventLogger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, 'my-event');
+      });
+
+      it('does not pass otel.event.name through as an attribute', () => {
+        eventLogger.info({ 'otel.event.name': 'my-event', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, 'my-event');
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+        assert.strictEqual(logRecords[0].attributes['foo'], 'bar');
+        assert.strictEqual(logRecords[0].body, 'hi');
+        assert.strictEqual(logRecords[0].severityNumber, SeverityNumber.INFO);
+      });
+
+      it('leaves eventName undefined when otel.event.name is absent', () => {
+        eventLogger.info({ foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+      });
+
+      it('ignores otel.event.name when value is a number', () => {
+        eventLogger.info({ 'otel.event.name': 123, foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
+
+      it('ignores otel.event.name when value is an object', () => {
+        eventLogger.info(
+          { 'otel.event.name': { bad: true }, foo: 'bar' },
+          'hi'
+        );
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, undefined);
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
+
+      it('promotes otel.event.name to eventName when value is empty string', () => {
+        eventLogger.info({ 'otel.event.name': '', foo: 'bar' }, 'hi');
+        const logRecords = memExporter.getFinishedLogRecords();
+        assert.strictEqual(logRecords.length, 1);
+        assert.strictEqual(logRecords[0].eventName, '');
+        assert.strictEqual(
+          logRecords[0].attributes[ATTR_OTEL_EVENT_NAME],
+          undefined
+        );
+      });
     });
   });
 

@@ -1,24 +1,13 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as tracing from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan, SpanExporter } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 
-export class DummySpanExporter implements tracing.SpanExporter {
-  export(spans: tracing.ReadableSpan[]) {}
+export class DummySpanExporter implements SpanExporter {
+  export(spans: ReadableSpan[]) {}
 
   shutdown() {
     return Promise.resolve();
@@ -61,12 +50,12 @@ export function fakeEventInteraction(
   element.dispatchEvent(event);
 }
 
-export function assertClickSpan(span: tracing.ReadableSpan, id = 'testBtn') {
+export function assertClickSpan(span: ReadableSpan, id = 'testBtn') {
   assertInteractionSpan(span, { name: 'click', elementId: id });
 }
 
 export function assertInteractionSpan(
-  span: tracing.ReadableSpan,
+  span: ReadableSpan,
   {
     name,
     eventType = name,
@@ -79,7 +68,7 @@ export function assertInteractionSpan(
   assert.strictEqual(attributes.event_type, eventType);
   assert.strictEqual(attributes.target_element, 'BUTTON');
   assert.strictEqual(attributes.target_xpath, `//*[@id="${elementId}"]`);
-  assert.ok(attributes['http.url'] !== '');
+  assert.ok(attributes['url.full'] !== '');
   assert.ok(attributes['user_agent'] !== '');
 }
 

@@ -1,18 +1,7 @@
 #!/usr/bin/env node
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
@@ -62,9 +51,18 @@ function getAllWorkspaceDirs() {
     fs.readFileSync(path.join(TOP, 'package.json'), 'utf8')
   );
   return pj.workspaces
-    .map(wsGlob => globSync(path.join(wsGlob, 'package.json')))
+    .map(wsGlob => globSync(`${wsGlob}/package.json`, { posix: true }))
     .flat()
     .map(path.dirname);
+}
+
+// `glob` always wants forward slashes in its patterns, even on Windows,
+// where `path.join`/`path.resolve` produce backslashes.
+function toGlobPattern(...parts) {
+  return path
+    .join(...parts)
+    .split(path.sep)
+    .join('/');
 }
 
 function genSemconvTs(wsDir) {
@@ -79,7 +77,9 @@ function genSemconvTs(wsDir) {
   // Gather unstable semconv imports. Consider any imports from
   // '@opentelemetry/semantic-conventions/incubating' or from an existing local
   // '.../semconv'.
-  const srcFiles = globSync(path.join(wsDir, '{src,test}', '**', '*.ts'));
+  const srcFiles = globSync(toGlobPattern(wsDir, '{src,test}', '**', '*.ts'), {
+    posix: true,
+  });
   const importRes = [
     /import\s+{([^}]*)}\s+from\s+'@opentelemetry\/semantic-conventions\/incubating'/s,
     /import\s+{([^}]*)}\s+from\s+'\.[^']*\/semconv'/s,
@@ -161,7 +161,7 @@ function genSemconvTs(wsDir) {
     console.log(`Using sources at "${semconvSrcDir}"`);
   }
   const srcPaths = globSync(
-    path.join(semconvSrcDir, 'src', 'experimental_*.ts')
+    toGlobPattern(semconvSrcDir, 'src', 'experimental_*.ts')
   );
   const src = srcPaths.map(f => fs.readFileSync(f)).join('\n\n');
 
@@ -205,18 +205,7 @@ function genSemconvTs(wsDir) {
     semconvTsPath,
     `/*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*

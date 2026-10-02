@@ -1,18 +1,7 @@
 /*
  * Copyright The OpenTelemetry Authors
- * Copyright (c) 2025, Oracle and/or its affiliates.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -39,16 +28,84 @@ export const ATTR_DB_OPERATION_PARAMETER = (key: string) =>
   `db.operation.parameter.${key}`;
 
 /**
- * Deprecated, no replacement at this time.
+ * The database domain associated with the connection.
+ */
+export const ATTR_ORACLE_DB_DOMAIN = 'oracle.db.domain' as const;
+
+/**
+ * The instance name associated with the connection in an Oracle Real
+ * Application Clusters environment.
+ */
+export const ATTR_ORACLE_DB_INSTANCE_NAME = 'oracle.db.instance.name' as const;
+
+/**
+ * The database name associated with the connection.
+ */
+export const ATTR_ORACLE_DB_NAME = 'oracle.db.name' as const;
+
+/**
+ * The pluggable database (PDB) name associated with the connection.
+ */
+export const ATTR_ORACLE_DB_PDB = 'oracle.db.pdb' as const;
+
+/**
+ * The service name currently associated with the database connection.
+ */
+export const ATTR_ORACLE_DB_SERVICE = 'oracle.db.service' as const;
+
+/**
+ * The state of a connection in the pool
  *
- * @example readonly_user
- * @example reporting_user
+ * @example idle
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Removed, no replacement at this time.
  */
-export const ATTR_DB_USER = 'db.user' as const;
+export const ATTR_DB_CLIENT_CONNECTION_STATE =
+  'db.client.connection.state' as const;
+
+/**
+ * Enum value "used" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_USED = 'used' as const;
+
+/**
+ * Enum value "idle" for attribute {@link ATTR_DB_CLIENT_CONNECTION_STATE}.
+ */
+export const DB_CLIENT_CONNECTION_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * The name of the connection pool; unique within the instrumented application. In case the connection pool implementation doesn't provide a name, instrumentation **SHOULD** use a combination of parameters that would make the name unique, for example, combining attributes `server.address`, `server.port`, and `db.namespace`, formatted as `server.address:server.port/db.namespace`. Instrumentations that generate connection pool name following different patterns **SHOULD** document it.
+ *
+ * @example myDataSource
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_DB_CLIENT_CONNECTION_POOL_NAME =
+  'db.client.connection.pool.name' as const;
+
+/**
+ * The number of connections that are currently in state described by the `state` attribute.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_COUNT =
+  'db.client.connection.count' as const;
+
+/**
+ * The number of current pending requests for an open connection.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS =
+  'db.client.connection.pending_requests' as const;
+
+/**
+ * The number of connection timeouts that have occurred trying to obtain a connection from the pool.
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_TIMEOUTS =
+  'db.client.connection.timeouts' as const;
 
 /**
  * Enum value "oracle.db" for attribute {@link ATTR_DB_SYSTEM_NAME}.

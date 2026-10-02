@@ -1,30 +1,19 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import type { Middleware, ParameterizedContext, DefaultState } from 'koa';
 import type { RouterParamContext } from '@koa/router';
 import * as KoaRouter from '@koa/router';
 import { context, trace, Span } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import {
   ATTR_HTTP_ROUTE,
   ATTR_EXCEPTION_MESSAGE,
@@ -73,8 +62,8 @@ const isrouterCompat =
 
 describe('Koa Instrumentation', function () {
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   plugin.setTracerProvider(provider);
@@ -457,6 +446,47 @@ describe('Koa Instrumentation', function () {
             .getFinishedSpans()
             .find(span => span.name === 'rootSpan');
           assert.notStrictEqual(exportedRootSpan, undefined);
+        }
+      );
+    });
+
+    it('should use fallback name for anonymous middleware', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      // Sets rootSpan as active context for subsequent middlewares.
+      // This middleware itself runs with no parent so it won't get a span.
+      app.use((ctx, next) =>
+        context.with(trace.setSpan(context.active(), rootSpan), next)
+      );
+      // Anonymous arrow function (no name inference for function arguments in JS).
+      // Runs after context is set, so the instrumentation will have a parent span
+      // and will create a span for it with the 'anonymous' fallback name.
+      app.use(async (_ctx, next) => {
+        await next();
+      });
+      app.use(simpleResponse());
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}`);
+          rootSpan.end();
+
+          const anonymousSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name === 'middleware - anonymous');
+          assert.notStrictEqual(
+            anonymousSpan,
+            undefined,
+            'Expected a span named "middleware - anonymous" for the anonymous middleware'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_NAME],
+            'anonymous'
+          );
+          assert.strictEqual(
+            anonymousSpan?.attributes[AttributeNames.KOA_TYPE],
+            KoaLayerType.MIDDLEWARE
+          );
         }
       );
     });

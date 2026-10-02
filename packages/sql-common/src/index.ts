@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -21,6 +10,26 @@ import {
   defaultTextMapSetter,
 } from '@opentelemetry/api';
 import { W3CTraceContextPropagator } from '@opentelemetry/core';
+
+const propagator = new W3CTraceContextPropagator();
+const TRACE_PARENT_HEADER = 'traceparent';
+
+/**
+ * Builds a W3C traceparent string from a span.
+ * Returns undefined if the span context is invalid or tracing is suppressed.
+ *
+ * Format: "00-{traceId}-{spanId}-{flags}"
+ * See: https://www.w3.org/TR/trace-context/#traceparent-header
+ */
+export function buildTraceparent(span: Span): string | undefined {
+  const carrier: Record<string, string> = {};
+  propagator.inject(
+    trace.setSpan(ROOT_CONTEXT, span),
+    carrier,
+    defaultTextMapSetter
+  );
+  return carrier[TRACE_PARENT_HEADER];
+}
 
 // NOTE: This function currently is returning false-positives
 // in cases where comment characters appear in string literals
@@ -63,7 +72,6 @@ export function addSqlCommenterComment(span: Span, query: string): string {
     return query;
   }
 
-  const propagator = new W3CTraceContextPropagator();
   const headers: { [key: string]: string } = {};
   propagator.inject(
     trace.setSpan(ROOT_CONTEXT, span),

@@ -3,9 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for *document load* for Web applications, which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
+This module provides automatic instrumentation for *document load* for Web applications.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -18,28 +16,29 @@ npm install --save @opentelemetry/instrumentation-document-load
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
+import { StackContextManager} from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { B3Propagator } from '@opentelemetry/propagator-b3';
-import { CompositePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
+import { CompositePropagator, W3CBaggagePropagator, W3CTraceContextPropagator } from '@opentelemetry/core';
 
-const provider = new WebTracerProvider({
+const provider = new TracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
 
-provider.register({
-  propagator: new CompositePropagator({
+context.setGlobalContextManager(new StackContextManager().enable());
+
+const propagator = new CompositePropagator({
     propagators: [
-      new B3Propagator(),
       new W3CTraceContextPropagator(),
+      new W3CBaggagePropagator(),
     ],
-  }),
-});
+  })
+);
+propagation.setGlobalPropagator(propagator);
 
 registerInstrumentations({
   instrumentations: [
@@ -52,7 +51,6 @@ registerInstrumentations({
     }),
   ],
 });
-
 ```
 
 ## Optional: Send a trace parent from your server
@@ -111,8 +109,6 @@ registerInstrumentations({
 })
 ```
 
-See [examples/tracer-web](https://github.com/open-telemetry/opentelemetry-js/tree/main/examples/tracer-web) for a short example.
-
 ## Document Load Instrumentation Options
 
 The document load instrumentation plugin has few options available to choose from. You can set the following:
@@ -124,25 +120,17 @@ The document load instrumentation plugin has few options available to choose fro
 | `applyCustomAttributesOnSpan.resourceFetch` | `ResourceFetchCustomAttributeFunction` | Function for adding custom attributes to `resourceFetch` spans                                                                                                                                                                                                                                        |
 | `ignoreNetworkEvents`                       | `boolean`                              | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.                             |
 | `ignorePerformancePaintEvents`              | `boolean`                              | Ignore adding performance resource paint span events to document load spans.                                                                                                                                                                                                                          |
-| `semconvStabilityOptIn`                     | string                                 | A comma-separated string of tokens as described for `OTEL_SEMCONV_STABILITY_OPT_IN` in the [HTTP semantic convention stability migration](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md) guide. See the "Semantic Conventions" section below. |
 
 ## Semantic Conventions
 
 This instrumentation creates spans that include some HTTP-related data as span attributes (URL, User-Agent header).
-Up to and including v0.50.0, `instrumentation-document-load` follows [Semantic Conventions v1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md) for these attributes.
 
-HTTP semantic conventions (semconv) were stabilized in semconv v1.23.0, and a [migration process](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md#http-semantic-convention-stability-migration) was defined. `instrumentation-document-load` versions 0.51.0 and later include support for migrating to stable HTTP semantic conventions, as described below. The intent is to provide an approximate 6 month time window for users of this instrumentation to migrate to the new HTTP semconv, after which a new minor version will change to use the *new* semconv by default and drop support for the old semconv. See the [HTTP semconv migration plan for OpenTelemetry JS instrumentations](https://github.com/open-telemetry/opentelemetry-js/issues/5646).
+The `instrumentation-document-load` versions 0.65.0 and later emit the stable v1.23.0+ semantic conventions.
 
-To select which semconv version(s) is emitted from this instrumentation, use the `semconvStabilityOptIn` configuration option. This option works [as described for `OTEL_SEMCONV_STABILITY_OPT_IN`](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md):
-
-- `http`: emit the new (stable) v1.23.0 semantics
-- `http/dup`: emit **both** the old and the new (stable) v1.23.0 semantics
-- By default, if `semconvStabilityOptIn` includes neither of the above tokens, the old semconv is used.
-
-| v1.7.0 semconv    | v1.23.0 semconv       | Notes                                                                                                                   |
-|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------|
-| `http.url`        | `url.full`            | Full HTTP request URL                                                                                                   |
-| `http.user_agent` | `user_agent.original` | Value of the [HTTP User-Agent](https://www.rfc-editor.org/rfc/rfc9110.html#field.user-agent) header sent by the client. |
+| v1.23.0 semconv       | Notes                                                                                                                   |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------|
+| `url.full`            | Full HTTP request URL                                                                                                   |
+| `user_agent.original` | Value of the [HTTP User-Agent](https://www.rfc-editor.org/rfc/rfc9110.html#field.user-agent) header sent by the client. |
 
 
 ## Useful links
