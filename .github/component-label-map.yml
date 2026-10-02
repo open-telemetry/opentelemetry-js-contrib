@@ -37,6 +37,11 @@ pkg:instrumentation-amqplib:
       - any-glob-to-any-file:
           - packages/instrumentation-amqplib/**
           - packages/contrib-test-utils/**
+pkg:instrumentation-anthropic:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-anthropic/**
+          - packages/contrib-test-utils/**
 pkg:instrumentation-aws-lambda:
   - changed-files:
       - any-glob-to-any-file:

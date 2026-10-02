@@ -1,0 +1,23 @@
+[
+  {
+    "scope": "https://api.anthropic.com:443",
+    "method": "POST",
+    "path": "/v1/messages",
+    "body": {
+      "model": "claude-haiku-4-5-20251001",
+      "max_tokens": 16,
+      "messages": [
+        {
+          "role": "user",
+          "content": "Reply with exactly two words: Hello telemetry"
+        }
+      ],
+      "stream": true
+    },
+    "status": 200,
+    "response": "event: message_start\ndata: {\"type\": \"message_start\", \"message\": {\"id\": \"msg_01234567890\", \"type\": \"message\", \"role\": \"assistant\", \"model\": \"claude-haiku-4-5-20251001\", \"content\": [], \"stop_reason\": null, \"usage\": {\"input_tokens\": 10, \"output_tokens\": 0}}}\n\nevent: error\ndata: {\"type\": \"error\", \"error\": {\"type\": \"overloaded_error\", \"message\": \"Overloaded\"}}\n\n",
+    "rawHeaders": {
+      "content-type": "text/event-stream"
+    }
+  }
+]
