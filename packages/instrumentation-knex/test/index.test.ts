@@ -733,7 +733,6 @@ describe('utils: connectionString parsing', () => {
 });
 
 describe('utils: getName', () => {
-
   it('should include database, operation and table when all are present', () => {
     assert.strictEqual(getName('mydb', 'select', 'items'), 'select mydb.items');
   });
