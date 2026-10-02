@@ -36,16 +36,23 @@ run()
 
 ### GitHub Detector
 
-| Resource Attribute | Description                                               |
-| ------------------ | --------------------------------------------------------- |
-| github.actor       | Value of Process Environment Variable `GITHUB_ACTOR`      |
-| github.base_ref    | Value of Process Environment Variable `GITHUB_BASE_REF`   |
-| github.head_ref    | Value of Process Environment Variable `GITHUB_HEAD_REF`   |
-| github.ref         | Value of Process Environment Variable `GITHUB_REF`        |
-| github.run_id      | Value of Process Environment Variable `GITHUB_RUN_ID`     |
-| github.run_number  | Value of Process Environment Variable `GITHUB_RUN_NUMBER` |
-| github.sha         | Value of Process Environment Variable `GITHUB_SHA`        |
-| github.workflow    | Value of Process Environment Variable `GITHUB_WORKFLOW`   |
+| Resource Attribute    | Description                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| cicd.pipeline.name    | Value of Process Environment Variable `GITHUB_WORKFLOW`                               |
+| cicd.pipeline.run.id  | Value of Process Environment Variable `GITHUB_RUN_ID`                                 |
+| vcs.ref.base.name     | Value of Process Environment Variable `GITHUB_BASE_REF`                               |
+| vcs.ref.head.name     | Value of Process Environment Variable `GITHUB_HEAD_REF`, falling back to `GITHUB_REF` |
+| vcs.ref.head.revision | Value of Process Environment Variable `GITHUB_SHA`                                    |
+| github.actor          | Value of Process Environment Variable `GITHUB_ACTOR`                                  |
+| github.run_number     | Value of Process Environment Variable `GITHUB_RUN_NUMBER`                             |
+
+The `cicd.*` and `vcs.*` attributes follow the [CI/CD][semconv-cicd-url] and [VCS][semconv-vcs-url]
+semantic conventions. `github.actor` and `github.run_number` are kept as custom attributes because
+the semantic conventions do not currently define an equivalent for either.
+
+`GITHUB_HEAD_REF` is only set for pull request events; for those events `GITHUB_REF` holds the
+synthetic merge ref (for example `refs/pull/1/merge`) rather than the branch being merged, so
+`GITHUB_HEAD_REF` is preferred when present.
 
 ## Useful links
 
@@ -59,6 +66,8 @@ run()
 Apache 2.0 - See [LICENSE][license-url] for more information.
 
 [discussions-url]: https://github.com/open-telemetry/opentelemetry-js/discussions
+[semconv-cicd-url]: https://opentelemetry.io/docs/specs/semconv/registry/attributes/cicd/
+[semconv-vcs-url]: https://opentelemetry.io/docs/specs/semconv/registry/attributes/vcs/
 [license-url]: https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/LICENSE
 [license-image]: https://img.shields.io/badge/license-Apache_2.0-green.svg?style=flat
 [npm-url]: https://www.npmjs.com/package/@opentelemetry/resource-detector-github
