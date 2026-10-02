@@ -33,12 +33,48 @@ export interface PgInstrumentationExecutionRequestHook {
   (span: api.Span, queryInfo: PgRequestHookInformation): void;
 }
 
+export interface PgInstrumentationQueryTextSanitizationHook {
+  (query: string): string;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the query's parameters will be attached
    * the spans generated to represent the query.
    */
   enhancedDatabaseReporting?: boolean;
+
+  /**
+   * If true, the query text is recorded as-is instead of being sanitized by
+   * {@link queryTextSanitizationHook} before it is recorded as the
+   * `db.query.text` attribute.
+   *
+   * Only affects non-parameterized queries -- a call with no `values`, or with
+   * an empty `values` array. A parameterized query's text is always recorded
+   * as-is, whatever this is set to. See the package README for why, and for
+   * how this interacts with {@link enhancedDatabaseReporting}.
+   *
+   * @default false
+   * @see queryTextSanitizationHook
+   */
+  skipQueryTextSanitization?: boolean;
+
+  /**
+   * Hook that sanitizes the query text before it is recorded as the
+   * `db.query.text` attribute. Only consulted for a non-parameterized query
+   * when {@link skipQueryTextSanitization} is false, and never applied to the
+   * query sent to the server or to the text passed to {@link requestHook}.
+   *
+   * The default replaces literals with `?` while preserving parameter
+   * placeholders and identifiers. It is `sanitizeSql` from
+   * `@opentelemetry/sql-common`, so a custom hook can build on it.
+   *
+   * If the hook throws or returns something other than a string,
+   * `db.query.text` is omitted rather than falling back to the raw text.
+   *
+   * @default (query) => sanitizeSql(query, { dialect: 'postgresql' })
+   */
+  queryTextSanitizationHook?: PgInstrumentationQueryTextSanitizationHook;
 
   /**
    * Hook that allows adding custom span attributes or updating the
