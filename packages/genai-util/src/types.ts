@@ -10,7 +10,7 @@
  * @experimental
  */
 
-import type { Attributes, Context } from '@opentelemetry/api';
+import type { Attributes, Context, TimeInput } from '@opentelemetry/api';
 
 /**
  * Mode of capturing message content (prompts, completions, tool calls).
@@ -36,7 +36,7 @@ export type FinishReason =
   | 'tool_call'
   | 'compaction'
   | 'error'
-  | string;
+  | (string & {});
 
 /**
  * Role of the message sender in a chat conversation.
@@ -47,6 +47,18 @@ export type Role = 'system' | 'user' | 'assistant' | 'tool' | string;
  * Modality of multimodal content (e.g. image, video, audio, document).
  */
 export type Modality = 'image' | 'video' | 'audio' | 'document' | string;
+
+/**
+ * The modality of the tokens being counted (`gen_ai.token.modality`).
+ *
+ * A custom value MAY be used when none of the well-known values applies.
+ */
+export type TokenModality = 'audio' | 'image' | 'text' | 'unknown';
+
+/**
+ * Token counts keyed by modality, e.g. `{ text: 100, image: 200 }`.
+ */
+export type TokenCountsByModality = Partial<Record<TokenModality, number>>;
 
 /**
  * Classification of tool utilized by an agent.
@@ -289,44 +301,35 @@ export type OutputMessages = OutputMessage[];
 export type SystemInstructions = SystemInstructionPart[];
 
 /**
- * Token usage counts for a request per OpenTelemetry SemConv.
+ * Token usage of a single inference operation, as reported by the provider.
  *
- * All fields are optional and MUST be left `undefined` when the provider did
- * not return usage data (for example, when a request fails before any tokens
- * are billed). Do not substitute `0` for missing values: the
- * `gen_ai.client.token.usage` histogram uses explicit bucket boundaries that
- * start at 1, so recording `0` on failed requests adds data points that skew
- * the distribution and its computed averages.
+ * The span attributes and the token metrics are all derived from these
+ * values, so they stay consistent. Prefer billable counts when the provider
+ * reports both used and billable tokens. Leave fields `undefined` when they
+ * were not reported; do not default to `0`, which would skew the token
+ * distributions.
  */
 export interface TokenUsage {
-  /**
-   * Number of tokens in the prompt / input (`gen_ai.usage.input_tokens`).
-   * Leave `undefined` when the provider did not report input token usage;
-   * do not default to `0`.
-   */
-  inputTokens?: number;
-  /**
-   * Number of tokens in the completion / output (`gen_ai.usage.output_tokens`).
-   * Leave `undefined` when the provider did not report output token usage;
-   * do not default to `0`.
-   */
-  outputTokens?: number;
-  /** Number of tokens used for model reasoning / thinking (`gen_ai.usage.reasoning.output_tokens`). */
-  reasoningTokens?: number;
-  /** Number of cached tokens read from prompt cache (`gen_ai.usage.cache_read.input_tokens`). */
-  cacheReadTokens?: number;
-  /** Number of tokens written to prompt cache (`gen_ai.usage.cache_write.input_tokens`). */
-  cacheWriteTokens?: number;
-  /** Number of tokens written to prompt cache (alias for `cacheWriteTokens`). */
-  cacheCreationTokens?: number;
-  /** Total tokens (convenience sum, not recorded as span attribute per semconv). */
-  totalTokens?: number;
+  /** The number of input (prompt) tokens used per inference operation. This includes tokens from cache reads and writes. */
+  inputTokens?: TokenCountsByModality;
+  /** The number of output (completion) tokens used per inference operation. This includes reasoning tokens. */
+  outputTokens?: TokenCountsByModality;
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`). */
+  reasoningTokens?: TokenCountsByModality;
+  /** Number of cached tokens read from prompt cache (`gen_ai.client_inference.usage.cache_read.input_tokens`). */
+  cacheReadTokens?: TokenCountsByModality;
+  /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`). */
+  cacheWriteTokens?: TokenCountsByModality;
 }
 
 /**
- * Standard parameters for a GenAI request.
+ * Standard parameters for a GenAI inference request.
+ *
+ * Every attribute produced from this interface is defined by the GenAI
+ * semantic conventions on the inference span only; other invocation types
+ * (embeddings, execute tool, ...) declare their own request parameters.
  */
-export interface GenAIRequestOptions {
+export interface InferenceRequestOptions {
   /** Sampling temperature (`gen_ai.request.temperature`). */
   temperature?: number;
   /** Top-p nucleus sampling parameter (`gen_ai.request.top_p`). */
@@ -345,8 +348,6 @@ export interface GenAIRequestOptions {
   choiceCount?: number;
   /** Random seed for deterministic generation (`gen_ai.request.seed`). */
   seed?: number;
-  /** Target encoding formats (`gen_ai.request.encoding_formats`). */
-  encodingFormats?: string[];
   /** Whether the request was streamed (`gen_ai.request.stream`). */
   stream?: boolean;
   /** The requested reasoning effort/level (`gen_ai.request.reasoning.level`). */
@@ -358,17 +359,46 @@ export interface GenAIRequestOptions {
 // ============================================================================
 
 /**
+ * Options shared by all invocation types.
+ *
+ * This is the caller-facing counterpart of `BaseInvocationOptions`, which is the
+ * contract between a concrete invocation and its base class: the span kind is chosen
+ * by the concrete invocation, and `parentContext` is passed to the base class as
+ * `context`.
+ */
+interface CommonInvocationOptions {
+  /** Parent context for the span. Defaults to the currently active context. */
+  parentContext?: Context;
+  /** Custom initial span attributes. */
+  attributes?: Attributes;
+  /**
+   * Custom metric attributes, recorded on this invocation's metrics only. They override
+   * the semantic convention dimensions the invocation would otherwise report (except
+   * `error.type`) and must be low cardinality.
+   */
+  metricAttributes?: Attributes;
+  /** Start time of the invocation. Defaults to the time the invocation is created. */
+  startTime?: TimeInput;
+}
+
+/**
  * Options for starting an inference invocation.
  */
-export interface InferenceInvocationOptions {
+export interface InferenceInvocationOptions extends CommonInvocationOptions {
   /** Name of the provider (e.g. 'openai', 'anthropic', 'aws.bedrock'). */
   providerName: string;
   /** Operation name (e.g. 'chat', 'text_completion', 'generate_content'). Defaults to 'chat'. */
   operationName?: string;
-  /** Model name requested (`gen_ai.request.model`). */
+  /** Model name requested. */
   requestModel?: string;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
+  /** Request parameters/settings. */
+  requestOptions?: InferenceRequestOptions;
+  /** Input messages sent to the model. */
+  inputMessages?: InputMessages;
+  /** System instructions. */
+  systemInstructions?: SystemInstructions;
+  /** Conversation / session / thread ID. */
+  conversationId?: string;
   /** Server address (e.g. hostname). */
   serverAddress?: string;
   /** Server port. */
@@ -378,33 +408,45 @@ export interface InferenceInvocationOptions {
 /**
  * Options for starting an embedding invocation.
  */
-export interface EmbeddingInvocationOptions {
-  /** Name of the provider (`gen_ai.provider.name`). */
+export interface EmbeddingInvocationOptions extends CommonInvocationOptions {
+  /** Name of the provider. */
   providerName: string;
-  /** Model name requested (`gen_ai.request.model`). */
+  /** Operation name (e.g. 'embedding', 'generate_content'). Defaults to 'embeddings'. */
+  operationName?: string;
+  /** Model name requested. */
   requestModel?: string;
+  /** Target encoding formats requested (`gen_ai.request.encoding_formats`). */
+  encodingFormats?: string[];
+  /** Number of dimensions the resulting output embeddings should have (`gen_ai.embeddings.dimension.count`). */
+  dimensionCount?: number;
   /** Server address. */
   serverAddress?: string;
   /** Server port. */
   serverPort?: number;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
 }
 
 /**
  * Options for starting a tool execution invocation.
  */
-export interface ToolInvocationOptions {
+export interface ToolInvocationOptions extends CommonInvocationOptions {
   /** Name of the tool being executed (`gen_ai.tool.name`). */
   toolName: string;
+  /**
+   * Operation name (`gen_ai.operation.name`). Defaults to `'execute_tool'`.
+   */
+  operationName?: string;
+  /** Description of the tool (`gen_ai.tool.description`). */
+  toolDescription?: string;
+  /** Unique ID of the tool call (`gen_ai.tool.call.id`). */
+  toolCallId?: string;
   /** Type classification of the tool (`gen_ai.tool.type`). */
   toolType?: ToolType;
-  /** Parent context. */
-  parentContext?: Context;
+  /** Arguments provided to the tool (`gen_ai.tool.call.arguments`). */
+  toolArguments?: unknown;
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
+  conversationId?: string;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
   agentName?: string;
-  /** Custom initial span attributes. */
-  attributes?: Attributes;
 }
 
 /**

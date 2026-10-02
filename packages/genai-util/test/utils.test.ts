@@ -6,7 +6,6 @@
 import * as assert from 'assert';
 import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
@@ -25,6 +24,8 @@ import {
   formatSystemInstructions,
   getErrorType,
   getRequestOptionsAttributes,
+  mergeTokenUsage,
+  sumTokenCountsAcrossModalities,
 } from '../src/utils';
 import type {
   BlobPart,
@@ -77,6 +78,7 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatInputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatInputMessages(undefined), undefined);
+      assert.strictEqual(formatInputMessages([]), undefined);
 
       // BlobPart handling with Uint8Array base64 encoding
       const blobPart: BlobPart = {
@@ -178,6 +180,7 @@ describe('GenAI Utils', () => {
       ];
       assert.strictEqual(formatOutputMessages(msgs), JSON.stringify(msgs));
       assert.strictEqual(formatOutputMessages(undefined), undefined);
+      assert.strictEqual(formatOutputMessages([]), undefined);
 
       const blobPart: BlobPart = {
         type: 'blob',
@@ -439,7 +442,6 @@ describe('GenAI Utils', () => {
         presencePenalty: 0.6,
         choiceCount: 3,
         seed: 42,
-        encodingFormats: ['text', 'json'],
         stream: true,
         reasoningLevel: 'high',
       });
@@ -454,18 +456,87 @@ describe('GenAI Utils', () => {
         [ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY]: 0.6,
         [ATTR_GEN_AI_REQUEST_CHOICE_COUNT]: 3,
         [ATTR_GEN_AI_REQUEST_SEED]: 42,
-        [ATTR_GEN_AI_REQUEST_ENCODING_FORMATS]: ['text', 'json'],
         [ATTR_GEN_AI_REQUEST_STREAM]: true,
         [ATTR_GEN_AI_REQUEST_REASONING_LEVEL]: 'high',
       });
     });
 
-    it('should ignore empty stopSequences and encodingFormats arrays', () => {
+    it('should only set stream attribute when stream is true and omit when false or undefined', () => {
+      assert.deepStrictEqual(getRequestOptionsAttributes({ stream: true }), {
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+      });
+      assert.deepStrictEqual(
+        getRequestOptionsAttributes({ stream: false }),
+        {}
+      );
+      assert.deepStrictEqual(getRequestOptionsAttributes({}), {});
+    });
+
+    it('should ignore empty stopSequences array', () => {
       const result = getRequestOptionsAttributes({
         stopSequences: [],
-        encodingFormats: [],
       });
       assert.deepStrictEqual(result, {});
+    });
+  });
+
+  describe('sumTokenCountsAcrossModalities', () => {
+    it('should sum the counts of every modality', () => {
+      assert.strictEqual(
+        sumTokenCountsAcrossModalities({
+          text: 100,
+          image: 50,
+          audio: 5,
+          unknown: 10,
+        }),
+        165
+      );
+    });
+
+    it('should return undefined, not 0, when there is no count', () => {
+      assert.strictEqual(sumTokenCountsAcrossModalities(undefined), undefined);
+      assert.strictEqual(sumTokenCountsAcrossModalities({}), undefined);
+      assert.strictEqual(
+        sumTokenCountsAcrossModalities({ text: undefined }),
+        undefined
+      );
+    });
+
+    it('should keep an explicit 0', () => {
+      assert.strictEqual(sumTokenCountsAcrossModalities({ text: 0 }), 0);
+    });
+
+    it('should ignore negative counts', () => {
+      assert.strictEqual(
+        sumTokenCountsAcrossModalities({ text: 10, image: -5 }),
+        10
+      );
+      assert.strictEqual(
+        sumTokenCountsAcrossModalities({ text: -1 }),
+        undefined
+      );
+    });
+  });
+
+  describe('mergeTokenUsage', () => {
+    it('should only overwrite fields defined in the update', () => {
+      const merged = mergeTokenUsage(
+        { inputTokens: { text: 10 }, cacheReadTokens: { text: 4 } },
+        { outputTokens: { text: 20 }, inputTokens: undefined }
+      );
+      assert.deepStrictEqual(merged, {
+        inputTokens: { text: 10 },
+        outputTokens: { text: 20 },
+        cacheReadTokens: { text: 4 },
+      });
+    });
+
+    it('should not mutate the existing usage or the update', () => {
+      const existing = { inputTokens: { text: 10 } };
+      const update = { outputTokens: { text: 20 } };
+      mergeTokenUsage(existing, update);
+      assert.deepStrictEqual(existing, { inputTokens: { text: 10 } });
+      assert.deepStrictEqual(update, { outputTokens: { text: 20 } });
     });
   });
 });

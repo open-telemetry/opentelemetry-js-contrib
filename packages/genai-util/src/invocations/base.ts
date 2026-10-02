@@ -58,10 +58,11 @@ export interface BaseInvocationOptions {
    * low cardinality: never put message content, user identifiers, request identifiers, or
    * other unbounded values here.
    *
-   * Concrete invocations seed this with their operation's semantic convention dimensions,
-   * spreading the caller's own metric attributes last so that explicit caller values win.
-   * Dimensions that are only known later (e.g. `gen_ai.response.model`) are added to
-   * `_metricAttributes` as they arrive.
+   * These override the semantic convention dimensions that the concrete invocation
+   * reports (see {@link BaseInvocation._getSemconvMetricAttributes}): when both define
+   * the same key, the value given here (or later via
+   * {@link BaseInvocation.setMetricAttribute}) wins. The only exception is `error.type`,
+   * which always reflects the resolved failure.
    */
   metricAttributes?: Attributes;
   /**
@@ -299,11 +300,11 @@ export abstract class BaseInvocation {
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     this._isEnded = true;
 
+    let errorType: string | undefined;
     try {
       const durationSec = hrTimeToSeconds(
         hrTimeDuration(this._startTime, endHr)
       );
-      let errorType: string | undefined;
 
       if (error) {
         // The span's error state is recorded before the subclass hooks run so that a hook
@@ -323,6 +324,7 @@ export abstract class BaseInvocation {
         );
       }
 
+      this._onInvocationEnd(endHr, errorType);
       this._recordMetrics(durationSec, errorType);
       this._emitContentEvent(endHr);
     } catch (err) {
@@ -338,17 +340,57 @@ export abstract class BaseInvocation {
   }
 
   /**
+   * Return the semantic convention metric dimensions for this invocation.
+   *
+   * Called every time metrics are recorded, so dimensions that only become known after
+   * the invocation starts (e.g. `gen_ai.response.model`) should be read from the
+   * invocation's current state rather than cached. Do NOT include `error.type`: it is
+   * added by {@link _getMetricAttributes}.
+   *
+   * Subclasses should override this instead of merging {@link _metricAttributes}
+   * themselves, so that caller-supplied metric attributes consistently take precedence.
+   */
+  protected abstract _getSemconvMetricAttributes(): Attributes;
+
+  /**
+   * Build the attributes shared by the metrics recorded for this invocation.
+   *
+   * Precedence, from lowest to highest:
+   * 1. semantic convention dimensions from {@link _getSemconvMetricAttributes};
+   * 2. caller-supplied metric attributes ({@link _metricAttributes}), so an explicit
+   *    caller value overrides the value the invocation would otherwise report;
+   * 3. `error.type`, when `errorType` is given, so that it always reflects the resolved
+   *    failure.
+   *
+   * A new object is returned on every call, so callers may add per-measurement
+   * dimensions to it without affecting other measurements or {@link _metricAttributes}.
+   *
+   * @param errorType The resolved `error.type` value, or `undefined` to omit it (on
+   *   success, or for metrics that do not define the `error.type` dimension).
+   */
+  protected _getMetricAttributes(errorType?: string): Attributes {
+    const attributes: Attributes = {
+      ...this._getSemconvMetricAttributes(),
+      ...this._metricAttributes,
+    };
+    if (errorType) {
+      attributes[ATTR_ERROR_TYPE] = errorType;
+    }
+    return attributes;
+  }
+
+  /**
    * Emit the operation-specific metrics for this invocation on stop/fail.
    *
    * Every concrete invocation must implement this: each GenAI operation has at least an
    * operation duration metric defined by the semantic conventions. A subclass with
    * nothing to record must say so explicitly with an empty body.
    *
-   * Record with {@link _metricAttributes}, spreading it when a measurement needs an extra
-   * dimension of its own (e.g. `{ ...this._metricAttributes, [ATTR_GEN_AI_TOKEN_TYPE]:
-   * 'input' }`) so that the dimension does not leak into the invocation's other
-   * measurements. Pass `this._context` to the recording call so that exemplars are
-   * associated with the invocation span.
+   * Record with the attributes returned by {@link _getMetricAttributes}, passing
+   * `errorType` for metrics that define the `error.type` dimension. Add any
+   * per-measurement dimension (e.g. `gen_ai.token.modality`) to a copy so that it does not
+   * leak into the invocation's other measurements. Pass `this._context` to the
+   * recording call so that exemplars are associated with the invocation span.
    *
    * @param durationSec Duration of the invocation in seconds.
    * @param errorType The resolved `error.type` value, or `undefined` if the invocation
@@ -373,4 +415,9 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
+
+  /**
+   * Hook for subclasses to emit invocation specific telemetry.
+   */
+  protected _onInvocationEnd(_endTime: HrTime, _errorType?: string): void {}
 }

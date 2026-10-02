@@ -9,6 +9,7 @@ import {
   trace,
   type Attributes,
   type Context,
+  type Counter,
   type DiagLogger,
   type Histogram,
   type Meter,
@@ -20,23 +21,40 @@ import {
   getContentCaptureMode,
   parseContentCaptureMode,
 } from './environment-variables';
+import { EmbeddingInvocation } from './invocations/embedding';
+import { InferenceInvocation } from './invocations/inference';
+import { ToolInvocation } from './invocations/tool';
 import {
+  createCacheReadInputTokenUsageCounter,
+  createCacheWriteInputTokenUsageCounter,
   createDurationHistogram,
+  createExecuteToolDurationHistogram,
+  createInputTokenOperationHistogram,
+  createInputTokenUsageCounter,
+  createOutputTokenOperationHistogram,
+  createOutputTokenUsageCounter,
+  createReasoningOutputTokenUsageCounter,
   createTimePerOutputChunkHistogram,
   createTimeToFirstChunkHistogram,
-  createTokenUsageHistogram,
 } from './metrics';
 import {
-  ATTR_GEN_AI_TOKEN_TYPE,
+  ATTR_GEN_AI_TOKEN_MODALITY,
   GEN_AI_SCHEMA_URL,
-  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
 } from './semconv';
 import type {
   ContentCaptureMode,
+  EmbeddingInvocationOptions,
   GenAIInstrumentationConfig,
+  InferenceInvocationOptions,
+  TokenModality,
   TokenUsage,
+  ToolInvocationOptions,
 } from './types';
+import { sumTokenCountsAcrossModalities } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -80,9 +98,16 @@ export class TelemetryHandler {
   private _diag: DiagLogger;
   private _contentCaptureMode: ContentCaptureMode;
   private readonly _operationDurationHistogram: Histogram;
-  private readonly _tokenUsageHistogram: Histogram;
+  private readonly _inputTokenOperationHistogram: Histogram;
+  private readonly _outputTokenOperationHistogram: Histogram;
+  private readonly _inputTokenUsageCounter: Counter;
+  private readonly _outputTokenUsageCounter: Counter;
+  private readonly _cacheReadInputTokenUsageCounter: Counter;
+  private readonly _cacheWriteInputTokenUsageCounter: Counter;
+  private readonly _reasoningOutputTokenUsageCounter: Counter;
   private readonly _timeToFirstChunkHistogram: Histogram;
   private readonly _timePerOutputChunkHistogram: Histogram;
+  private readonly _executeToolDurationHistogram: Histogram;
 
   constructor(options: TelemetryHandlerOptions) {
     const { instrumentationName, instrumentationVersion } = options;
@@ -114,11 +139,27 @@ export class TelemetryHandler {
     }
 
     this._operationDurationHistogram = createDurationHistogram(this._meter);
-    this._tokenUsageHistogram = createTokenUsageHistogram(this._meter);
+    this._inputTokenOperationHistogram = createInputTokenOperationHistogram(
+      this._meter
+    );
+    this._outputTokenOperationHistogram = createOutputTokenOperationHistogram(
+      this._meter
+    );
+    this._inputTokenUsageCounter = createInputTokenUsageCounter(this._meter);
+    this._outputTokenUsageCounter = createOutputTokenUsageCounter(this._meter);
+    this._cacheReadInputTokenUsageCounter =
+      createCacheReadInputTokenUsageCounter(this._meter);
+    this._cacheWriteInputTokenUsageCounter =
+      createCacheWriteInputTokenUsageCounter(this._meter);
+    this._reasoningOutputTokenUsageCounter =
+      createReasoningOutputTokenUsageCounter(this._meter);
     this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(
       this._meter
     );
     this._timePerOutputChunkHistogram = createTimePerOutputChunkHistogram(
+      this._meter
+    );
+    this._executeToolDurationHistogram = createExecuteToolDurationHistogram(
       this._meter
     );
   }
@@ -159,6 +200,37 @@ export class TelemetryHandler {
   }
 
   /**
+   * Start an LLM / GenAI inference invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startInference(
+    options: InferenceInvocationOptions
+  ): InferenceInvocation {
+    return new InferenceInvocation(this, options);
+  }
+
+  /**
+   * Start an Embedding invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startEmbedding(
+    options: EmbeddingInvocationOptions
+  ): EmbeddingInvocation {
+    return new EmbeddingInvocation(this, options);
+  }
+
+  /**
+   * Start a Tool execution invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startTool(options: ToolInvocationOptions): ToolInvocation {
+    return new ToolInvocation(this, options);
+  }
+
+  /**
    * Record operation duration metric.
    *
    * @param durationSeconds - The duration of the operation, in seconds.
@@ -173,9 +245,6 @@ export class TelemetryHandler {
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (durationSeconds < 0 || !isFinite(durationSeconds)) {
-      return;
-    }
     this._operationDurationHistogram.record(
       durationSeconds,
       attributes,
@@ -184,14 +253,27 @@ export class TelemetryHandler {
   }
 
   /**
-   * Record token usage metric.
+   * Record the token usage metrics of a single inference operation.
    *
-   * @param usage - Input and output token counts.
-   * @param attributes - Metric attributes.
+   * Call once per operation with its final usage. Input and output tokens are
+   * recorded on both metric families defined by the semantic conventions: once
+   * on the `gen_ai.client.inference.operation.*` histograms, and on the
+   * `gen_ai.client.inference.usage.*` counters split by `gen_ai.token.modality`
+   * Missing, zero and negative counts are skipped.
+   *
+   * Intended to be called by {@link InferenceInvocation} when the invocation
+   * ends, with usage whose missing `inputTokens` / `outputTokens` have already
+   * been inferred (from cache and reasoning tokens respectively). This method
+   * does not infer them itself: if they are missing, the input / output
+   * histograms and counters are not recorded.
+   *
+   * @param usage - Token counts of the operation.
+   * @param attributes - Metric attributes. Token metrics do not define
+   *   `error.type`, so leave it out even when the operation failed.
    * @param context - Context used to associate an exemplar with the
    *   measurement. Defaults to the currently active context.
    */
-  public recordTokenUsage(
+  public recordInferenceTokenUsage(
     usage: TokenUsage,
     attributes?: Attributes,
     context?: Context
@@ -199,28 +281,56 @@ export class TelemetryHandler {
     if (!usage) {
       return;
     }
+    const totalInputTokensAcrossModalities = sumTokenCountsAcrossModalities(
+      usage.inputTokens
+    );
+    const totalOutputTokensAcrossModalities = sumTokenCountsAcrossModalities(
+      usage.outputTokens
+    );
 
-    if (usage.inputTokens !== undefined && usage.inputTokens > 0) {
-      this._tokenUsageHistogram.record(
-        usage.inputTokens,
-        {
-          ...attributes,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-        },
+    if (isPositiveCount(totalInputTokensAcrossModalities)) {
+      this._inputTokenOperationHistogram.record(
+        totalInputTokensAcrossModalities,
+        attributes,
         context
       );
     }
 
-    if (usage.outputTokens !== undefined && usage.outputTokens > 0) {
-      this._tokenUsageHistogram.record(
-        usage.outputTokens,
-        {
-          ...attributes,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-        },
+    if (isPositiveCount(totalOutputTokensAcrossModalities)) {
+      this._outputTokenOperationHistogram.record(
+        totalOutputTokensAcrossModalities,
+        attributes,
         context
       );
     }
+
+    this.recordModalityUsage(
+      GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+      usage,
+      attributes,
+      context
+    );
+
+    this.recordModalityUsage(
+      GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+      usage,
+      attributes,
+      context
+    );
+
+    this.recordModalityUsage(
+      GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+      usage,
+      attributes,
+      context
+    );
+
+    this.recordModalityUsage(
+      GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+      usage,
+      attributes,
+      context
+    );
   }
 
   /**
@@ -246,7 +356,11 @@ export class TelemetryHandler {
   /**
    * Record time per output chunk metric for streaming responses.
    *
-   * @param durationSeconds - Average time between output chunks, in seconds.
+   * Called once per output chunk after the first, with the time elapsed since the
+   * previous chunk.
+   *
+   * @param durationSeconds - Time elapsed between this chunk and the previous one, in
+   *   seconds.
    * @param attributes - Metric attributes.
    * @param context - Context used to associate an exemplar with the
    *   measurement. Defaults to the currently active context.
@@ -262,4 +376,102 @@ export class TelemetryHandler {
       context
     );
   }
+
+  /**
+   * Record the `gen_ai.execute_tool.duration` metric for a single tool execution.
+   *
+   * @param durationSeconds - The duration of the tool execution, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Pass the invocation's context explicitly, since the
+   *   measurement is often recorded after the invocation's context is no
+   *   longer active. Defaults to the currently active context.
+   */
+  public recordExecuteToolDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._executeToolDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record token counts across all usage counters for a specific modality.
+   */
+  private recordModalityUsage(
+    modality: TokenModality,
+    usage: TokenUsage,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this.recordTokenUsageForModality(
+      this._inputTokenUsageCounter,
+      modality,
+      usage.inputTokens?.[modality],
+      attributes,
+      context
+    );
+    this.recordTokenUsageForModality(
+      this._outputTokenUsageCounter,
+      modality,
+      usage.outputTokens?.[modality],
+      attributes,
+      context
+    );
+    this.recordTokenUsageForModality(
+      this._cacheReadInputTokenUsageCounter,
+      modality,
+      usage.cacheReadTokens?.[modality],
+      attributes,
+      context
+    );
+    this.recordTokenUsageForModality(
+      this._cacheWriteInputTokenUsageCounter,
+      modality,
+      usage.cacheWriteTokens?.[modality],
+      attributes,
+      context
+    );
+    this.recordTokenUsageForModality(
+      this._reasoningOutputTokenUsageCounter,
+      modality,
+      usage.reasoningTokens?.[modality],
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record token usage for a specific modality.
+   */
+  private recordTokenUsageForModality(
+    tokenCounter: Counter,
+    modality: TokenModality,
+    count: number | undefined,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    if (isPositiveCount(count)) {
+      tokenCounter.add(
+        count,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+        },
+        context
+      );
+    }
+  }
+}
+
+/**
+ * Return whether `value` is a token count to record: missing, zero and
+ * negative counts are skipped.
+ */
+function isPositiveCount(value: number | undefined): value is number {
+  return value !== undefined && value > 0;
 }

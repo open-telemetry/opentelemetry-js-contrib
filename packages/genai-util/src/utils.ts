@@ -9,7 +9,6 @@
 import type { Attributes } from '@opentelemetry/api';
 import {
   ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
@@ -22,11 +21,13 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_P,
 } from './semconv';
 import type {
-  GenAIRequestOptions,
+  InferenceRequestOptions,
   InputMessages,
   OutputMessages,
   SystemInstructionPart,
   SystemInstructions,
+  TokenCountsByModality,
+  TokenUsage,
 } from './types';
 
 /**
@@ -116,7 +117,7 @@ function serializeMessageReplacer(
 export function formatInputMessages(
   messages?: InputMessages
 ): string | undefined {
-  if (!messages) {
+  if (!messages || messages.length === 0) {
     return undefined;
   }
   try {
@@ -135,7 +136,7 @@ export function formatInputMessages(
 export function formatOutputMessages(
   messages?: OutputMessages
 ): string | undefined {
-  if (!messages) {
+  if (!messages || messages.length === 0) {
     return undefined;
   }
   try {
@@ -284,13 +285,17 @@ export function getErrorType(error: unknown): string {
 }
 
 /**
- * Extract OpenTelemetry span attributes from GenAI request options.
+ * Extract OpenTelemetry span attributes from GenAI inference request options.
  *
- * @param requestOptions - Optional GenAI request options to extract attributes from.
+ * All returned attributes are defined by the GenAI semantic conventions on the
+ * inference span only, so this helper is not applicable to other invocation
+ * types.
+ *
+ * @param requestOptions - Optional inference request options to extract attributes from.
  * @returns Attributes object populated with GenAI request semantic conventions.
  */
 export function getRequestOptionsAttributes(
-  requestOptions?: GenAIRequestOptions
+  requestOptions?: InferenceRequestOptions
 ): Attributes {
   const attrs: Attributes = {};
   if (!requestOptions) {
@@ -326,14 +331,7 @@ export function getRequestOptionsAttributes(
   if (requestOptions.seed !== undefined) {
     attrs[ATTR_GEN_AI_REQUEST_SEED] = requestOptions.seed;
   }
-  if (
-    requestOptions.encodingFormats &&
-    requestOptions.encodingFormats.length > 0
-  ) {
-    attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] =
-      requestOptions.encodingFormats;
-  }
-  if (requestOptions.stream !== undefined) {
+  if (requestOptions.stream) {
     attrs[ATTR_GEN_AI_REQUEST_STREAM] = requestOptions.stream;
   }
   if (requestOptions.reasoningLevel !== undefined) {
@@ -341,4 +339,67 @@ export function getRequestOptionsAttributes(
   }
 
   return attrs;
+}
+
+/**
+ * Merge a partial token usage update into the previously recorded usage.
+ *
+ * Only fields that are defined in `update` overwrite the existing values, so
+ * usage reported incrementally (e.g. input tokens at stream start and output
+ * tokens at stream end) accumulates instead of being replaced. This mirrors the
+ * behavior of span attributes, which are only set for defined values and can
+ * never be removed once set.
+ *
+ * @param existing - Previously recorded usage, if any.
+ * @param update - New (possibly partial) usage values.
+ * @returns A new merged {@link TokenUsage} object.
+ */
+export function mergeTokenUsage(
+  existing: TokenUsage | undefined,
+  update: TokenUsage
+): TokenUsage {
+  const merged: TokenUsage = { ...existing };
+  for (const key of Object.keys(update) as (keyof TokenUsage)[]) {
+    setIfDefined(merged, key, update[key]);
+  }
+  return merged;
+}
+
+/**
+ * Assign `value` to `target[key]` unless it is `undefined`.
+ *
+ * The generic key keeps the assignment type-safe across fields of different types.
+ */
+function setIfDefined<K extends keyof TokenUsage>(
+  target: TokenUsage,
+  key: K,
+  value: TokenUsage[K]
+): void {
+  if (value !== undefined) {
+    target[key] = value;
+  }
+}
+
+/**
+ * Sum the defined, non-negative counts across modalities.
+ *
+ * Returns `undefined` when no such count exists, so that a missing value is
+ * never treated as `0`. Negative counts are ignored; an explicit `0` is kept.
+ *
+ * @param tokenCounts - Token counts keyed by modality, if any.
+ * @returns The total, or `undefined` if there is nothing to sum.
+ */
+export function sumTokenCountsAcrossModalities(
+  tokenCounts: TokenCountsByModality | undefined
+): number | undefined {
+  if (!tokenCounts) {
+    return undefined;
+  }
+  let sum: number | undefined;
+  for (const count of Object.values(tokenCounts)) {
+    if (count !== undefined && count >= 0) {
+      sum = (sum ?? 0) + count;
+    }
+  }
+  return sum;
 }

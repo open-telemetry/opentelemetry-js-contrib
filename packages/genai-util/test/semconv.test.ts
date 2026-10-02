@@ -19,6 +19,9 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_AGENT_VERSION,
   ATTR_GEN_AI_WORKFLOW_NAME,
+  ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+  ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
+  ATTR_GEN_AI_TOKEN_MODALITY,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
@@ -28,9 +31,19 @@ import {
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
   GEN_AI_SCHEMA_URL,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
@@ -75,6 +88,15 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(ATTR_GEN_AI_TOOL_TYPE, 'gen_ai.tool.type');
     assert.strictEqual(ATTR_GEN_AI_AGENT_VERSION, 'gen_ai.agent.version');
     assert.strictEqual(ATTR_GEN_AI_WORKFLOW_NAME, 'gen_ai.workflow.name');
+    assert.strictEqual(
+      ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
+      'gen_ai.request.encoding_formats'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
+      'gen_ai.embeddings.dimension.count'
+    );
+    assert.strictEqual(ATTR_GEN_AI_TOKEN_MODALITY, 'gen_ai.token.modality');
   });
 
   it('should define expected constant values', () => {
@@ -99,6 +121,10 @@ describe('GenAI Semantic Conventions', () => {
       'gcp.vertex_ai'
     );
     assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI, 'gcp.gemini');
+    assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO, 'audio');
+    assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE, 'image');
+    assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_TEXT, 'text');
+    assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN, 'unknown');
   });
 
   it('should define expected metric and event names', () => {
@@ -107,8 +133,32 @@ describe('GenAI Semantic Conventions', () => {
       'gen_ai.client.operation.duration'
     );
     assert.strictEqual(
-      METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-      'gen_ai.client.token.usage'
+      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+      'gen_ai.client.inference.operation.input_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+      'gen_ai.client.inference.operation.output_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+      'gen_ai.client.inference.usage.input_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+      'gen_ai.client.inference.usage.output_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+      'gen_ai.client.inference.usage.cache_read.input_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+      'gen_ai.client.inference.usage.cache_write.input_tokens'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+      'gen_ai.client.inference.usage.reasoning.output_tokens'
     );
     assert.strictEqual(
       METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
