@@ -23,6 +23,7 @@ import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
 import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
 import { HostMetricsInstrumentation } from '@opentelemetry/instrumentation-host-metrics';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import { IbmMqInstrumentation } from '@opentelemetry/instrumentation-ibmmq';
 import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
 import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
 import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
@@ -102,6 +103,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
   '@opentelemetry/instrumentation-host-metrics': HostMetricsInstrumentation,
   '@opentelemetry/instrumentation-http': HttpInstrumentation,
+  '@opentelemetry/instrumentation-ibmmq': IbmMqInstrumentation,
   '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
   '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
   '@opentelemetry/instrumentation-knex': KnexInstrumentation,
