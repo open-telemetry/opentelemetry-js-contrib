@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-fs
 
 ## Supported Versions
 
-- Node.js `>=22.15.0`
+- Node.js `>=18`
 
 ## Usage
 

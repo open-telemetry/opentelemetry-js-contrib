@@ -67,6 +67,6 @@
     "@smithy/node-http-handler": "4.4.14"
   },
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   }
 }

@@ -12,7 +12,7 @@ process termination.
 
 ## Supported Versions
 
-- Node.js `>=22.15.0`
+- Node.js `^18.19.0 || >=20.6.0`
 
 ## Example
 
