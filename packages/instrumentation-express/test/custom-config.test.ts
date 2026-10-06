@@ -12,6 +12,7 @@ import {
 } from '@opentelemetry/sdk-trace';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
+import * as semver from 'semver';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -26,6 +27,9 @@ instrumentation.disable();
 
 import * as express from 'express';
 import * as http from 'http';
+
+const LIB_VERSION = require('express/package.json').version;
+const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
 
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
@@ -270,6 +274,114 @@ describe('ExpressInstrumentation', () => {
           assert.strictEqual(rpcMetadata!.route, '/api/p/:id');
         }
       );
+    });
+
+    describe('when ignoreLayers matches a layer that is not middleware', () => {
+      afterEach(() => {
+        instrumentation.setConfig({
+          ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+        });
+      });
+
+      // Express v5 mounts middleware that applies to every path as a catch-all
+      // route, `{/*splat}` (NestJS registers its app-wide middleware this way),
+      // so those layers are request handlers, not middleware. Ignoring them
+      // used to leave their path in the layers store, and http.route became
+      // `{/*splat}/users/:id`.
+      it('should not leave the path of an ignored request handler in http.route', async () => {
+        // `{/*splat}` is Express v5 syntax
+        if (!isExpressV5) {
+          return;
+        }
+        instrumentation.setConfig({ ignoreLayers: [/\{\/\*splat\}$/] });
+        let rpcMetadata: RPCMetadata | undefined;
+        const rootSpan = tracer.startSpan('rootSpan');
+
+        app.use((req, res, next) => {
+          rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+          return context.with(
+            setRPCMetadata(
+              trace.setSpan(context.active(), rootSpan),
+              rpcMetadata
+            ),
+            next
+          );
+        });
+        app.all('{/*splat}', (req, res, next) => next());
+        app.get('/users/:id', (req, res) => res.send('ok'));
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/users/42`);
+            rootSpan.end();
+
+            const spans = memoryExporter.getFinishedSpans();
+            const handlerSpans = spans.filter(
+              s =>
+                s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler'
+            );
+            // only the route's own handler: the catch-all one is ignored
+            assert.strictEqual(handlerSpans.length, 1);
+            assert.strictEqual(
+              handlerSpans[0].attributes[ATTR_HTTP_ROUTE],
+              '/users/:id',
+              'the ignored handler path must not leak into http.route'
+            );
+            assert.strictEqual(
+              handlerSpans[0].name,
+              'request handler - /users/:id'
+            );
+            assert.strictEqual(rpcMetadata!.route, '/users/:id');
+          }
+        );
+      });
+
+      it('should keep the path of an ignored router for the routes it mounts', async () => {
+        instrumentation.setConfig({ ignoreLayers: [/^router - /] });
+        let rpcMetadata: RPCMetadata | undefined;
+        const rootSpan = tracer.startSpan('rootSpan');
+
+        app.use((req, res, next) => {
+          rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+          return context.with(
+            setRPCMetadata(
+              trace.setSpan(context.active(), rootSpan),
+              rpcMetadata
+            ),
+            next
+          );
+        });
+        const api = express.Router();
+        api.get('/users/:id', (req, res) => res.send('ok'));
+        app.use('/api', api);
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/api/users/42`);
+            rootSpan.end();
+
+            const spans = memoryExporter.getFinishedSpans();
+            assert.deepStrictEqual(
+              spans.filter(
+                s => s.attributes[AttributeNames.EXPRESS_TYPE] === 'router'
+              ),
+              [],
+              'the ignored router should have no span'
+            );
+            const handlerSpan = spans.find(
+              s =>
+                s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler'
+            );
+            assert.strictEqual(
+              handlerSpan?.attributes[ATTR_HTTP_ROUTE],
+              '/api/users/:id'
+            );
+            assert.strictEqual(rpcMetadata!.route, '/api/users/:id');
+          }
+        );
+      });
     });
   });
 });
