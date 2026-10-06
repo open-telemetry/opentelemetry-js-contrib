@@ -6,7 +6,7 @@
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-configuration-propagators#readme",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "publishConfig": {
     "access": "public"
