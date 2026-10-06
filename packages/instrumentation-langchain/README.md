@@ -76,7 +76,11 @@ This layer does **not** instrument `stream` or `transform`, tools, agents,
 LangGraph operations or retrieval. Internal graph adapter sequences are excluded.
 Streaming methods retain their original behavior without workflow stream telemetry.
 Provider inference remains the responsibility of provider-specific instrumentation.
-Workflows emit spans only, not `gen_ai.client.*` metrics or content events.
+Workflows emit spans and the `gen_ai.invoke_workflow.duration` histogram in
+seconds, not `gen_ai.client.*` metrics or content events. Each completed
+instrumented operation records one duration, with `gen_ai.workflow.name` when
+available and `error.type` on failure. Prompt/completion content and conversation
+IDs are not included in metric attributes.
 
 Span names use the effective SDK `runName`, falling back to the runnable's
 explicit `name`. Only non-blank strings are used. The instrumentation does not
@@ -116,10 +120,10 @@ deliberately.
 
 Workflow spans use the standard OpenTelemetry tracer, span and context APIs
 directly, with the instrumentation-owned tracer (including `setTracerProvider`).
-Config/provider updates apply to future invocations; in-flight invocations finish
-with their original span and content setting. Disabling instrumentation does not
-abandon in-flight spans. `setMeterProvider` remains supported by the instrumentation
-base, but workflows do not create metric instruments or record client metrics.
+Config/provider updates apply to future invocations. In-flight invocations finish
+with their original span, content setting and duration histogram. Disabling
+instrumentation does not abandon in-flight spans or duration recordings.
+`setMeterProvider` configures the provider used for workflow duration metrics.
 
 Multiple instrumentation instances share one workflow wrapper per method.
 The most recently enabled instance supplies configuration and providers, without
@@ -197,8 +201,9 @@ This is scoped regression proof, not the later full migration conformance suite.
 
 This package uses the experimental GenAI conventions
 `gen_ai.operation.name`, `gen_ai.workflow.name`, `gen_ai.conversation.id`,
-`gen_ai.input.messages`, and `gen_ai.output.messages`. Their exact provenance is
-pinned in this package's `src/semconv.ts`; stable `error.type` is imported from
+`gen_ai.input.messages`, `gen_ai.output.messages`, and
+`gen_ai.invoke_workflow.duration`. Their exact provenance is pinned in this
+package's `src/semconv.ts`. Stable `error.type` is imported from
 `@opentelemetry/semantic-conventions`.
 
 ## Useful links
