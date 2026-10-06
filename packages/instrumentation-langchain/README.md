@@ -78,7 +78,11 @@ Streaming methods retain their original behavior without workflow stream telemet
 Provider inference remains the responsibility of provider-specific instrumentation.
 Workflows emit spans only, not `gen_ai.client.*` metrics or content events.
 
-Span names use the effective SDK `runName`, runnable name, or `getName()`.
+Span names use the effective SDK `runName`, falling back to the runnable's
+explicit `name`. Only non-blank strings are used. The instrumentation does not
+call `getName()`. If neither name is available, the span name is `invoke_workflow`
+and `gen_ai.workflow.name` is omitted. Otherwise, the span name is
+`invoke_workflow {name}` and `gen_ai.workflow.name` contains that same name.
 `gen_ai.conversation.id` uses the first non-empty string from
 `configurable.thread_id`, `configurable.session_id`,
 `configurable.conversation_id`, `metadata.session_id`, `metadata.thread_id`,
