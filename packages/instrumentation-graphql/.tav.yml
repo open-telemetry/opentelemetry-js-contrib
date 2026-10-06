@@ -1,5 +1,10 @@
 graphql:
-  versions:
-    include: "14 || 15 || 16"
-    mode: max-7
-  commands: npm run test
+  - versions:
+      include: "14 || 15 || 16"
+      mode: max-7
+    commands: npm run test
+  - versions:
+      include: "17"
+      mode: max-7
+    node: ">=22.0.0"
+    commands: npm run test
