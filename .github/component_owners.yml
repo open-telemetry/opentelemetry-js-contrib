@@ -144,6 +144,8 @@ components:
     - hectorhdzg
     - trentm
     - seemk
+  packages/instrumentation-openai-agents:
+    - eternalcuriouslearner
   packages/instrumentation-pg:
     - maryliag
     - raphael-theriault-swi

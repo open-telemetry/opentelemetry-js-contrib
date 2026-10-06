@@ -1,0 +1,148 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "Use get_weather and report its result in one sentence.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "What is the weather in Paris?"
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the weather for a city.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "city": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "city"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1b8709009c07b6d3b424a5a263f097bd6c9ba9d39a5332be6df1a5cd29a5eb040897c6f1b837884857dfecd3514805102edf5a7b67bead7215c65d5eb239da5f620744c96dcb922d2a85d254894a5995d53cb1d96b57b4348189fe9a4334b6d006413a4f685d51aad495d68988718825575a5b44669dd78ab3dad4ac1c67c892395d3a4850a629a89056964994bdc4f20f5455977993a758cb390de44f35ceb3496284c26751780ff962b851cab375def34ec2414daa0061750f1c6c22fa8e06cac926b277ecd4a28b541564fd18f67131f088a437e7db1504a5e7c85b27474389f46e8cdc96eb1fc717614a2320bc4f25677e72ce5b32ad8a6c3c44a60ec8982b4281db50f414fffaa18fbd7cd9e385b247813b7b58f5540d0eab0034e79d63cc4ed58f5a59b96a16777466e954627253e89d1f311b5517a676858d92032258d11a8c17a95727691bd073b07e1c460f67b70bbff03de9f0c92f704e21d794685cfdb3c7f2f9f3aa0ed5d3ebe9fee92666c5d30b6eb29b175f841bda6c5955205f38a61cfb56fd4eed42f42dfb1101299309a86f131a387d3a6ef46139f79118e56d34959d7c29489445a14dc27841acc325caf4e3112194a04142c0ccd830096f48afa861babb9e9ee5e131226cd14f51d606fec5092ce63464c986f027ca410a35c94c5aba4f4d86dd4a9148aaf7ad25e865378e6b8426bda61d85c4644d4ee8fd188d10b46b62065b3ea3a12c0ee04a83ba5b311915ffea59c34c5d24cb568a49b3a5f04b46add2ff7742256207afed898de8aad629696ab19a538562bdf952b8daf1489a020c066d0545bd3c9b517ec04ec97f54d11970dba8356ec2388ba7d554d90d7aec3af112e14609b5b3ea9e04cd0bb481267b580d96781ca9cda1d67e566aaa628d937b1099dfef43e3564a8489d5acd76c1ca15257adbbb36e97e7cbb4a1ccd38443f5da682348ca8089906e62c69fe2d2d36c39f461a94d0f822b1eebcb61b5305cc0e1dd482137904ca22f96f399963a9244632c092238b9c9da791a7cef564562b2cc9b0a3e89affeaac00932df40aafbe612d972e49c8d72"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a29b54e389a18c73-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Wed, 12 Aug 2026 00:23:30 GMT",
+            "openai-processing-ms": "1476",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9998",
+            "x-ratelimit-remaining-tokens": "199723",
+            "x-ratelimit-reset-requests": "15.849s",
+            "x-ratelimit-reset-tokens": "83ms",
+            "x-request-id": "req_0c6dc87ce69f421b8832c93b336deeab"
+        },
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "Use get_weather and report its result in one sentence.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "What is the weather in Paris?"
+                },
+                {
+                    "id": "fc_0df5612f6dfeeecf006a7bbd01ec4c81a3b6a7aac185c8f5d8",
+                    "type": "function_call",
+                    "name": "get_weather",
+                    "call_id": "call_P6RXI8r7QTDzQKt35QS0w3KS",
+                    "arguments": "{\"city\":\"Paris\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_P6RXI8r7QTDzQKt35QS0w3KS",
+                    "output": "{\"city\":\"Paris\",\"weather\":\"sunny\"}",
+                    "status": "completed"
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "get_weather",
+                    "description": "Get the weather for a city.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "city": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "city"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1bde09002c0aec363287f62a20ef16cfcc2c00814c9a53d992edc6ca6dfa9ed2723e4fc31401e9b3e146dd122f3b05c603a46c62caea278b824e2b8074f5f5bfdfeff733244aa01252d876166e5144d25ef780a73734b3900891a1d2d20f217c1ba3f9eb200ce07491ffcc5f995d73889404a76fdf8d65dbb789c80e27b2f2b5dc49942c826be66f72f7852b93d5df094aa15555c9abd322c91168fa0fec619a2a4c74cf83caa1c67d96b2d8df18df49e53de4bbc7a5e65c16aba2bf145770a9d5a65a20a9ad276f952353f577bb12a6eb475320a331ba045278f4a3de489a0cf16b7378a6ae46ca783746b7e55c35e717614627a0bc4fa5177e7ed71fb8562f7cbc24060675e65e44012dcdf49afeee51727ffb0f5ce8e921f0e8201f1c60ec8d8146e29ea26c361e55e5c22d1ebba771da91b5fe16a1f6d0fddeb9343668d2b8d245b81c8875f38321bc1319a3ccb1eaa82e75ec9606530a24ddb73e63f8dee64789de2c4dd9c1c363eaeacb34d8dd9c72723415e6ef8158ff97a0a90738a81600cf581373305ef5090064cd683fdaf2270fd43cb180c90082ac1776c264af44bf4b06507d0e2b7de91b9132b12fcc636680993b8aa31a075a200d541ac101b7611a70142304a3a3e8cd78f208875e80d018326d00b06e1b0347aaa18c611ad65139964364d9b110d7c1638cb79824727dea45d1f834e7453f6e2920ef66246f03944561fe4a4334344f291b08bfc148bc6a9d3998efa4730258813074f28e1d35536d8a6221aaab4983faff6dac6d22a63c5ff026d382e7343770d9d14e6531b6c2cd099e60d3d22426f0c8ed9eeee24992f1bb787af4ff5f94e4b40955810cdb3736b5e63d23f2785da49e40433d0e7622fdb8ada3ddb7be9e62bd16eb5acdf727bfe7836da228211ad54c4d2d7ca48991168baf676ddef90172614126d445e92ba0d629052c336a5ed1354bcf3e2ead76a38f5856c66d0ee926647c9dbd009a0789704d627d3316b6dac0e54d4e8d9e42b21a7d5fce799af60149ebe3512030cb6dcecfebc1d79ee79d13f0d6b457c3ab93498e7b9404aaa776cadae9ac4b367303"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a29b54edba9e8c73-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Wed, 12 Aug 2026 00:23:30 GMT",
+            "openai-processing-ms": "638",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9997",
+            "x-ratelimit-remaining-tokens": "199690",
+            "x-ratelimit-reset-requests": "23.689s",
+            "x-ratelimit-reset-tokens": "93ms",
+            "x-request-id": "req_1668c85cff044a7c802c7fa7735f2459"
+        },
+        "responseIsBinary": false
+    }
+]
