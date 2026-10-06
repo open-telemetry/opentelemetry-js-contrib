@@ -53,7 +53,7 @@
     "@opentelemetry/contrib-test-utils": "^0.69.0",
     "@opentelemetry/sdk-metrics": "^2.9.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
-    "@types/mysql": "2.15.27",
+    "@types/mysql": "2.15.28",
     "mysql": "2.18.1"
   },
   "dependencies": {
