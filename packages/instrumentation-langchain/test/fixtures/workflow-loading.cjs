@@ -20,6 +20,14 @@ async function main() {
   });
   const instrumentation = new LangChainInstrumentation();
   instrumentation.setTracerProvider(provider);
+  const secondExporter = new InMemorySpanExporter();
+  const secondProvider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: secondExporter })],
+  });
+  const second = new LangChainInstrumentation({
+    captureMessageContent: 'span_only',
+  });
+  second.setTracerProvider(secondProvider);
   const reader = new TestMetricReader();
   const meterProvider = new MeterProvider({ readers: [reader] });
   instrumentation.setMeterProvider(meterProvider);
@@ -30,6 +38,7 @@ async function main() {
   const modules = [await load(process.argv[2])];
   instrumentation.disable();
   modules.push(await load(process.argv[2] === 'cjs' ? 'esm' : 'cjs'));
+  second.disable();
   const adapters = [];
   for (const [index, module] of modules.entries()) {
     const mode =
@@ -276,9 +285,80 @@ async function main() {
         );
       }
     }
+
+    const instances = [instrumentation, second];
+    const exporters = [exporter, secondExporter];
+    const check = async owner => {
+      for (const current of exporters) current.reset();
+      for (const { RunnableLambda, RunnableMap, RunnableSequence } of modules) {
+        const sequence = RunnableSequence.from([
+          RunnableLambda.from(value => value),
+          RunnableLambda.from(value => value),
+        ]);
+        assert.equal(await sequence.invoke('input'), 'input');
+        assert.deepEqual(await sequence.batch(['input']), ['input']);
+        assert.deepEqual(
+          await RunnableMap.from({
+            value: RunnableLambda.from(value => value),
+          }).invoke('input'),
+          { value: 'input' }
+        );
+      }
+      for (const [index, current] of exporters.entries()) {
+        const spans = current.getFinishedSpans();
+        assert.equal(spans.length, index === owner ? modules.length * 3 : 0);
+        for (const span of spans) {
+          assert.equal('gen_ai.input.messages' in span.attributes, owner === 1);
+        }
+      }
+    };
+    for (const firstDisabled of [0, 1]) {
+      for (const instance of instances) {
+        instance.enable();
+        instance.enable();
+      }
+      const wrappers = modules.map(module => [
+        module.RunnableSequence.prototype.invoke,
+        module.RunnableSequence.prototype.batch,
+        module.RunnableMap.prototype.invoke,
+      ]);
+      await check(1);
+      instances[firstDisabled].disable();
+      instances[firstDisabled].disable();
+      for (const [index, module] of modules.entries()) {
+        assert.deepEqual(
+          [
+            module.RunnableSequence.prototype.invoke,
+            module.RunnableSequence.prototype.batch,
+            module.RunnableMap.prototype.invoke,
+          ],
+          wrappers[index]
+        );
+      }
+      await check(1 - firstDisabled);
+      instances[firstDisabled].enable();
+      await check(firstDisabled);
+      instances[1 - firstDisabled].disable();
+      await check(firstDisabled);
+      instances[firstDisabled].disable();
+      await check();
+      for (const [index, module] of modules.entries()) {
+        assert.equal(
+          module.RunnableSequence.prototype.invoke,
+          originals[index].invoke
+        );
+        assert.equal(
+          module.RunnableSequence.prototype.batch,
+          originals[index].batch
+        );
+        assert.equal(module.RunnableMap.prototype.invoke, originals[index].map);
+      }
+    }
   } finally {
     instrumentation.disable();
+    second.disable();
     await provider.shutdown();
+    await secondProvider.shutdown();
     await meterProvider.shutdown();
   }
 }

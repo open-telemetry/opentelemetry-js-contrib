@@ -117,6 +117,12 @@ with their original span and content setting. Disabling instrumentation does not
 abandon in-flight spans. `setMeterProvider` remains supported by the instrumentation
 base, but workflows do not create metric instruments or record client metrics.
 
+Multiple instrumentation instances share one workflow wrapper per method.
+The most recently enabled instance supplies configuration and providers, without
+duplicating telemetry. Disabling it falls back to another enabled instance.
+Original methods are restored only after the last instance is disabled, without
+removing wrappers installed by other code.
+
 This workflow-only phase intentionally does not depend on `@opentelemetry/genai-util`.
 Adoption of its concrete workflow API is deferred to a follow-up once that API is
 ready. Public GenAI utility exports and system-instruction handling are outside

@@ -17,6 +17,36 @@ import { join, normalize } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 
+class TestInstrumentation extends LangChainInstrumentation {
+  declare definitions: InstrumentationNodeModuleDefinition[];
+  protected override init() {
+    this.definitions = super.init();
+    return this.definitions;
+  }
+}
+
+function runnableModule() {
+  return {
+    RunnableSequence: class {
+      invoke(value: unknown) {
+        return value;
+      }
+      batch(value: unknown) {
+        return value;
+      }
+      stream() {}
+      transform() {}
+    },
+    RunnableMap: class {
+      invoke(value: unknown) {
+        return value;
+      }
+      stream() {}
+      transform() {}
+    },
+  };
+}
+
 describe('LangChainInstrumentation', () => {
   let instrumentation: LangChainInstrumentation;
   const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
@@ -70,13 +100,6 @@ describe('LangChainInstrumentation', () => {
   });
 
   it('patches every loaded module copy without touching streaming methods', () => {
-    class TestInstrumentation extends LangChainInstrumentation {
-      declare definitions: InstrumentationNodeModuleDefinition[];
-      protected override init() {
-        this.definitions = super.init();
-        return this.definitions;
-      }
-    }
     const instance = new TestInstrumentation({ enabled: false });
     expect(instance.instrumentationName).toBe(
       '@opentelemetry/instrumentation-langchain'
@@ -100,34 +123,7 @@ describe('LangChainInstrumentation', () => {
     const file = instance.definitions[0].files.find(file =>
       file.name.endsWith('base.cjs')
     )!;
-    function module() {
-      return {
-        RunnableSequence: class {
-          getName() {
-            return 'sequence';
-          }
-          invoke(value: unknown) {
-            return value;
-          }
-          batch(value: unknown) {
-            return value;
-          }
-          stream() {}
-          transform() {}
-        },
-        RunnableMap: class {
-          getName() {
-            return 'map';
-          }
-          invoke(value: unknown) {
-            return value;
-          }
-          stream() {}
-          transform() {}
-        },
-      };
-    }
-    const modules = [module(), module(), module()];
+    const modules = [runnableModule(), runnableModule(), runnableModule()];
     const originals = modules.map(copy => ({
       invoke: copy.RunnableSequence.prototype.invoke,
       batch: copy.RunnableSequence.prototype.batch,
@@ -148,20 +144,17 @@ describe('LangChainInstrumentation', () => {
         instance.enable();
         resetMemoryExporter();
         for (const [index, copy] of modules.entries()) {
+          const invoke = copy.RunnableSequence.prototype.invoke;
+          const batchMethod = copy.RunnableSequence.prototype.batch;
+          const map = copy.RunnableMap.prototype.invoke;
           file.patch(copy);
           file.patch(copy);
-          expect(copy.RunnableSequence.prototype.invoke).toHaveProperty(
-            '__original',
-            originals[index].invoke
-          );
-          expect(copy.RunnableSequence.prototype.batch).toHaveProperty(
-            '__original',
-            originals[index].batch
-          );
-          expect(copy.RunnableMap.prototype.invoke).toHaveProperty(
-            '__original',
-            originals[index].map
-          );
+          expect(copy.RunnableSequence.prototype.invoke).toBe(invoke);
+          expect(copy.RunnableSequence.prototype.batch).toBe(batchMethod);
+          expect(copy.RunnableMap.prototype.invoke).toBe(map);
+          expect(invoke).not.toBe(originals[index].invoke);
+          expect(batchMethod).not.toBe(originals[index].batch);
+          expect(map).not.toBe(originals[index].map);
           expect(copy.RunnableSequence.prototype.stream).toBe(
             originals[index].stream
           );
@@ -191,6 +184,125 @@ describe('LangChainInstrumentation', () => {
       instance.disable();
     }
   });
+
+  for (const firstDisabled of [0, 1]) {
+    it(`keeps shared workflow patches active when instance ${firstDisabled + 1} is disabled first`, () => {
+      const instances = [
+        new TestInstrumentation({ enabled: false }),
+        new TestInstrumentation({
+          enabled: false,
+          captureMessageContent: 'span_only',
+        }),
+      ];
+      const copy = runnableModule();
+      const methods = () => [
+        copy.RunnableSequence.prototype.invoke,
+        copy.RunnableSequence.prototype.batch,
+        copy.RunnableMap.prototype.invoke,
+      ];
+      const originals = methods();
+      const check = (owner?: number) => {
+        resetMemoryExporter();
+        expect(new copy.RunnableSequence().invoke('input')).toBe('input');
+        const batch = ['input'];
+        expect(new copy.RunnableSequence().batch(batch)).toBe(batch);
+        expect(new copy.RunnableMap().invoke('input')).toBe('input');
+        const spans = getTestSpans();
+        expect(spans).toHaveLength(owner === undefined ? 0 : 3);
+        for (const span of spans) {
+          expect('gen_ai.input.messages' in span.attributes).toBe(owner === 1);
+        }
+      };
+      try {
+        for (const instance of instances) {
+          instance.enable();
+          const file = instance.definitions[0].files[0];
+          file.moduleExports = copy;
+          file.patch(copy);
+        }
+        for (let cycle = 0; cycle < 2; cycle++) {
+          instances[0].enable();
+          instances[1].enable();
+          const wrappers = methods();
+          for (const instance of instances) {
+            instance.enable();
+            instance.definitions[0].files[0].patch(copy);
+          }
+          expect(methods()).toEqual(wrappers);
+          check(1);
+          instances[firstDisabled].disable();
+          instances[firstDisabled].disable();
+          expect(methods()).toEqual(wrappers);
+          check(1 - firstDisabled);
+          instances[firstDisabled].enable();
+          expect(methods()).toEqual(wrappers);
+          check(firstDisabled);
+          instances[1 - firstDisabled].disable();
+          expect(methods()).toEqual(wrappers);
+          check(firstDisabled);
+          instances[firstDisabled].disable();
+          expect(methods()).toEqual(originals);
+          check();
+          expect(
+            wrappers[0].call(new copy.RunnableSequence(), 'saved wrapper')
+          ).toBe('saved wrapper');
+          expect(getTestSpans()).toHaveLength(0);
+        }
+      } finally {
+        for (const instance of instances) instance.disable();
+      }
+    });
+  }
+
+  for (const installed of ['before', 'after']) {
+    it(`preserves another wrapper installed ${installed} the workflow patch`, () => {
+      const instance = new TestInstrumentation({ enabled: false });
+      const copy = runnableModule();
+      const target = copy.RunnableSequence.prototype;
+      const original = target.invoke;
+      const calls = sinon.spy();
+      const unwrap = sinon.spy(() => {
+        target.invoke = original;
+      });
+      const wrap = () => {
+        const previous = target.invoke;
+        const wrapper = Object.assign(
+          function (this: typeof target, value: unknown) {
+            calls();
+            return previous.call(this, value);
+          },
+          { __original: previous, __wrapped: true, __unwrap: unwrap }
+        );
+        target.invoke = wrapper;
+        return wrapper;
+      };
+      let otherWrapper = installed === 'before' ? wrap() : undefined;
+      try {
+        instance.enable();
+        const file = instance.definitions[0].files[0];
+        file.moduleExports = copy;
+        file.patch(copy);
+        if (installed === 'after') otherWrapper = wrap();
+        for (let cycle = 0; cycle < 2; cycle++) {
+          instance.enable();
+          resetMemoryExporter();
+          expect(new copy.RunnableSequence().invoke('enabled')).toBe('enabled');
+          expect(getTestSpans()).toHaveLength(1);
+          instance.disable();
+          expect(target.invoke).toBe(otherWrapper);
+          expect(new copy.RunnableSequence().invoke('disabled')).toBe(
+            'disabled'
+          );
+          expect(getTestSpans()).toHaveLength(1);
+        }
+        expect(calls.callCount).toBe(4);
+        expect(unwrap.called).toBe(false);
+      } finally {
+        instance.disable();
+        target.invoke = original;
+      }
+    });
+  }
 
   describe('constructor', () => {
     it('should create an instance', () => {
