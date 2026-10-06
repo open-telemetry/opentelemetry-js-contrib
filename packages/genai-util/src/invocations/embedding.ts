@@ -47,10 +47,10 @@ function buildInitialAttributes(
   options: EmbeddingInvocationOptions
 ): Attributes {
   const attrs: Attributes = {
+    ...options.attributes,
     [ATTR_GEN_AI_PROVIDER_NAME]: options.providerName,
     [ATTR_GEN_AI_OPERATION_NAME]:
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
-    ...options.attributes,
   };
 
   if (options.requestModel) {

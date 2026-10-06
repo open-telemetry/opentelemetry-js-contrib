@@ -176,7 +176,7 @@ export class InferenceInvocation extends BaseInvocation {
    * Set finish reasons for the response choices.
    */
   public setFinishReasons(reasons: readonly FinishReason[]): this {
-    const arr = typeof reasons === 'string' ? [reasons] : [...reasons];
+    const arr = [...reasons];
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
     return this;
   }
@@ -293,9 +293,9 @@ export class InferenceInvocation extends BaseInvocation {
     }
     if (this._serverAddress) {
       metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-    }
-    if (this._serverPort !== undefined) {
-      metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      if (this._serverPort !== undefined) {
+        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      }
     }
     return metricAttrs;
   }

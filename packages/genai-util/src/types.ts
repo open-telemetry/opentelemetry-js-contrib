@@ -41,12 +41,12 @@ export type FinishReason =
 /**
  * Role of the message sender in a chat conversation.
  */
-export type Role = 'system' | 'user' | 'assistant' | 'tool' | string;
+export type Role = 'system' | 'user' | 'assistant' | 'tool' | (string & {});
 
 /**
  * Modality of multimodal content (e.g. image, video, audio, document).
  */
-export type Modality = 'image' | 'video' | 'audio' | 'document' | string;
+export type Modality = 'image' | 'video' | 'audio' | 'document' | (string & {});
 
 /**
  * The modality of the tokens being counted (`gen_ai.token.modality`).
@@ -65,7 +65,7 @@ export type TokenCountsByModality = Partial<Record<TokenModality, number>>;
  *
  * Corresponds to `gen_ai.tool.type`.
  */
-export type ToolType = 'function' | 'extension' | 'datastore' | string;
+export type ToolType = 'function' | 'extension' | 'datastore' | (string & {});
 
 /**
  * Lifecycle status of a generated response, as reported by the provider.
@@ -79,7 +79,7 @@ export type ResponseStatus =
   | 'incomplete'
   | 'failed'
   | 'cancelled'
-  | string;
+  | (string & {});
 
 // ============================================================================
 // Message Parts (per gen-ai-input-messages.json / gen-ai-output-messages.json)
