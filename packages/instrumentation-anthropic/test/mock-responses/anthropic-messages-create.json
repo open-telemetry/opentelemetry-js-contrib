@@ -1,0 +1,47 @@
+[
+    {
+        "scope": "https://api.anthropic.com:443",
+        "method": "POST",
+        "path": "/v1/messages",
+        "body": {
+            "model": "claude-haiku-4-5-20251001",
+            "max_tokens": 16,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Reply with exactly two words: Hello telemetry"
+                }
+            ]
+        },
+        "status": 200,
+        "response": [
+            "1bfa01008cd315f3a28475cf7f5867ea2f1fbc55312df91fc4d661e9ea3b75535f5f5ff1d11a7b6b2053bb4c22d8e289a4edfa5c51941237b8cd873501f70a60c546633bac6f0451c32aacca3ea20f44411011021b90541e09a2b8731f2fcbd8a8bb2a3dbacf75756e8b708b500fb903589d18446516731c10891579ea3361c853d9a86bc117db45edc44ee2d4e5802f1cd902d589a044a6f8136de8a436d54d99629215d912c1dc971da7b8a860429424d213e150892b0644ab24b115725205236c939d593cb9c7ef4eee3b89531a31a90966ee8115fd9d25644d5dc08ae16c4475e094001a7b0841ea56e8a481e764d6a5594d2c1fe0c10e0c2fcdaa3ab022212e"
+        ],
+        "rawHeaders": {
+            "anthropic-ratelimit-input-tokens-limit": "10000000",
+            "anthropic-ratelimit-input-tokens-remaining": "10000000",
+            "anthropic-ratelimit-input-tokens-reset": "2026-09-24T03:21:53Z",
+            "anthropic-ratelimit-output-tokens-limit": "2000000",
+            "anthropic-ratelimit-output-tokens-remaining": "2000000",
+            "anthropic-ratelimit-output-tokens-reset": "2026-09-24T03:21:53Z",
+            "anthropic-ratelimit-requests-limit": "10000",
+            "anthropic-ratelimit-requests-remaining": "9999",
+            "anthropic-ratelimit-requests-reset": "2026-09-24T03:21:52Z",
+            "anthropic-ratelimit-tokens-limit": "12000000",
+            "anthropic-ratelimit-tokens-remaining": "12000000",
+            "anthropic-ratelimit-tokens-reset": "2026-09-24T03:21:53Z",
+            "cf-cache-status": "DYNAMIC",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+            "content-type": "application/json",
+            "date": "Thu, 24 Sep 2026 03:21:53 GMT",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "vary": "Accept-Encoding",
+            "x-robots-tag": "none"
+        },
+        "responseIsBinary": false
+    }
+]
