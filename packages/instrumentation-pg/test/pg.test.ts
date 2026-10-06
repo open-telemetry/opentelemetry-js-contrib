@@ -1393,96 +1393,108 @@ describe('pg', () => {
 
     it('should generate db.client.operation.duration metric', done => {
       client.query('SELECT NOW()', async (_, ret) => {
-        assert.ok(ret, 'query should be executed');
+        try {
+          assert.ok(ret, 'query should be executed');
 
-        const { resourceMetrics, errors } = await metricReader.collect();
-        assert.deepEqual(
-          errors,
-          [],
-          'expected no errors from the callback during metric collection'
-        );
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
 
-        const metrics = resourceMetrics.scopeMetrics[0].metrics;
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          METRIC_DB_CLIENT_OPERATION_DURATION
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'Duration of database client operations.'
-        );
-        const dataPoint = metrics[0].dataPoints[0];
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
-          DB_SYSTEM_NAME_VALUE_POSTGRESQL
-        );
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-          'SELECT'
-        );
-        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+            DB_SYSTEM_NAME_VALUE_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+            'SELECT'
+          );
+          assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
 
-        const v = (dataPoint as DataPoint<Histogram>).value;
-        v.min = v.min ? v.min : 0;
-        v.max = v.max ? v.max : 0;
-        assert.equal(
-          v.min > 0,
-          true,
-          'expect min value for Histogram to be greater than 0'
-        );
-        assert.equal(
-          v.max > 0,
-          true,
-          'expect max value for Histogram to be greater than 0'
-        );
-        done();
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
+          );
+          done();
+        } catch (e) {
+          // An assertion failing inside this async callback would otherwise
+          // surface as a timeout instead of the actual error.
+          done(e);
+        }
       });
     });
 
     it('should generate db.client.operation.duration metric with error attribute', done => {
       client.query('SELECT foo from bar', async (err, ret) => {
-        assert.notEqual(err, null);
-        const { resourceMetrics, errors } = await metricReader.collect();
-        assert.deepEqual(
-          errors,
-          [],
-          'expected no errors from the callback during metric collection'
-        );
+        try {
+          assert.notEqual(err, null);
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
 
-        const metrics = resourceMetrics.scopeMetrics[0].metrics;
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          METRIC_DB_CLIENT_OPERATION_DURATION
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'Duration of database client operations.'
-        );
-        const dataPoint = metrics[0].dataPoints[0];
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
-          DB_SYSTEM_NAME_VALUE_POSTGRESQL
-        );
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-          'SELECT'
-        );
-        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '42P01');
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+            DB_SYSTEM_NAME_VALUE_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+            'SELECT'
+          );
+          assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '42P01');
 
-        const v = (dataPoint as DataPoint<Histogram>).value;
-        v.min = v.min ? v.min : 0;
-        v.max = v.max ? v.max : 0;
-        assert.equal(
-          v.min > 0,
-          true,
-          'expect min value for Histogram to be greater than 0'
-        );
-        assert.equal(
-          v.max > 0,
-          true,
-          'expect max value for Histogram to be greater than 0'
-        );
-        done();
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
+          );
+          done();
+        } catch (e) {
+          // An assertion failing inside this async callback would otherwise
+          // surface as a timeout instead of the actual error.
+          done(e);
+        }
       });
     });
   });
