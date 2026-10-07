@@ -159,7 +159,7 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
         const span = trace.getSpan(context.active());
         const conn = this['_connection'];
 
-        if (span !== undefined && conn !== undefined) {
+        if (span !== undefined && conn !== undefined && span.isRecording()) {
           const port = parseInt(conn.port, 10);
 
           span.setAttribute(ATTR_SERVER_ADDRESS, conn.address);
