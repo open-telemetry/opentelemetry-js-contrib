@@ -107,8 +107,9 @@ describe('dns.lookup()', () => {
       // So rather than fail the test -- just take a little longer
       this.timeout(10000);
 
-      it('should export a valid span with error NOT_FOUND', done => {
-        const hostname = 'ᚕ';
+      it('should export a valid span with error EINVAL', done => {
+        // Over-long name: the resolver rejects it immediately, without a network round trip
+        const hostname = `${'a'.repeat(300)}.invalid`;
         dns.lookup(hostname, (err, address, family) => {
           assert.ok(err);
 
