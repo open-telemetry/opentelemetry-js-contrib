@@ -18,6 +18,8 @@ import {
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
 } from '../../src/semconv';
@@ -284,5 +286,118 @@ describe('EmbeddingInvocation', () => {
       span.attributes[ATTR_GEN_AI_REQUEST_MODEL],
       'text-embedding-3-small'
     );
+  });
+
+  describe('token usage', () => {
+    it('should record gen_ai.usage.input_tokens on the span', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const invocation = handler.startEmbedding({
+        providerName: 'openai',
+        requestModel: 'text-embedding-3-small',
+      });
+
+      invocation.setUsage({ inputTokens: { text: 120 } });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 120);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS],
+        undefined
+      );
+    });
+
+    it('should merge multiple setUsage calls', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const invocation = handler.startEmbedding({
+        providerName: 'openai',
+      });
+
+      invocation.setUsage({ inputTokens: { text: 50 } });
+      invocation.setUsage({ inputTokens: { text: 100 } });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 100);
+    });
+
+    it('should infer inputTokens from cache read and cache write tokens', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const invocation = handler.startEmbedding({
+        providerName: 'openai',
+      });
+
+      invocation.setUsage({
+        cacheReadTokens: { text: 30 },
+        cacheWriteTokens: { text: 20 },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
+    });
+
+    it('should record explicit 0 on the span but ignore negative counts', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const invZero = handler.startEmbedding({ providerName: 'openai' });
+      invZero.setUsage({ inputTokens: { text: 0 } });
+      invZero.stop();
+
+      const invNegative = handler.startEmbedding({ providerName: 'openai' });
+      invNegative.setUsage({ inputTokens: { text: -5 } });
+      invNegative.stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
+        0
+      );
+      assert.strictEqual(
+        spans[1].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
+        undefined
+      );
+    });
+
+    it('should not record token metrics for embedding invocations', async () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      const invocation = handler.startEmbedding({
+        providerName: 'openai',
+      });
+      invocation.setUsage({ inputTokens: { text: 100 } });
+      invocation.stop();
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      assert.deepStrictEqual(
+        metrics.map(m => m.descriptor.name),
+        [METRIC_GEN_AI_CLIENT_OPERATION_DURATION]
+      );
+    });
   });
 });

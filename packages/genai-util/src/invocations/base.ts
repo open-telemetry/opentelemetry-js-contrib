@@ -59,7 +59,7 @@ export interface BaseInvocationOptions {
    * other unbounded values here.
    *
    * These override the semantic convention dimensions that the concrete invocation
-   * reports (see {@link BaseInvocation._getSemconvMetricAttributes}): when both define
+   * reports (see {@link BaseInvocation._getSemconvMetricAttributes()}): when both define
    * the same key, the value given here (or later via
    * {@link BaseInvocation.setMetricAttribute}) wins. The only exception is `error.type`,
    * which always reflects the resolved failure.

@@ -28,6 +28,7 @@ import type {
   SystemInstructions,
   TokenCountsByModality,
   TokenUsage,
+  TokenModality,
 } from './types';
 
 /**
@@ -402,4 +403,51 @@ export function sumTokenCountsAcrossModalities(
     }
   }
   return sum;
+}
+
+/**
+ * Return a copy of `usage` with `inputTokens` and `outputTokens` inferred if
+ * not already defined. The caller-supplied object is not modified.
+ */
+export function inferMissingTokenCounts(usage: TokenUsage): TokenUsage {
+  const result: TokenUsage = { ...usage };
+  if (result.inputTokens === undefined) {
+    const combinedInput = combineTokenCounts(
+      result.cacheReadTokens,
+      result.cacheWriteTokens
+    );
+    if (combinedInput !== undefined) {
+      result.inputTokens = combinedInput;
+    }
+  }
+  if (result.outputTokens === undefined) {
+    const inferredOutput = combineTokenCounts(result.reasoningTokens);
+    if (inferredOutput !== undefined) {
+      result.outputTokens = inferredOutput;
+    }
+  }
+  return result;
+}
+
+/**
+ * Add up the positive counts of each modality across `countsList`.
+ *
+ * Returns `undefined` when there is no positive count, so that an inferred
+ * value never introduces a `0` that the caller did not report.
+ */
+function combineTokenCounts(
+  ...countsList: (TokenCountsByModality | undefined)[]
+): TokenCountsByModality | undefined {
+  let combined: TokenCountsByModality | undefined;
+  for (const counts of countsList) {
+    if (!counts) continue;
+    for (const [modality, val] of Object.entries(counts)) {
+      if (val !== undefined && val > 0) {
+        combined = combined ?? {};
+        const key = modality as TokenModality;
+        combined[key] = (combined[key] ?? 0) + val;
+      }
+    }
+  }
+  return combined;
 }

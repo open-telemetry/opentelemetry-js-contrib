@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SpanKind, type Attributes } from '@opentelemetry/api';
+import { HrTime, SpanKind, type Attributes } from '@opentelemetry/api';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -16,10 +16,16 @@ import {
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_RESPONSE_MODEL,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
 } from '../semconv';
-import type { EmbeddingInvocationOptions } from '../types';
+import type { EmbeddingInvocationOptions, TokenUsage } from '../types';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
+import {
+  mergeTokenUsage,
+  inferMissingTokenCounts,
+  sumTokenCountsAcrossModalities,
+} from '../utils';
 
 /**
  * Format a GenAI span name for an embedding invocation adhering to
@@ -83,6 +89,7 @@ export class EmbeddingInvocation extends BaseInvocation {
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
+  private _usage?: TokenUsage;
   private _responseModel?: string;
 
   /**
@@ -148,6 +155,37 @@ export class EmbeddingInvocation extends BaseInvocation {
       }
     }
     return metricAttrs;
+  }
+
+  protected override _onInvocationEnd(
+    _endTime: HrTime,
+    _errorType?: string
+  ): void {
+    if (this._usage) {
+      this._usage = inferMissingTokenCounts(this._usage);
+      const total = sumTokenCountsAcrossModalities(this._usage.inputTokens);
+      if (total !== undefined) {
+        this._span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, total);
+      }
+    }
+  }
+
+  /**
+   * Record token usage.
+   *
+   * May be called multiple times (e.g. when a streaming provider reports input
+   * and output tokens in separate events). Only fields that are defined in
+   * `usage` are updated; previously recorded values for other fields are kept.
+   * The span attributes are derived from the merged usage once, when the invocation ends.
+   *
+   * Only input usage tokens are supported for Embedding Invocations.
+   *
+   * Note (applied to the merged usage when the invocation ends):
+   * If `usage` TokenUsage does not contain inputTokens, it is inferred using the cache read tokens and cache write tokens.
+   */
+  public setUsage(usage: TokenUsage): this {
+    this._usage = mergeTokenUsage(this._usage, usage);
+    return this;
   }
 
   protected override _recordMetrics(
