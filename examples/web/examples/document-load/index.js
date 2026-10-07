@@ -5,12 +5,12 @@
 
 'use strict';
 
-import { context, trace } from '@opentelemetry/api';
+import { context, propagation, trace } from '@opentelemetry/api';
 import {
   ConsoleSpanExporter,
   SimpleSpanProcessor,
+  TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { ZoneContextManager } from '@opentelemetry/context-zone';
@@ -21,25 +21,30 @@ import {
   W3CTraceContextPropagator,
 } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { resourceFromAttributes } from '@opentelemetry/resources';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 
-const provider = new WebTracerProvider({
-  resource: resourceFromAttributes({
-    [ATTR_SERVICE_NAME]: 'web-service-dl',
-  }),
+const tracerProvider = new TracerProvider({
+  resource: defaultResource().merge(
+    resourceFromAttributes({
+      [ATTR_SERVICE_NAME]: 'web-service-dl',
+    })
+  ),
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
     new SimpleSpanProcessor({ exporter: new OTLPTraceExporter() }),
   ],
 });
-
-provider.register({
-  contextManager: new ZoneContextManager(),
-  propagator: new CompositePropagator({
-    propagators: [new B3Propagator(), new W3CTraceContextPropagator()],
-  }),
+trace.setGlobalTracerProvider(tracerProvider);
+context.setGlobalContextManager(new ZoneContextManager().enable());
+const propagator = new CompositePropagator({
+  propagators: [new B3Propagator(), new W3CTraceContextPropagator()],
 });
+propagation.setGlobalPropagator(propagator);
+
 registerInstrumentations({
   instrumentations: [
     new DocumentLoadInstrumentation(),
@@ -48,10 +53,9 @@ registerInstrumentations({
       propagateTraceHeaderCorsUrls: ['http://localhost:8090'],
     }),
   ],
-  tracerProvider: provider,
 });
 
-const tracer = provider.getTracer('example-document-load');
+const tracer = trace.getTracer('example-document-load');
 
 const getData = url =>
   new Promise((resolve, reject) => {
@@ -74,7 +78,7 @@ const prepareClickEvent = () => {
   const url1 =
     'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
   const url2 =
-    'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/packages/opentelemetry-sdk-trace-web/package.json';
+    'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/packages/sdk-trace/package.json';
 
   const element = document.getElementById('button1');
 

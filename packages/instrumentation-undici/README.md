@@ -68,12 +68,13 @@ Attributes collected:
 
 | Attribute                      | Short Description                                                                                          |
 |--------------------------------|------------------------------------------------------------------------------------------------------------|
-| `error.type`                   | Describes a class of error the operation ended with.                                                       |
+| `error.type`                   | An HTTP status code, as a string, for HTTP responses >=400; or [an `'UND_ERR_*'` code](https://undici.nodejs.org/api/Errors) if the request errored without a server response. Excluded if the request succeeded. |
 | `http.request.method`          | HTTP request method.                                                                                       |
 | `http.request.method_original` | Original HTTP method sent by the client in the request line.                                               |
 | `http.response.status_code`    | [HTTP response status code](https://tools.ietf.org/html/rfc7231#section-6).                                |
 | `network.peer.address`         | Peer address of the network connection - IP address or Unix domain socket name.                            |
 | `network.peer.port`            | Peer port number of the network connection.                                                                |
+| `network.protocol.version`     | The version of the network protocol being used.                                                            |
 | `server.address`               | Server domain name, IP address or Unix domain socket name.                                                 |
 | `server.port`                  | Server port number.                                                                                        |
 | `url.full`                     | Absolute URL describing a network resource according to [RFC3986](https://www.rfc-editor.org/rfc/rfc3986). |

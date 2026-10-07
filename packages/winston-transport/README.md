@@ -53,6 +53,15 @@ const logger = winston.createLogger({
 > [!IMPORTANT]
 > Logs will be duplicated if `@opentelemetry/winston-transport` is added as a transport in `winston` and `@opentelemetry/instrumentation-winston` is configured with `disableLogSending: false`.
 
+### Error handling
+
+`Error` instances assigned to the conventional `error` or `err` fields are
+emitted through the OpenTelemetry Logs API exception field. Instances assigned
+to other metadata fields, including errors nested in arrays or objects, are
+converted to structured attributes containing their `name`, `message`, `stack`,
+and other own properties. Circular references in serialized error metadata are
+represented as `[Circular]`.
+
 ### Supported versions
 
 - [`winston`](https://www.npmjs.com/package/winston) versions `>=3.0.0 <4`

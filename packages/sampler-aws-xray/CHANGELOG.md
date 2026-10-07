@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sampler-aws-xray-v0.2.0...sampler-aws-xray-v0.3.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585))
+
+### Features
+
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585)) ([5b7dd0e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5b7dd0e102e940d653e04b08b5a1b721a8271037))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sampler-aws-xray-v0.1.2...sampler-aws-xray-v0.2.0) (2025-12-17)
 
 

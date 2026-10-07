@@ -18,7 +18,7 @@ const readPkg = dir =>
   JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8'));
 const pkgInfo = readPkg('.');
 const pkgFiles = pkgInfo.workspaces.map(exp =>
-  globSync(path.join(exp, 'package.json'))
+  globSync(`${exp}/package.json`, { posix: true })
 );
 const pkgsWithFlag = pkgFiles.flat().map(f => {
   const path = f.replace('package.json', '');

@@ -1,6 +1,37 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.67.0...instrumentation-document-load-v0.68.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Bug Fixes
+
+* **instrumentation-document-load:** replace deprecated otperformance ([#3727](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3727)) ([59b65c4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/59b65c4409411dfb32c934790de2c598edba3ec5))
+
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.66.0...instrumentation-document-load-v0.67.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.65.0...instrumentation-document-load-v0.66.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+* only emit stable http, network and database attributes ([#3585](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3585)) ([5b7dd0e](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5b7dd0e102e940d653e04b08b5a1b721a8271037))
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.64.0...instrumentation-document-load-v0.65.0) (2026-07-03)
 
 

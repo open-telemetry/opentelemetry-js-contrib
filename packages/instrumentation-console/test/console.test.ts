@@ -164,4 +164,32 @@ describe('ConsoleInstrumentation', () => {
       instrumentation.enable();
     });
   });
+
+  describe('construction-time enable', () => {
+    it('restores original console methods on disable() when constructed with { enabled: true }', () => {
+      // Capture the shared instrumentation's patched console.log so we can
+      // assert disable() restores it exactly.
+      const beforeLog = console.log;
+
+      // { enabled: true } triggers enable() from InstrumentationBase's
+      // constructor, patching console and saving originals.
+      const inst = new ConsoleInstrumentation({ enabled: true });
+      try {
+        assert.notStrictEqual(
+          console.log,
+          beforeLog,
+          'expected console.log to be patched after construction'
+        );
+      } finally {
+        // Ensure console is unpatched even if the assertion above fails so we
+        // don't leave console.log double-patched for subsequent tests.
+        inst.disable();
+      }
+      assert.strictEqual(
+        console.log,
+        beforeLog,
+        'expected console.log to be restored after disable()'
+      );
+    });
+  });
 });

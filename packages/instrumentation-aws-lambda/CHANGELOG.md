@@ -1,6 +1,32 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.75.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.74.0...instrumentation-aws-lambda-v0.75.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+## [0.74.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.73.0...instrumentation-aws-lambda-v0.74.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+## [0.73.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.72.0...instrumentation-aws-lambda-v0.73.0) (2026-07-23)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+
+
+### Bug Fixes
+
+* **lint:deps:** fix knip failure ([#3616](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3616)) ([cb0c0a0](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cb0c0a0e2e9bb22ebc2ddf86a39927d18b756a5e))
+
 ## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.71.0...instrumentation-aws-lambda-v0.72.0) (2026-07-03)
 
 

@@ -25,7 +25,7 @@ import {
   StackContextManager,
 } from '@opentelemetry/sdk-trace-web';
 
-// @ts-expect-error cjs still works
+// @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';

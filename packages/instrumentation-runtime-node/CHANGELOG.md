@@ -1,6 +1,32 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.35.0...instrumentation-runtime-node-v0.36.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.34.0...instrumentation-runtime-node-v0.35.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.33.0...instrumentation-runtime-node-v0.34.0) (2026-07-23)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-runtime-node:** remove deprecated v8js.memory.heap.limit metric ([#3632](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3632))
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+* **instrumentation-runtime-node:** remove deprecated v8js.memory.heap.limit metric ([#3632](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3632)) ([f698292](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f69829245952b95f5d1827b0a6cee67499f85bc6))
+
 ## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.32.0...instrumentation-runtime-node-v0.33.0) (2026-07-03)
 
 

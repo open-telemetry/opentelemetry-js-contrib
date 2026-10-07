@@ -21,7 +21,7 @@ const instrumentation = registerInstrumentationTesting(
   new TypeormInstrumentation()
 );
 import * as typeorm from 'typeorm';
-import { defaultOptions, User } from './utils';
+import { defaultOptions, sqliteDriverType, User } from './utils';
 
 describe('EntityManager', () => {
   after(() => {
@@ -164,7 +164,7 @@ describe('EntityManager', () => {
   describe('multiple connections', () => {
     const options2: any = {
       name: 'connection2',
-      type: 'sqlite',
+      type: sqliteDriverType,
       database: 'connection2.db',
       entities: [User],
       synchronize: true,

@@ -43,6 +43,10 @@ export const AKS_CLUSTER_RESOURCE_ID = 'CLUSTER_RESOURCE_ID';
 // AKS ConfigMap file path (mounted from aks-cluster-metadata ConfigMap in kube-public)
 export const AKS_METADATA_FILE_PATH = '/etc/kubernetes/aks-cluster-metadata';
 
+// The single key of the aks-cluster-metadata ConfigMap. When the ConfigMap is
+// mounted as a volume, Kubernetes creates a file with this name holding the raw value.
+export const AKS_CLUSTER_RESOURCE_ID_KEY = 'clusterResourceId';
+
 export interface AksClusterMetadata {
   name?: string;
   resourceId?: string;

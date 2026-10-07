@@ -42,6 +42,9 @@ components:
     - legendecas
   packages/id-generator-aws-xray:
     - jj22ee
+  packages/genai-util:
+    - psx95
+    - JacksonWeber
   packages/redis-common: []
     # Unmaintained
   packages/contrib-test-utils:
@@ -71,8 +74,8 @@ components:
     - seemk
     - t2t2
     - mhennoch
-  packages/instrumentation-tedious: []
-    # Unmaintained
+  packages/instrumentation-tedious:
+    - aryamohanan
   packages/instrumentation-typeorm:
     - seemk
     - weyert
@@ -148,8 +151,8 @@ components:
     - seemk
   packages/instrumentation-redis:
     - blumamir
-  packages/instrumentation-restify: []
-    # Unmaintained
+  packages/instrumentation-restify:
+    - aryamohanan
   packages/instrumentation-router: []
     # Unmaintained
   packages/instrumentation-undici:
@@ -169,8 +172,6 @@ components:
     - martinkuba
     - pkanal
     - wolfgangcodes
-  packages/plugin-react-load:
-    - martinkuba
   packages/instrumentation-browser-navigation:
     - Abinet18
     - martinkuba

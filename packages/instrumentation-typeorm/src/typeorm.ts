@@ -79,6 +79,7 @@ const entityManagerMethods: EntityManagerMethods[] = [
   ...functionsUsingEntityPersistExecutor,
   ...functionsUsingQueryBuilder,
 ];
+const supportedVersions = ['>=0.3.0 <2'];
 
 export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumentationConfig> {
   constructor(config: TypeormInstrumentationConfig = {}) {
@@ -88,7 +89,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
   protected init() {
     const selectQueryBuilder = new InstrumentationNodeModuleFile(
       'typeorm/query-builder/SelectQueryBuilder.js',
-      ['>=0.3.0 <1'],
+      supportedVersions,
       moduleExports => {
         selectQueryBuilderExecuteMethods.map(method => {
           if (isWrapped(moduleExports.SelectQueryBuilder.prototype?.[method])) {
@@ -115,7 +116,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const dataSource = new InstrumentationNodeModuleFile(
       'typeorm/data-source/DataSource.js',
-      ['>=0.3.0 <1'],
+      supportedVersions,
       moduleExports => {
         if (isWrapped(moduleExports.DataSource.prototype?.[rawQueryFuncName])) {
           this._unwrap(moduleExports.DataSource.prototype, rawQueryFuncName);
@@ -138,10 +139,18 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const entityManager = new InstrumentationNodeModuleFile(
       'typeorm/entity-manager/EntityManager.js',
-      ['>=0.3.0 <1'],
+      supportedVersions,
       moduleExports => {
         entityManagerMethods.map(method => {
-          if (isWrapped(moduleExports.EntityManager.prototype?.[method])) {
+          // some methods do not exist in all supported versions,
+          // e.g. `findByIds` was removed in typeorm@1.0.0
+          if (
+            typeof moduleExports.EntityManager.prototype?.[method] !==
+            'function'
+          ) {
+            return;
+          }
+          if (isWrapped(moduleExports.EntityManager.prototype[method])) {
             this._unwrap(moduleExports.EntityManager.prototype, method);
           }
           this._wrap(
@@ -165,7 +174,7 @@ export class TypeormInstrumentation extends InstrumentationBase<TypeormInstrumen
 
     const module = new InstrumentationNodeModuleDefinition(
       'typeorm',
-      ['>=0.3.0 <1'],
+      supportedVersions,
       undefined,
       undefined,
       [selectQueryBuilder, entityManager, dataSource]

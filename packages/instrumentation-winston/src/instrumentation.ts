@@ -25,6 +25,9 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
+const OTEL_CONTEXT_SYMBOL = Symbol.for(
+  'opentelemetry.js.contrib.winston.context'
+);
 
 export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumentationConfig> {
   constructor(config: WinstonInstrumentationConfig = {}) {
@@ -128,6 +131,7 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
         ...args: Parameters<typeof original>
       ) {
         const record = args[0];
+        record[OTEL_CONTEXT_SYMBOL] = context.active();
         instrumentation._handleLogCorrelation(record);
         return original.apply(this, args);
       };

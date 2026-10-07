@@ -20,6 +20,7 @@ import {
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
@@ -46,6 +47,7 @@ import {
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_DESTINATION_PARTITION_ID,
+  ATTR_MESSAGING_KAFKA_CLUSTER_ID,
   ATTR_MESSAGING_KAFKA_MESSAGE_KEY,
   ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE,
   ATTR_MESSAGING_KAFKA_OFFSET,
@@ -72,6 +74,7 @@ interface ConsumerSpanOptions {
   attributes: Attributes;
   ctx?: Context | undefined;
   link?: Link;
+  kafkaClient?: unknown;
 }
 // This interface acts as a strict subset of the KafkaJS Consumer and
 // Producer interfaces (just for the event we're needing)
@@ -151,6 +154,29 @@ function prepareDurationHistogram<T extends Attributes>(
 const HISTOGRAM_BUCKET_BOUNDARIES = [
   0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
 ];
+
+interface ClusterType {
+  brokerPool?: {
+    metadata?: { clusterId?: string };
+  };
+}
+
+// Maps a Producer/Consumer (or Transaction) to its kafkajs Cluster instance.
+const _clusterWeakMap = new WeakMap<object, ClusterType>();
+
+function _readClusterId(client: unknown): string | undefined {
+  if (client === null || client === undefined) return undefined;
+  const cluster = _clusterWeakMap.get(client as object);
+  try {
+    const clusterId = cluster?.brokerPool?.metadata?.clusterId;
+    return typeof clusterId === 'string' && clusterId !== ''
+      ? clusterId
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumentationConfig> {
   declare private _clientDuration: Histogram<ClientDurationAttributes>;
   declare private _sentMessages: Counter<SentMessagesAttributes>;
@@ -208,7 +234,41 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       },
       unpatch
     );
+    module.files.push(
+      this._getClusterCaptureFile('kafkajs/src/producer/index.js')
+    );
+    module.files.push(
+      this._getClusterCaptureFile('kafkajs/src/consumer/index.js')
+    );
     return module;
+  }
+
+  // kafkajs passes the Cluster as params.cluster into these internal
+  // factories, so no instance patching or restore step is needed. unpatch is
+  // a no-op: the export is replaced wholesale (not a property), so there's
+  // nothing to restore, and the wrapper stays harmless once disabled.
+  private _getClusterCaptureFile(path: string): InstrumentationNodeModuleFile {
+    return new InstrumentationNodeModuleFile(
+      path,
+      ['>=0.3.0 <3'],
+      (moduleExports: unknown) => {
+        if (typeof moduleExports !== 'function') return moduleExports;
+        const originalFactory = moduleExports as (
+          params?: Record<string, unknown>
+        ) => object;
+        return function wrappedFactory(
+          this: unknown,
+          params?: Record<string, unknown>
+        ) {
+          const client = originalFactory.call(this, params);
+          if (params?.cluster) {
+            _clusterWeakMap.set(client, params.cluster as ClusterType);
+          }
+          return client;
+        };
+      },
+      (moduleExports: unknown) => moduleExports
+    );
   }
 
   private _getConsumerPatch() {
@@ -266,7 +326,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
   private _getProducerPatch() {
     const instrumentation = this;
     return (original: kafkaJs.Kafka['producer']) => {
-      return function consumer(
+      return function producer(
         this: kafkaJs.Kafka,
         ...args: Parameters<kafkaJs.Kafka['producer']>
       ) {
@@ -321,7 +381,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._wrap(
             config,
             'eachMessage',
-            instrumentation._getConsumerEachMessagePatch()
+            instrumentation._getConsumerEachMessagePatch(this)
           );
         }
         if (config?.eachBatch) {
@@ -331,7 +391,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           instrumentation._wrap(
             config,
             'eachBatch',
-            instrumentation._getConsumerEachBatchPatch()
+            instrumentation._getConsumerEachBatchPatch(this)
           );
         }
         return original.call(this, config);
@@ -339,7 +399,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     };
   }
 
-  private _getConsumerEachMessagePatch() {
+  private _getConsumerEachMessagePatch(kafkaClient?: unknown) {
     const instrumentation = this;
     return (original: ConsumerRunConfig['eachMessage']) => {
       return function eachMessage(
@@ -357,6 +417,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           message: payload.message,
           operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
           ctx: propagatedContext,
+          kafkaClient,
           attributes: {
             [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
               payload.partition
@@ -402,7 +463,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     };
   }
 
-  private _getConsumerEachBatchPatch() {
+  private _getConsumerEachBatchPatch(kafkaClient?: unknown) {
     return (original: ConsumerRunConfig['eachBatch']) => {
       const instrumentation = this;
       return function eachBatch(
@@ -416,6 +477,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           message: undefined,
           operationType: MESSAGING_OPERATION_TYPE_VALUE_RECEIVE,
           ctx: ROOT_CONTEXT,
+          kafkaClient,
           attributes: {
             [ATTR_MESSAGING_BATCH_MESSAGE_COUNT]: payload.batch.messages.length,
             [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
@@ -463,6 +525,7 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
                   message,
                   operationType: MESSAGING_OPERATION_TYPE_VALUE_PROCESS,
                   link: origSpanLink,
+                  kafkaClient,
                   attributes: {
                     [ATTR_MESSAGING_DESTINATION_PARTITION_ID]: String(
                       payload.batch.partition
@@ -509,11 +572,19 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         ...args: Parameters<Producer['transaction']>
       ): ReturnType<Producer['transaction']> {
         const transactionSpan = instrumentation.tracer.startSpan('transaction');
+        const producer = this;
 
         const transactionPromise = original.apply(this, args);
 
         transactionPromise
           .then((transaction: kafkaJs.Transaction) => {
+            // Register the transaction so _readClusterId works when this=Transaction
+            // inside send/sendBatch wrappers (Transaction is not the Producer).
+            const cluster = _clusterWeakMap.get(producer as object);
+            if (cluster !== undefined) {
+              _clusterWeakMap.set(transaction as object, cluster);
+            }
+
             const originalSend = transaction.send;
             transaction.send = function send(
               this: kafkaJs.Transaction,
@@ -619,7 +690,11 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
         messages.forEach(topicMessage => {
           topicMessage.messages.forEach(message => {
             spans.push(
-              instrumentation._startProducerSpan(topicMessage.topic, message)
+              instrumentation._startProducerSpan(
+                topicMessage.topic,
+                message,
+                this
+              )
             );
             pendingMetrics.push(
               prepareCounter(instrumentation._sentMessages, 1, {
@@ -659,7 +734,11 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
       ): ReturnType<Producer['send']> {
         const record = args[0];
         const spans: Span[] = record.messages.map(message => {
-          return instrumentation._startProducerSpan(record.topic, message);
+          return instrumentation._startProducerSpan(
+            record.topic,
+            message,
+            this
+          );
         });
 
         const pendingMetrics: RecordPendingMetric[] = record.messages.map(m =>
@@ -735,11 +814,14 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     ctx,
     link,
     attributes,
+    kafkaClient,
   }: ConsumerSpanOptions) {
     const operationName =
       operationType === MESSAGING_OPERATION_TYPE_VALUE_RECEIVE
         ? 'poll' // for batch processing spans
         : operationType; // for individual message processing spans
+
+    const clusterId = _readClusterId(kafkaClient);
 
     const span = this.tracer.startSpan(
       `${operationName} ${topic}`,
@@ -760,6 +842,9 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
           [ATTR_MESSAGING_KAFKA_MESSAGE_TOMBSTONE]:
             message?.key && message.value === null ? true : undefined,
           [ATTR_MESSAGING_KAFKA_OFFSET]: message?.offset,
+          ...(clusterId !== undefined
+            ? { [ATTR_MESSAGING_KAFKA_CLUSTER_ID]: clusterId }
+            : {}),
         },
         links: link ? [link] : [],
       },
@@ -780,7 +865,13 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
     return span;
   }
 
-  private _startProducerSpan(topic: string, message: Message) {
+  private _startProducerSpan(
+    topic: string,
+    message: Message,
+    kafkaClient?: unknown
+  ) {
+    const clusterId = _readClusterId(kafkaClient);
+
     const span = this.tracer.startSpan(`send ${topic}`, {
       kind: SpanKind.PRODUCER,
       attributes: {
@@ -797,6 +888,9 @@ export class KafkaJsInstrumentation extends InstrumentationBase<KafkaJsInstrumen
             : undefined,
         [ATTR_MESSAGING_OPERATION_NAME]: 'send',
         [ATTR_MESSAGING_OPERATION_TYPE]: MESSAGING_OPERATION_TYPE_VALUE_SEND,
+        ...(clusterId !== undefined
+          ? { [ATTR_MESSAGING_KAFKA_CLUSTER_ID]: clusterId }
+          : {}),
       },
     });
 

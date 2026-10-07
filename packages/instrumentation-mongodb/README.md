@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`mongodb`](https://github.com/mongodb/node-mongodb-native) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -41,8 +41,6 @@ sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
-See [`examples/mongodb`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mongodb) for a short example.
-
 ### Mongo instrumentation Options
 
 Mongodb instrumentation has few options available to choose from. You can set the following:
@@ -74,7 +72,7 @@ Span attributes:
 
 Metrics collected:
 
-- [`db.client.connections.usage`](https://github.com/open-telemetry/semantic-conventions/blob/v1.24.0/docs/database/database-metrics.md#metric-dbclientconnectionsusage) - The number of connections currently in a given state.
+- [`db.client.connection.count`](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/#metric-dbclientconnectioncount) - The number of connections currently in a given state.
 
 ## Useful links
 

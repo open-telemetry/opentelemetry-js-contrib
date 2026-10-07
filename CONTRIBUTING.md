@@ -15,6 +15,7 @@ We'd love your help!
   - [CHANGELOG](#changelog)
   - [Testing](#testing)
   - [Benchmarks](#benchmarks)
+- [Skills](#skills)
 - [Component Ownership](#component-ownership)
   - [Becoming a Component Owner](#becoming-a-component-owner)
 - [Component Lifecycle](#component-lifecycle)
@@ -132,12 +133,12 @@ The `opentelemetry-js-contrib` project is written in TypeScript.
 As a general rule, installing from the root directory should always be done first before anything else.
 Packages within this repository might have dependencies between them. This means the dependencies should
 be built before if you want to `compile` or `test` the changes you've made in a package. Each package
-has a script to ensure these dependecies are ready.
+has a script to ensure these dependencies are ready.
 
-The required steps to start development on a pacakge are:
+The required steps to start development on a package are:
 
 - `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
-- `cd` into the pacakge you want to apply changes.
+- `cd` into the package you want to apply changes.
 - `npm run compile:with-dependencies` compiles the TypeScript files for this package and its dependencies within the repository.
 
 Then you can proceed to do apply the changes and use the scripts below for development workflow
@@ -193,6 +194,19 @@ npm run test:browser
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
 
 - `npm run bench` to run your benchmark.
+
+## Skills
+
+This repository ships repeatable AI-assisted contribution workflows under
+[`.github/skills`](.github/skills). Trigger them deliberately when starting a
+matching task:
+
+- **`migrate-from-openinference`** - migrate a donated JavaScript or TypeScript
+  OpenInference package into this repository, or augment an existing package
+  with missing coverage.
+
+Please contribute back anything learned while using the skills that could
+improve them.
 
 ## Component Ownership
 
