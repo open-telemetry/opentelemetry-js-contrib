@@ -1,6 +1,39 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.68.0...instrumentation-mysql-v0.69.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.69.0 to ^0.70.0
+
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.67.0...instrumentation-mysql-v0.68.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **deps:** move unused [@types](https://github.com/types) packages out of runtime dependencies ([#3702](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3702)) ([49ebdaf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49ebdaf9cac16d74ed748ae15a5bc573a82e4a0e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.66.0...instrumentation-mysql-v0.67.0) (2026-07-23)
 
 

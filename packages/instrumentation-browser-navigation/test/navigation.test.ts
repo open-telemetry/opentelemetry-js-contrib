@@ -21,7 +21,7 @@ import {
 } from '../src/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 import { logs } from '@opentelemetry/api-logs';
-// @ts-expect-error cjs still works
+// @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 // registerInstrumentations removed - using plugin.enable() directly
 

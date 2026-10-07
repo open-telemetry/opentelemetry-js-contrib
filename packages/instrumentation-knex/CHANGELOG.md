@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.66.0...instrumentation-knex-v0.67.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.65.0...instrumentation-knex-v0.66.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-knex-v0.64.0...instrumentation-knex-v0.65.0) (2026-07-23)
 
 

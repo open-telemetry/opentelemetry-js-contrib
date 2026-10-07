@@ -1,6 +1,36 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.67.0...auto-instrumentations-web-v0.68.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.67.0 to ^0.68.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.66.0 to ^0.67.0
+
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.66.0...auto-instrumentations-web-v0.67.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.66.0 to ^0.67.0
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.65.0 to ^0.66.0
+
 ## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.65.0...auto-instrumentations-web-v0.66.0) (2026-07-23)
 
 
