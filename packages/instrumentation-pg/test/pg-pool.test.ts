@@ -764,69 +764,75 @@ describe('pg-pool', () => {
 
         client.query('SELECT NOW()', async (err, ret) => {
           release();
-          if (err) {
-            throw new Error(err.message);
+          try {
+            if (err) {
+              throw new Error(err.message);
+            }
+            assert.ok(ret);
+
+            const { resourceMetrics, errors } = await metricReader.collect();
+            assert.deepEqual(
+              errors,
+              [],
+              'expected no errors from the callback during metric collection'
+            );
+
+            const metrics = resourceMetrics.scopeMetrics[0].metrics;
+            assert.strictEqual(
+              metrics[0].descriptor.name,
+              METRIC_DB_CLIENT_OPERATION_DURATION
+            );
+
+            assert.strictEqual(
+              metrics[1].descriptor.name,
+              METRIC_DB_CLIENT_CONNECTION_COUNT
+            );
+            assert.strictEqual(
+              metrics[1].descriptor.description,
+              'The number of connections that are currently in state described by the state attribute.'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].attributes[
+                ATTR_DB_CLIENT_CONNECTION_STATE
+              ],
+              'used'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].value,
+              1,
+              'expected to have 1 used connection'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[1].attributes[
+                ATTR_DB_CLIENT_CONNECTION_STATE
+              ],
+              'idle'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[1].value,
+              0,
+              'expected to have 0 idle connections'
+            );
+
+            assert.strictEqual(
+              metrics[2].descriptor.name,
+              METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
+            );
+            assert.strictEqual(
+              metrics[2].descriptor.description,
+              'The number of current pending requests for an open connection.'
+            );
+            assert.strictEqual(
+              metrics[2].dataPoints[0].value,
+              0,
+              'expected to have 0 pending requests'
+            );
+            done();
+          } catch (e) {
+            // An assertion failing inside this async callback would otherwise
+            // surface as a timeout instead of the actual error.
+            done(e);
           }
-          assert.ok(ret);
-
-          const { resourceMetrics, errors } = await metricReader.collect();
-          assert.deepEqual(
-            errors,
-            [],
-            'expected no errors from the callback during metric collection'
-          );
-
-          const metrics = resourceMetrics.scopeMetrics[0].metrics;
-          assert.strictEqual(
-            metrics[0].descriptor.name,
-            METRIC_DB_CLIENT_OPERATION_DURATION
-          );
-
-          assert.strictEqual(
-            metrics[1].descriptor.name,
-            METRIC_DB_CLIENT_CONNECTION_COUNT
-          );
-          assert.strictEqual(
-            metrics[1].descriptor.description,
-            'The number of connections that are currently in state described by the state attribute.'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
-            ],
-            'used'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].value,
-            1,
-            'expected to have 1 used connection'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[1].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
-            ],
-            'idle'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[1].value,
-            0,
-            'expected to have 0 idle connections'
-          );
-
-          assert.strictEqual(
-            metrics[2].descriptor.name,
-            METRIC_DB_CLIENT_CONNECTION_PENDING_REQUESTS
-          );
-          assert.strictEqual(
-            metrics[2].descriptor.description,
-            'The number of current pending requests for an open connection.'
-          );
-          assert.strictEqual(
-            metrics[2].dataPoints[0].value,
-            0,
-            'expected to have 0 pending requests'
-          );
-          done();
         });
       });
     });
@@ -1002,8 +1008,7 @@ describe('pg-pool', () => {
       const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
 
       const finish = () => {
-        poolAux.end();
-        done();
+        poolAux.end(() => done());
       };
 
       let completed = 0;
@@ -1109,64 +1114,69 @@ describe('pg-pool', () => {
 
         client.query('SELECT NOW()', async (err, ret) => {
           release();
-          if (err) {
-            throw new Error(err.message);
+          try {
+            if (err) {
+              throw new Error(err.message);
+            }
+            assert.ok(ret);
+            assert.equal(
+              poolAux.listenerCount('connect'),
+              2,
+              `${poolAux.listenerCount(
+                'connect'
+              )} event listener(s) for 'connect'`
+            );
+            assert.equal(
+              poolAux.listenerCount('acquire'),
+              1,
+              `${poolAux.listenerCount(
+                'acquire'
+              )} event listener(s) for 'acquire'`
+            );
+            assert.equal(
+              poolAux.listenerCount('remove'),
+              1,
+              `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
+            );
+            assert.equal(
+              poolAux.listenerCount('release'),
+              1,
+              `${poolAux.listenerCount(
+                'release'
+              )} event listener(s) for 'release'`
+            );
+            assert.equal(testValue, 1);
+
+            const { resourceMetrics, errors } = await metricReader.collect();
+            assert.deepEqual(
+              errors,
+              [],
+              'expected no errors from the callback during metric collection'
+            );
+
+            const metrics = resourceMetrics.scopeMetrics[0].metrics;
+            assert.strictEqual(
+              metrics[1].descriptor.name,
+              METRIC_DB_CLIENT_CONNECTION_COUNT
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].attributes[
+                ATTR_DB_CLIENT_CONNECTION_STATE
+              ],
+              'used'
+            );
+            assert.strictEqual(
+              metrics[1].dataPoints[0].value,
+              1,
+              'expected to have 1 used connection'
+            );
+
+            poolAux.end(() => done());
+          } catch (e) {
+            // An assertion failing inside this async callback would otherwise
+            // surface as a timeout instead of the actual error.
+            poolAux.end(() => done(e));
           }
-          assert.ok(ret);
-          assert.equal(
-            poolAux.listenerCount('connect'),
-            2,
-            `${poolAux.listenerCount(
-              'connect'
-            )} event listener(s) for 'connect'`
-          );
-          assert.equal(
-            poolAux.listenerCount('acquire'),
-            1,
-            `${poolAux.listenerCount(
-              'acquire'
-            )} event listener(s) for 'acquire'`
-          );
-          assert.equal(
-            poolAux.listenerCount('remove'),
-            1,
-            `${poolAux.listenerCount('remove')} event listener(s) for 'remove'`
-          );
-          assert.equal(
-            poolAux.listenerCount('release'),
-            1,
-            `${poolAux.listenerCount(
-              'release'
-            )} event listener(s) for 'release'`
-          );
-          assert.equal(testValue, 1);
-
-          const { resourceMetrics, errors } = await metricReader.collect();
-          assert.deepEqual(
-            errors,
-            [],
-            'expected no errors from the callback during metric collection'
-          );
-
-          const metrics = resourceMetrics.scopeMetrics[0].metrics;
-          assert.strictEqual(
-            metrics[1].descriptor.name,
-            METRIC_DB_CLIENT_CONNECTION_COUNT
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].attributes[
-              ATTR_DB_CLIENT_CONNECTION_STATE
-            ],
-            'used'
-          );
-          assert.strictEqual(
-            metrics[1].dataPoints[0].value,
-            1,
-            'expected to have 1 used connection'
-          );
-
-          poolAux.end();
-          done();
         });
       });
     });
@@ -1176,9 +1186,7 @@ describe('pg-pool', () => {
       const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
 
       const finish = () => {
-        pool1.end();
-        pool2.end();
-        done();
+        Promise.all([pool1.end(), pool2.end()]).then(() => done());
       };
 
       let completed = 0;
