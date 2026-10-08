@@ -24,7 +24,10 @@ import {
   formatSystemInstructions,
   getErrorType,
   getRequestOptionsAttributes,
+  inferMissingModalityCounts,
+  inferMissingTokenCounts,
   mergeTokenUsage,
+  mergeTokenUsageDetails,
   sumTokenCountsAcrossModalities,
 } from '../src/utils';
 import type {
@@ -32,6 +35,7 @@ import type {
   InputMessages,
   OutputMessages,
   SystemInstructions,
+  TokenUsageDetails,
 } from '../src/types';
 
 describe('GenAI Utils', () => {
@@ -537,6 +541,207 @@ describe('GenAI Utils', () => {
       mergeTokenUsage(existing, update);
       assert.deepStrictEqual(existing, { inputTokens: { text: 10 } });
       assert.deepStrictEqual(update, { outputTokens: { text: 20 } });
+    });
+  });
+
+  describe('mergeTokenUsageDetails', () => {
+    it('should merge scalar counts and modality breakdowns', () => {
+      const existing: TokenUsageDetails = {
+        inputTokenCount: 100,
+        cacheReadTokenCount: 40,
+        tokenUsageByModality: {
+          inputTokens: { text: 100 },
+          cacheReadTokens: { text: 40 },
+        },
+      };
+      const update: TokenUsageDetails = {
+        outputTokenCount: 50,
+        inputTokenCount: undefined,
+        tokenUsageByModality: {
+          outputTokens: { text: 50 },
+          inputTokens: undefined,
+        },
+      };
+
+      const merged = mergeTokenUsageDetails(existing, update);
+      assert.deepStrictEqual(merged, {
+        inputTokenCount: 100,
+        outputTokenCount: 50,
+        cacheReadTokenCount: 40,
+        tokenUsageByModality: {
+          inputTokens: { text: 100 },
+          outputTokens: { text: 50 },
+          cacheReadTokens: { text: 40 },
+        },
+      });
+    });
+
+    it('should handle undefined existing details', () => {
+      const update: TokenUsageDetails = {
+        inputTokenCount: 20,
+        tokenUsageByModality: { inputTokens: { text: 20 } },
+      };
+      const merged = mergeTokenUsageDetails(undefined, update);
+      assert.deepStrictEqual(merged, update);
+    });
+
+    it('should not mutate the existing details or update', () => {
+      const existing: TokenUsageDetails = { inputTokenCount: 10 };
+      const update: TokenUsageDetails = { outputTokenCount: 20 };
+      mergeTokenUsageDetails(existing, update);
+      assert.deepStrictEqual(existing, { inputTokenCount: 10 });
+      assert.deepStrictEqual(update, { outputTokenCount: 20 });
+    });
+  });
+
+  describe('inferMissingTokenCounts', () => {
+    it('should infer inputTokenCount from cacheReadTokenCount and cacheWriteTokenCount', () => {
+      const usage: TokenUsageDetails = {
+        cacheReadTokenCount: 50,
+        cacheWriteTokenCount: 30,
+      };
+      const inferred = inferMissingTokenCounts(usage);
+      assert.strictEqual(inferred.inputTokenCount, 80);
+    });
+
+    it('should infer outputTokenCount from reasoningTokenCount', () => {
+      const usage: TokenUsageDetails = {
+        reasoningTokenCount: 25,
+      };
+      const inferred = inferMissingTokenCounts(usage);
+      assert.strictEqual(inferred.outputTokenCount, 25);
+    });
+
+    it('should infer modality inputTokens and outputTokens if tokenUsageByModality is present', () => {
+      const usage: TokenUsageDetails = {
+        cacheReadTokenCount: 10,
+        cacheWriteTokenCount: 20,
+        reasoningTokenCount: 15,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 10 },
+          cacheWriteTokens: { text: 10, image: 10 },
+          reasoningTokens: { text: 15 },
+        },
+      };
+      const inferred = inferMissingTokenCounts(usage);
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
+        text: 20,
+        image: 10,
+      });
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.outputTokens, {
+        text: 15,
+      });
+    });
+
+    it('should not overwrite already reported input and output token counts or modalities', () => {
+      const usage: TokenUsageDetails = {
+        inputTokenCount: 100,
+        outputTokenCount: 50,
+        cacheReadTokenCount: 10,
+        reasoningTokenCount: 5,
+        tokenUsageByModality: {
+          inputTokens: { text: 100 },
+          outputTokens: { text: 50 },
+          cacheReadTokens: { text: 10 },
+          reasoningTokens: { text: 5 },
+        },
+      };
+      const inferred = inferMissingTokenCounts(usage);
+      assert.strictEqual(inferred.inputTokenCount, 100);
+      assert.strictEqual(inferred.outputTokenCount, 50);
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
+        text: 100,
+      });
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.outputTokens, {
+        text: 50,
+      });
+    });
+  });
+
+  describe('inferMissingModalityCounts', () => {
+    it('should return a copy of usage unmodified when there are no token counts', () => {
+      const usage: TokenUsageDetails = {};
+      const inferred = inferMissingModalityCounts(usage);
+      assert.deepStrictEqual(inferred, {});
+    });
+
+    it('should attribute missing modality breakdowns to unknown', () => {
+      const usage: TokenUsageDetails = {
+        inputTokenCount: 100,
+        outputTokenCount: 50,
+        reasoningTokenCount: 20,
+        cacheReadTokenCount: 30,
+        cacheWriteTokenCount: 15,
+      };
+      const inferred = inferMissingModalityCounts(usage);
+      assert.deepStrictEqual(inferred.tokenUsageByModality, {
+        inputTokens: { unknown: 100 },
+        outputTokens: { unknown: 50 },
+        reasoningTokens: { unknown: 20 },
+        cacheReadTokens: { unknown: 30 },
+        cacheWriteTokens: { unknown: 15 },
+      });
+    });
+
+    it('should attribute the missing delta to unknown when partial modality breakdown is provided', () => {
+      const usage: TokenUsageDetails = {
+        inputTokenCount: 100,
+        outputTokenCount: 50,
+        tokenUsageByModality: {
+          inputTokens: { text: 60 },
+          outputTokens: { text: 30, unknown: 10 },
+        },
+      };
+      const inferred = inferMissingModalityCounts(usage);
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
+        text: 60,
+        unknown: 40,
+      });
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.outputTokens, {
+        text: 30,
+        unknown: 20,
+      });
+    });
+
+    it('should not alter modality breakdown when sum covers or exceeds the total count', () => {
+      const usageEqual: TokenUsageDetails = {
+        inputTokenCount: 50,
+        tokenUsageByModality: {
+          inputTokens: { text: 50 },
+        },
+      };
+      const inferredEqual = inferMissingModalityCounts(usageEqual);
+      assert.deepStrictEqual(inferredEqual.tokenUsageByModality?.inputTokens, {
+        text: 50,
+      });
+
+      const usageExceeds: TokenUsageDetails = {
+        inputTokenCount: 50,
+        tokenUsageByModality: {
+          inputTokens: { text: 40, image: 30 },
+        },
+      };
+      const inferredExceeds = inferMissingModalityCounts(usageExceeds);
+      assert.deepStrictEqual(
+        inferredExceeds.tokenUsageByModality?.inputTokens,
+        {
+          text: 40,
+          image: 30,
+        }
+      );
+    });
+
+    it('should ignore negative counts when inferring modality counts', () => {
+      const usage: TokenUsageDetails = {
+        inputTokenCount: -10,
+        tokenUsageByModality: {
+          inputTokens: { text: 10 },
+        },
+      };
+      const inferred = inferMissingModalityCounts(usage);
+      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
+        text: 10,
+      });
     });
   });
 });

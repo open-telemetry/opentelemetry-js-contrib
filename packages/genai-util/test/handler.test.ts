@@ -191,8 +191,8 @@ describe('TelemetryHandler', () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
-          inputTokens: { text: 300 },
-          outputTokens: { text: 40 },
+          inputTokenCount: 300,
+          outputTokenCount: 40,
         },
         attributes
       );
@@ -216,8 +216,12 @@ describe('TelemetryHandler', () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
-          inputTokens: { text: 100, image: 200, audio: -5 },
-          outputTokens: { text: 30, audio: 12 },
+          inputTokenCount: 300,
+          outputTokenCount: 42,
+          tokenUsageByModality: {
+            inputTokens: { text: 100, image: 200, audio: -5 },
+            outputTokens: { text: 30, audio: 12 },
+          },
         },
         attributes
       );
@@ -242,9 +246,11 @@ describe('TelemetryHandler', () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
-          cacheReadTokens: { text: 60 },
-          cacheWriteTokens: { text: 20 },
-          reasoningTokens: { text: 30 },
+          tokenUsageByModality: {
+            cacheReadTokens: { text: 60 },
+            cacheWriteTokens: { text: 20 },
+            reasoningTokens: { text: 30 },
+          },
         },
         attributes
       );
@@ -264,11 +270,15 @@ describe('TelemetryHandler', () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
-          inputTokens: { text: 100, image: 150 },
-          outputTokens: { text: 40, audio: 0 },
-          cacheReadTokens: { text: 60 },
-          cacheWriteTokens: { text: 20, audio: 50 },
-          reasoningTokens: { text: 300, unknown: 50 },
+          inputTokenCount: 250,
+          outputTokenCount: 40,
+          tokenUsageByModality: {
+            inputTokens: { text: 100, image: 150 },
+            outputTokens: { text: 40, audio: 0 },
+            cacheReadTokens: { text: 60 },
+            cacheWriteTokens: { text: 20, audio: 50 },
+            reasoningTokens: { text: 300, unknown: 50 },
+          },
         },
         attributes
       );
@@ -328,11 +338,18 @@ describe('TelemetryHandler', () => {
       handler.recordInferenceTokenUsage({}, attributes);
       handler.recordInferenceTokenUsage(
         {
-          inputTokens: { text: 0 },
-          outputTokens: { text: -10 },
-          cacheReadTokens: { text: 0 },
-          cacheWriteTokens: { text: -1 },
-          reasoningTokens: { text: 0 },
+          inputTokenCount: 0,
+          outputTokenCount: -10,
+          cacheReadTokenCount: 0,
+          cacheWriteTokenCount: -1,
+          reasoningTokenCount: 0,
+          tokenUsageByModality: {
+            inputTokens: { text: 0 },
+            outputTokens: { text: -10 },
+            cacheReadTokens: { text: 0 },
+            cacheWriteTokens: { text: -1 },
+            reasoningTokens: { text: 0 },
+          },
         },
         attributes
       );

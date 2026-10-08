@@ -622,8 +622,12 @@ describe('BaseInvocation', () => {
           );
           this._handler.recordInferenceTokenUsage(
             {
-              inputTokens: { text: 10, image: 5 },
-              outputTokens: { text: 5, audio: 3 },
+              inputTokenCount: 15,
+              outputTokenCount: 8,
+              tokenUsageByModality: {
+                inputTokens: { text: 10, image: 5 },
+                outputTokens: { text: 5, audio: 3 },
+              },
             },
             metricAttrs,
             this._context

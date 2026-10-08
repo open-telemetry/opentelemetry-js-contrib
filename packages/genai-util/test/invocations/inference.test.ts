@@ -90,11 +90,18 @@ describe('InferenceInvocation', () => {
     invocation.setResponseId('chatcmpl-123');
     invocation.setFinishReasons(['stop']);
     invocation.setUsage({
-      inputTokens: { text: 10 },
-      outputTokens: { text: 20 },
-      reasoningTokens: { text: 5 },
-      cacheReadTokens: { text: 15 },
-      cacheWriteTokens: { text: 8 },
+      inputTokenCount: 10,
+      outputTokenCount: 20,
+      reasoningTokenCount: 5,
+      cacheReadTokenCount: 15,
+      cacheWriteTokenCount: 8,
+      tokenUsageByModality: {
+        inputTokens: { text: 10 },
+        outputTokens: { text: 20 },
+        reasoningTokens: { text: 5 },
+        cacheReadTokens: { text: 15 },
+        cacheWriteTokens: { text: 8 },
+      },
     });
     invocation.addOutputMessages([
       {
@@ -599,8 +606,12 @@ describe('InferenceInvocation', () => {
     });
     invocation.recordStreamChunk();
     invocation.setUsage({
-      inputTokens: { text: 10 },
-      outputTokens: { text: 20 },
+      inputTokenCount: 10,
+      outputTokenCount: 20,
+      tokenUsageByModality: {
+        inputTokens: { text: 10 },
+        outputTokens: { text: 20 },
+      },
     });
     invocation.stop();
 
@@ -677,9 +688,19 @@ describe('InferenceInvocation', () => {
     });
 
     // Streaming providers may report input and output tokens in separate events.
-    invocation.setUsage({ inputTokens: { text: 100, image: 200 } });
+    invocation.setUsage({
+      inputTokenCount: 300,
+      tokenUsageByModality: { inputTokens: { text: 100, image: 200 } },
+    });
     // An explicitly undefined field must not erase the previously reported value.
-    invocation.setUsage({ outputTokens: { text: 50 }, inputTokens: undefined });
+    invocation.setUsage({
+      outputTokenCount: 50,
+      inputTokenCount: undefined,
+      tokenUsageByModality: {
+        outputTokens: { text: 50 },
+        inputTokens: undefined,
+      },
+    });
     invocation.stop();
 
     const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -729,8 +750,12 @@ describe('InferenceInvocation', () => {
     });
     // E.g. a stream that reported usage before it was interrupted.
     invocation.setUsage({
-      inputTokens: { text: 10 },
-      outputTokens: { text: 5 },
+      inputTokenCount: 10,
+      outputTokenCount: 5,
+      tokenUsageByModality: {
+        inputTokens: { text: 10 },
+        outputTokens: { text: 5 },
+      },
     });
     invocation.fail({
       errorType: 'Error',
@@ -785,8 +810,12 @@ describe('InferenceInvocation', () => {
     it('should infer inputTokens from cache read and write tokens, per modality', async () => {
       const invocation = startInference();
       invocation.setUsage({
-        cacheReadTokens: { text: 100 },
-        cacheWriteTokens: { text: 50, image: 20 },
+        cacheReadTokenCount: 100,
+        cacheWriteTokenCount: 70,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 100 },
+          cacheWriteTokens: { text: 50, image: 20 },
+        },
       });
       invocation.stop();
 
@@ -819,7 +848,12 @@ describe('InferenceInvocation', () => {
 
     it('should infer outputTokens from reasoning tokens', async () => {
       const invocation = startInference();
-      invocation.setUsage({ reasoningTokens: { text: 45 } });
+      invocation.setUsage({
+        reasoningTokenCount: 45,
+        tokenUsageByModality: {
+          reasoningTokens: { text: 45 },
+        },
+      });
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -844,14 +878,91 @@ describe('InferenceInvocation', () => {
       );
     });
 
+    it('should attribute missing modality to unknown when only scalar counts are reported', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokenCount: 100,
+        outputTokenCount: 50,
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 100);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 50);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+        ),
+        { unknown: 100 }
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        { unknown: 50 }
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 100 }]
+      );
+      assert.deepStrictEqual(
+        histogramPoints(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+        ),
+        [{ count: 1, sum: 50 }]
+      );
+    });
+
+    it('should attribute difference to unknown when partial modality breakdown is reported', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        inputTokenCount: 100,
+        outputTokenCount: 80,
+        tokenUsageByModality: {
+          inputTokens: { image: 30 },
+          outputTokens: { text: 50 },
+        },
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 100);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 80);
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+        ),
+        { image: 30, unknown: 70 }
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        { text: 50, unknown: 30 }
+      );
+    });
+
     it('should not modify reported inputTokens and outputTokens', async () => {
       const invocation = startInference();
       invocation.setUsage({
-        inputTokens: { text: 500 },
-        outputTokens: { text: 250 },
-        cacheReadTokens: { text: 100 },
-        cacheWriteTokens: { text: 50 },
-        reasoningTokens: { text: 30 },
+        inputTokenCount: 500,
+        outputTokenCount: 250,
+        cacheReadTokenCount: 100,
+        cacheWriteTokenCount: 50,
+        reasoningTokenCount: 30,
+        tokenUsageByModality: {
+          inputTokens: { text: 500 },
+          outputTokens: { text: 250 },
+          cacheReadTokens: { text: 100 },
+          cacheWriteTokens: { text: 50 },
+          reasoningTokens: { text: 30 },
+        },
       });
       invocation.stop();
 
@@ -877,12 +988,20 @@ describe('InferenceInvocation', () => {
     it('should not let a later cache or reasoning-only update overwrite reported tokens', async () => {
       const invocation = startInference();
       invocation.setUsage({
-        inputTokens: { text: 10 },
-        outputTokens: { text: 20 },
+        inputTokenCount: 10,
+        outputTokenCount: 20,
+        tokenUsageByModality: {
+          inputTokens: { text: 10 },
+          outputTokens: { text: 20 },
+        },
       });
       invocation.setUsage({
-        cacheReadTokens: { text: 5 },
-        reasoningTokens: { text: 3 },
+        cacheReadTokenCount: 5,
+        reasoningTokenCount: 3,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 5 },
+          reasoningTokens: { text: 3 },
+        },
       });
       invocation.stop();
 
@@ -908,8 +1027,12 @@ describe('InferenceInvocation', () => {
     it('should not record undefined token counts on the span or the metrics', async () => {
       const invocation = startInference();
       invocation.setUsage({
-        inputTokens: {},
-        outputTokens: { text: undefined },
+        inputTokenCount: undefined,
+        outputTokenCount: undefined,
+        tokenUsageByModality: {
+          inputTokens: {},
+          outputTokens: { text: undefined },
+        },
       });
       invocation.stop();
 
@@ -926,8 +1049,12 @@ describe('InferenceInvocation', () => {
     it('should record an explicit 0 on the span but not on the metrics', async () => {
       const invocation = startInference();
       invocation.setUsage({
-        inputTokens: { text: 0 },
-        outputTokens: { text: 0 },
+        inputTokenCount: 0,
+        outputTokenCount: 0,
+        tokenUsageByModality: {
+          inputTokens: { text: 0 },
+          outputTokens: { text: 0 },
+        },
       });
       invocation.stop();
 
@@ -944,8 +1071,12 @@ describe('InferenceInvocation', () => {
     it('should not infer a 0 that was not reported', () => {
       const invocation = startInference();
       invocation.setUsage({
-        cacheReadTokens: { text: 0 },
-        reasoningTokens: { text: 0 },
+        cacheReadTokenCount: 0,
+        reasoningTokenCount: 0,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 0 },
+          reasoningTokens: { text: 0 },
+        },
       });
       invocation.stop();
 
@@ -967,8 +1098,12 @@ describe('InferenceInvocation', () => {
     it('should ignore negative token counts on the span', () => {
       const invocation = startInference();
       invocation.setUsage({
-        inputTokens: { text: -5 },
-        outputTokens: { text: 10, image: -3 },
+        inputTokenCount: -5,
+        outputTokenCount: 10,
+        tokenUsageByModality: {
+          inputTokens: { text: -5 },
+          outputTokens: { text: 10, image: -3 },
+        },
       });
       invocation.stop();
 
@@ -980,23 +1115,35 @@ describe('InferenceInvocation', () => {
     it('should not mutate the caller-supplied usage object', () => {
       const invocation = startInference();
       const usage = {
-        cacheReadTokens: { text: 5 },
-        reasoningTokens: { text: 3 },
+        cacheReadTokenCount: 5,
+        reasoningTokenCount: 3,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 5 },
+          reasoningTokens: { text: 3 },
+        },
       };
       invocation.setUsage(usage);
       invocation.stop();
 
       assert.deepStrictEqual(usage, {
-        cacheReadTokens: { text: 5 },
-        reasoningTokens: { text: 3 },
+        cacheReadTokenCount: 5,
+        reasoningTokenCount: 3,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 5 },
+          reasoningTokens: { text: 3 },
+        },
       });
     });
 
     it('should set usage attributes on failure even when content capture is disabled', async () => {
       const invocation = startInference('none');
       invocation.setUsage({
-        cacheReadTokens: { text: 8 },
-        reasoningTokens: { text: 4 },
+        cacheReadTokenCount: 8,
+        reasoningTokenCount: 4,
+        tokenUsageByModality: {
+          cacheReadTokens: { text: 8 },
+          reasoningTokens: { text: 4 },
+        },
       });
       invocation.fail({ errorType: 'Error' });
 

@@ -301,7 +301,38 @@ export type OutputMessages = OutputMessage[];
 export type SystemInstructions = SystemInstructionPart[];
 
 /**
- * Token usage of a single inference operation, as reported by the provider.
+ * Token usage of a single inference operation broken down by modality, as reported by the provider.
+ *
+ * Each field maps a {@link TokenModality} (e.g. `'text'`, `'audio'`, `'image'`, `'unknown'`) to its corresponding
+ * token count. These counts are recorded on the `gen_ai.client.inference.usage.*` metric counters.
+ */
+export interface TokenUsageByModality {
+  /**
+   * Token counts for input (prompt) tokens broken down by modality (`gen_ai.client.inference.usage.input_tokens`).
+   * This includes tokens from cache reads and writes.
+   */
+  inputTokens?: TokenCountsByModality;
+  /**
+   * Token counts for output (completion) tokens broken down by modality (`gen_ai.client.inference.usage.output_tokens`).
+   * This includes reasoning tokens.
+   */
+  outputTokens?: TokenCountsByModality;
+  /**
+   * Token counts used for model reasoning / thinking broken down by modality (`gen_ai.client.inference.usage.reasoning.output_tokens`).
+   */
+  reasoningTokens?: TokenCountsByModality;
+  /**
+   * Token counts for cached tokens read from the prompt cache broken down by modality (`gen_ai.client.inference.usage.cache_read.input_tokens`).
+   */
+  cacheReadTokens?: TokenCountsByModality;
+  /**
+   * Token counts for tokens written to create the prompt cache broken down by modality (`gen_ai.client.inference.usage.cache_write.input_tokens`).
+   */
+  cacheWriteTokens?: TokenCountsByModality;
+}
+
+/**
+ * Token usage of a single invocation request, as reported by the provider.
  *
  * The span attributes and the token metrics are all derived from these
  * values, so they stay consistent. Prefer billable counts when the provider
@@ -309,17 +340,44 @@ export type SystemInstructions = SystemInstructionPart[];
  * were not reported; do not default to `0`, which would skew the token
  * distributions.
  */
-export interface TokenUsage {
-  /** The number of input (prompt) tokens used per inference operation. This includes tokens from cache reads and writes. */
-  inputTokens?: TokenCountsByModality;
-  /** The number of output (completion) tokens used per inference operation. This includes reasoning tokens. */
-  outputTokens?: TokenCountsByModality;
-  /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`). */
-  reasoningTokens?: TokenCountsByModality;
-  /** Number of cached tokens read from prompt cache (`gen_ai.client_inference.usage.cache_read.input_tokens`). */
-  cacheReadTokens?: TokenCountsByModality;
-  /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`). */
-  cacheWriteTokens?: TokenCountsByModality;
+export interface TokenUsageDetails {
+  /**
+   * The number of input (prompt) tokens used per inference request.
+   * This includes tokens from cache reads and writes. If this is not provided,
+   * the total will be inferred from cacheReadTokens and cacheWriteTokens.
+   */
+  inputTokenCount?: number;
+  /** The number of output (completion) tokens used per inference request.
+   * This includes reasoning tokens. If this is not provided, the total will be
+   * inferred from reasoningTokens and the tokenUsageByModality.
+   */
+  outputTokenCount?: number;
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`).*/
+  reasoningTokenCount?: number;
+  /** Number of cached tokens read from prompt cache (`gen_ai.client_inference.usage.cache_read.input_tokens`).*/
+  cacheReadTokenCount?: number;
+  /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`).*/
+  cacheWriteTokenCount?: number;
+
+  /**
+   * Detailed token usage by modality. If this is provided, any missing token
+   * counts would be inferred using the totals (if available). The missing token
+   * counts would be attributed to the modality 'unknown'.
+   *
+   * Note:
+   * - The `tokenUsageByModality` is never used to infer the token count fields in
+   *   this interface.
+   * - If the breakdown is not provided, then all token counts are attributed to the
+   *   'unknown' modality.
+   *
+   * Example:
+   *  - inputTokenCount = 250, inputTokens = {audio: 50}, missing token counts
+   * are inferred as audio = 50, text = 200
+   *  - reasoningTokenCount = 100, reasoningTokens = {text: {inputTokenCount: 20,
+   * outputTokenCount: 30}}, missing token counts are inferred as inputTokenCount
+   * = 20, outputTokenCount = 80
+   */
+  tokenUsageByModality?: TokenUsageByModality;
 }
 
 /**

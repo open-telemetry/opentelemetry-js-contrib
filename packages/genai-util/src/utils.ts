@@ -27,8 +27,9 @@ import type {
   SystemInstructionPart,
   SystemInstructions,
   TokenCountsByModality,
-  TokenUsage,
   TokenModality,
+  TokenUsageByModality,
+  TokenUsageDetails,
 } from './types';
 
 /**
@@ -343,6 +344,39 @@ export function getRequestOptionsAttributes(
 }
 
 /**
+ * Merge a partial token usage details update into the previously recorded usage.
+ *
+ * Only fields that are defined in `update` overwrite existing values. The nested
+ * `tokenUsageByModality` is recursively merged using {@link mergeTokenUsage}.
+ *
+ * @param existing - Previously recorded usage details, if any.
+ * @param update - New (possibly partial) usage details.
+ * @returns A new merged {@link TokenUsageDetails} object.
+ */
+export function mergeTokenUsageDetails(
+  existing: TokenUsageDetails | undefined,
+  update: TokenUsageDetails
+): TokenUsageDetails {
+  const merged: TokenUsageDetails = { ...existing };
+  for (const key of Object.keys(update) as (keyof TokenUsageDetails)[]) {
+    if (key === 'tokenUsageByModality') {
+      if (update.tokenUsageByModality !== undefined) {
+        merged.tokenUsageByModality = mergeTokenUsage(
+          existing?.tokenUsageByModality,
+          update.tokenUsageByModality
+        );
+      }
+    } else {
+      const val = update[key];
+      if (val !== undefined) {
+        (merged as Record<string, unknown>)[key] = val;
+      }
+    }
+  }
+  return merged;
+}
+
+/**
  * Merge a partial token usage update into the previously recorded usage.
  *
  * Only fields that are defined in `update` overwrite the existing values, so
@@ -353,14 +387,14 @@ export function getRequestOptionsAttributes(
  *
  * @param existing - Previously recorded usage, if any.
  * @param update - New (possibly partial) usage values.
- * @returns A new merged {@link TokenUsage} object.
+ * @returns A new merged {@link TokenUsageByModality} object.
  */
 export function mergeTokenUsage(
-  existing: TokenUsage | undefined,
-  update: TokenUsage
-): TokenUsage {
-  const merged: TokenUsage = { ...existing };
-  for (const key of Object.keys(update) as (keyof TokenUsage)[]) {
+  existing: TokenUsageByModality | undefined,
+  update: TokenUsageByModality
+): TokenUsageByModality {
+  const merged: TokenUsageByModality = { ...existing };
+  for (const key of Object.keys(update) as (keyof TokenUsageByModality)[]) {
     setIfDefined(merged, key, update[key]);
   }
   return merged;
@@ -371,10 +405,10 @@ export function mergeTokenUsage(
  *
  * The generic key keeps the assignment type-safe across fields of different types.
  */
-function setIfDefined<K extends keyof TokenUsage>(
-  target: TokenUsage,
+function setIfDefined<K extends keyof TokenUsageByModality>(
+  target: TokenUsageByModality,
   key: K,
-  value: TokenUsage[K]
+  value: TokenUsageByModality[K]
 ): void {
   if (value !== undefined) {
     target[key] = value;
@@ -406,27 +440,76 @@ export function sumTokenCountsAcrossModalities(
 }
 
 /**
- * Return a copy of `usage` with `inputTokens` and `outputTokens` inferred if
- * not already defined. The caller-supplied object is not modified.
+ * Return a copy of `usage` with `inputTokenCount` and `outputTokenCount` inferred
+ * from cache and reasoning token counts if not already defined. If `tokenUsageByModality`
+ * is present, also infers modality breakdowns for input and output tokens.
+ * The caller-supplied object is not modified.
+ *
+ * @param usage - Token usage details to infer counts for.
+ * @returns A new {@link TokenUsageDetails} object with missing token counts inferred.
  */
-export function inferMissingTokenCounts(usage: TokenUsage): TokenUsage {
-  const result: TokenUsage = { ...usage };
-  if (result.inputTokens === undefined) {
-    const combinedInput = combineTokenCounts(
-      result.cacheReadTokens,
-      result.cacheWriteTokens
+export function inferMissingTokenCounts(
+  usage: TokenUsageDetails
+): TokenUsageDetails {
+  const result: TokenUsageDetails = { ...usage };
+  if (result.inputTokenCount === undefined) {
+    const combinedTokenCount: number | undefined = combineTotals(
+      result.cacheReadTokenCount,
+      result.cacheWriteTokenCount
     );
-    if (combinedInput !== undefined) {
-      result.inputTokens = combinedInput;
+    if (combinedTokenCount !== undefined) {
+      result.inputTokenCount = combinedTokenCount;
     }
   }
-  if (result.outputTokens === undefined) {
-    const inferredOutput = combineTokenCounts(result.reasoningTokens);
-    if (inferredOutput !== undefined) {
-      result.outputTokens = inferredOutput;
+  if (result.outputTokenCount === undefined) {
+    const combinedTokenCount: number | undefined = combineTotals(
+      result.reasoningTokenCount
+    );
+    if (combinedTokenCount !== undefined) {
+      result.outputTokenCount = combinedTokenCount;
+    }
+  }
+  if (result.tokenUsageByModality) {
+    const modality = { ...result.tokenUsageByModality };
+    let modified = false;
+    if (modality.inputTokens === undefined) {
+      const combinedInput = combineTokenCounts(
+        modality.cacheReadTokens,
+        modality.cacheWriteTokens
+      );
+      if (combinedInput !== undefined) {
+        modality.inputTokens = combinedInput;
+        modified = true;
+      }
+    }
+    if (modality.outputTokens === undefined) {
+      const combinedOutput = combineTokenCounts(modality.reasoningTokens);
+      if (combinedOutput !== undefined) {
+        modality.outputTokens = combinedOutput;
+        modified = true;
+      }
+    }
+    if (modified) {
+      result.tokenUsageByModality = modality;
     }
   }
   return result;
+}
+
+/**
+ * Add up positive total counts.
+ *
+ * Returns `undefined` when there is no positive count, so that an inferred
+ * value never introduces a `0` that the caller did not report.
+ */
+function combineTotals(...totals: (number | undefined)[]): number | undefined {
+  let combined: number | undefined;
+  for (const total of totals) {
+    if (total !== undefined && total > 0) {
+      combined = (combined ?? 0) + total;
+    }
+  }
+  return combined;
 }
 
 /**
@@ -450,4 +533,108 @@ function combineTokenCounts(
     }
   }
   return combined;
+}
+
+/**
+ * Infer missing modality token counts as the 'unknown' modality.
+ *
+ * For each token category (input, output, reasoning, cache read, cache write):
+ * - If the total count is present and the corresponding {@link TokenUsageByModality}
+ *   field is not explicitly provided, the entire count is attributed to the 'unknown' modality.
+ * - If the corresponding {@link TokenUsageByModality} field is provided, but the sum of counts
+ *   across all defined modalities is less than the total count, the missing difference is
+ *   inferred as the 'unknown' modality.
+ *
+ * The caller-supplied object is not modified.
+ *
+ * @param usage - Token usage details with total counts and optional modality breakdown.
+ * @returns A new {@link TokenUsageDetails} object with missing modality counts inferred.
+ */
+export function inferMissingModalityCounts(
+  usage: TokenUsageDetails
+): TokenUsageDetails {
+  const inputTokens = inferModalityCount(
+    usage.inputTokenCount,
+    usage.tokenUsageByModality?.inputTokens
+  );
+  const outputTokens = inferModalityCount(
+    usage.outputTokenCount,
+    usage.tokenUsageByModality?.outputTokens
+  );
+  const reasoningTokens = inferModalityCount(
+    usage.reasoningTokenCount,
+    usage.tokenUsageByModality?.reasoningTokens
+  );
+  const cacheReadTokens = inferModalityCount(
+    usage.cacheReadTokenCount,
+    usage.tokenUsageByModality?.cacheReadTokens
+  );
+  const cacheWriteTokens = inferModalityCount(
+    usage.cacheWriteTokenCount,
+    usage.tokenUsageByModality?.cacheWriteTokens
+  );
+
+  const hasModalityUsage =
+    inputTokens !== undefined ||
+    outputTokens !== undefined ||
+    reasoningTokens !== undefined ||
+    cacheReadTokens !== undefined ||
+    cacheWriteTokens !== undefined;
+
+  if (!hasModalityUsage) {
+    return { ...usage };
+  }
+
+  const tokenUsageByModality: TokenUsageByModality = {
+    ...usage.tokenUsageByModality,
+  };
+  if (inputTokens !== undefined) {
+    tokenUsageByModality.inputTokens = inputTokens;
+  }
+  if (outputTokens !== undefined) {
+    tokenUsageByModality.outputTokens = outputTokens;
+  }
+  if (reasoningTokens !== undefined) {
+    tokenUsageByModality.reasoningTokens = reasoningTokens;
+  }
+  if (cacheReadTokens !== undefined) {
+    tokenUsageByModality.cacheReadTokens = cacheReadTokens;
+  }
+  if (cacheWriteTokens !== undefined) {
+    tokenUsageByModality.cacheWriteTokens = cacheWriteTokens;
+  }
+
+  return {
+    ...usage,
+    tokenUsageByModality,
+  };
+}
+
+/**
+ * Infer missing modality token counts for a single category.
+ *
+ * @param count - The total count for this category, if reported.
+ * @param existing - The existing modality breakdown, if reported.
+ * @returns The updated modality breakdown with missing counts attributed to 'unknown',
+ *   or `existing` if no count was reported or the existing sum already covers the count.
+ */
+function inferModalityCount(
+  count: number | undefined,
+  existing: TokenCountsByModality | undefined
+): TokenCountsByModality | undefined {
+  if (count === undefined || count < 0) {
+    return existing;
+  }
+  if (!existing) {
+    return { unknown: count };
+  }
+  const sum = sumTokenCountsAcrossModalities(existing) ?? 0;
+  if (sum < count) {
+    const missing = count - sum;
+    return {
+      ...existing,
+      unknown: (existing.unknown ?? 0) + missing,
+    };
+  }
+  return existing;
 }

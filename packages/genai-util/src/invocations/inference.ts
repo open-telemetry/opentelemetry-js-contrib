@@ -36,17 +36,16 @@ import type {
   InputMessages,
   OutputMessages,
   SystemInstructions,
-  TokenCountsByModality,
-  TokenUsage,
+  TokenUsageDetails,
 } from '../types';
 import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
   getRequestOptionsAttributes,
-  mergeTokenUsage,
-  sumTokenCountsAcrossModalities,
+  mergeTokenUsageDetails,
   inferMissingTokenCounts,
+  inferMissingModalityCounts,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
@@ -119,7 +118,7 @@ export class InferenceInvocation extends BaseInvocation {
   private readonly _serverPort?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
   private _responseModel?: string;
-  private _usage?: TokenUsage;
+  private _usage?: TokenUsageDetails;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstructions;
@@ -182,21 +181,29 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Record token usage.
+   * Record token usage details.
    *
    * May be called multiple times (e.g. when a streaming provider reports input
    * and output tokens in separate events). Only fields that are defined in
    * `usage` are updated; previously recorded values for other fields are kept.
+   * Nested `tokenUsageByModality` fields are merged incrementally.
    * The span attributes and the token usage metrics are both derived from the
    * merged usage once, when the invocation ends, so they always agree.
    *
    * Note (applied to the merged usage when the invocation ends):
-   * If `usage` TokenUsage does not contain inputTokens, it is inferred using the cache read tokens and cache write tokens.
-   * If `usage` TokenUsage does not contain outputTokens, it is inferred using the reasoning tokens.
-   * If `usage` TokenUsage already contains inputTokens and outputTokens, they are not modified.
+   * - If `tokenUsageByModality` is provided, any missing modality token counts
+   *   are inferred using the total counts (if available) and attributed to the
+   *   modality 'unknown'.
+   * - If `inputTokens` are not defined in `tokenUsageByModality`, they are
+   *   inferred using cache read and cache write tokens.
+   * - If `outputTokens` are not defined in `tokenUsageByModality`, they are
+   *   inferred using reasoning tokens.
+   * - If fields are already defined, they are not modified.
+   *
+   * @param usage - Token usage details reported by the provider.
    */
-  public setUsage(usage: TokenUsage): this {
-    this._usage = mergeTokenUsage(this._usage, usage);
+  public setUsage(usage: TokenUsageDetails): this {
+    this._usage = mergeTokenUsageDetails(this._usage, usage);
     return this;
   }
 
@@ -323,16 +330,6 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Emit log-based event `gen_ai.client.inference.operation.details`.
-   *
-   * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
-   * once the Logs & Events API is stable in OpenTelemetry JavaScript.
-   */
-  protected override _emitContentEvent(_endTime?: HrTime): void {
-    // No-op until Logs/Events API is stable in JS.
-  }
-
-  /**
    * Finalize token usage and serialize the invocation's content onto the span.
    *
    * Token usage is finalized here (before `_recordMetrics` runs) so that the
@@ -349,6 +346,7 @@ export class InferenceInvocation extends BaseInvocation {
   ): void {
     if (this._usage) {
       this._usage = inferMissingTokenCounts(this._usage);
+      this._usage = inferMissingModalityCounts(this._usage);
       this.setUsageAttributes(this._usage);
     }
 
@@ -384,30 +382,35 @@ export class InferenceInvocation extends BaseInvocation {
    * non-negative count. An explicitly reported `0` is recorded; `undefined` is
    * never treated as `0`.
    */
-  private setUsageAttributes(usage: TokenUsage): void {
-    this.setUsageAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, usage.inputTokens);
-    this.setUsageAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, usage.outputTokens);
-    this.setUsageAttribute(
+  private setUsageAttributes(usage: TokenUsageDetails): void {
+    this.setTokenUsageAttribute(
+      ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+      usage.inputTokenCount
+    );
+    this.setTokenUsageAttribute(
+      ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+      usage.outputTokenCount
+    );
+    this.setTokenUsageAttribute(
       ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
-      usage.reasoningTokens
+      usage.reasoningTokenCount
     );
-    this.setUsageAttribute(
+    this.setTokenUsageAttribute(
       ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
-      usage.cacheReadTokens
+      usage.cacheReadTokenCount
     );
-    this.setUsageAttribute(
+    this.setTokenUsageAttribute(
       ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
-      usage.cacheWriteTokens
+      usage.cacheWriteTokenCount
     );
   }
 
-  private setUsageAttribute(
+  private setTokenUsageAttribute(
     key: string,
-    tokenCounts: TokenCountsByModality | undefined
+    tokenCount: number | undefined
   ): void {
-    const total = sumTokenCountsAcrossModalities(tokenCounts);
-    if (total !== undefined) {
-      this._span.setAttribute(key, total);
+    if (tokenCount !== undefined && tokenCount >= 0) {
+      this._span.setAttribute(key, tokenCount);
     }
   }
 }

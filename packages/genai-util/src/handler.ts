@@ -51,10 +51,10 @@ import type {
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
   TokenModality,
-  TokenUsage,
+  TokenUsageByModality,
+  TokenUsageDetails,
   ToolInvocationOptions,
 } from './types';
-import { sumTokenCountsAcrossModalities } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -274,63 +274,59 @@ export class TelemetryHandler {
    *   measurement. Defaults to the currently active context.
    */
   public recordInferenceTokenUsage(
-    usage: TokenUsage,
+    usage: TokenUsageDetails,
     attributes?: Attributes,
     context?: Context
   ): void {
     if (!usage) {
       return;
     }
-    const totalInputTokensAcrossModalities = sumTokenCountsAcrossModalities(
-      usage.inputTokens
-    );
-    const totalOutputTokensAcrossModalities = sumTokenCountsAcrossModalities(
-      usage.outputTokens
-    );
 
-    if (isPositiveCount(totalInputTokensAcrossModalities)) {
+    if (isPositiveCount(usage.inputTokenCount)) {
       this._inputTokenOperationHistogram.record(
-        totalInputTokensAcrossModalities,
+        usage.inputTokenCount,
         attributes,
         context
       );
     }
 
-    if (isPositiveCount(totalOutputTokensAcrossModalities)) {
+    if (isPositiveCount(usage.outputTokenCount)) {
       this._outputTokenOperationHistogram.record(
-        totalOutputTokensAcrossModalities,
+        usage.outputTokenCount,
         attributes,
         context
       );
     }
 
-    this.recordModalityUsage(
-      GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
-      usage,
-      attributes,
-      context
-    );
+    if (usage.tokenUsageByModality) {
+      this.recordModalityUsage(
+        GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+        usage.tokenUsageByModality,
+        attributes,
+        context
+      );
 
-    this.recordModalityUsage(
-      GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
-      usage,
-      attributes,
-      context
-    );
+      this.recordModalityUsage(
+        GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+        usage.tokenUsageByModality,
+        attributes,
+        context
+      );
 
-    this.recordModalityUsage(
-      GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
-      usage,
-      attributes,
-      context
-    );
+      this.recordModalityUsage(
+        GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+        usage.tokenUsageByModality,
+        attributes,
+        context
+      );
 
-    this.recordModalityUsage(
-      GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
-      usage,
-      attributes,
-      context
-    );
+      this.recordModalityUsage(
+        GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+        usage.tokenUsageByModality,
+        attributes,
+        context
+      );
+    }
   }
 
   /**
@@ -404,7 +400,7 @@ export class TelemetryHandler {
    */
   private recordModalityUsage(
     modality: TokenModality,
-    usage: TokenUsage,
+    usage: TokenUsageByModality,
     attributes?: Attributes,
     context?: Context
   ): void {

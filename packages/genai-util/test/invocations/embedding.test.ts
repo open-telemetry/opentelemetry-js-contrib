@@ -301,7 +301,7 @@ describe('EmbeddingInvocation', () => {
         requestModel: 'text-embedding-3-small',
       });
 
-      invocation.setUsage({ inputTokens: { text: 120 } });
+      invocation.setUsage({ inputTokenCount: 120 });
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -323,8 +323,8 @@ describe('EmbeddingInvocation', () => {
         providerName: 'openai',
       });
 
-      invocation.setUsage({ inputTokens: { text: 50 } });
-      invocation.setUsage({ inputTokens: { text: 100 } });
+      invocation.setUsage({ inputTokenCount: 50 });
+      invocation.setUsage({ inputTokenCount: 100 });
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -343,8 +343,8 @@ describe('EmbeddingInvocation', () => {
       });
 
       invocation.setUsage({
-        cacheReadTokens: { text: 30 },
-        cacheWriteTokens: { text: 20 },
+        cacheReadTokenCount: 30,
+        cacheWriteTokenCount: 20,
       });
       invocation.stop();
 
@@ -360,11 +360,11 @@ describe('EmbeddingInvocation', () => {
       });
 
       const invZero = handler.startEmbedding({ providerName: 'openai' });
-      invZero.setUsage({ inputTokens: { text: 0 } });
+      invZero.setUsage({ inputTokenCount: 0 });
       invZero.stop();
 
       const invNegative = handler.startEmbedding({ providerName: 'openai' });
-      invNegative.setUsage({ inputTokens: { text: -5 } });
+      invNegative.setUsage({ inputTokenCount: -5 });
       invNegative.stop();
 
       const spans = ctx.memoryExporter.getFinishedSpans();
@@ -389,7 +389,7 @@ describe('EmbeddingInvocation', () => {
       const invocation = handler.startEmbedding({
         providerName: 'openai',
       });
-      invocation.setUsage({ inputTokens: { text: 100 } });
+      invocation.setUsage({ inputTokenCount: 100 });
       invocation.stop();
 
       const { resourceMetrics } = await ctx.metricReader.collect();
