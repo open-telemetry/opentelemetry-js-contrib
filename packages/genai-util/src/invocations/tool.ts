@@ -183,16 +183,6 @@ export class ToolInvocation extends BaseInvocation {
   }
 
   /**
-   * Emit log-based event `gen_ai.client.inference.operation.details`.
-   *
-   * NOTE: Currently a no-op placeholder. Will be implemented using LoggerProvider / EventLogger
-   * once the Logs & Events API is stable in OpenTelemetry JavaScript.
-   */
-  protected override _emitContentEvent(_endTime?: HrTime): void {
-    // No-op until Logs/Events API is stable in JS.
-  }
-
-  /**
    * Hook for subclasses to emit invocation specific telemetry.
    */
   protected override _onInvocationEnd(
