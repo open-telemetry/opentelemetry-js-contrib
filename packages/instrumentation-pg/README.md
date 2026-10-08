@@ -55,12 +55,15 @@ PostgreSQL instrumentation has few options available to choose from. You can set
 
 | Options | Type | Description |
 | ------- | ---- | ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts#L30) | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
+| `enhancedDatabaseReporting` | `boolean` | If true, additional information about query parameters and results will be attached (as `attributes`) to spans representing database operations |
 | `requestHook` | `PgInstrumentationExecutionRequestHook` (function) | Function for adding custom span attributes using information about the query being issued and the db to which it's directed |
 | `responseHook` | `PgInstrumentationExecutionResponseHook` (function) | Function for adding custom span attributes from db response |
 | `requireParentSpan` | `boolean` | If true, requires a parent span to create new spans (default false) |
 | `addSqlCommenterCommentToQueries` | `boolean` | If true, adds [sqlcommenter](https://github.com/open-telemetry/opentelemetry-sqlcommenter) specification compliant comment to queries with tracing context (default false). _NOTE: A comment will not be added to queries that already contain `--` or `/* ... */` in them, even if these are not actually part of comments_ |
 | `ignoreConnectSpans` | `boolean` | If true, `pg.connect` and `pg-pool.connect` spans will not be created. Query spans and pool metrics are still recorded (default false) |
+| `skipQueryTextSanitization` | `boolean` | If true, the `db.query.text` attribute is recorded as-is instead of being sanitized by `queryTextSanitizationHook` (default false, i.e. sanitized by default). The query sent to the server is never modified |
+| `queryTextSanitizationHook` | `PgInstrumentationQueryTextSanitizationHook` (function) | Function used to sanitize `db.query.text` unless `skipQueryTextSanitization` is true. Defaults to `sanitizeSql` from [`@opentelemetry/sql-common`](../sql-common). If it throws or returns a non-string, `db.query.text` is omitted |
+| `enableTraceContextPropagation` | `boolean` | If true, injects the current span's W3C traceparent into the PostgreSQL session via `SET application_name` before each query (default false). _NOTE: this adds a round-trip per query_ |
 
 ## Semantic Conventions
 
@@ -83,6 +86,81 @@ The `@opentelemetry/instrumentation-pg` versions 0.72.0 and later emit the stabl
 > name separately, and the OpenTelemetry specification advises against parsing
 > `db.query.text` when the database supports queries touching multiple
 > collections in non-batch operations, which is the case for PostgreSQL.
+
+### Sanitizing `db.query.text`
+
+> [!IMPORTANT]
+> Versions 0.74.0 and later sanitize `db.query.text` for non-parameterized
+> queries by default. Earlier versions recorded it verbatim. Queries built by
+> string concatenation therefore record `?` in place of their literals, which
+> changes the value of an attribute existing dashboards and saved queries may
+> match on. Set `skipQueryTextSanitization: true` to restore the previous
+> behaviour.
+
+The `pg` driver never interpolates parameter values into the query text, so a
+parameterized query records placeholders rather than values — which is why
+the specification advises against
+[sanitizing](https://opentelemetry.io/docs/specs/semconv/database/database-spans/#sanitization-of-dbquerytext)
+parameterized query text. A parameterized call — one made with a non-empty
+`values` array — always has its `db.query.text` recorded exactly as passed to
+`client.query()`, regardless of `skipQueryTextSanitization`. An empty `values`
+array does not count: nothing is travelling beside the text, so the text is
+sanitized as it would be for any other non-parameterized query. This matters
+for the common wrapper `query(text, params = [])`, which would otherwise send
+every concatenated query down the unsanitized path.
+
+Applications that build SQL by string concatenation put literals into the query
+text, and therefore onto the span. For a non-parameterized query, `db.query.text`
+is sanitized by default to strip those out; set `skipQueryTextSanitization: true`
+to record it verbatim instead. By default:
+
+- string, numeric, bit-string and dollar-quoted literals become `?`
+- `--` and (nestable) `/* */` comments are removed
+- runs of whitespace collapse to a single space
+- `$n` parameter placeholders and identifiers, including `"quoted"` ones, are preserved
+- the result is truncated at 32768 characters
+
+So `SELECT * FROM users WHERE email = 'a@b.c' -- lookup` is recorded as
+`SELECT * FROM users WHERE email = ?`, while
+`SELECT * FROM users WHERE id = $1` is recorded unchanged.
+
+The default is `sanitizeSql` from
+[`@opentelemetry/sql-common`](../sql-common) called with no options beyond the
+dialect, so a hook that wants a different truncation limit can call it directly:
+
+```js
+const { sanitizeSql } = require('@opentelemetry/sql-common');
+
+new PgInstrumentation({
+  queryTextSanitizationHook: query =>
+    sanitizeSql(query, { dialect: 'postgresql', maxLength: 4096 }),
+});
+```
+
+Limits worth knowing:
+
+- Only `db.query.text` is sanitized. The query sent to PostgreSQL is untouched,
+  and `requestHook` still receives the original text.
+- `db.operation.name` and the span name are derived from the raw query text, not
+  the sanitized text -- and because `db.operation.name` is also a dimension of
+  the `db.client.operation.duration` metric, that text reaches metrics as well.
+  Only the leading keyword is used, though, so this is limited to the SQL
+  command name (`SELECT`, `INSERT`, etc.), never a literal.
+- Double-quoted identifiers are preserved, because in PostgreSQL `"` delimits an
+  identifier rather than a string literal. An application that quotes _dynamic_
+  identifiers should supply its own `queryTextSanitizationHook`.
+- `db.postgresql.values` (see `enhancedDatabaseReporting`) and
+  `db.postgresql.plan` (the prepared-statement name) are not sanitized.
+  `db.postgresql.values` is only ever populated for a parameterized query, and
+  a parameterized query's `db.query.text` is always recorded as-is (see
+  above), so the two are never a mix of sanitized text and raw values.
+- If `queryTextSanitizationHook` throws or returns a non-string, `db.query.text`
+  is omitted rather than falling back to the raw text, and a warning is logged
+  through the API diagnostic logger.
+- The default hook assumes `standard_conforming_strings` is on, which has been
+  PostgreSQL's default since version 9.1. A server with it explicitly turned
+  off can use a backslash to escape a quote inside an ordinary string, which
+  the default hook does not account for and can sanitize incorrectly.
 
 Metrics Exported:
 
