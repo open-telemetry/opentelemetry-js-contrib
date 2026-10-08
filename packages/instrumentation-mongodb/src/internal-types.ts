@@ -3,42 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import { Span } from '@opentelemetry/api';
-
-export interface MongoDBInstrumentationExecutionResponseHook {
-  (span: Span, responseInfo: MongoResponseHookInformation): void;
-}
-
-/**
- * Function that can be used to serialize db.statement tag
- * @param cmd - MongoDB command object
- *
- * @returns serialized string that will be used as the db.statement attribute.
- */
-export type DbStatementSerializer = (cmd: Record<string, unknown>) => string;
-
-export interface MongoDBInstrumentationConfig extends InstrumentationConfig {
-  /**
-   * If true, additional information about query parameters and
-   * results will be attached (as `attributes`) to spans representing
-   * database operations.
-   */
-  enhancedDatabaseReporting?: boolean;
-
-  /**
-   * Hook that allows adding custom span attributes based on the data
-   * returned from MongoDB actions.
-   *
-   * @default undefined
-   */
-  responseHook?: MongoDBInstrumentationExecutionResponseHook;
-
-  /**
-   * Custom serializer function for the db.statement tag
-   */
-  dbStatementSerializer?: DbStatementSerializer;
-}
+export { MongodbCommandType } from './types';
 
 export type Func<T> = (...args: unknown[]) => T;
 export type MongoInternalCommand = {
@@ -65,17 +30,6 @@ export type CursorState = { cmd: MongoInternalCommand } & Record<
   string,
   unknown
 >;
-
-export interface MongoResponseHookInformation {
-  data: CommandResult;
-}
-
-// https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/connection/command_result.js
-export type CommandResult = {
-  result?: unknown;
-  connection?: unknown;
-  message?: unknown;
-};
 
 // https://github.com/mongodb/node-mongodb-native/blob/3.6/lib/core/wireprotocol/index.js
 export type WireProtocolInternal = {
@@ -150,15 +104,6 @@ export type MongoInternalTopology = {
     address?: string;
   };
 };
-
-export enum MongodbCommandType {
-  CREATE_INDEXES = 'createIndexes',
-  FIND_AND_MODIFY = 'findAndModify',
-  IS_MASTER = 'isMaster',
-  COUNT = 'count',
-  AGGREGATE = 'aggregate',
-  UNKNOWN = 'unknown',
-}
 
 // https://github.com/mongodb/js-bson/blob/main/src/bson.ts
 export type Document = {
