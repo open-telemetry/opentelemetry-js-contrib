@@ -22,6 +22,9 @@ class ContextSetter
     key: string,
     value: string
   ) {
+    if (value.length === 0) {
+      return;
+    }
     carrier[key] = {
       DataType: 'String',
       StringValue: value as string,
@@ -63,11 +66,16 @@ export const injectPropagationContext = (
   attributesMap?: SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap
 ): SQS.MessageBodyAttributeMap | SNS.MessageAttributeMap => {
   const attributes = attributesMap ?? {};
-  if (
-    Object.keys(attributes).length + propagation.fields().length <=
-    MAX_MESSAGE_ATTRIBUTES
-  ) {
-    propagation.inject(context.active(), attributes, contextSetter);
+  const propagationAttributes:
+    | SQS.MessageBodyAttributeMap
+    | SNS.MessageAttributeMap = {};
+  propagation.inject(context.active(), propagationAttributes, contextSetter);
+  const attributeCount = new Set([
+    ...Object.keys(attributes),
+    ...Object.keys(propagationAttributes),
+  ]).size;
+  if (attributeCount <= MAX_MESSAGE_ATTRIBUTES) {
+    Object.assign(attributes, propagationAttributes);
   } else {
     diag.warn(
       'aws-sdk instrumentation: cannot set context propagation on SQS/SNS message due to maximum amount of MessageAttributes'
