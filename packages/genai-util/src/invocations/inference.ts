@@ -319,14 +319,13 @@ export class InferenceInvocation extends BaseInvocation {
       this._getMetricAttributes(errorType),
       this._context
     );
-    if (this._usage) {
-      // Token metrics do not define `error.type`, even for failed operations.
-      this._handler.recordInferenceTokenUsage(
-        this._usage,
-        this._getMetricAttributes(),
-        this._context
-      );
-    }
+
+    // Token metrics do not define `error.type`, even for failed operations.
+    this._handler.recordInferenceTokenUsage(
+      this._usage,
+      this._getMetricAttributes(),
+      this._context
+    );
   }
 
   /**
@@ -378,38 +377,50 @@ export class InferenceInvocation extends BaseInvocation {
   /**
    * Set the `gen_ai.usage.*` span attributes for every field defined in `usage`.
    *
-   * An attribute is only set when the field contains at least one defined,
-   * non-negative count. An explicitly reported `0` is recorded; `undefined` is
-   * never treated as `0`.
+   * An explicitly reported `0` is recorded on {@link ATTR_GEN_AI_USAGE_INPUT_TOKENS}
+   * and {@link ATTR_GEN_AI_USAGE_OUTPUT_TOKENS}. An explicitly reported count of `0`
+   * is not recorded on {@link ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS},
+   * {@link ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS}, or
+   * {@link ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS}.
+   * `undefined` or negative values are never recorded.
    */
   private setUsageAttributes(usage: TokenUsageDetails): void {
-    this.setTokenUsageAttribute(
+    this.setTokenUsageAttributeIfPositiveZeroInclusive(
       ATTR_GEN_AI_USAGE_INPUT_TOKENS,
       usage.inputTokenCount
     );
-    this.setTokenUsageAttribute(
+    this.setTokenUsageAttributeIfPositiveZeroInclusive(
       ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
       usage.outputTokenCount
     );
-    this.setTokenUsageAttribute(
+    this.setTokenUsageAttributeIfPositive(
       ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
       usage.reasoningTokenCount
     );
-    this.setTokenUsageAttribute(
+    this.setTokenUsageAttributeIfPositive(
       ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
       usage.cacheReadTokenCount
     );
-    this.setTokenUsageAttribute(
+    this.setTokenUsageAttributeIfPositive(
       ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS,
       usage.cacheWriteTokenCount
     );
   }
 
-  private setTokenUsageAttribute(
+  private setTokenUsageAttributeIfPositiveZeroInclusive(
     key: string,
     tokenCount: number | undefined
   ): void {
     if (tokenCount !== undefined && tokenCount >= 0) {
+      this._span.setAttribute(key, tokenCount);
+    }
+  }
+
+  private setTokenUsageAttributeIfPositive(
+    key: string,
+    tokenCount: number | undefined
+  ): void {
+    if (tokenCount !== undefined && tokenCount > 0) {
       this._span.setAttribute(key, tokenCount);
     }
   }

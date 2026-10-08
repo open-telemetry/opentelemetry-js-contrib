@@ -42,6 +42,10 @@ import {
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
   ATTR_GEN_AI_TOKEN_MODALITY,
 } from '../../src/semconv';
 import {
@@ -787,14 +791,115 @@ describe('InferenceInvocation', () => {
     }
   });
 
-  describe('token usage finalization', () => {
-    const TOKEN_METRICS = [
-      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
-      METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  it('should record 0 on histograms and unknown modality on counters when failed without usage', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    invocation.fail({
+      errorType: 'Error',
+      statusDescription: 'Request failed before response',
+    });
+
+    const metrics = await collectMetricsByName(ctx.metricReader);
+
+    // Histograms record 0
+    assert.deepStrictEqual(
+      histogramPoints(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
+      ),
+      [{ count: 1, sum: 0 }]
+    );
+    assert.deepStrictEqual(
+      histogramPoints(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
+      ),
+      [{ count: 1, sum: 0 }]
+    );
+
+    // All 5 usage counters record exactly 1 data point with modality: 'unknown' and value 0
+    for (const name of [
       METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
       METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
-    ];
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+    ]) {
+      const metric = metrics.get(name);
+      assert.strictEqual(
+        metric?.dataPoints.length,
+        1,
+        `Expected exactly 1 data point for ${name}, got ${metric?.dataPoints.length}`
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(metric),
+        { [GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN]: 0 },
+        `Expected ${name} to record only unknown modality with count 0`
+      );
+    }
+  });
 
+  it('should not emit spurious zeros for unreported modalities when usage is present', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    invocation.setUsage({
+      inputTokenCount: 100,
+      outputTokenCount: 50,
+      tokenUsageByModality: {
+        inputTokens: { text: 100 },
+        outputTokens: { text: 50 },
+      },
+    });
+    invocation.stop();
+
+    const metrics = await collectMetricsByName(ctx.metricReader);
+
+    // Only text was reported: should not have audio: 0, image: 0, or unknown: 0
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
+      ),
+      { text: 100 }
+    );
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+      ),
+      { text: 50 }
+    );
+
+    // Cache and reasoning were not reported: should not record data points with 0
+    for (const name of [
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+      METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+    ]) {
+      const metric = metrics.get(name);
+      assert.strictEqual(
+        metric?.dataPoints.length ?? 0,
+        0,
+        `Expected 0 data points for unreported metric ${name}`
+      );
+    }
+  });
+
+  describe('token usage finalization', () => {
     const startInference = (contentCaptureMode?: 'none' | 'span_only') =>
       new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
@@ -803,9 +908,6 @@ describe('InferenceInvocation', () => {
         meterProvider: ctx.meterProvider,
         contentCaptureMode,
       }).startInference({ providerName: 'openai', requestModel: 'gpt-4o' });
-
-    const dataPointCount = (metric: MetricData | undefined) =>
-      metric?.dataPoints.length ?? 0;
 
     it('should infer inputTokens from cache read and write tokens, per modality', async () => {
       const invocation = startInference();
@@ -1024,75 +1126,40 @@ describe('InferenceInvocation', () => {
       );
     });
 
-    it('should not record undefined token counts on the span or the metrics', async () => {
-      const invocation = startInference();
-      invocation.setUsage({
-        inputTokenCount: undefined,
-        outputTokenCount: undefined,
-        tokenUsageByModality: {
-          inputTokens: {},
-          outputTokens: { text: undefined },
-        },
-      });
-      invocation.stop();
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.ok(!(ATTR_GEN_AI_USAGE_INPUT_TOKENS in span.attributes));
-      assert.ok(!(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS in span.attributes));
-
-      const metrics = await collectMetricsByName(ctx.metricReader);
-      for (const name of TOKEN_METRICS) {
-        assert.strictEqual(dataPointCount(metrics.get(name)), 0, name);
-      }
-    });
-
-    it('should record an explicit 0 on the span but not on the metrics', async () => {
+    it('should only report 0 on input_tokens and output_tokens among span usage attributes', () => {
       const invocation = startInference();
       invocation.setUsage({
         inputTokenCount: 0,
         outputTokenCount: 0,
+        cacheReadTokenCount: 0,
+        cacheWriteTokenCount: 0,
+        reasoningTokenCount: 0,
         tokenUsageByModality: {
           inputTokens: { text: 0 },
           outputTokens: { text: 0 },
-        },
-      });
-      invocation.stop();
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 0);
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 0);
-
-      const metrics = await collectMetricsByName(ctx.metricReader);
-      for (const name of TOKEN_METRICS) {
-        assert.strictEqual(dataPointCount(metrics.get(name)), 0, name);
-      }
-    });
-
-    it('should not infer a 0 that was not reported', () => {
-      const invocation = startInference();
-      invocation.setUsage({
-        cacheReadTokenCount: 0,
-        reasoningTokenCount: 0,
-        tokenUsageByModality: {
           cacheReadTokens: { text: 0 },
+          cacheWriteTokens: { text: 0 },
           reasoningTokens: { text: 0 },
         },
       });
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
-      // The explicitly reported zeros are kept...
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS],
-        0
+
+      // Only input_tokens and output_tokens report an explicit 0 count.
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 0);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 0);
+
+      // Detailed token count attributes (cache and reasoning) are only reported for non-zero values.
+      assert.ok(
+        !(ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS in span.attributes)
       );
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
-        0
+      assert.ok(
+        !(ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS in span.attributes)
       );
-      // ...but no input / output value is inferred from them.
-      assert.ok(!(ATTR_GEN_AI_USAGE_INPUT_TOKENS in span.attributes));
-      assert.ok(!(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS in span.attributes));
+      assert.ok(
+        !(ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS in span.attributes)
+      );
     });
 
     it('should ignore negative token counts on the span', () => {

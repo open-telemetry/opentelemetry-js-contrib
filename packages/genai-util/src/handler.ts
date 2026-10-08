@@ -87,6 +87,13 @@ export interface TelemetryHandlerOptions {
   contentCaptureMode?: ContentCaptureMode;
 }
 
+const ALL_TOKEN_MODALITIES: readonly TokenModality[] = [
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+];
+
 /**
  * Central lifecycle handler and façade for GenAI telemetry collection.
  *
@@ -259,69 +266,56 @@ export class TelemetryHandler {
    * recorded on both metric families defined by the semantic conventions: once
    * on the `gen_ai.client.inference.operation.*` histograms, and on the
    * `gen_ai.client.inference.usage.*` counters split by `gen_ai.token.modality`
-   * Missing, zero and negative counts are skipped.
+   * Negative counts are skipped.
    *
    * Intended to be called by {@link InferenceInvocation} when the invocation
    * ends, with usage whose missing `inputTokens` / `outputTokens` have already
    * been inferred (from cache and reasoning tokens respectively). This method
-   * does not infer them itself: if they are missing, the input / output
-   * histograms and counters are not recorded.
+   * does not infer them itself: if usage is missing or undefined, a count of 0
+   * is recorded for the input / output histograms, and for the usage counters with
+   * `gen_ai.token.modality` set to `'unknown'`.
    *
-   * @param usage - Token counts of the operation.
+   * @param usage - Token counts of the operation, or undefined if not reported.
    * @param attributes - Metric attributes. Token metrics do not define
    *   `error.type`, so leave it out even when the operation failed.
    * @param context - Context used to associate an exemplar with the
    *   measurement. Defaults to the currently active context.
    */
   public recordInferenceTokenUsage(
-    usage: TokenUsageDetails,
+    usage: TokenUsageDetails | undefined,
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (!usage) {
+    // Record operation-level input tokens on histogram, defaulting missing counts to 0.
+    const inputTokens = usage?.inputTokenCount ?? 0;
+    if (inputTokens >= 0) {
+      this._inputTokenOperationHistogram.record(
+        inputTokens,
+        attributes,
+        context
+      );
+    }
+
+    // Record operation-level output tokens on histogram, defaulting missing counts to 0.
+    const outputTokens = usage?.outputTokenCount ?? 0;
+    if (outputTokens >= 0) {
+      this._outputTokenOperationHistogram.record(
+        outputTokens,
+        attributes,
+        context
+      );
+    }
+
+    // When modality usage is missing or undefined, record 0 under unknown modality on all usage counters.
+    if (!usage?.tokenUsageByModality) {
+      this.recordNoUsage(attributes, context);
       return;
     }
 
-    if (isPositiveCount(usage.inputTokenCount)) {
-      this._inputTokenOperationHistogram.record(
-        usage.inputTokenCount,
-        attributes,
-        context
-      );
-    }
-
-    if (isPositiveCount(usage.outputTokenCount)) {
-      this._outputTokenOperationHistogram.record(
-        usage.outputTokenCount,
-        attributes,
-        context
-      );
-    }
-
-    if (usage.tokenUsageByModality) {
+    // Record positive counts per modality, skipping modalities that were not reported.
+    for (const modality of ALL_TOKEN_MODALITIES) {
       this.recordModalityUsage(
-        GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
-        usage.tokenUsageByModality,
-        attributes,
-        context
-      );
-
-      this.recordModalityUsage(
-        GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
-        usage.tokenUsageByModality,
-        attributes,
-        context
-      );
-
-      this.recordModalityUsage(
-        GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
-        usage.tokenUsageByModality,
-        attributes,
-        context
-      );
-
-      this.recordModalityUsage(
-        GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+        modality,
         usage.tokenUsageByModality,
         attributes,
         context
@@ -400,49 +394,65 @@ export class TelemetryHandler {
    */
   private recordModalityUsage(
     modality: TokenModality,
-    usage: TokenUsageByModality,
+    usage: TokenUsageByModality | undefined,
     attributes?: Attributes,
     context?: Context
   ): void {
     this.recordTokenUsageForModality(
       this._inputTokenUsageCounter,
       modality,
-      usage.inputTokens?.[modality],
+      usage?.inputTokens?.[modality],
       attributes,
       context
     );
     this.recordTokenUsageForModality(
       this._outputTokenUsageCounter,
       modality,
-      usage.outputTokens?.[modality],
+      usage?.outputTokens?.[modality],
       attributes,
       context
     );
     this.recordTokenUsageForModality(
       this._cacheReadInputTokenUsageCounter,
       modality,
-      usage.cacheReadTokens?.[modality],
+      usage?.cacheReadTokens?.[modality],
       attributes,
       context
     );
     this.recordTokenUsageForModality(
       this._cacheWriteInputTokenUsageCounter,
       modality,
-      usage.cacheWriteTokens?.[modality],
+      usage?.cacheWriteTokens?.[modality],
       attributes,
       context
     );
     this.recordTokenUsageForModality(
       this._reasoningOutputTokenUsageCounter,
       modality,
-      usage.reasoningTokens?.[modality],
+      usage?.reasoningTokens?.[modality],
       attributes,
       context
     );
   }
 
   /**
-   * Record token usage for a specific modality.
+   * Record zero token usage on all usage counters under the unknown modality
+   * when no usage was reported.
+   */
+  private recordNoUsage(attributes?: Attributes, context?: Context): void {
+    const unknownAttrs = {
+      ...attributes,
+      [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+    };
+    this._inputTokenUsageCounter.add(0, unknownAttrs, context);
+    this._outputTokenUsageCounter.add(0, unknownAttrs, context);
+    this._cacheReadInputTokenUsageCounter.add(0, unknownAttrs, context);
+    this._cacheWriteInputTokenUsageCounter.add(0, unknownAttrs, context);
+    this._reasoningOutputTokenUsageCounter.add(0, unknownAttrs, context);
+  }
+
+  /**
+   * Record token usage for a specific modality. Missing, zero and negative counts are skipped.
    */
   private recordTokenUsageForModality(
     tokenCounter: Counter,
