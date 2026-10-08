@@ -261,9 +261,7 @@ describe('LangChainInstrumentation', () => {
       const target = copy.RunnableSequence.prototype;
       const original = target.invoke;
       const calls = sinon.spy();
-      const unwrap = sinon.spy(() => {
-        target.invoke = original;
-      });
+      const unwrap = sinon.spy();
       const wrap = () => {
         const previous = target.invoke;
         const wrapper = Object.assign(
@@ -271,7 +269,14 @@ describe('LangChainInstrumentation', () => {
             calls();
             return previous.call(this, value);
           },
-          { __original: previous, __wrapped: true, __unwrap: unwrap }
+          {
+            __original: previous,
+            __wrapped: true,
+            __unwrap: () => {
+              unwrap();
+              target.invoke = previous;
+            },
+          }
         );
         target.invoke = wrapper;
         return wrapper;
@@ -302,6 +307,91 @@ describe('LangChainInstrumentation', () => {
         target.invoke = original;
       }
     });
+  }
+
+  for (const method of ['invoke', 'batch'] as const) {
+    for (const reenable of [false, true]) {
+      it(`restores ${method} after outer wrappers are removed (re-enable=${reenable})`, () => {
+        const first = new TestInstrumentation({ enabled: false });
+        const second = new TestInstrumentation({ enabled: false });
+        const copy = runnableModule();
+        const target = copy.RunnableSequence.prototype;
+        const original = target[method];
+        const descriptor = Object.getOwnPropertyDescriptor(target, method);
+        const receiver = new copy.RunnableSequence();
+        const result = ['input'];
+        const wrap = () => {
+          const previous = target[method];
+          const wrapper = function (this: typeof target, value: unknown) {
+            expect(this).toBe(receiver);
+            expect(value).toBe(result);
+            return previous.call(this, value);
+          };
+          target[method] = wrapper;
+          return {
+            wrapper,
+            unwrap: () => {
+              target[method] = previous;
+            },
+          };
+        };
+        try {
+          for (const instance of [first, second]) {
+            instance.enable();
+            const file = instance.definitions[0].files[0];
+            file.moduleExports = copy;
+            file.patch(copy);
+          }
+          const workflowWrapper = target[method];
+          const inner = wrap();
+          const outer = wrap();
+          first.disable();
+          resetMemoryExporter();
+          expect(receiver[method](result)).toBe(result);
+          expect(getTestSpans()).toHaveLength(1);
+          second.disable();
+          resetMemoryExporter();
+          expect(receiver[method](result)).toBe(result);
+          expect(target[method]).toBe(outer.wrapper);
+          expect(getTestSpans()).toHaveLength(0);
+          outer.unwrap();
+          expect(receiver[method](result)).toBe(result);
+          expect(target[method]).toBe(inner.wrapper);
+          expect(getTestSpans()).toHaveLength(0);
+          if (reenable) first.enable();
+          inner.unwrap();
+          expect(target[method]).toBe(workflowWrapper);
+          expect(receiver[method](result)).toBe(result);
+          expect(getTestSpans()).toHaveLength(reenable ? 1 : 0);
+          if (reenable) {
+            expect(target[method]).toBe(workflowWrapper);
+            first.disable();
+          }
+          expect(target[method]).toBe(original);
+          expect(Object.getOwnPropertyDescriptor(target, method)).toEqual(
+            descriptor
+          );
+
+          // Cleanup must remove the registry entry as well as the wrapper.
+          first.enable();
+          const replacement = target[method];
+          expect(replacement).not.toBe(original);
+          expect(replacement).not.toBe(workflowWrapper);
+          resetMemoryExporter();
+          expect(workflowWrapper.call(receiver, result)).toBe(result);
+          expect(getTestSpans()).toHaveLength(0);
+          expect(target[method]).toBe(replacement);
+          expect(receiver[method](result)).toBe(result);
+          expect(getTestSpans()).toHaveLength(1);
+          first.disable();
+          expect(target[method]).toBe(original);
+        } finally {
+          first.disable();
+          second.disable();
+          target[method] = original;
+        }
+      });
+    }
   }
 
   describe('constructor', () => {

@@ -129,7 +129,9 @@ Multiple instrumentation instances share one workflow wrapper per method.
 The most recently enabled instance supplies configuration and providers, without
 duplicating telemetry. Disabling it falls back to another enabled instance.
 Original methods are restored only after the last instance is disabled, without
-removing wrappers installed by other code.
+removing wrappers installed by other code. If an outer wrapper prevents cleanup,
+the inactive workflow wrapper restores the original method on its next call
+after the outer wrapper is removed.
 
 This workflow-only phase intentionally does not depend on `@opentelemetry/genai-util`.
 Adoption of its concrete workflow API is deferred to a follow-up once that API is

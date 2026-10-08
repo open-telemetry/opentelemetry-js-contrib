@@ -59,7 +59,7 @@ const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
 
 interface WorkflowPatch {
   owners: Set<LangChainInstrumentation>;
-  restore: () => boolean;
+  restore: () => void;
 }
 
 const workflowPatches = new WeakMap<object, Map<PropertyKey, WorkflowPatch>>();
@@ -363,27 +363,30 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
    */
   private _patchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
-      this._patchMethod(cls.prototype, 'invoke', owners =>
-        this._createInvokeWrapper(owners)
+      this._patchMethod(cls.prototype, 'invoke', (owners, restore) =>
+        this._createInvokeWrapper(owners, restore)
       );
     }
     // Sequence has an optimized batch; Map's inherited batch invokes
     // each item separately and is already covered by its invoke patch.
-    this._patchMethod(module.RunnableSequence.prototype, 'batch', owners =>
-      this._createBatchWrapper(owners)
+    this._patchMethod(
+      module.RunnableSequence.prototype,
+      'batch',
+      (owners, restore) => this._createBatchWrapper(owners, restore)
     );
   }
 
   private _patchMethod<T extends object, K extends keyof T>(
     target: T,
     method: K,
-    factory: (owners: Set<LangChainInstrumentation>) => (original: T[K]) => T[K]
+    factory: (
+      owners: Set<LangChainInstrumentation>,
+      restore: () => void
+    ) => (original: T[K]) => T[K]
   ) {
-    let patches = workflowPatches.get(target);
-    if (!patches) {
-      patches = new Map();
-      workflowPatches.set(target, patches);
-    }
+    const patches =
+      workflowPatches.get(target) ?? new Map<PropertyKey, WorkflowPatch>();
+    workflowPatches.set(target, patches);
     const existing = patches.get(method);
     if (existing) {
       existing.owners.add(this);
@@ -391,17 +394,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     }
     const owners = new Set([this]);
     const original = target[method];
-    const wrapped = factory(owners)(original);
-    // The base _wrap removes existing wrappers, including those we do not own.
-    target[method] = wrapped;
-    patches.set(method, {
+    const patch: WorkflowPatch = {
       owners,
       restore: () => {
-        if (target[method] !== wrapped) return false;
+        if (owners.size !== 0 || target[method] !== wrapped) return;
         target[method] = original;
-        return true;
+        if (patches.get(method) === patch) patches.delete(method);
       },
-    });
+    };
+    const wrapped = factory(owners, patch.restore)(original);
+    // The base _wrap removes existing wrappers, including those we do not own.
+    target[method] = wrapped;
+    patches.set(method, patch);
   }
 
   /**
@@ -419,12 +423,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     if (!patches) return;
     const patch = patches.get(method);
     if (!patch?.owners.delete(this)) return;
-    if (patch.owners.size === 0 && patch.restore()) {
-      patches.delete(method);
-    }
+    patch.restore();
   }
 
-  private _createInvokeWrapper(owners: Set<LangChainInstrumentation>) {
+  private _createInvokeWrapper(
+    owners: Set<LangChainInstrumentation>,
+    restore: () => void
+  ) {
     return <T extends Runnables.Runnable, R>(
       original: (this: T, ...args: Parameters<T['invoke']>) => R
     ) =>
@@ -433,13 +438,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           .reverse()
           .find(instance => instance.isEnabled());
         const invoke = () => original.apply(this, args);
+        // An outer wrapper may have exposed us again after the last disable.
+        if (!owner) restore();
         return owner
           ? owner._traceWorkflow(this, args[0], args[1], false, invoke)
           : invoke();
       };
   }
 
-  private _createBatchWrapper(owners: Set<LangChainInstrumentation>) {
+  private _createBatchWrapper(
+    owners: Set<LangChainInstrumentation>,
+    restore: () => void
+  ) {
     return <T extends Runnables.RunnableSequence, R>(
       original: (this: T, ...args: Parameters<T['batch']>) => R
     ) =>
@@ -448,6 +458,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           .reverse()
           .find(instance => instance.isEnabled());
         const invoke = () => original.apply(this, args);
+        if (!owner) restore();
         return owner
           ? owner._traceWorkflow(this, args[0], args[1], true, invoke)
           : invoke();
