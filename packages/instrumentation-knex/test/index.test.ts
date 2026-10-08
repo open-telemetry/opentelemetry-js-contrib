@@ -18,6 +18,7 @@ import {
 import * as assert from 'assert';
 
 import { KnexInstrumentation } from '../src';
+import { getName } from '../src/utils';
 const plugin = new KnexInstrumentation({
   maxQueryLength: 50,
 });
@@ -172,6 +173,46 @@ describe('Knex instrumentation', () => {
       } finally {
         await functionClient.destroy();
       }
+    });
+
+    it('should always produce string span names when database metadata is unavailable', async () => {
+      // Warm up the pool so the connection exists, then simulate a functional
+      // connection config that exposes no database/filename metadata.
+      await client.raw('select 1');
+      memoryExporter.reset();
+      client.client.connectionSettings = {};
+
+      const parentSpan = tracer.startSpan('parentSpan');
+      await context.with(
+        trace.setSpan(context.active(), parentSpan),
+        async () => {
+          await client.schema.createTable('testTable1', (table: any) => {
+            table.string('title');
+          });
+          await client.insert({ title: 'test1' }).into('testTable1');
+          await client('testTable1').select('*');
+          await client.raw("select date('now')");
+          parentSpan.end();
+        }
+      );
+
+      const spans = memoryExporter
+        .getFinishedSpans()
+        .filter(s => s.name !== 'parentSpan');
+      assert.strictEqual(spans.length, 4);
+      spans.forEach(span => {
+        assert.strictEqual(typeof span.name, 'string');
+        assert.ok(span.name.length > 0);
+        assert.ok(
+          !span.name.includes('undefined'),
+          `span name should not contain "undefined": ${span.name}`
+        );
+        assert.strictEqual(span.attributes['db.namespace'], undefined);
+      });
+      assert.deepStrictEqual(
+        spans.map(s => s.name),
+        ['knex.query', 'insert testTable1', 'select testTable1', 'raw']
+      );
     });
 
     it("should correctly capture the DB's system name even with custom client implementations", async () => {
@@ -688,6 +729,29 @@ describe('utils: connectionString parsing', () => {
     );
     assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
     assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
+  });
+});
+
+describe('utils: getName', () => {
+  it('should include database, operation and table when all are present', () => {
+    assert.strictEqual(getName('mydb', 'select', 'items'), 'select mydb.items');
+  });
+
+  it('should handle operation without table', () => {
+    assert.strictEqual(getName('mydb', 'raw', undefined), 'raw mydb');
+  });
+
+  it('should return only the database when there is no operation', () => {
+    assert.strictEqual(getName('mydb', undefined, undefined), 'mydb');
+  });
+
+  it('should skip a missing database', () => {
+    assert.strictEqual(getName(undefined, 'select', 'items'), 'select items');
+    assert.strictEqual(getName(undefined, 'raw', undefined), 'raw');
+  });
+
+  it('should fall back to knex.query when nothing is available', () => {
+    assert.strictEqual(getName(undefined, undefined, undefined), 'knex.query');
   });
 });
 
