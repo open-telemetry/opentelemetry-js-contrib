@@ -1,0 +1,30 @@
+[
+    {
+        "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+        "method": "POST",
+        "path": "/model/amazon.titan-embed-text-v2:0/invoke",
+        "body": {
+            "inputText": "hello world",
+            "dimensions": 1024,
+            "normalize": true
+        },
+        "status": 200,
+        "response": {
+            "embedding": [0.1, 0.2, 0.3],
+            "inputTextTokenCount": 2
+        },
+        "rawHeaders": [
+            "Date",
+            "Mon, 10 Feb 2025 01:39:12 GMT",
+            "Content-Type",
+            "application/json",
+            "Content-Length",
+            "52",
+            "Connection",
+            "keep-alive",
+            "x-amzn-RequestId",
+            "91139412-bc01-4c17-a89f-12534a3aca0b"
+        ],
+        "responseIsBinary": false
+    }
+]
