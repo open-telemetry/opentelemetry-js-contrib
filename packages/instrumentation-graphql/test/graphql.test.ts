@@ -1664,4 +1664,100 @@ describe('graphql', () => {
       assert.deepStrictEqual(executeSpans.length, 1);
     });
   });
+
+  describe('when resolvers are added after first execution', () => {
+    // This test simulates the behavior of Apollo Server 5 + NestJS where
+    // resolvers might be attached to fields after the schema is first processed.
+    // See: https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3362
+
+    beforeEach(() => {
+      create({});
+    });
+
+    afterEach(() => {
+      exporter.reset();
+      graphQLInstrumentation.disable();
+    });
+
+    it('should create spans for resolvers added after type was first processed', async () => {
+      // Create a schema with a query type that initially has NO custom resolver
+      const queryType = new GraphQLObjectType({
+        name: 'Query',
+        fields: {
+          department: {
+            type: new GraphQLObjectType({
+              name: 'Department',
+              fields: {
+                id: { type: GraphQLString },
+                name: { type: GraphQLString },
+              },
+            }),
+            args: {
+              id: { type: GraphQLString },
+            },
+            // Initially no resolver - will be added later
+          },
+        },
+      });
+
+      const schemaWithDelayedResolver = new GraphQLSchema({
+        query: queryType,
+      });
+
+      // First execution - this processes the schema but field has no resolver yet
+      // The default resolver will be used
+      const rootValue1 = {
+        department: () => ({ id: '1', name: 'Engineering' }),
+      };
+
+      await graphql({
+        schema: schemaWithDelayedResolver,
+        source: '{ department(id: "1") { id name } }',
+        rootValue: rootValue1,
+      });
+
+      // Clear the spans from first execution
+      exporter.reset();
+
+      // Now simulate what Apollo Server does: add a resolver to the field AFTER
+      // the type has already been processed
+      const fields = queryType.getFields();
+      fields['department'].resolve = (
+        _source: any,
+        args: { id: string }
+      ): { id: string; name: string } => {
+        return { id: args.id, name: 'Custom Resolver Department' };
+      };
+
+      // Second execution - the newly added resolver should be instrumented
+      await graphql({
+        schema: schemaWithDelayedResolver,
+        source: '{ department(id: "2") { id name } }',
+      });
+
+      const spans = exporter.getFinishedSpans();
+
+      // Should have spans for: parse, validate, resolve department, resolve id, resolve name, execute
+      // The key assertion is that 'department' resolver span exists
+      const departmentResolveSpans = spans.filter(
+        span => span.name === `${SpanNames.RESOLVE} department`
+      );
+
+      assert.deepStrictEqual(
+        departmentResolveSpans.length,
+        1,
+        'Should have a span for the department resolver that was added after first execution'
+      );
+
+      const departmentSpan = departmentResolveSpans[0];
+      assert.deepStrictEqual(
+        departmentSpan.attributes[AttributeNames.FIELD_PATH],
+        'department'
+      );
+      assert.deepStrictEqual(
+        departmentSpan.attributes[AttributeNames.FIELD_NAME],
+        'department'
+      );
+    });
+  });
 });
