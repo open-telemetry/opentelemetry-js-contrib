@@ -271,7 +271,7 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
   private _getClientConnectPatch() {
     const plugin = this;
     return (original: PgClientConnect) => {
-      return function connect(this: pgTypes.Client, callback?: Function) {
+      return function connect(this: PgClientExtended, callback?: Function) {
         const config = plugin.getConfig();
 
         if (
@@ -285,6 +285,18 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
           kind: SpanKind.CLIENT,
           attributes: utils.getSemanticAttributesFromConnection(this),
         });
+
+        utils.handleConnectionHook(
+          config,
+          span,
+          () => {
+            // pick keys to expose explicitly, so we're not leaking pg package
+            // internals that are subject to change
+            const { database, host, port, user } = this.connectionParameters;
+            return { database, host, port, user };
+          },
+          err => plugin._diag.error('Error running connection hook', err)
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
@@ -675,6 +687,13 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             this.options
           ),
         });
+
+        utils.handleConnectionHook(
+          config,
+          span,
+          () => utils.getConnectionInfoFromPoolConnection(this.options),
+          err => plugin._diag.error('Error running connection hook', err)
+        );
 
         if (callback) {
           const parentSpan = trace.getSpan(context.active());
