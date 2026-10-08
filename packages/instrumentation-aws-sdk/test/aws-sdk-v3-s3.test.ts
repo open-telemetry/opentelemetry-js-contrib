@@ -136,31 +136,29 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         Key: 'aws-ot-s3-test-object.txt',
       };
 
-      try {
-        await s3Client.putObject(params);
-      } catch {
-        expect(getTestSpans().length).toBe(1);
-        const [span] = getTestSpans();
+      await expect(s3Client.putObject(params)).rejects.toThrow();
 
-        // expect error attributes
-        expect(span.status.code).toEqual(SpanStatusCode.ERROR);
-        expect(span.status.message).toEqual('Access Denied');
-        expect(span.events.length).toBe(1);
-        expect(span.events[0].name).toEqual('exception');
+      expect(getTestSpans().length).toBe(1);
+      const [span] = getTestSpans();
 
-        expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
-        expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
-        expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
-        expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
-          'invalid-bucket-name'
-        );
-        expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
-        expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
-        expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(
-          'MS95GTS7KXQ34X2S'
-        );
-        expect(span.name).toEqual('S3.PutObject');
-      }
+      // expect error attributes
+      expect(span.status.code).toEqual(SpanStatusCode.ERROR);
+      expect(span.status.message).toEqual('Access Denied');
+      expect(span.events.length).toBe(1);
+      expect(span.events[0].name).toEqual('exception');
+
+      expect(span.attributes[ATTR_RPC_SYSTEM]).toEqual('aws-api');
+      expect(span.attributes[ATTR_RPC_METHOD]).toEqual('PutObject');
+      expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('S3');
+      expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
+        'invalid-bucket-name'
+      );
+      expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
+      expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
+      expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(
+        'MS95GTS7KXQ34X2S'
+      );
+      expect(span.name).toEqual('S3.PutObject');
     });
   });
 
@@ -289,18 +287,14 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         Bucket: 'ot-demo-test',
         Key: 'aws-ot-s3-test-object.txt',
       };
-      try {
-        await s3Client.putObject(params);
-      } catch {
-        expect(getTestSpans().length).toBe(1);
-        const [span] = getTestSpans();
-        expect(span.attributes['attribute.from.exception.hook']).toEqual(
-          params.Bucket
-        );
-        expect(span.attributes['error.from.exception.hook']).toEqual(
-          'NotFound'
-        );
-      }
+      await expect(s3Client.putObject(params)).rejects.toThrow();
+
+      expect(getTestSpans().length).toBe(1);
+      const [span] = getTestSpans();
+      expect(span.attributes['attribute.from.exception.hook']).toEqual(
+        params.Bucket
+      );
+      expect(span.attributes['error.from.exception.hook']).toEqual('NotFound');
     });
   });
 });
