@@ -53,7 +53,7 @@ const DEFAULT_CONFIG: GraphQLInstrumentationParsedConfig = {
   ignoreResolveSpans: false,
 };
 
-const supportedVersions = ['>=14.0.0 <17'];
+const supportedVersions = ['>=14.0.0 <18'];
 
 export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumentationParsedConfig> {
   constructor(config: GraphQLInstrumentationConfig = {}) {
@@ -69,16 +69,20 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
       'graphql',
       supportedVersions
     );
-    module.files.push(this._addPatchingExecute());
-    module.files.push(this._addPatchingParser());
-    module.files.push(this._addPatchingValidate());
+    for (const extension of ['js', 'mjs'] as const) {
+      module.files.push(this._addPatchingExecute(extension));
+      module.files.push(this._addPatchingParser(extension));
+      module.files.push(this._addPatchingValidate(extension));
+    }
 
     return module;
   }
 
-  private _addPatchingExecute(): InstrumentationNodeModuleFile {
+  private _addPatchingExecute(
+    extension: 'js' | 'mjs'
+  ): InstrumentationNodeModuleFile {
     return new InstrumentationNodeModuleFile(
-      'graphql/execution/execute.js',
+      `graphql/execution/execute.${extension}`,
       supportedVersions,
       // cannot make it work with appropriate type as execute function has 2
       //types and/cannot import function but only types
@@ -101,9 +105,11 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
     );
   }
 
-  private _addPatchingParser(): InstrumentationNodeModuleFile {
+  private _addPatchingParser(
+    extension: 'js' | 'mjs'
+  ): InstrumentationNodeModuleFile {
     return new InstrumentationNodeModuleFile(
-      'graphql/language/parser.js',
+      `graphql/language/parser.${extension}`,
       supportedVersions,
       (moduleExports: typeof graphqlTypes) => {
         if (isWrapped(moduleExports.parse)) {
@@ -120,9 +126,11 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
     );
   }
 
-  private _addPatchingValidate(): InstrumentationNodeModuleFile {
+  private _addPatchingValidate(
+    extension: 'js' | 'mjs'
+  ): InstrumentationNodeModuleFile {
     return new InstrumentationNodeModuleFile(
-      'graphql/validation/validate.js',
+      `graphql/validation/validate.${extension}`,
       supportedVersions,
       moduleExports => {
         if (isWrapped(moduleExports.validate)) {
