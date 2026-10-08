@@ -372,6 +372,30 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
 
+    it(
+      'should ignore zero valued secureConnectionStart for navigation entries',
+      done => {
+  const navigationEntry = {
+    ...entries,
+    secureConnectionStart: 0,
+  };
+
+  spyEntries.withArgs('navigation').returns([navigationEntry]);
+
+  plugin.enable();
+
+  setTimeout(() => {
+    const fetchSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
+
+    const eventNames = fetchSpan.events.map(event => event.name);
+
+    assert.notInclude(eventNames, PTN.SECURE_CONNECTION_START);
+
+    done();
+   });
+  }
+);
+
     describe('AND window has information about server root span', () => {
       let spyGetElementsByTagName: any;
       beforeEach(() => {
