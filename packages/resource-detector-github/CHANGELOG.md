@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.32.0...resource-detector-github-v0.33.0) (2026-10-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* **resource-detector-github:** use semconv cicd.* and vcs.* attributes ([#3624](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3624))
+
+### Features
+
+* **resource-detector-github:** use semconv cicd.* and vcs.* attributes ([#3624](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3624)) ([e6eec98](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e6eec9863b9105735e2b8ce1c7f55dce218b7c68))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.31.2...resource-detector-github-v0.32.0) (2025-12-17)
 
 
