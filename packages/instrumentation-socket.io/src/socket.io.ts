@@ -33,6 +33,8 @@ import {
   normalizeConfig,
 } from './utils';
 
+const ORIGINAL_LISTENER = Symbol('opentelemetry.socket.io.original_listener');
+
 const reservedEvents = [
   'connect',
   'connect_error',
@@ -58,13 +60,9 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
-          this._unwrap(moduleExports.Socket.prototype, 'on');
-        }
-        this._wrap(
-          moduleExports.Socket.prototype,
-          'on',
-          this._patchOn(moduleVersion)
+        this._patchListenerMethods(
+          moduleExports?.Socket?.prototype,
+          moduleVersion
         );
         if (isWrapped(moduleExports?.Socket?.prototype?.emit)) {
           this._unwrap(moduleExports.Socket.prototype, 'emit');
@@ -77,9 +75,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         return moduleExports;
       },
       moduleExports => {
-        if (isWrapped(moduleExports?.Socket?.prototype?.on)) {
-          this._unwrap(moduleExports.Socket.prototype, 'on');
-        }
+        this._unpatchListenerMethods(moduleExports?.Socket?.prototype);
         if (isWrapped(moduleExports?.Socket?.prototype?.emit)) {
           this._unwrap(moduleExports.Socket.prototype, 'emit');
         }
@@ -150,10 +146,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         if (moduleVersion === undefined) {
           return moduleExports;
         }
-        if (isWrapped(moduleExports.prototype?.on)) {
-          this._unwrap(moduleExports.prototype, 'on');
-        }
-        this._wrap(moduleExports.prototype, 'on', this._patchOn(moduleVersion));
+        this._patchListenerMethods(moduleExports.prototype, moduleVersion);
         if (isWrapped(moduleExports.prototype?.emit)) {
           this._unwrap(moduleExports.prototype, 'emit');
         }
@@ -165,9 +158,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
         return moduleExports;
       },
       moduleExports => {
-        if (isWrapped(moduleExports.prototype?.on)) {
-          this._unwrap(moduleExports.prototype, 'on');
-        }
+        this._unpatchListenerMethods(moduleExports.prototype);
         if (isWrapped(moduleExports.prototype?.emit)) {
           this._unwrap(moduleExports.prototype, 'emit');
         }
@@ -212,20 +203,14 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          if (isWrapped(moduleExports?.Server?.prototype?.on)) {
-            this._unwrap(moduleExports.Server.prototype, 'on');
-          }
-          this._wrap(
-            moduleExports.Server.prototype,
-            'on',
-            this._patchOn(moduleVersion)
+          this._patchListenerMethods(
+            moduleExports?.Server?.prototype,
+            moduleVersion
           );
           return moduleExports;
         },
         moduleExports => {
-          if (isWrapped(moduleExports?.Server?.prototype?.on)) {
-            this._unwrap(moduleExports.Server.prototype, 'on');
-          }
+          this._unpatchListenerMethods(moduleExports?.Server?.prototype);
           return moduleExports;
         },
         [
@@ -244,20 +229,11 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
           if (moduleVersion === undefined) {
             return moduleExports;
           }
-          if (isWrapped(moduleExports?.prototype?.on)) {
-            this._unwrap(moduleExports.prototype, 'on');
-          }
-          this._wrap(
-            moduleExports.prototype,
-            'on',
-            this._patchOn(moduleVersion)
-          );
+          this._patchListenerMethods(moduleExports?.prototype, moduleVersion);
           return moduleExports;
         },
         (moduleExports, moduleVersion) => {
-          if (isWrapped(moduleExports?.prototype?.on)) {
-            this._unwrap(moduleExports.prototype, 'on');
-          }
+          this._unpatchListenerMethods(moduleExports?.prototype);
           return moduleExports;
         },
         [namespaceInstrumentationLegacy, socketInstrumentationLegacy]
@@ -267,6 +243,43 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
 
   override setConfig(config: SocketIoInstrumentationConfig = {}) {
     return super.setConfig(normalizeConfig(config));
+  }
+
+  private _patchListenerMethods(target: any, moduleVersion: string) {
+    for (const name of ['on', 'addListener']) {
+      if (isWrapped(target?.[name])) {
+        this._unwrap(target, name);
+      }
+      this._wrap(target, name, this._patchOn(moduleVersion));
+    }
+    for (const name of ['removeListener', 'off']) {
+      if (isWrapped(target?.[name])) {
+        this._unwrap(target, name);
+      }
+      this._wrap(target, name, this._patchRemoveListener());
+    }
+  }
+
+  private _unpatchListenerMethods(target: any) {
+    for (const name of ['on', 'addListener', 'removeListener', 'off']) {
+      if (isWrapped(target?.[name])) {
+        this._unwrap(target, name);
+      }
+    }
+  }
+
+  private _patchRemoveListener() {
+    return (original: Function) => {
+      return function (this: any, ev: any, listener: Function) {
+        const wrappedListener = this.listeners?.(ev)?.find(
+          (registered: any) => registered?.[ORIGINAL_LISTENER] === listener
+        );
+        if (wrappedListener) {
+          return original.call(this, ev, wrappedListener);
+        }
+        return original.apply(this, arguments);
+      };
+    };
   }
 
   private _patchOn(moduleVersion: string) {
@@ -310,6 +323,7 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
             self.endSpan(() => originalListener.apply(this, arguments), span)
           );
         };
+        (wrappedListener as any)[ORIGINAL_LISTENER] = originalListener;
         return original.apply(this, [ev, wrappedListener]);
       };
     };
