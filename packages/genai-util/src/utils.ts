@@ -469,7 +469,10 @@ export function inferMissingTokenCounts(
       result.outputTokenCount = combinedTokenCount;
     }
   }
-  if (result.tokenUsageByModality) {
+  if (
+    result.tokenUsageByModality ||
+    (result.reasoningTokenCount !== undefined && result.reasoningTokenCount > 0)
+  ) {
     const modality = { ...result.tokenUsageByModality };
     let modified = false;
     if (modality.inputTokens === undefined) {
@@ -483,9 +486,11 @@ export function inferMissingTokenCounts(
       }
     }
     if (modality.outputTokens === undefined) {
-      const combinedOutput = combineTokenCounts(modality.reasoningTokens);
-      if (combinedOutput !== undefined) {
-        modality.outputTokens = combinedOutput;
+      if (
+        result.reasoningTokenCount !== undefined &&
+        result.reasoningTokenCount > 0
+      ) {
+        modality.outputTokens = { text: result.reasoningTokenCount };
         modified = true;
       }
     }
@@ -538,7 +543,7 @@ function combineTokenCounts(
 /**
  * Infer missing modality token counts as the 'unknown' modality.
  *
- * For each token category (input, output, reasoning, cache read, cache write):
+ * For each token category (input, output, cache read, cache write):
  * - If the total count is present and the corresponding {@link TokenUsageByModality}
  *   field is not explicitly provided, the entire count is attributed to the 'unknown' modality.
  * - If the corresponding {@link TokenUsageByModality} field is provided, but the sum of counts
@@ -561,10 +566,6 @@ export function inferMissingModalityCounts(
     usage.outputTokenCount,
     usage.tokenUsageByModality?.outputTokens
   );
-  const reasoningTokens = inferModalityCount(
-    usage.reasoningTokenCount,
-    usage.tokenUsageByModality?.reasoningTokens
-  );
   const cacheReadTokens = inferModalityCount(
     usage.cacheReadTokenCount,
     usage.tokenUsageByModality?.cacheReadTokens
@@ -577,7 +578,6 @@ export function inferMissingModalityCounts(
   const hasModalityUsage =
     inputTokens !== undefined ||
     outputTokens !== undefined ||
-    reasoningTokens !== undefined ||
     cacheReadTokens !== undefined ||
     cacheWriteTokens !== undefined;
 
@@ -593,9 +593,6 @@ export function inferMissingModalityCounts(
   }
   if (outputTokens !== undefined) {
     tokenUsageByModality.outputTokens = outputTokens;
-  }
-  if (reasoningTokens !== undefined) {
-    tokenUsageByModality.reasoningTokens = reasoningTokens;
   }
   if (cacheReadTokens !== undefined) {
     tokenUsageByModality.cacheReadTokens = cacheReadTokens;

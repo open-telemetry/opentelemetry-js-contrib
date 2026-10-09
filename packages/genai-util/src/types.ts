@@ -318,10 +318,6 @@ export interface TokenUsageByModality {
    */
   outputTokens?: TokenCountsByModality;
   /**
-   * Token counts used for model reasoning / thinking broken down by modality (`gen_ai.client.inference.usage.reasoning.output_tokens`).
-   */
-  reasoningTokens?: TokenCountsByModality;
-  /**
    * Token counts for cached tokens read from the prompt cache broken down by modality (`gen_ai.client.inference.usage.cache_read.input_tokens`).
    */
   cacheReadTokens?: TokenCountsByModality;
@@ -349,10 +345,12 @@ export interface TokenUsageDetails {
   inputTokenCount?: number;
   /** The number of output (completion) tokens used per inference request.
    * This includes reasoning tokens. If this is not provided, the total will be
-   * inferred from reasoningTokens and the tokenUsageByModality.
+   * inferred from reasoningTokenCount.
    */
   outputTokenCount?: number;
-  /** Number of tokens used for model reasoning / thinking (`gen_ai.client.inference.usage.reasoning.output_tokens`).*/
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.client.inference.usage.reasoning.output_tokens`).
+   * Reasoning tokens are always inferred as tokens with modality 'text'.
+   */
   reasoningTokenCount?: number;
   /** Number of cached tokens read from prompt cache (`gen_ai.client.inference.usage.cache_read.input_tokens`).*/
   cacheReadTokenCount?: number;

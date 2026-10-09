@@ -247,12 +247,12 @@ describe('TelemetryHandler', () => {
         {
           inputTokenCount: 250,
           outputTokenCount: 40,
+          reasoningTokenCount: 300,
           tokenUsageByModality: {
             inputTokens: { text: 100, image: 150 },
             outputTokens: { text: 40, audio: 0 },
             cacheReadTokens: { text: 60 },
             cacheWriteTokens: { text: 20, audio: 50 },
-            reasoningTokens: { text: 300, unknown: 50 },
           },
         },
         attributes
@@ -299,10 +299,7 @@ describe('TelemetryHandler', () => {
             METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
           )
         ),
-        [
-          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 300],
-          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN), 50],
-        ]
+        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 300]]
       );
     });
 

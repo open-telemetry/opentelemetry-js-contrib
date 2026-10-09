@@ -321,6 +321,15 @@ export class TelemetryHandler {
         context
       );
     }
+
+    // Reasoning tokens are always inferred as tokens with modality 'text'.
+    this.recordTokenUsageForModality(
+      this._reasoningOutputTokenUsageCounter,
+      GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+      usage.reasoningTokenCount,
+      attributes,
+      context
+    );
   }
 
   /**
@@ -423,13 +432,6 @@ export class TelemetryHandler {
       this._cacheWriteInputTokenUsageCounter,
       modality,
       usage?.cacheWriteTokens?.[modality],
-      attributes,
-      context
-    );
-    this.recordTokenUsageForModality(
-      this._reasoningOutputTokenUsageCounter,
-      modality,
-      usage?.reasoningTokens?.[modality],
       attributes,
       context
     );

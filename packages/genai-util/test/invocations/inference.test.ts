@@ -102,7 +102,6 @@ describe('InferenceInvocation', () => {
       tokenUsageByModality: {
         inputTokens: { text: 10 },
         outputTokens: { text: 20 },
-        reasoningTokens: { text: 5 },
         cacheReadTokens: { text: 15 },
         cacheWriteTokens: { text: 8 },
       },
@@ -952,9 +951,6 @@ describe('InferenceInvocation', () => {
       const invocation = startInference();
       invocation.setUsage({
         reasoningTokenCount: 45,
-        tokenUsageByModality: {
-          reasoningTokens: { text: 45 },
-        },
       });
       invocation.stop();
 
@@ -977,6 +973,14 @@ describe('InferenceInvocation', () => {
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
         ),
         [{ count: 1, sum: 45 }]
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
+          )
+        ),
+        { text: 45 }
       );
     });
 
@@ -1063,7 +1067,6 @@ describe('InferenceInvocation', () => {
           outputTokens: { text: 250 },
           cacheReadTokens: { text: 100 },
           cacheWriteTokens: { text: 50 },
-          reasoningTokens: { text: 30 },
         },
       });
       invocation.stop();
@@ -1102,7 +1105,6 @@ describe('InferenceInvocation', () => {
         reasoningTokenCount: 3,
         tokenUsageByModality: {
           cacheReadTokens: { text: 5 },
-          reasoningTokens: { text: 3 },
         },
       });
       invocation.stop();
@@ -1139,7 +1141,6 @@ describe('InferenceInvocation', () => {
           outputTokens: { text: 0 },
           cacheReadTokens: { text: 0 },
           cacheWriteTokens: { text: 0 },
-          reasoningTokens: { text: 0 },
         },
       });
       invocation.stop();
@@ -1186,7 +1187,6 @@ describe('InferenceInvocation', () => {
         reasoningTokenCount: 3,
         tokenUsageByModality: {
           cacheReadTokens: { text: 5 },
-          reasoningTokens: { text: 3 },
         },
       };
       invocation.setUsage(usage);
@@ -1197,7 +1197,6 @@ describe('InferenceInvocation', () => {
         reasoningTokenCount: 3,
         tokenUsageByModality: {
           cacheReadTokens: { text: 5 },
-          reasoningTokens: { text: 3 },
         },
       });
     });
@@ -1209,7 +1208,6 @@ describe('InferenceInvocation', () => {
         reasoningTokenCount: 4,
         tokenUsageByModality: {
           cacheReadTokens: { text: 8 },
-          reasoningTokens: { text: 4 },
         },
       });
       invocation.fail({ errorType: 'Error' });

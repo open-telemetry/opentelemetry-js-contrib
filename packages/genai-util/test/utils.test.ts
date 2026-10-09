@@ -620,7 +620,6 @@ describe('GenAI Utils', () => {
         tokenUsageByModality: {
           cacheReadTokens: { text: 10 },
           cacheWriteTokens: { text: 10, image: 10 },
-          reasoningTokens: { text: 15 },
         },
       };
       const inferred = inferMissingTokenCounts(usage);
@@ -643,7 +642,6 @@ describe('GenAI Utils', () => {
           inputTokens: { text: 100 },
           outputTokens: { text: 50 },
           cacheReadTokens: { text: 10 },
-          reasoningTokens: { text: 5 },
         },
       };
       const inferred = inferMissingTokenCounts(usage);
@@ -677,7 +675,6 @@ describe('GenAI Utils', () => {
       assert.deepStrictEqual(inferred.tokenUsageByModality, {
         inputTokens: { unknown: 100 },
         outputTokens: { unknown: 50 },
-        reasoningTokens: { unknown: 20 },
         cacheReadTokens: { unknown: 30 },
         cacheWriteTokens: { unknown: 15 },
       });
