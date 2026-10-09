@@ -272,7 +272,10 @@ describe('TelemetryHandler', () => {
         counterPoints(
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
         ),
-        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 40]]
+        [
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO), 0],
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 40],
+        ]
       );
       assert.deepStrictEqual(
         counterPoints(
@@ -303,7 +306,7 @@ describe('TelemetryHandler', () => {
       );
     });
 
-    it('should not record spurious zeros for unreported modalities when token usage is present', async () => {
+    it('should record 0 with unknown modality for unreported subset tokens when token usage is present', async () => {
       const handler = createHandler({ meterProvider: ctx.meterProvider });
       handler.recordInferenceTokenUsage(
         {
@@ -336,19 +339,65 @@ describe('TelemetryHandler', () => {
       );
 
       // cacheReadTokens, cacheWriteTokens, and reasoningTokens were not reported:
-      // should not emit spurious zeros for text/audio/image/unknown
+      // should record 0 under unknown modality per semantic conventions
       for (const name of [
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
       ]) {
-        const metric = metrics.get(name);
-        assert.strictEqual(
-          metric?.dataPoints.length ?? 0,
-          0,
-          `Expected no data points for unreported counter ${name}`
+        assert.deepStrictEqual(
+          counterPoints(metrics.get(name)),
+          [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN), 0]],
+          `Expected 0 with unknown modality for unreported counter ${name}`
         );
       }
+    });
+
+    it('should record explicit 0 for subset tokens under reported modality', async () => {
+      const handler = createHandler({ meterProvider: ctx.meterProvider });
+      handler.recordInferenceTokenUsage(
+        {
+          inputTokenCount: 100,
+          outputTokenCount: 50,
+          reasoningTokenCount: 0,
+          tokenUsageByModality: {
+            inputTokens: { text: 100 },
+            outputTokens: { text: 50 },
+            cacheReadTokens: { text: 0 },
+            cacheWriteTokens: { text: 0, image: 0 },
+          },
+        },
+        attributes
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS
+          )
+        ),
+        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 0]]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS
+          )
+        ),
+        [
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE), 0],
+          [withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 0],
+        ]
+      );
+      assert.deepStrictEqual(
+        counterPoints(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
+          )
+        ),
+        [[withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT), 0]]
+      );
     });
 
     for (const testCase of [

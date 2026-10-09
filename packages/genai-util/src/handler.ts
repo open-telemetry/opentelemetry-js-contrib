@@ -50,11 +50,12 @@ import type {
   EmbeddingInvocationOptions,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
+  TokenCountsByModality,
   TokenModality,
-  TokenUsageByModality,
   TokenUsageDetails,
   ToolInvocationOptions,
 } from './types';
+import { inferMissingModalityCounts } from './utils';
 
 /**
  * Options for initializing a TelemetryHandler.
@@ -306,27 +307,40 @@ export class TelemetryHandler {
       );
     }
 
-    // When modality usage is missing or undefined, record 0 under unknown modality on all usage counters.
-    if (!usage?.tokenUsageByModality) {
-      this.recordNoUsage(attributes, context);
-      return;
-    }
+    const effectiveUsage = usage
+      ? inferMissingModalityCounts(usage)
+      : undefined;
+    const modalityUsage = effectiveUsage?.tokenUsageByModality;
 
-    // Record positive counts per modality, skipping modalities that were not reported.
-    for (const modality of ALL_TOKEN_MODALITIES) {
-      this.recordModalityUsage(
-        modality,
-        usage.tokenUsageByModality,
-        attributes,
-        context
-      );
-    }
+    this.recordTokenUsageCounter(
+      this._inputTokenUsageCounter,
+      modalityUsage?.inputTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._outputTokenUsageCounter,
+      modalityUsage?.outputTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._cacheReadInputTokenUsageCounter,
+      modalityUsage?.cacheReadTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._cacheWriteInputTokenUsageCounter,
+      modalityUsage?.cacheWriteTokens,
+      attributes,
+      context
+    );
 
-    // Reasoning tokens are always inferred as tokens with modality 'text'.
-    this.recordTokenUsageForModality(
-      this._reasoningOutputTokenUsageCounter,
-      GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
-      usage.reasoningTokenCount,
+    // Special handling for reasoning tokens since they are always recorded
+    // with modality 'text'
+    this.recordReasoningTokenUsage(
+      effectiveUsage?.reasoningTokenCount,
       attributes,
       context
     );
@@ -399,76 +413,75 @@ export class TelemetryHandler {
   }
 
   /**
-   * Record token counts across all usage counters for a specific modality.
+   * Record a token usage counter across reported modalities.
+   *
+   * If token counts are reported for specific modalities, each non-negative count
+   * is recorded under its modality. If no valid counts were reported for any modality
+   * (or if the breakdown is missing/unreported), 0 is recorded under the 'unknown' modality.
    */
-  private recordModalityUsage(
-    modality: TokenModality,
-    usage: TokenUsageByModality | undefined,
-    attributes?: Attributes,
-    context?: Context
-  ): void {
-    this.recordTokenUsageForModality(
-      this._inputTokenUsageCounter,
-      modality,
-      usage?.inputTokens?.[modality],
-      attributes,
-      context
-    );
-    this.recordTokenUsageForModality(
-      this._outputTokenUsageCounter,
-      modality,
-      usage?.outputTokens?.[modality],
-      attributes,
-      context
-    );
-    this.recordTokenUsageForModality(
-      this._cacheReadInputTokenUsageCounter,
-      modality,
-      usage?.cacheReadTokens?.[modality],
-      attributes,
-      context
-    );
-    this.recordTokenUsageForModality(
-      this._cacheWriteInputTokenUsageCounter,
-      modality,
-      usage?.cacheWriteTokens?.[modality],
-      attributes,
-      context
-    );
-  }
-
-  /**
-   * Record zero token usage on all usage counters under the unknown modality
-   * when no usage was reported.
-   */
-  private recordNoUsage(attributes?: Attributes, context?: Context): void {
-    const unknownAttrs = {
-      ...attributes,
-      [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
-    };
-    this._inputTokenUsageCounter.add(0, unknownAttrs, context);
-    this._outputTokenUsageCounter.add(0, unknownAttrs, context);
-    this._cacheReadInputTokenUsageCounter.add(0, unknownAttrs, context);
-    this._cacheWriteInputTokenUsageCounter.add(0, unknownAttrs, context);
-    this._reasoningOutputTokenUsageCounter.add(0, unknownAttrs, context);
-  }
-
-  /**
-   * Record token usage for a specific modality. Missing, zero and negative counts are skipped.
-   */
-  private recordTokenUsageForModality(
+  private recordTokenUsageCounter(
     tokenCounter: Counter,
-    modality: TokenModality,
-    count: number | undefined,
+    counts?: TokenCountsByModality,
     attributes?: Attributes,
     context?: Context
   ): void {
-    if (isPositiveCount(count)) {
+    let hasRecorded = false;
+    if (counts) {
+      for (const modality of ALL_TOKEN_MODALITIES) {
+        const count = counts[modality];
+        if (isValidTokenCount(count)) {
+          tokenCounter.add(
+            count,
+            {
+              ...attributes,
+              [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+            },
+            context
+          );
+          hasRecorded = true;
+        }
+      }
+    }
+
+    if (!hasRecorded) {
       tokenCounter.add(
+        0,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+        },
+        context
+      );
+    }
+  }
+
+  /**
+   * Record reasoning output token usage.
+   *
+   * Reasoning tokens are always inferred as tokens with modality 'text' when reported.
+   * When no reasoning usage was reported (or response was not received), 0 is recorded
+   * under the 'unknown' modality.
+   */
+  private recordReasoningTokenUsage(
+    count?: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    if (isValidTokenCount(count)) {
+      this._reasoningOutputTokenUsageCounter.add(
         count,
         {
           ...attributes,
-          [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+        },
+        context
+      );
+    } else {
+      this._reasoningOutputTokenUsageCounter.add(
+        0,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
         },
         context
       );
@@ -477,9 +490,9 @@ export class TelemetryHandler {
 }
 
 /**
- * Return whether `value` is a token count to record: missing, zero and
- * negative counts are skipped.
+ * Return whether `value` is a valid token count to record: non-negative counts
+ * (including explicit zero) are valid, while undefined and negative counts are skipped.
  */
-function isPositiveCount(value: number | undefined): value is number {
-  return value !== undefined && value > 0;
+function isValidTokenCount(value: number | undefined): value is number {
+  return value !== undefined && value >= 0;
 }

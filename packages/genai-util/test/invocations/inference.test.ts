@@ -627,6 +627,9 @@ describe('InferenceInvocation', () => {
         METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
       ].sort()
@@ -774,6 +777,9 @@ describe('InferenceInvocation', () => {
         METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
         METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
       ].sort()
     );
     for (const [name, metric] of metrics) {
@@ -883,19 +889,70 @@ describe('InferenceInvocation', () => {
       { text: 50 }
     );
 
-    // Cache and reasoning were not reported: should not record data points with 0
+    // Cache and reasoning were not reported: should record 0 under unknown modality
     for (const name of [
       METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
       METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
       METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
     ]) {
-      const metric = metrics.get(name);
-      assert.strictEqual(
-        metric?.dataPoints.length ?? 0,
-        0,
-        `Expected 0 data points for unreported metric ${name}`
+      assert.deepStrictEqual(
+        counterValuesByModality(metrics.get(name)),
+        { [GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN]: 0 },
+        `Expected unknown: 0 for unreported metric ${name}`
       );
     }
+  });
+
+  it('should record explicit 0 on metrics when reported by provider', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    invocation.setUsage({
+      inputTokenCount: 100,
+      outputTokenCount: 50,
+      reasoningTokenCount: 0,
+      tokenUsageByModality: {
+        inputTokens: { text: 100 },
+        outputTokens: { text: 50 },
+        cacheReadTokens: { text: 0 },
+        cacheWriteTokens: { text: 0, image: 0 },
+      },
+    });
+    invocation.stop();
+
+    const metrics = await collectMetricsByName(ctx.metricReader);
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(
+          METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS
+        )
+      ),
+      { text: 0 }
+    );
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(
+          METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS
+        )
+      ),
+      { image: 0, text: 0 }
+    );
+    assert.deepStrictEqual(
+      counterValuesByModality(
+        metrics.get(
+          METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
+        )
+      ),
+      { text: 0 }
+    );
   });
 
   describe('token usage finalization', () => {
