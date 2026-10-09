@@ -30,16 +30,17 @@ export class GCCollector extends BaseCollector {
     this._observer = new perf_hooks.PerformanceObserver(list => {
       if (!this._config.enabled) return;
 
-      const entry = list.getEntries()[0];
-      // Node < 16 uses entry.kind
-      // Node >= 16 uses entry.detail.kind
-      // See: https://nodejs.org/docs/latest-v16.x/api/deprecations.html#deprecations_dep0152_extension_performanceentry_properties
-      // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
-      this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
-        [ATTR_V8JS_GC_TYPE]: kind,
-      });
+      for (const entry of list.getEntries()) {
+        // Node < 16 uses entry.kind
+        // Node >= 16 uses entry.detail.kind
+        // See: https://nodejs.org/docs/latest-v16.x/api/deprecations.html#deprecations_dep0152_extension_performanceentry_properties
+        // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const kind = kinds[entry.detail ? entry.detail.kind : entry.kind];
+        this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
+          [ATTR_V8JS_GC_TYPE]: kind,
+        });
+      }
     });
   }
 
