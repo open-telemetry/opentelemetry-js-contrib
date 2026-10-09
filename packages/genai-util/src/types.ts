@@ -352,17 +352,16 @@ export interface TokenUsageDetails {
    * inferred from reasoningTokens and the tokenUsageByModality.
    */
   outputTokenCount?: number;
-  /** Number of tokens used for model reasoning / thinking (`gen_ai.client_inference.usage.reasoning.output_tokens`).*/
+  /** Number of tokens used for model reasoning / thinking (`gen_ai.client.inference.usage.reasoning.output_tokens`).*/
   reasoningTokenCount?: number;
-  /** Number of cached tokens read from prompt cache (`gen_ai.client_inference.usage.cache_read.input_tokens`).*/
+  /** Number of cached tokens read from prompt cache (`gen_ai.client.inference.usage.cache_read.input_tokens`).*/
   cacheReadTokenCount?: number;
-  /** Number of tokens written to prompt cache (`gen_ai.client_inference.usage.cache_write.input_tokens`).*/
+  /** Number of tokens written to prompt cache (`gen_ai.client.inference.usage.cache_write.input_tokens`).*/
   cacheWriteTokenCount?: number;
 
   /**
-   * Detailed token usage by modality. If this is provided, any missing token
-   * counts would be inferred using the totals (if available). The missing token
-   * counts would be attributed to the modality 'unknown'.
+   * Detailed token usage by modality. Any part of a total count that is not
+   * covered by the breakdown is attributed to the 'unknown' modality.
    *
    * Note:
    * - The `tokenUsageByModality` is never used to infer the token count fields in
@@ -371,11 +370,8 @@ export interface TokenUsageDetails {
    *   'unknown' modality.
    *
    * Example:
-   *  - inputTokenCount = 250, inputTokens = {audio: 50}, missing token counts
-   * are inferred as audio = 50, text = 200
-   *  - reasoningTokenCount = 100, reasoningTokens = {text: {inputTokenCount: 20,
-   * outputTokenCount: 30}}, missing token counts are inferred as inputTokenCount
-   * = 20, outputTokenCount = 80
+   *  - inputTokenCount = 250, inputTokens = {audio: 50} is recorded as
+   *    audio = 50, unknown = 200
    */
   tokenUsageByModality?: TokenUsageByModality;
 }
