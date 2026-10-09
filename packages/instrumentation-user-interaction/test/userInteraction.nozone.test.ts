@@ -84,7 +84,9 @@ describe('UserInteractionInstrumentation', () => {
         ],
       });
       trace.setGlobalTracerProvider(tracerProvider);
-      context.setGlobalContextManager(new tracing.StackContextManager().enable());
+      context.setGlobalContextManager(
+        new tracing.StackContextManager().enable()
+      );
       // A global propagator is not necessary for tests in this file.
 
       registerTestInstrumentations();
