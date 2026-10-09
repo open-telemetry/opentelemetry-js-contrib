@@ -301,7 +301,7 @@ describe('EmbeddingInvocation', () => {
         requestModel: 'text-embedding-3-small',
       });
 
-      invocation.setUsage({ inputTokenCount: 120 });
+      invocation.setUsage(120);
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -312,7 +312,7 @@ describe('EmbeddingInvocation', () => {
       );
     });
 
-    it('should merge multiple setUsage calls', () => {
+    it('should overwrite with latest setUsage call', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -323,33 +323,12 @@ describe('EmbeddingInvocation', () => {
         providerName: 'openai',
       });
 
-      invocation.setUsage({ inputTokenCount: 50 });
-      invocation.setUsage({ inputTokenCount: 100 });
+      invocation.setUsage(50);
+      invocation.setUsage(100);
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 100);
-    });
-
-    it('should infer inputTokens from cache read and cache write tokens', () => {
-      const handler = new TelemetryHandler({
-        instrumentationName: 'test-instrumentation',
-        instrumentationVersion: '1.0.0',
-        tracerProvider: ctx.tracerProvider,
-      });
-
-      const invocation = handler.startEmbedding({
-        providerName: 'openai',
-      });
-
-      invocation.setUsage({
-        cacheReadTokenCount: 30,
-        cacheWriteTokenCount: 20,
-      });
-      invocation.stop();
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 50);
     });
 
     it('should record explicit 0 on the span but ignore negative counts', () => {
@@ -360,11 +339,11 @@ describe('EmbeddingInvocation', () => {
       });
 
       const invZero = handler.startEmbedding({ providerName: 'openai' });
-      invZero.setUsage({ inputTokenCount: 0 });
+      invZero.setUsage(0);
       invZero.stop();
 
       const invNegative = handler.startEmbedding({ providerName: 'openai' });
-      invNegative.setUsage({ inputTokenCount: -5 });
+      invNegative.setUsage(-5);
       invNegative.stop();
 
       const spans = ctx.memoryExporter.getFinishedSpans();
@@ -389,7 +368,7 @@ describe('EmbeddingInvocation', () => {
       const invocation = handler.startEmbedding({
         providerName: 'openai',
       });
-      invocation.setUsage({ inputTokenCount: 100 });
+      invocation.setUsage(100);
       invocation.stop();
 
       const { resourceMetrics } = await ctx.metricReader.collect();
