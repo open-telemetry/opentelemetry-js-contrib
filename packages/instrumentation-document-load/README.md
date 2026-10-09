@@ -16,8 +16,7 @@ npm install --save @opentelemetry/instrumentation-document-load
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
-import { StackContextManager} from '@opentelemetry/sdk-trace';
+import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider, StackContextManager } from '@opentelemetry/sdk-trace';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
