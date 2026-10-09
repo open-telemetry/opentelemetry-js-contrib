@@ -174,7 +174,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpStatusCode: response.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
     });
 
@@ -199,7 +199,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpStatusCode: response.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
     });
 
@@ -270,7 +270,7 @@ describe('UndiciInstrumentation `fetch` tests', function () {
         httpStatusCode: queryResponse.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: reqInit.headers,
       });
       assert.deepStrictEqual(
