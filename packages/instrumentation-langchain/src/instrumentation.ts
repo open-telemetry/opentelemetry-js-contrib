@@ -194,7 +194,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         () => {},
         (module: typeof Runnables) => {
           if (!isTrackingFactory(module.RunnablePassthrough.assign))
-            this._wrap(
+            this._wrapTracking(
               module.RunnablePassthrough,
               'assign',
               trackFactory(
@@ -214,7 +214,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               module.BaseChatModel.prototype.withStructuredOutput
             )
           )
-            this._wrap(
+            this._wrapTracking(
               module.BaseChatModel.prototype,
               'withStructuredOutput',
               trackFactory(
@@ -238,7 +238,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           ) => unknown;
         }) => {
           if (!isTrackingFactory(module.assembleStructuredOutputPipeline))
-            this._wrap(
+            this._wrapTracking(
               module,
               'assembleStructuredOutputPipeline',
               trackFactory(
@@ -272,7 +272,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               withAgentName: (model: unknown, mode: unknown) => unknown;
             }) => {
               if (!isTrackingFactory(module.withAgentName))
-                this._wrap(
+                this._wrapTracking(
                   module,
                   'withAgentName',
                   trackFactory(result => markWorkflow(result), this._diag)
@@ -288,7 +288,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 typeof module.getPromptRunnable === 'function' &&
                 !isTrackingFactory(module.getPromptRunnable)
               ) {
-                this._wrap(
+                this._wrapTracking(
                   module,
                   'getPromptRunnable',
                   trackFactory(result => markAgentPrompt(result), this._diag)
@@ -304,14 +304,14 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   private _trackRunnableFactories(module: typeof Runnables) {
     if (!module.Runnable) return;
     if (!isTrackingFactory(module.Runnable.prototype.pipe))
-      this._wrap(
+      this._wrapTracking(
         module.Runnable.prototype,
         'pipe',
         trackFactory(markAgentPromptComposition, this._diag)
       );
     this._trackWorkflowOwner(module.RunnableToolLike);
     if (!isTrackingFactory(module.Runnable.prototype.asTool))
-      this._wrap(
+      this._wrapTracking(
         module.Runnable.prototype,
         'asTool',
         trackFactory(
@@ -320,7 +320,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         )
       );
     if (!isTrackingFactory(module.Runnable.prototype.assign))
-      this._wrap(
+      this._wrapTracking(
         module.Runnable.prototype,
         'assign',
         trackFactory(
@@ -329,7 +329,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         )
       );
     if (!isTrackingFactory(module.RunnableBinding.prototype.withConfig))
-      this._wrap(
+      this._wrapTracking(
         module.RunnableBinding.prototype,
         'withConfig',
         trackFactory((result, receiver) => {
@@ -349,13 +349,27 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   ) {
     for (const method of ['invoke', 'batch'] as const) {
       if (!isTrackingFactory(owner.prototype[method])) {
-        this._wrap(
+        this._wrapTracking(
           owner.prototype,
           method,
           trackOwnedWorkflow(owner, this._diag)
         );
       }
     }
+  }
+
+  private _wrapTracking<T extends object, K extends keyof T>(
+    target: T,
+    method: K,
+    factory: (original: T[K]) => T[K]
+  ) {
+    // Tracking stays active while disabled, so never unwrap another owner.
+    // defineProperty also supports import-in-the-middle module proxies.
+    Object.defineProperty(target, method, {
+      configurable: true,
+      writable: true,
+      value: factory(target[method]),
+    });
   }
 
   /**

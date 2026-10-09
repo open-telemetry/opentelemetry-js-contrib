@@ -69,13 +69,17 @@ function trackingProxy<F extends (...args: never[]) => unknown>(
   original: F,
   apply: (receiver: unknown, args: unknown[]) => unknown
 ): F {
-  const metadata = new Map<PropertyKey, unknown>();
+  const metadata = new Map<PropertyKey, unknown>([
+    ['__original', undefined],
+    ['__unwrap', undefined],
+    ['__wrapped', undefined],
+  ]);
   const wrapped = new Proxy(original, {
     apply(_target, receiver: unknown, args: unknown[]) {
       return apply(receiver, args);
     },
-    // Shimmer annotates its wrapper. Do not forward those writes to an
-    // inherited SDK method shared by multiple owner classes.
+    // Keep wrapper metadata local, without inheriting it from or writing it
+    // to another wrapper or an SDK method shared by multiple owner classes.
     defineProperty(target, key, descriptor) {
       if (key === '__original' || key === '__unwrap' || key === '__wrapped') {
         metadata.set(key, descriptor.value);

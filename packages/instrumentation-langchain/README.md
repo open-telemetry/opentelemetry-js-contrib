@@ -133,6 +133,11 @@ removing wrappers installed by other code. If an outer wrapper prevents cleanup,
 the inactive workflow wrapper restores the original method on its next call
 after the outer wrapper is removed.
 
+Internal-adapter tracking hooks remain installed while disabled so adapters
+created during that time can still be recognized after re-enabling. These hooks
+do not emit telemetry and wrap the current method without removing wrappers
+installed by other code.
+
 This workflow-only phase intentionally does not depend on `@opentelemetry/genai-util`.
 Adoption of its concrete workflow API is deferred to a follow-up once that API is
 ready. Public GenAI utility exports and system-instruction handling are outside

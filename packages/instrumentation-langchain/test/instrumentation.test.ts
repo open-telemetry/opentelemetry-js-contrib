@@ -6,7 +6,10 @@
 import { LangChainInstrumentation } from '../src';
 import type { LangChainInstrumentationConfig } from '../src';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
-import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import {
+  isWrapped,
+  type InstrumentationNodeModuleDefinition,
+} from '@opentelemetry/instrumentation';
 import {
   getTestSpans,
   resetMemoryExporter,
@@ -389,6 +392,153 @@ describe('LangChainInstrumentation', () => {
           first.disable();
           second.disable();
           target[method] = original;
+        }
+      });
+    }
+  }
+
+  const trackingHooks = [
+    ['base', 'pipe'],
+    ['base', 'asTool'],
+    ['base', 'assign'],
+    ['base', 'withConfig'],
+    ['base', 'invoke'],
+    ['base', 'batch'],
+    ['history', 'invoke'],
+    ['history', 'batch'],
+    ['passthrough', 'assign'],
+    ['chat_models', 'withStructuredOutput'],
+    ['structured_output', 'assembleStructuredOutputPipeline'],
+    ['withAgentName', 'withAgentName'],
+    ['utils', 'getPromptRunnable'],
+  ] as const;
+
+  for (const extension of ['cjs', 'js']) {
+    for (const [fileName, method] of trackingHooks) {
+      it(`preserves existing wrappers in the ${fileName}.${extension} ${method} tracking hook`, () => {
+        const instances = [
+          new TestInstrumentation({ enabled: false }),
+          new TestInstrumentation({ enabled: false }),
+        ];
+        const failure = new Error('SDK failure');
+        const original = sinon.spy(function (
+          this: unknown,
+          ...args: unknown[]
+        ) {
+          if (args[0] === failure) throw failure;
+          return args[0];
+        });
+        const methods = {
+          pipe: original,
+          asTool: original,
+          assign: original,
+          withConfig: original,
+          invoke: original,
+          batch: original,
+          withStructuredOutput: original,
+          assembleStructuredOutputPipeline: original,
+          withAgentName: original,
+          getPromptRunnable: original,
+        };
+        class Owner {}
+        const prototype = Object.assign(Owner.prototype, methods);
+        const module = {
+          ...runnableModule(),
+          ...methods,
+          Runnable: { prototype },
+          RunnableBinding: { prototype },
+          RunnableToolLike: Owner,
+          RunnableWithMessageHistory: Owner,
+          RunnablePassthrough: prototype,
+          BaseChatModel: { prototype },
+        };
+        const target =
+          fileName === 'structured_output' ||
+          fileName === 'withAgentName' ||
+          fileName === 'utils'
+            ? module
+            : prototype;
+        const receiver = new Owner();
+        const other = sinon.spy(function (this: unknown, ...args: unknown[]) {
+          return Reflect.apply(original, this, args);
+        });
+        const unwrap = sinon.spy(() => {
+          target[method] = original;
+        });
+        Object.assign(other, {
+          __original: original,
+          __wrapped: true,
+          __unwrap: unwrap,
+        });
+        target[method] = other;
+        const check = () => {
+          const result = Promise.resolve('same promise');
+          const args = [result, undefined, {}];
+          expect(Reflect.apply(target[method], receiver, args)).toBe(result);
+          expect(other.lastCall.thisValue).toBe(receiver);
+          expect(other.lastCall.args).toEqual(args);
+          expect(original.lastCall.thisValue).toBe(receiver);
+          expect(original.lastCall.args).toEqual(args);
+          expect(() =>
+            Reflect.apply(target[method], receiver, [failure])
+          ).toThrow(failure);
+          expect(other.lastCall.exception).toBe(failure);
+          expect(original.lastCall.exception).toBe(failure);
+        };
+        try {
+          resetMemoryExporter();
+          for (const instance of instances) {
+            const file = instance.definitions
+              .flatMap(definition => definition.files)
+              .find(file => file.name.endsWith(`${fileName}.${extension}`))!;
+            file.moduleExports = module;
+          }
+          const tracking = target[method];
+          expect(unwrap.called).toBe(false);
+          expect(tracking).not.toBe(other);
+          expect(isWrapped(tracking)).toBe(false);
+          expect(isWrapped(other)).toBe(true);
+          check();
+          for (let cycle = 0; cycle < 2; cycle++) {
+            for (const instance of instances) instance.enable();
+            expect(target[method]).toBe(tracking);
+            check();
+            for (const instance of instances) instance.disable();
+            expect(target[method]).toBe(tracking);
+            check();
+          }
+          expect(unwrap.called).toBe(false);
+          expect(other.callCount).toBe(10);
+          expect(original.callCount).toBe(10);
+          expect(getTestSpans()).toHaveLength(0);
+
+          const outer = Object.assign(
+            sinon.spy(function (this: unknown, ...args: unknown[]) {
+              return Reflect.apply(tracking, this, args);
+            }),
+            {
+              __original: tracking,
+              __wrapped: true,
+              __unwrap: () => {
+                target[method] = tracking;
+              },
+            }
+          );
+          instances[0].enable();
+          target[method] = outer;
+          instances[0].disable();
+          expect(target[method]).toBe(outer);
+          check();
+          expect(outer.callCount).toBe(2);
+          outer.__unwrap();
+          check();
+          expect(target[method]).toBe(tracking);
+          expect(other.callCount).toBe(14);
+          expect(original.callCount).toBe(14);
+          expect(unwrap.called).toBe(false);
+          expect(getTestSpans()).toHaveLength(0);
+        } finally {
+          for (const instance of instances) instance.disable();
         }
       });
     }
