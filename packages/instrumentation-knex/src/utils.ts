@@ -117,10 +117,11 @@ export const extractPortFromConnectionString = (
   }
 };
 
-export const extractTableName = (builder: any): string => {
+export const extractTableName = (builder: any): string | undefined => {
   const table = builder?._single?.table;
   if (typeof table === 'object') {
     return extractTableName(table);
   }
-  return table;
+  // `table` can also be a callback subquery, e.g. `from(function () { ... })`
+  return typeof table === 'string' ? table : undefined;
 };
