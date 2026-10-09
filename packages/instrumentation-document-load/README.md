@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-document-load
 
 ```js
 import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
-import { StackContextManager} from '@opentelemetry/sdk-trace-web';
+import { StackContextManager} from '@opentelemetry/sdk-trace';
 import { DocumentLoadInstrumentation } from '@opentelemetry/instrumentation-document-load';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
@@ -118,7 +118,7 @@ The document load instrumentation plugin has few options available to choose fro
 | `applyCustomAttributesOnSpan.documentLoad`  | `DocumentLoadCustomAttributeFunction`  | Function for adding custom attributes to `documentLoad` spans.                                                                                                                                                                                                                                        |
 | `applyCustomAttributesOnSpan.documentFetch` | `DocumentLoadCustomAttributeFunction`  | Function for adding custom attributes to `documentFetch` spans.                                                                                                                                                                                                                                       |
 | `applyCustomAttributesOnSpan.resourceFetch` | `ResourceFetchCustomAttributeFunction` | Function for adding custom attributes to `resourceFetch` spans                                                                                                                                                                                                                                        |
-| `ignoreNetworkEvents`                       | `boolean`                              | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/e49c4c7f42c6c444da3f802687cfa4f2d6983f46/packages/opentelemetry-sdk-trace-web/src/enums/PerformanceTimingNames.ts#L17) for document fetch and resource fetch spans.                             |
+| `ignoreNetworkEvents`                       | `boolean`                              | Ignore adding [network events as span events](https://github.com/open-telemetry/opentelemetry-js/blob/92b844e8aa7d9655e4b3560154e912c4c1ced64d/experimental/packages/web-common/src/enums/PerformanceTimingNames.ts#L9) for document fetch and resource fetch spans.                             |
 | `ignorePerformancePaintEvents`              | `boolean`                              | Ignore adding performance resource paint span events to document load spans.                                                                                                                                                                                                                          |
 
 ## Semantic Conventions

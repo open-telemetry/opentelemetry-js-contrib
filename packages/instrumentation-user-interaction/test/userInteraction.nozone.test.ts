@@ -7,7 +7,6 @@ const originalSetTimeout = window.setTimeout;
 import { context, trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import { StackContextManager } from '@opentelemetry/sdk-trace-web';
 import * as tracing from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
@@ -85,7 +84,7 @@ describe('UserInteractionInstrumentation', () => {
         ],
       });
       trace.setGlobalTracerProvider(tracerProvider);
-      context.setGlobalContextManager(new StackContextManager().enable());
+      context.setGlobalContextManager(new tracing.StackContextManager().enable());
       // A global propagator is not necessary for tests in this file.
 
       registerTestInstrumentations();
