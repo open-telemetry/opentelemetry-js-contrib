@@ -17,7 +17,7 @@ import {
   hasKey,
   PerformanceEntries,
   PerformanceTimingNames as PTN,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/web-common';
 import {
   InstrumentationBase,
   safeExecuteInTheMiddle,

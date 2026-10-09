@@ -19,11 +19,9 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace';
-import {
-  PerformanceTimingNames as PTN,
   StackContextManager,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
+import { PerformanceTimingNames as PTN } from '@opentelemetry/web-common';
 
 // @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
