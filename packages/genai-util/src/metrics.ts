@@ -3,12 +3,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { ValueType, type Histogram, type Meter } from '@opentelemetry/api';
+import {
+  ValueType,
+  type Counter,
+  type Histogram,
+  type Meter,
+} from '@opentelemetry/api';
 import {
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
+  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
 } from './semconv';
 
 /**
@@ -67,19 +79,126 @@ export function createDurationHistogram(meter: Meter): Histogram {
 }
 
 /**
- * Create standard `gen_ai.client.token.usage` histogram.
+ * Create standard `gen_ai.client.inference.operation.input_tokens` histogram.
  *
  * @experimental
  */
-export function createTokenUsageHistogram(meter: Meter): Histogram {
-  return meter.createHistogram(METRIC_GEN_AI_CLIENT_TOKEN_USAGE, {
-    description: 'Number of input and output tokens used by GenAI clients',
-    unit: '{token}',
-    valueType: ValueType.INT,
-    advice: {
-      explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
-    },
-  });
+export function createInputTokenOperationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(
+    METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+    {
+      description: 'Number of input tokens used per inference operation',
+      unit: '{token}',
+      valueType: ValueType.INT,
+      advice: {
+        explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
+      },
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.operation.output_tokens` histogram.
+ *
+ * @experimental
+ */
+export function createOutputTokenOperationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(
+    METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+    {
+      description: 'Number of output tokens used per inference operation',
+      unit: '{token}',
+      valueType: ValueType.INT,
+      advice: {
+        explicitBucketBoundaries: GENAI_TOKEN_USAGE_BUCKETS,
+      },
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.usage.input_tokens` counter.
+ *
+ * @experimental
+ */
+export function createInputTokenUsageCounter(meter: Meter): Counter {
+  return meter.createCounter(
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+    {
+      description:
+        'The number of input (prompt) tokens used, including cached tokens.',
+      unit: '{token}',
+      valueType: ValueType.INT,
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.usage.output_tokens` counter.
+ *
+ * @experimental
+ */
+export function createOutputTokenUsageCounter(meter: Meter): Counter {
+  return meter.createCounter(
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+    {
+      description:
+        'The number of output (completion) tokens used, including reasoning tokens.',
+      unit: '{token}',
+      valueType: ValueType.INT,
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.usage.cache_read.input_tokens` counter.
+ *
+ * @experimental
+ */
+export function createCacheReadInputTokenUsageCounter(meter: Meter): Counter {
+  return meter.createCounter(
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+    {
+      description:
+        'The number of input tokens served from a provider-managed cache.',
+      unit: '{token}',
+      valueType: ValueType.INT,
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.usage.cache_write.input_tokens` counter.
+ *
+ * @experimental
+ */
+export function createCacheWriteInputTokenUsageCounter(meter: Meter): Counter {
+  return meter.createCounter(
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+    {
+      description:
+        'The number of input tokens written to a provider-managed cache.',
+      unit: '{token}',
+      valueType: ValueType.INT,
+    }
+  );
+}
+
+/**
+ * Create standard `gen_ai.client.inference.usage.reasoning.output_tokens` counter.
+ *
+ * @experimental
+ */
+export function createReasoningOutputTokenUsageCounter(meter: Meter): Counter {
+  return meter.createCounter(
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+    {
+      description:
+        'The number of output tokens used for reasoning (e.g. chain-of-thought, extended thinking).',
+      unit: '{token}',
+      valueType: ValueType.INT,
+    }
+  );
 }
 
 /**
@@ -118,4 +237,19 @@ export function createTimePerOutputChunkHistogram(meter: Meter): Histogram {
       },
     }
   );
+}
+
+/**
+ * Create standard `gen_ai.execute_tool.duration` histogram.
+ *
+ * @experimental
+ */
+export function createExecuteToolDurationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_EXECUTE_TOOL_DURATION, {
+    description: 'The duration of a single tool execution.',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
+    },
+  });
 }
