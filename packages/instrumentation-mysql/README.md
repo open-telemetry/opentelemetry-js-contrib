@@ -39,8 +39,6 @@ sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
-See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/mysql) for a short example.
-
 ### MySQL instrumentation Options
 
 | Options                                           | Type      | Default | Description |

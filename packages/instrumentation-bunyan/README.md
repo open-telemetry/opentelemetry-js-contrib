@@ -117,8 +117,8 @@ const { OpenTelemetryBunyanStream } = require('@opentelemetry/instrumentation-bu
 const bunyan = require('bunyan');
 
 // You must register an OpenTelemetry LoggerProvider, otherwise log records will
-// be sent to a no-op implementation. "examples/telemetry.js" shows one way
-// to configure one.
+// be sent to a no-op implementation. "examples/bunyan/telemetry.js" shows one
+// way to configure one.
 // ...
 
 const logger = bunyan.createLogger({

@@ -48,12 +48,12 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.65.0",
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/contrib-test-utils": "^0.69.0",
+    "@opentelemetry/contrib-test-utils": "^0.70.0",
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^2.9.0",
-    "@opentelemetry/instrumentation": "^0.222.0"
+    "@opentelemetry/instrumentation": "^0.223.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-anthropic#readme"
 }
