@@ -41,6 +41,8 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.client.inference.operation.input_tokens` / `output_tokens` (per-operation token histograms)
   - `gen_ai.client.inference.usage.*` (input, output, cache read / write input and reasoning output token counters, split by `gen_ai.token.modality`)
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
+  - `gen_ai.client.operation.time_per_output_chunk` (in seconds)
+  - `gen_ai.execute_tool.duration` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
 
 ---
