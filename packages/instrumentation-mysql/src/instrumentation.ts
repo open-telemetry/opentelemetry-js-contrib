@@ -214,7 +214,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
       const thisPlugin = this;
       return function add(id: string, config: unknown) {
         // Unwrap if unpatch has been called
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(cluster, 'add');
           return originalAdd.apply(cluster, arguments);
         }
@@ -244,7 +244,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         arg3?: unknown
       ) {
         // Unwrap if unpatch has been called
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(pool, 'getConnection');
           return originalGetConnection.apply(pool, arguments);
         }
@@ -307,7 +307,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         _valuesOrCallback?: unknown[] | mysqlTypes.queryCallback,
         _callback?: mysqlTypes.queryCallback
       ) {
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(connection, 'query');
           return originalQuery.apply(connection, arguments);
         }
