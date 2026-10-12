@@ -113,7 +113,6 @@ describe('InferenceInvocation', () => {
         finish_reason: 'stop',
       },
     ]);
-    invocation.setTimeToFirstChunk(0.123);
     invocation.stop();
 
     const spans = ctx.memoryExporter.getFinishedSpans();
@@ -127,10 +126,6 @@ describe('InferenceInvocation', () => {
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
     assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.7);
-    assert.strictEqual(
-      span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
-      0.123
-    );
     assert.strictEqual(
       span.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
       'gpt-4o-2024-08-06'

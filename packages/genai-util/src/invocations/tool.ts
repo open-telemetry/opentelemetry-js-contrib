@@ -86,7 +86,6 @@ export class ToolInvocation extends BaseInvocation {
   private readonly _toolName: string;
   private readonly _toolType?: ToolType;
   private readonly _agentName?: string;
-  private _toolArguments?: unknown;
   private _result?: unknown;
 
   /**
@@ -121,7 +120,6 @@ export class ToolInvocation extends BaseInvocation {
     this._toolName = options.toolName;
     this._toolType = options.toolType;
     this._agentName = options.agentName;
-    this._toolArguments = options.toolArguments;
   }
 
   /**
@@ -134,14 +132,6 @@ export class ToolInvocation extends BaseInvocation {
   public setResult(result: unknown): this {
     this._result = result;
     return this;
-  }
-
-  public getToolArguments(): unknown {
-    return this._toolArguments;
-  }
-
-  public getResult(): unknown {
-    return this._result;
   }
 
   /**

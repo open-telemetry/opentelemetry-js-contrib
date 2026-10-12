@@ -280,17 +280,6 @@ describe('ToolInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'RangeError');
     });
 
-    it('should keep the result readable via getResult() after a failure', () => {
-      const inv = createHandler().startTool({ toolName: 'calculator' });
-
-      inv.setResult({ value: 42 });
-      inv.fail({ exception: new Error('boom') });
-
-      // Suppression applies to the recorded attribute, not to the in-memory value that
-      // completion hooks and callers may still inspect.
-      assert.deepStrictEqual(inv.getResult(), { value: 42 });
-    });
-
     it('should not record a result when content capture is disabled', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',

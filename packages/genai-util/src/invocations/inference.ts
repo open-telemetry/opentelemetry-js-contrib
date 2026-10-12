@@ -235,14 +235,6 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Set time to first chunk in seconds for streaming responses.
-   */
-  public setTimeToFirstChunk(seconds: number): this {
-    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK, seconds);
-    return this;
-  }
-
-  /**
    * Record one streamed output chunk arriving.
    *
    * The first call marks the request as streaming and records time-to-first-chunk
