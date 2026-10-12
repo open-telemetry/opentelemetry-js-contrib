@@ -339,13 +339,11 @@ export interface TokenUsageByModality {
 export interface TokenUsageDetails {
   /**
    * The number of input (prompt) tokens used per inference request.
-   * This includes tokens from cache reads and writes. If this is not provided,
-   * the total will be inferred from cacheReadTokens and cacheWriteTokens.
+   * This includes tokens from cache reads and writes.
    */
   inputTokenCount?: number;
   /** The number of output (completion) tokens used per inference request.
-   * This includes reasoning tokens. If this is not provided, the total will be
-   * inferred from reasoningTokenCount.
+   * This includes reasoning tokens.
    */
   outputTokenCount?: number;
   /** Number of tokens used for model reasoning / thinking (`gen_ai.client.inference.usage.reasoning.output_tokens`).

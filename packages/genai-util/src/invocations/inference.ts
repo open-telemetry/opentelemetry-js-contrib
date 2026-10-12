@@ -44,7 +44,6 @@ import {
   formatSystemInstructions,
   getRequestOptionsAttributes,
   mergeTokenUsageDetails,
-  inferMissingTokenCounts,
   inferMissingModalityCounts,
 } from '../utils';
 import type { TelemetryHandler } from '../handler';
@@ -194,10 +193,6 @@ export class InferenceInvocation extends BaseInvocation {
    * - If `tokenUsageByModality` is provided, any missing modality token counts
    *   are inferred using the total counts (if available) and attributed to the
    *   modality 'unknown'.
-   * - If `inputTokens` are not defined in `tokenUsageByModality`, they are
-   *   inferred using cache read and cache write tokens.
-   * - If `outputTokens` are not defined in `tokenUsageByModality`, they are
-   *   inferred using reasoning tokens.
    * - If fields are already defined, they are not modified.
    *
    * @param usage - Token usage details reported by the provider.
@@ -332,8 +327,7 @@ export class InferenceInvocation extends BaseInvocation {
    * Finalize token usage and serialize the invocation's content onto the span.
    *
    * Token usage is finalized here (before `_recordMetrics` runs) so that the
-   * span attributes and the token metrics are derived from the same merged and
-   * inferred usage.
+   * span attributes and the token metrics are derived from the same merged usage.
    *
    * All content, including content supplied at start, is serialized once here rather
    * than on every `add*` / `set*` call, since messages may be added repeatedly and
@@ -344,7 +338,6 @@ export class InferenceInvocation extends BaseInvocation {
     _errorType?: string
   ): void {
     if (this._usage) {
-      this._usage = inferMissingTokenCounts(this._usage);
       this._usage = inferMissingModalityCounts(this._usage);
       this.setUsageAttributes(this._usage);
     }

@@ -965,7 +965,7 @@ describe('InferenceInvocation', () => {
         contentCaptureMode,
       }).startInference({ providerName: 'openai', requestModel: 'gpt-4o' });
 
-    it('should infer inputTokens from cache read and write tokens, per modality', async () => {
+    it('should not infer inputTokens from cache read and write tokens', async () => {
       const invocation = startInference();
       invocation.setUsage({
         cacheReadTokenCount: 100,
@@ -978,7 +978,10 @@ describe('InferenceInvocation', () => {
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 170);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
+        undefined
+      );
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS],
         100
@@ -988,23 +991,38 @@ describe('InferenceInvocation', () => {
         70
       );
 
-      // Metrics are derived from the same inferred usage as the span.
       const metrics = await collectMetricsByName(ctx.metricReader);
       assert.deepStrictEqual(
         counterValuesByModality(
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS)
         ),
-        { text: 150, image: 20 }
+        { unknown: 0 }
       );
       assert.deepStrictEqual(
         histogramPoints(
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS)
         ),
-        [{ count: 1, sum: 170 }]
+        [{ count: 1, sum: 0 }]
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS
+          )
+        ),
+        { text: 100 }
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS
+          )
+        ),
+        { text: 50, image: 20 }
       );
     });
 
-    it('should infer outputTokens from reasoning tokens', async () => {
+    it('should not infer outputTokens from reasoning tokens', async () => {
       const invocation = startInference();
       invocation.setUsage({
         reasoningTokenCount: 45,
@@ -1012,7 +1030,10 @@ describe('InferenceInvocation', () => {
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 45);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS],
+        undefined
+      );
       assert.strictEqual(
         span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
         45
@@ -1023,13 +1044,13 @@ describe('InferenceInvocation', () => {
         counterValuesByModality(
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
         ),
-        { text: 45 }
+        { unknown: 0 }
       );
       assert.deepStrictEqual(
         histogramPoints(
           metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS)
         ),
-        [{ count: 1, sum: 45 }]
+        [{ count: 1, sum: 0 }]
       );
       assert.deepStrictEqual(
         counterValuesByModality(
@@ -1038,6 +1059,38 @@ describe('InferenceInvocation', () => {
           )
         ),
         { text: 45 }
+      );
+    });
+
+    it('should not invent output breakdown for reasoning tokens when only totals are reported', async () => {
+      const invocation = startInference();
+      invocation.setUsage({
+        outputTokenCount: 620,
+        reasoningTokenCount: 384,
+      });
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 620);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS],
+        384
+      );
+
+      const metrics = await collectMetricsByName(ctx.metricReader);
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS)
+        ),
+        { unknown: 620 }
+      );
+      assert.deepStrictEqual(
+        counterValuesByModality(
+          metrics.get(
+            METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS
+          )
+        ),
+        { text: 384 }
       );
     });
 
@@ -1261,6 +1314,8 @@ describe('InferenceInvocation', () => {
     it('should set usage attributes on failure even when content capture is disabled', async () => {
       const invocation = startInference('none');
       invocation.setUsage({
+        inputTokenCount: 8,
+        outputTokenCount: 4,
         cacheReadTokenCount: 8,
         reasoningTokenCount: 4,
         tokenUsageByModality: {

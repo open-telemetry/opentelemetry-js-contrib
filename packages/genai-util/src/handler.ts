@@ -270,11 +270,9 @@ export class TelemetryHandler {
    * Negative counts are skipped.
    *
    * Intended to be called by {@link InferenceInvocation} when the invocation
-   * ends, with usage whose missing `inputTokens` / `outputTokens` have already
-   * been inferred (from cache and reasoning tokens respectively). This method
-   * does not infer them itself: if usage is missing or undefined, a count of 0
-   * is recorded for the input / output histograms, and for the usage counters with
-   * `gen_ai.token.modality` set to `'unknown'`.
+   * ends. This method does not infer missing token counts: if usage is missing
+   * or undefined, a count of 0 is recorded for the input / output histograms,
+   * and for the usage counters with `gen_ai.token.modality` set to `'unknown'`.
    *
    * @param usage - Token counts of the operation, or undefined if not reported.
    * @param attributes - Metric attributes. Token metrics do not define

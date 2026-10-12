@@ -25,7 +25,6 @@ import {
   getErrorType,
   getRequestOptionsAttributes,
   inferMissingModalityCounts,
-  inferMissingTokenCounts,
   mergeTokenUsage,
   mergeTokenUsageDetails,
   sumTokenCountsAcrossModalities,
@@ -591,68 +590,6 @@ describe('GenAI Utils', () => {
       mergeTokenUsageDetails(existing, update);
       assert.deepStrictEqual(existing, { inputTokenCount: 10 });
       assert.deepStrictEqual(update, { outputTokenCount: 20 });
-    });
-  });
-
-  describe('inferMissingTokenCounts', () => {
-    it('should infer inputTokenCount from cacheReadTokenCount and cacheWriteTokenCount', () => {
-      const usage: TokenUsageDetails = {
-        cacheReadTokenCount: 50,
-        cacheWriteTokenCount: 30,
-      };
-      const inferred = inferMissingTokenCounts(usage);
-      assert.strictEqual(inferred.inputTokenCount, 80);
-    });
-
-    it('should infer outputTokenCount from reasoningTokenCount', () => {
-      const usage: TokenUsageDetails = {
-        reasoningTokenCount: 25,
-      };
-      const inferred = inferMissingTokenCounts(usage);
-      assert.strictEqual(inferred.outputTokenCount, 25);
-    });
-
-    it('should infer modality inputTokens and outputTokens if tokenUsageByModality is present', () => {
-      const usage: TokenUsageDetails = {
-        cacheReadTokenCount: 10,
-        cacheWriteTokenCount: 20,
-        reasoningTokenCount: 15,
-        tokenUsageByModality: {
-          cacheReadTokens: { text: 10 },
-          cacheWriteTokens: { text: 10, image: 10 },
-        },
-      };
-      const inferred = inferMissingTokenCounts(usage);
-      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
-        text: 20,
-        image: 10,
-      });
-      assert.deepStrictEqual(inferred.tokenUsageByModality?.outputTokens, {
-        text: 15,
-      });
-    });
-
-    it('should not overwrite already reported input and output token counts or modalities', () => {
-      const usage: TokenUsageDetails = {
-        inputTokenCount: 100,
-        outputTokenCount: 50,
-        cacheReadTokenCount: 10,
-        reasoningTokenCount: 5,
-        tokenUsageByModality: {
-          inputTokens: { text: 100 },
-          outputTokens: { text: 50 },
-          cacheReadTokens: { text: 10 },
-        },
-      };
-      const inferred = inferMissingTokenCounts(usage);
-      assert.strictEqual(inferred.inputTokenCount, 100);
-      assert.strictEqual(inferred.outputTokenCount, 50);
-      assert.deepStrictEqual(inferred.tokenUsageByModality?.inputTokens, {
-        text: 100,
-      });
-      assert.deepStrictEqual(inferred.tokenUsageByModality?.outputTokens, {
-        text: 50,
-      });
     });
   });
 

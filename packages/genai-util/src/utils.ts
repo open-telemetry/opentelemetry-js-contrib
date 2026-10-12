@@ -27,7 +27,6 @@ import type {
   SystemInstructionPart,
   SystemInstructions,
   TokenCountsByModality,
-  TokenModality,
   TokenUsageByModality,
   TokenUsageDetails,
 } from './types';
@@ -437,107 +436,6 @@ export function sumTokenCountsAcrossModalities(
     }
   }
   return sum;
-}
-
-/**
- * Return a copy of `usage` with `inputTokenCount` and `outputTokenCount` inferred
- * from cache and reasoning token counts if not already defined. If `tokenUsageByModality`
- * is present, also infers modality breakdowns for input and output tokens.
- * The caller-supplied object is not modified.
- *
- * @param usage - Token usage details to infer counts for.
- * @returns A new {@link TokenUsageDetails} object with missing token counts inferred.
- */
-export function inferMissingTokenCounts(
-  usage: TokenUsageDetails
-): TokenUsageDetails {
-  const result: TokenUsageDetails = { ...usage };
-  if (result.inputTokenCount === undefined) {
-    const combinedTokenCount: number | undefined = combineTotals(
-      result.cacheReadTokenCount,
-      result.cacheWriteTokenCount
-    );
-    if (combinedTokenCount !== undefined) {
-      result.inputTokenCount = combinedTokenCount;
-    }
-  }
-  if (result.outputTokenCount === undefined) {
-    const combinedTokenCount: number | undefined = combineTotals(
-      result.reasoningTokenCount
-    );
-    if (combinedTokenCount !== undefined) {
-      result.outputTokenCount = combinedTokenCount;
-    }
-  }
-  if (
-    result.tokenUsageByModality ||
-    (result.reasoningTokenCount !== undefined && result.reasoningTokenCount > 0)
-  ) {
-    const modality = { ...result.tokenUsageByModality };
-    let modified = false;
-    if (modality.inputTokens === undefined) {
-      const combinedInput = combineTokenCounts(
-        modality.cacheReadTokens,
-        modality.cacheWriteTokens
-      );
-      if (combinedInput !== undefined) {
-        modality.inputTokens = combinedInput;
-        modified = true;
-      }
-    }
-    if (modality.outputTokens === undefined) {
-      if (
-        result.reasoningTokenCount !== undefined &&
-        result.reasoningTokenCount > 0
-      ) {
-        modality.outputTokens = { text: result.reasoningTokenCount };
-        modified = true;
-      }
-    }
-    if (modified) {
-      result.tokenUsageByModality = modality;
-    }
-  }
-  return result;
-}
-
-/**
- * Add up positive total counts.
- *
- * Returns `undefined` when there is no positive count, so that an inferred
- * value never introduces a `0` that the caller did not report.
- */
-function combineTotals(...totals: (number | undefined)[]): number | undefined {
-  let combined: number | undefined;
-  for (const total of totals) {
-    if (total !== undefined && total > 0) {
-      combined = (combined ?? 0) + total;
-    }
-  }
-  return combined;
-}
-
-/**
- * Add up the positive counts of each modality across `countsList`.
- *
- * Returns `undefined` when there is no positive count, so that an inferred
- * value never introduces a `0` that the caller did not report.
- */
-function combineTokenCounts(
-  ...countsList: (TokenCountsByModality | undefined)[]
-): TokenCountsByModality | undefined {
-  let combined: TokenCountsByModality | undefined;
-  for (const counts of countsList) {
-    if (!counts) continue;
-    for (const [modality, val] of Object.entries(counts)) {
-      if (val !== undefined && val > 0) {
-        combined = combined ?? {};
-        const key = modality as TokenModality;
-        combined[key] = (combined[key] ?? 0) + val;
-      }
-    }
-  }
-  return combined;
 }
 
 /**
