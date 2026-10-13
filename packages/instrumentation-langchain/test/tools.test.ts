@@ -181,6 +181,55 @@ describe('LangChain donated tool callbacks', () => {
     );
   });
 
+  for (const { value, expected } of [
+    { value: ['first', 'second'], expected: { output: ['first', 'second'] } },
+    { value: 'text', expected: { output: 'text' } },
+    { value: 0, expected: { output: 0 } },
+    { value: false, expected: { output: false } },
+    { value: null, expected: { output: null } },
+    { value: undefined, expected: undefined },
+    { value: { answer: 'yes' }, expected: { answer: 'yes' } },
+  ]) {
+    it(`normalizes the serialized result shape (${JSON.stringify(value)})`, async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const toJSON = sinon.spy(() => value);
+      const output = { toJSON };
+      const operation = new DynamicStructuredTool({
+        name: 'serialized-result',
+        description: '',
+        schema: echo().schema.innerType().required(),
+        func: async () => output,
+      });
+      assert.equal(await operation.invoke({ input: '' }), output);
+      assert.ok(toJSON.calledOnce);
+      assert.equal(
+        getTestSpans()[0].attributes['gen_ai.tool.call.result'],
+        JSON.stringify(expected)
+      );
+      assert.equal(getTestSpans()[0].status.code, SpanStatusCode.UNSET);
+      assert.equal((await points())[0].value.count, 1);
+    });
+  }
+
+  it('does not serialize tool results when capture is disabled', async () => {
+    const toJSON = sinon.spy(() => {
+      throw new Error('private serialization failure');
+    });
+    const output = { toJSON };
+    const operation = new DynamicStructuredTool({
+      name: 'no-capture',
+      description: '',
+      schema: echo().schema.innerType().required(),
+      func: async () => output,
+    });
+    assert.equal(await operation.invoke({ input: '' }), output);
+    assert.ok(toJSON.notCalled);
+    assert.equal(
+      getTestSpans()[0].attributes['gen_ai.tool.call.result'],
+      undefined
+    );
+  });
+
   for (const invalid of [false, true]) {
     it(`migrates serialized name and description precedence (invalid=${invalid})`, async () => {
       class SerializedTool extends DynamicTool {

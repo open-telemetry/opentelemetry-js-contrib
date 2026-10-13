@@ -49,12 +49,14 @@ interface ToolTelemetry {
   capture: boolean;
 }
 
-interface ToolRun extends ToolTelemetry {
+interface ToolRun {
   span: Span;
   context: Context;
   startTime: HrTime;
   metricAttributes: Attributes;
   callId: string | undefined;
+  duration: Histogram | undefined;
+  capture: boolean;
 }
 
 // CJS/ESM handlers share callback run IDs, including nested tool executions.
@@ -75,7 +77,6 @@ export function addToolHandler(
 }
 
 function content(value: unknown, key: 'input' | 'output'): string | undefined {
-  if (value === undefined) return undefined;
   if (typeof value === 'string') {
     try {
       const parsed: unknown = JSON.parse(value);
@@ -84,7 +85,10 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
       // A plain text tool argument or result is not serialized JSON.
     }
   }
-  return JSON.stringify(isRecord(value) ? value : { [key]: value });
+  const serialized = JSON.stringify(value);
+  if (serialized === undefined) return undefined;
+  // Check the JSON shape after toJSON, without serializing SDK objects twice.
+  return serialized[0] === '{' ? serialized : `{"${key}":${serialized}}`;
 }
 
 /**
@@ -213,7 +217,8 @@ export function createToolCallbacks(
           parent
         );
         runs.set(runId, {
-          ...current,
+          duration: current.duration,
+          capture: current.capture,
           span,
           startTime,
           metricAttributes,

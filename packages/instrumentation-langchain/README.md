@@ -128,7 +128,9 @@ recorded without copying arbitrary metadata.
 and `gen_ai.tool.call.result`. JSON-object strings are decoded, and non-object
 values are wrapped as `{"input": value}` or `{"output": value}` to satisfy the
 official object schemas. SDK result objects, including ToolMessage envelopes,
-retain their serialized structure. Failed executions omit results.
+retain their serialized structure. The object-shape check is applied after
+`toJSON`, so dates and other scalar or array serializations are wrapped too.
+Failed executions omit results.
 
 Each observed tool end/error callback records `gen_ai.execute_tool.duration`
 in seconds, matching its span duration. Metric attributes contain the tool
@@ -280,7 +282,8 @@ npm run test:conformance --workspace @opentelemetry/instrumentation-langchain
 The scenario registry is pinned alongside the tool conventions in `semconv.ts`.
 The scenarios execute real offline tools and export spans and metrics through
 OTLP/gRPC to Weaver. They cover capture disabled, capture enabled and execution
-failure. Reports are written under the package's ignored `coverage` directory.
+failure, and results whose JSON serialization is not an object. Reports are
+written under the package's ignored `coverage` directory.
 The package-wide missing instrumentation-scope schema URL is declared as a
 specific expected violation, not silently skipped. No provider requests or
 Docker containers are needed.

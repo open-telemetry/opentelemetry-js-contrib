@@ -37,10 +37,14 @@ async function main() {
   const { tool } = require('@langchain/core/tools');
   const failure = new TypeError('synthetic tool failure');
   const fail = process.argv[2] === 'error';
+  const serializedResult = process.argv[2] === 'serialized-result';
+  const result = serializedResult
+    ? new Date('2026-01-01T00:00:00Z')
+    : 'tool result';
   const operation = tool(
     async () => {
       if (fail) throw failure;
-      return 'tool result';
+      return result;
     },
     { name: 'test_tool', description: 'Offline donated tool scenario' }
   );
@@ -51,7 +55,7 @@ async function main() {
         error => error === failure
       );
     } else {
-      assert.equal(await operation.invoke('hello'), 'tool result');
+      assert.equal(await operation.invoke('hello'), result);
     }
   } finally {
     instrumentation.disable();

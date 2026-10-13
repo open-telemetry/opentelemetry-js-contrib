@@ -75,3 +75,22 @@ scenarios:
             error.type: TypeError
     metrics: [gen_ai.execute_tool.duration]
     events: []
+
+  tool_serialized_result:
+    run: node tool.cjs serialized-result
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.call.arguments: '{"input":"hello"}'
+            gen_ai.tool.call.result: '{"output":"2026-01-01T00:00:00.000Z"}'
+            error.type: {present: false}
+    metrics: [gen_ai.execute_tool.duration]
+    events: []
