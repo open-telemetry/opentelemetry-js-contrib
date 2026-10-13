@@ -491,8 +491,9 @@ describe('Restify Instrumentation', () => {
         DiagLogLevel.WARN
       );
 
-      const asyncHandler: restify.RequestHandler = async (req, res, next) => {
-        return getHandler(req, res, next);
+      const supportsAsyncHandlers = semver.satisfies(LIB_VERSION, '>=9');
+      const asyncHandler: restify.RequestHandler = async (req, res) => {
+        res.send({ route: req?.params?.param });
       };
       const asyncThrower: restify.RequestHandler = async () => {
         throw new AppError('NOK');
@@ -502,7 +503,9 @@ describe('Restify Instrumentation', () => {
         server.get('/route/:param', getHandler);
         server.get('/erroring', returnError);
         server.get('/async', asyncHandler);
-        server.get('/async-error', asyncThrower);
+        if (supportsAsyncHandlers) {
+          server.get('/async-error', asyncThrower);
+        }
       });
       const testLocalPort = testLocalServer.address().port;
 
@@ -510,14 +513,21 @@ describe('Restify Instrumentation', () => {
         await httpRequest.get(`http://localhost:${testLocalPort}/route/foo`);
         await httpRequest.get(`http://localhost:${testLocalPort}/erroring`);
         await httpRequest.get(`http://localhost:${testLocalPort}/async`);
-        await httpRequest.get(`http://localhost:${testLocalPort}/async-error`);
+        if (supportsAsyncHandlers) {
+          await httpRequest.get(
+            `http://localhost:${testLocalPort}/async-error`
+          );
+        }
         assert.strictEqual(
           diagMessages.length,
           0,
           `unexpected diag messages: ${JSON.stringify(diagMessages)}`
         );
         // 2 spans per request: middleware 'use' + request handler
-        assert.strictEqual(memoryExporter.getFinishedSpans().length, 8);
+        assert.strictEqual(
+          memoryExporter.getFinishedSpans().length,
+          supportsAsyncHandlers ? 8 : 6
+        );
       } finally {
         diag.disable();
         testLocalServer.close();
