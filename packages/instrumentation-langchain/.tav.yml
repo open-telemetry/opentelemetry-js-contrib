@@ -1,5 +1,9 @@
-langchain:
+'@langchain/core':
+  node: '>=20'
+  # Keep the companion compatible with the oldest supported core.
+  peerDependencies:
+    - langchain@1.0.1
   versions:
-    include: '>=1.0.0'
+    include: '>=1.0.0 <2'
     mode: max-5
   commands: npm test
