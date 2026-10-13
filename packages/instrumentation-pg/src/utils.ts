@@ -41,6 +41,7 @@ import {
 import { PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
+import { sanitizeSql } from '@opentelemetry/sql-common';
 import { SpanNames } from './enums/SpanNames';
 
 /**
@@ -82,14 +83,10 @@ export function getQuerySpanName(
 }
 
 export function parseNormalizedOperationName(queryText: string) {
-  // Trim the query text to handle leading/trailing whitespace
-  const trimmedQuery = queryText.trim();
-  const indexOfFirstSpace = trimmedQuery.indexOf(' ');
-  let sqlCommand =
-    indexOfFirstSpace === -1
-      ? trimmedQuery
-      : trimmedQuery.slice(0, indexOfFirstSpace);
-  sqlCommand = sqlCommand.toUpperCase();
+  // The leading keyword, up to the first whitespace of any kind -- not just
+  // a space, since a statement may separate its keyword from the rest with
+  // a tab or newline instead.
+  const sqlCommand = (queryText.trim().match(/^\S+/)?.[0] ?? '').toUpperCase();
 
   // Handle query text being "COMMIT;", which has an extra semicolon before the space.
   return sqlCommand.endsWith(';') ? sqlCommand.slice(0, -1) : sqlCommand;
@@ -179,6 +176,53 @@ export function shouldSkipInstrumentation(
   );
 }
 
+function defaultQueryTextSanitizationHook(query: string): string {
+  return sanitizeSql(query, { dialect: 'postgresql' });
+}
+
+/**
+ * Resolves the value for the `db.query.text` attribute, returning undefined
+ * when the attribute should be left off the span.
+ *
+ * A sanitization hook that fails is treated as a refusal to record the text
+ * rather than as a reason to fall back to it: falling back would turn a bug in
+ * the hook into the data leak that sanitization was enabled to prevent.
+ */
+export function sanitizeQueryText(
+  text: string,
+  instrumentationConfig: PgInstrumentationConfig
+): string | undefined {
+  if (instrumentationConfig.skipQueryTextSanitization) {
+    return text;
+  }
+
+  const hook =
+    instrumentationConfig.queryTextSanitizationHook ??
+    defaultQueryTextSanitizationHook;
+
+  let sanitized: unknown;
+  try {
+    sanitized = hook(text);
+  } catch (err) {
+    diag.warn(
+      'Error running queryTextSanitizationHook, omitting the db.query.text attribute',
+      err
+    );
+    return undefined;
+  }
+
+  if (typeof sanitized !== 'string') {
+    diag.warn(
+      'queryTextSanitizationHook returned a non-string value, omitting the db.query.text attribute'
+    );
+    return undefined;
+  }
+
+  // Empty text says less than no attribute does: a consumer cannot tell it
+  // apart from a statement that carried no text to begin with.
+  return sanitized === '' ? undefined : sanitized;
+}
+
 // Create a span from our normalized queryConfig object,
 // or return a basic span if no queryConfig was given/could be created.
 export function handleConfigQuery(
@@ -201,40 +245,53 @@ export function handleConfigQuery(
     return span;
   }
 
-  // Set attributes
-  if (queryConfig.text) {
-    span.setAttribute(ATTR_DB_QUERY_TEXT, queryConfig.text);
-  }
+  // Gated on isRecording so that an unsampled span does not pay for
+  // sanitizing the query text or stringifying the parameter values.
+  if (span.isRecording()) {
+    const values = Array.isArray(queryConfig.values)
+      ? queryConfig.values
+      : undefined;
 
-  if (
-    instrumentationConfig.enhancedDatabaseReporting &&
-    Array.isArray(queryConfig.values)
-  ) {
-    try {
-      const convertedValues = queryConfig.values.map(value => {
-        if (value == null) {
-          return 'null';
-        } else if (value instanceof Buffer) {
-          return value.toString();
-        } else if (typeof value === 'object') {
-          if (typeof value.toPostgres === 'function') {
-            return value.toPostgres();
-          }
-          return JSON.stringify(value);
-        } else {
-          //string, number
-          return value.toString();
-        }
-      });
-      span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
-    } catch (e) {
-      diag.error('failed to stringify ', queryConfig.values, e);
+    // An empty array is not a parameterized call: nothing travels beside the
+    // text, so the text has no assurance of having been kept free of values.
+    const isParameterized = values !== undefined && values.length > 0;
+
+    if (queryConfig.text) {
+      const queryText = isParameterized
+        ? queryConfig.text
+        : sanitizeQueryText(queryConfig.text, instrumentationConfig);
+      if (queryText !== undefined) {
+        span.setAttribute(ATTR_DB_QUERY_TEXT, queryText);
+      }
     }
-  }
 
-  // Set plan name attribute, if present
-  if (typeof queryConfig.name === 'string') {
-    span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
+    if (instrumentationConfig.enhancedDatabaseReporting && values) {
+      try {
+        const convertedValues = values.map(value => {
+          if (value == null) {
+            return 'null';
+          } else if (value instanceof Buffer) {
+            return value.toString();
+          } else if (typeof value === 'object') {
+            if (typeof value.toPostgres === 'function') {
+              return value.toPostgres();
+            }
+            return JSON.stringify(value);
+          } else {
+            //string, number
+            return value.toString();
+          }
+        });
+        span.setAttribute(AttributeNames.PG_VALUES, convertedValues);
+      } catch (e) {
+        diag.error('failed to stringify ', values, e);
+      }
+    }
+
+    // Set plan name attribute, if present
+    if (typeof queryConfig.name === 'string') {
+      span.setAttribute(AttributeNames.PG_PLAN, queryConfig.name);
+    }
   }
 
   return span;
