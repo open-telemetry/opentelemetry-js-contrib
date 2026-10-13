@@ -1002,8 +1002,7 @@ describe('pg-pool', () => {
       const poolAux: pgPool<pg.Client> = new pgPool(CONFIG);
 
       const finish = () => {
-        poolAux.end();
-        done();
+        poolAux.end(() => done());
       };
 
       let completed = 0;
@@ -1165,8 +1164,7 @@ describe('pg-pool', () => {
             'expected to have 1 used connection'
           );
 
-          poolAux.end();
-          done();
+          poolAux.end(() => done());
         });
       });
     });
@@ -1176,9 +1174,7 @@ describe('pg-pool', () => {
       const pool2: pgPool<pg.Client> = new pgPool(CONFIG);
 
       const finish = () => {
-        pool1.end();
-        pool2.end();
-        done();
+        Promise.all([pool1.end(), pool2.end()]).then(() => done());
       };
 
       let completed = 0;
