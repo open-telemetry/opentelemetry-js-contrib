@@ -102,7 +102,7 @@ describe('LangChainInstrumentation', () => {
     }
   });
 
-  it('patches every loaded module copy without touching streaming methods', () => {
+  it('patches workflow methods in every loaded module copy', () => {
     const instance = new TestInstrumentation({ enabled: false });
     expect(instance.instrumentationName).toBe(
       '@opentelemetry/instrumentation-langchain'
@@ -158,10 +158,10 @@ describe('LangChainInstrumentation', () => {
           expect(invoke).not.toBe(originals[index].invoke);
           expect(batchMethod).not.toBe(originals[index].batch);
           expect(map).not.toBe(originals[index].map);
-          expect(copy.RunnableSequence.prototype.stream).toBe(
+          expect(copy.RunnableSequence.prototype.stream).not.toBe(
             originals[index].stream
           );
-          expect(copy.RunnableMap.prototype.transform).toBe(
+          expect(copy.RunnableMap.prototype.transform).not.toBe(
             originals[index].transform
           );
           const result = { answer: 'same object' };
@@ -181,6 +181,12 @@ describe('LangChainInstrumentation', () => {
             originals[index].batch
           );
           expect(copy.RunnableMap.prototype.invoke).toBe(originals[index].map);
+          expect(copy.RunnableSequence.prototype.stream).toBe(
+            originals[index].stream
+          );
+          expect(copy.RunnableMap.prototype.transform).toBe(
+            originals[index].transform
+          );
         }
       }
     } finally {
@@ -202,6 +208,10 @@ describe('LangChainInstrumentation', () => {
         copy.RunnableSequence.prototype.invoke,
         copy.RunnableSequence.prototype.batch,
         copy.RunnableMap.prototype.invoke,
+        copy.RunnableSequence.prototype.stream,
+        copy.RunnableSequence.prototype.transform,
+        copy.RunnableMap.prototype.stream,
+        copy.RunnableMap.prototype.transform,
       ];
       const originals = methods();
       const check = (owner?: number) => {
@@ -435,6 +445,8 @@ describe('LangChainInstrumentation', () => {
           withConfig: original,
           invoke: original,
           batch: original,
+          stream: original,
+          transform: original,
           withStructuredOutput: original,
           assembleStructuredOutputPipeline: original,
           withAgentName: original,

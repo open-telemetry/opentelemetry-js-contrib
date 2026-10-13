@@ -198,6 +198,7 @@ async function exercise(provider) {
   const {
     RunnableSequence,
     RunnableLambda,
+    RunnableMap,
   } = require('@langchain/core/runnables');
   const { AIMessage, HumanMessage } = require('@langchain/core/messages');
   const tracer = provider.getTracer('workflow-collector-regressions');
@@ -224,6 +225,97 @@ async function exercise(provider) {
     checks.push({ name, capture, verify, evidence });
   };
   try {
+    for (const kind of ['sequence', 'map']) {
+      for (const method of ['stream', 'transform']) {
+        for (const capture of [false, true]) {
+          await runCase(
+            `${kind}-${method}-${capture}`,
+            capture,
+            async () => {
+              const tail = RunnableLambda.from(async function* (value) {
+                yield value;
+                yield '!';
+              });
+              const flow =
+                kind === 'sequence'
+                  ? RunnableSequence.from([
+                      RunnableLambda.from(value => value),
+                      tail,
+                    ])
+                  : RunnableMap.from({ output: tail });
+              async function* input() {
+                yield 'private-stream';
+                yield '-input';
+              }
+              const stream =
+                method === 'stream'
+                  ? await flow.stream('private-stream-input')
+                  : flow.transform(input(), {});
+              const chunks = [];
+              for await (const chunk of stream) chunks.push(chunk);
+              assert.deepEqual(
+                chunks,
+                kind === 'sequence'
+                  ? ['private-stream-input', '!']
+                  : [{ output: 'private-stream-input' }, { output: '!' }]
+              );
+            },
+            span => {
+              if (capture) {
+                assert.deepEqual(JSON.parse(span.attributes[contentKeys[0]]), [
+                  message('user', 'private-stream-input'),
+                ]);
+                assert.deepEqual(JSON.parse(span.attributes[contentKeys[1]]), [
+                  message('assistant', 'private-stream-input!'),
+                ]);
+              } else {
+                assert(!JSON.stringify(span).includes('private-stream-input'));
+              }
+            }
+          );
+        }
+      }
+    }
+    for (const fail of [false, true]) {
+      await runCase(
+        `stream-${fail ? 'error' : 'return'}`,
+        true,
+        async () => {
+          const failure = new TypeError('private-stream-error');
+          const flow = RunnableSequence.from([
+            RunnableLambda.from(value => value),
+            RunnableLambda.from(async function* () {
+              yield 'partial';
+              if (fail) throw failure;
+              yield 'rest';
+            }),
+          ]);
+          const stream = await flow.stream('input');
+          if (fail) {
+            await assert.rejects(
+              async () => {
+                for await (const chunk of stream)
+                  assert.equal(chunk, 'partial');
+              },
+              error => error === failure
+            );
+          } else {
+            for await (const chunk of stream) {
+              assert.equal(chunk, 'partial');
+              break;
+            }
+          }
+        },
+        span => {
+          assert.equal(span.attributes[contentKeys[1]], undefined);
+          assert.equal(
+            span.attributes['error.type'],
+            fail ? 'TypeError' : undefined
+          );
+          assert(!JSON.stringify(span).includes('private-stream-error'));
+        }
+      );
+    }
     for (const { spec, instance } of modeCases) {
       await runCase(
         spec.name,
@@ -651,8 +743,10 @@ service:
       assert.equal(span.parentSpanId, parent.spanId);
       assert.equal(span.droppedAttributesCount ?? 0, 0);
       assert(BigInt(span.endTimeUnixNano) >= BigInt(span.startTimeUnixNano));
-      if (check.name !== 'error-privacy')
-        assert.equal(span.status?.code ?? 0, 0);
+      assert.equal(
+        span.status?.code ?? 0,
+        check.name === 'error-privacy' || check.name === 'stream-error' ? 2 : 0
+      );
       if (!check.capture)
         for (const key of contentKeys)
           assert.equal(span.attributes[key], undefined);

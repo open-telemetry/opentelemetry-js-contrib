@@ -72,9 +72,12 @@ Batch output is normalized one result at a time, in result order: generated
 strings are assistant messages, while explicit SDK roles and nested message
 histories retain their roles. Input string-message shorthand remains user content.
 
-This layer does **not** instrument `stream` or `transform`, tools, agents,
-LangGraph operations or retrieval. Internal graph adapter sequences are excluded.
-Streaming methods retain their original behavior without workflow stream telemetry.
+`RunnableSequence.stream`, `RunnableMap.stream` and their `transform` methods
+also create workflow telemetry when consumed as async iterators. See
+[Iterator streaming](#iterator-streaming) for lifecycle and content behavior.
+
+This layer does **not** instrument tools, agents, LangGraph operations or
+retrieval. Internal graph adapter sequences are excluded.
 Provider inference remains the responsibility of provider-specific instrumentation.
 Workflows emit spans and the `gen_ai.invoke_workflow.duration` histogram in
 seconds, not `gen_ai.client.*` metrics or content events. Each completed
@@ -98,6 +101,51 @@ Configuration observation reads only own data properties. Accessor-backed
 `runName`, `metadata`, `configurable` and conversation aliases are omitted with
 content-free diagnostics, without invoking getters or changing SDK options.
 
+## Iterator streaming
+
+Consume streaming workflows with `for await`, or their `next`, `return` and
+`throw` methods:
+
+```js
+const chunks = await greeting.stream('hello');
+for await (const chunk of chunks) {
+  console.log(chunk);
+}
+```
+
+`stream` begins telemetry at invocation because LangChain eagerly prepares its
+first chunk. `transform` remains lazy and begins telemetry on its first `next`.
+Both retain the context in which the workflow method was called. Producer work
+and SDK callbacks run in the workflow context, without changing the consumer's
+active context. Map streaming creates one workflow span, not an extra span for
+its internal delegation to `transform`. Application-owned nested and recursive
+workflows remain separate spans.
+
+The original stream, generator, chunks, iterator results and Promises are
+preserved. Observation never pulls extra chunks. Span duration includes iterator
+consumption and records one workflow histogram sample when exhaustion, early
+return or an error is observed. A `break` or successful `return` is not an error.
+Rejected iterator calls, including observed aborts, use the same content-free
+error classification as non-streaming workflows. Recoverable `throw` calls and
+`return` calls yielding from `finally` keep the span open until termination.
+Abandoning a map also finishes its outstanding child workflow telemetry without
+forcing SDK cancellation or additional iterator calls.
+
+Content remains opt-in. Capture accumulates string chunks, SDK message chunks
+(including split tool calls), arrays and plain-object map deltas, then uses the
+existing message adapters. Transform input is observed only as the SDK consumes
+it, never pre-read. Unsupported chunk combinations are omitted with content-free
+diagnostics. Early termination and failures omit partial output rather than
+presenting it as a complete response.
+
+Native Web Stream consumption through `getReader`, `pipeTo`, `pipeThrough`,
+`tee`, `values` or direct `cancel` is deferred to a separate follow-up. Those
+methods are not patched, and consuming only through them does not finish the
+outer workflow telemetry in this phase. Use the async-iterator API for supported
+telemetry. Dropping an iterator without exhausting or closing it likewise cannot
+report completion. Abort signals are observed through SDK iterator failures,
+not by adding signal listeners or changing cancellation behavior.
+
 ## Configuration Options
 
 | Option                  | Type      | Default | Description                            |
@@ -120,7 +168,8 @@ deliberately.
 
 Workflow spans use the standard OpenTelemetry tracer, span and context APIs
 directly, with the instrumentation-owned tracer (including `setTracerProvider`).
-Config/provider updates apply to future invocations. In-flight invocations finish
+Config/provider updates apply to future invocations, or to transforms that have
+not started iterating. In-flight invocations finish
 with their original span, content setting and duration histogram. Disabling
 instrumentation does not abandon in-flight spans or duration recordings.
 `setMeterProvider` configures the provider used for workflow duration metrics.
@@ -178,7 +227,7 @@ lifecycle uses them only when content capture is enabled.
 ## Collector regression tests
 
 After building this package and its workspace dependencies, run the opt-in
-workflow-only regression harness with Docker available:
+workflow regression harness with Docker available:
 
 ```bash
 npm run test:collector --workspace @opentelemetry/instrumentation-langchain
@@ -190,7 +239,8 @@ Collector file output. It checks configuration getter behavior against disabled
 instrumentation, canonical capture modes, invalid/boolean-like settings and
 environment precedence, batch roles/order, privacy, errors, active context, and complete
 4 MiB synthetic image bytes plus sibling text through both base64 fields and
-data URLs. No provider requests are made.
+data URLs. Iterator scenarios cover sequence and map streaming and transforms,
+capture off and on, early return, and errors. No provider requests are made.
 
 Only loopback ephemeral ports are published. The Collector receiver sets
 `max_recv_msg_size_mib: 64`: two full base64 message attributes exceed the default

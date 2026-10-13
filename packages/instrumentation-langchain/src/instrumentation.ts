@@ -5,6 +5,7 @@
 
 import {
   context,
+  createContextKey,
   diag,
   trace,
   SpanKind,
@@ -42,6 +43,7 @@ import type { BaseChatModel } from '@langchain/core/language_models/chat_models'
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
+import { observeIterator, StreamContent } from './streaming';
 import {
   isInternalWorkflow,
   isTrackingFactory,
@@ -56,6 +58,13 @@ import {
 
 const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
+const STREAM_DELEGATION = createContextKey('LangChain stream delegation');
+const STREAM_CHILDREN = createContextKey('LangChain child iterators');
+
+interface StreamDelegation {
+  target: Runnables.Runnable;
+  active: boolean;
+}
 
 interface WorkflowPatch {
   owners: Set<LangChainInstrumentation>;
@@ -344,10 +353,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _trackWorkflowOwner(
     owner: (abstract new (...args: never[]) => object) & {
-      prototype: Pick<Runnables.Runnable<unknown, unknown>, 'invoke' | 'batch'>;
+      prototype: Pick<
+        Runnables.Runnable<unknown, unknown>,
+        'invoke' | 'batch' | 'stream' | 'transform'
+      >;
     }
   ) {
-    for (const method of ['invoke', 'batch'] as const) {
+    for (const method of ['invoke', 'batch', 'stream', 'transform'] as const) {
       if (!isTrackingFactory(owner.prototype[method])) {
         this._wrapTracking(
           owner.prototype,
@@ -373,12 +385,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   /**
-   * Wraps sequence and map invocations, plus the sequence-specific batch path.
+   * Wraps composed workflows, plus the sequence-specific batch path.
    */
   private _patchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
       this._patchMethod(cls.prototype, 'invoke', (owners, restore) =>
         this._createInvokeWrapper(owners, restore)
+      );
+      this._patchMethod(cls.prototype, 'stream', (owners, restore) =>
+        this._createStreamWrapper(owners, restore, 'stream')
+      );
+      this._patchMethod(cls.prototype, 'transform', (owners, restore) =>
+        this._createStreamWrapper(owners, restore, 'transform')
       );
     }
     // Sequence has an optimized batch; Map's inherited batch invokes
@@ -408,11 +426,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     }
     const owners = new Set([this]);
     const original = target[method];
+    const descriptor = Object.getOwnPropertyDescriptor(target, method);
     const patch: WorkflowPatch = {
       owners,
       restore: () => {
         if (owners.size !== 0 || target[method] !== wrapped) return;
-        target[method] = original;
+        if (descriptor) Object.defineProperty(target, method, descriptor);
+        else Reflect.deleteProperty(target, method);
         if (patches.get(method) === patch) patches.delete(method);
       },
     };
@@ -428,11 +448,16 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   private _unpatchRunnables(module: typeof Runnables) {
     for (const cls of [module.RunnableSequence, module.RunnableMap]) {
       this._unpatchMethod(cls.prototype, 'invoke');
+      this._unpatchMethod(cls.prototype, 'stream');
+      this._unpatchMethod(cls.prototype, 'transform');
     }
     this._unpatchMethod(module.RunnableSequence.prototype, 'batch');
   }
 
-  private _unpatchMethod(target: object, method: 'invoke' | 'batch') {
+  private _unpatchMethod(
+    target: object,
+    method: 'invoke' | 'batch' | 'stream' | 'transform'
+  ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
     const patch = patches.get(method);
@@ -479,6 +504,179 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       };
   }
 
+  private _createStreamWrapper(
+    owners: Set<LangChainInstrumentation>,
+    restore: () => void,
+    method: 'stream' | 'transform'
+  ) {
+    return <T extends Runnables.Runnable, A extends unknown[], R>(
+      original: (this: T, ...args: A) => R
+    ) =>
+      function (this: T, ...args: A): R {
+        const owner = Array.from(owners)
+          .reverse()
+          .find(instance => instance.isEnabled());
+        const invoke = () => original.apply(this, args);
+        if (!owner) restore();
+        const delegation = context.active().getValue(STREAM_DELEGATION) as
+          | StreamDelegation
+          | undefined;
+        // Map.stream delegates synchronously to its own transform. This guard
+        // expires as soon as stream returns its Promise, not for nested runs.
+        if (
+          method === 'transform' &&
+          delegation?.active &&
+          delegation.target === this
+        )
+          return invoke();
+        return owner
+          ? owner._traceStream(this, args[0], args[1], method, invoke)
+          : invoke();
+      };
+  }
+
+  private _traceStream<R>(
+    target: Runnables.Runnable,
+    input: unknown,
+    options: unknown,
+    method: 'stream' | 'transform',
+    invoke: () => R
+  ): R {
+    const parent = context.active();
+    if (
+      !this.isEnabled() ||
+      isInternalWorkflow(target) ||
+      ('omitSequenceTags' in target && target.omitSequenceTags === true)
+    )
+      return invoke();
+    let state: WorkflowState | undefined;
+    let output: StreamContent | undefined;
+    let streamedInput: StreamContent | undefined;
+    let stopInput: (() => void) | undefined;
+    let stopOutput: (() => void) | undefined;
+    let started = false;
+    let finished = false;
+    let returning = false;
+    const children = new Set<() => void>();
+    const parentChildren = parent.getValue(STREAM_CHILDREN) as
+      | Set<() => void>
+      | undefined;
+    const abandon = () => end(false);
+    const start = () => {
+      if (started) return;
+      started = true;
+      state = this._startWorkflow(
+        target,
+        method === 'stream' ? input : undefined,
+        options,
+        false,
+        parent
+      );
+      if (state) {
+        state.context = state.context.setValue(STREAM_CHILDREN, children);
+        parentChildren?.add(abandon);
+      }
+      if (!state?.capture) return;
+      output = new StreamContent(this._diag);
+      if (method === 'transform') {
+        streamedInput = new StreamContent(this._diag);
+        try {
+          stopInput = observeIterator(
+            input,
+            (_method, call) => call(),
+            (_method, value) => {
+              if (!value.done) streamedInput?.add(value.value);
+            },
+            () => {},
+            () => {
+              streamedInput?.take();
+              streamedInput = undefined;
+            },
+            this._diag
+          );
+        } catch {
+          this._diag.warn('LangChain: could not observe workflow input');
+        }
+      }
+    };
+    const end = (complete: boolean, failure?: { error: unknown }) => {
+      if (finished) return;
+      const endTime = hrTime();
+      finished = true;
+      parentChildren?.delete(abandon);
+      // Map cancellation does not close its branch iterators. Finish their
+      // telemetry without making additional SDK return/cancel calls.
+      if (!complete) {
+        for (const child of children) child();
+        children.clear();
+      }
+      stopInput?.();
+      stopOutput?.();
+      const inputValue = streamedInput?.take();
+      const outputValue = output?.take();
+      if (!state) return;
+      if (complete && streamedInput) {
+        try {
+          const content = messages(inputValue, this._diag);
+          if (content !== undefined)
+            state.span.setAttribute(ATTR_GEN_AI_INPUT_MESSAGES, content);
+        } catch {
+          this._diag.warn('LangChain: could not extract workflow input');
+        }
+      }
+      this._end(state, complete ? outputValue : undefined, failure, endTime);
+    };
+    const observe = (iterator: unknown) => {
+      if (finished) return;
+      try {
+        stopOutput = observeIterator(
+          iterator,
+          (operation, call) => {
+            if (operation === 'next') start();
+            if (operation === 'return') returning = true;
+            return context.with(state?.context ?? parent, call);
+          },
+          (operation, value) => {
+            if (value.done) end(operation === 'next' && !returning);
+            else output?.add(value.value);
+          },
+          error => end(false, { error }),
+          () => end(false),
+          this._diag
+        );
+      } catch {
+        this._diag.warn('LangChain: could not observe workflow stream');
+        end(false);
+      }
+    };
+    if (method === 'stream') start();
+    let result: R;
+    const delegation: StreamDelegation = { target, active: true };
+    try {
+      result = context.with(
+        (state?.context ?? parent).setValue(STREAM_DELEGATION, delegation),
+        invoke
+      );
+    } catch (error) {
+      start();
+      end(false, { error });
+      throw error;
+    } finally {
+      delegation.active = false;
+    }
+    try {
+      if (result instanceof Promise) {
+        void result.then(observe, error => end(false, { error }));
+      } else {
+        observe(result);
+      }
+    } catch {
+      this._diag.warn('LangChain: could not observe workflow stream Promise');
+      end(false);
+    }
+    return result;
+  }
+
   /**
    * Runs a workflow in its span context and observes completion while preserving
    * the original return value or thrown error.
@@ -491,12 +689,44 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     invoke: () => R
   ): R {
     const parent = context.active();
+    const active = this._startWorkflow(target, input, options, batch, parent);
+    if (!active) return invoke();
+    let result: R;
+    try {
+      result = context.with(active.context, invoke);
+    } catch (error) {
+      this._end(active, undefined, { error });
+      throw error;
+    }
+    try {
+      if (result instanceof Promise) {
+        void result.then(
+          value => this._end(active, value),
+          error => this._end(active, undefined, { error })
+        );
+      } else {
+        this._end(active, result);
+      }
+    } catch {
+      this._diag.warn('LangChain: could not observe operation result');
+      this._end(active);
+    }
+    return result;
+  }
+
+  private _startWorkflow(
+    target: Runnables.Runnable,
+    input: unknown,
+    options: unknown,
+    batch: boolean,
+    parent: Context
+  ): WorkflowState | undefined {
     if (
       !this.isEnabled() ||
       isTracingSuppressed(parent) ||
       isInternalWorkflow(target)
     )
-      return invoke();
+      return undefined;
     let state: WorkflowState | undefined;
     try {
       // LangGraph sets omitSequenceTags on internal node/channel-writer
@@ -537,29 +767,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     } catch {
       this._diag.warn('LangChain: could not start operation telemetry');
     }
-    if (!state) return invoke();
-    const active = state;
-    let result: R;
-    try {
-      result = context.with(active.context, invoke);
-    } catch (error) {
-      this._end(active, undefined, { error });
-      throw error;
-    }
-    try {
-      if (result instanceof Promise) {
-        void result.then(
-          value => this._end(active, value),
-          error => this._end(active, undefined, { error })
-        );
-      } else {
-        this._end(active, result);
-      }
-    } catch {
-      this._diag.warn('LangChain: could not observe operation result');
-      this._end(active);
-    }
-    return result;
+    return state;
   }
 
   /**
@@ -627,11 +835,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   private _end(
     state: WorkflowState,
     output?: unknown,
-    failure?: { error: unknown }
+    failure?: { error: unknown },
+    endTime = hrTime()
   ) {
     if (state.ended) return;
-    // Freeze the end before content extraction or metric recording adds overhead.
-    const endTime = hrTime();
     state.ended = true;
     try {
       if (failure) {
