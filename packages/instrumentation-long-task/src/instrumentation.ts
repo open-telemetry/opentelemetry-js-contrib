@@ -107,6 +107,7 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
       type: LONGTASK_PERFORMANCE_TYPE,
       buffered: true,
     });
+    this._enabled = true;
   }
 
   override disable() {
@@ -116,5 +117,6 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
 
     this._observer.disconnect();
     this._observer = undefined;
+    this._enabled = false;
   }
 }

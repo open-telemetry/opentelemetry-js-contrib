@@ -74,6 +74,14 @@ describe('LongTaskInstrumentation', () => {
     trace.disable();
   });
 
+  it('should report isEnabled() following enable() and disable()', () => {
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), true);
+    longTaskInstrumentation.disable();
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), false);
+    longTaskInstrumentation.enable();
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), true);
+  });
+
   it('should report long taking tasks', async () => {
     const taskStart = await waitForLongTask(exportSpy);
 

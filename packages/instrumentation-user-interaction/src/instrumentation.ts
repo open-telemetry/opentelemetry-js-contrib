@@ -61,11 +61,6 @@ function defaultShouldPreventSpanCreation() {
 export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
   readonly moduleName: string = 'user-interaction';
-  // NOTE: `_enabled` is a private property of the base class for nodejs platform
-  // but not for browser so we cannot access it. TS complains if we use it because
-  // we get the types of the nodejs implementation (we cannot override)
-  // As a workaround we use a new flag until types are fixed or design is updated
-  declare private _isEnabled?: boolean;
   declare private _zonePatched?: boolean;
   private _spansData = new WeakMap<api.Span, SpanData>();
   // for addEventListener/removeEventListener state
@@ -132,7 +127,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     eventName: EventName,
     parentSpan?: api.Span
   ): api.Span | undefined {
-    if (!this._isEnabled) {
+    if (!this._enabled) {
       return undefined;
     }
     if (!(element instanceof HTMLElement)) {
@@ -388,7 +383,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Patches the history api
    */
   _patchHistoryApi() {
-    if (!this._isEnabled) return;
+    if (!this._enabled) return;
     this._wrap(history, 'replaceState', this._patchHistoryMethod());
     this._wrap(history, 'pushState', this._patchHistoryMethod());
     this._wrap(history, 'back', this._patchHistoryMethod());
@@ -403,7 +398,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
     const plugin = this;
     return (original: any) => {
       return function patchHistoryMethod(this: History, ...args: unknown[]) {
-        if (!plugin._isEnabled) {
+        if (!plugin._enabled) {
           return original.apply(this, args);
         }
         const url = `${location.pathname}${location.hash}${location.search}`;
@@ -577,10 +572,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    */
   override enable() {
     // Early return if already enabled or patched
-    if (this._isEnabled) {
+    if (this._enabled) {
       return;
     }
-    this._isEnabled = true;
+    this._enabled = true;
     if (typeof this._zonePatched === 'boolean') {
       return;
     }
@@ -630,10 +625,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements unpatch function
    */
   override disable() {
-    if (!this._isEnabled) {
+    if (!this._enabled) {
       return;
     }
-    this._isEnabled = false;
+    this._enabled = false;
   }
 
   /**
