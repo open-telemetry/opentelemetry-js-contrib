@@ -223,6 +223,17 @@ describe('LangChain non-streaming workflows', () => {
     expect(getTestSpans()).toHaveLength(0);
   });
 
+  it('does not patch streaming or transform methods', async () => {
+    for await (const chunk of await workflow().stream('test'))
+      expect(chunk).toBe('TEST!');
+    async function* input() {
+      yield 'test';
+    }
+    for await (const chunk of identity().transform(input(), {}))
+      expect(chunk).toBe('test');
+    expect(getTestSpans()).toHaveLength(0);
+  });
+
   it('does not emit spans when disabled, including a saved wrapper', async () => {
     const chain = identity();
     const invoke = chain.invoke;
@@ -1213,10 +1224,10 @@ describe('LangChain non-streaming workflows', () => {
           RunnableLambda.from(value => value),
         ]);
         await expect(broken.invoke('input')).rejects.toBe(failure);
-        expect(create.calledOnce).toBe(true);
-        expect(create.firstCall.args[0]).toBe(
-          'gen_ai.invoke_workflow.duration'
-        );
+        expect(create.args.map(args => args[0])).toEqual([
+          'gen_ai.invoke_workflow.duration',
+          'gen_ai.execute_tool.duration',
+        ]);
         expect(getMeter.calledOnce).toBe(true);
         expect(record.callCount).toBe(3);
       } finally {

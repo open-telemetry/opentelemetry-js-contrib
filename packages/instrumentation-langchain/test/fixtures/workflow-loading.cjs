@@ -140,6 +140,11 @@ async function main() {
         { type: 'object' },
         { includeRaw: true }
       ),
+      callbackTool: new tools.DynamicTool({
+        name: 'loaded-tool',
+        description: 'Local tool loading scenario',
+        func: async value => value,
+      }),
       asTool: module.Runnable.prototype.asTool,
       assignFactory: module.RunnablePassthrough.assign,
     });
@@ -166,11 +171,11 @@ async function main() {
           RunnableSequence.prototype.batch,
           originals[index].batch
         );
-        assert.notEqual(
+        assert.equal(
           RunnableSequence.prototype.stream,
           originals[index].stream
         );
-        assert.notEqual(
+        assert.equal(
           RunnableMap.prototype.transform,
           originals[index].transform
         );
@@ -186,15 +191,6 @@ async function main() {
           }).invoke('test'),
           { value: 'test' }
         );
-        for await (const chunk of await chain.stream('hello'))
-          assert.equal(chunk, 'HELLO!');
-        async function* input() {
-          yield 'test';
-        }
-        for await (const chunk of RunnableMap.from({
-          output: RunnableLambda.from(value => value),
-        }).transform(input(), {}))
-          assert.deepEqual(chunk, { output: 'test' });
         const adapter = adapters[index];
         assert.equal(
           await adapter.tool.invoke({ input: 'tool-value' }),
@@ -262,10 +258,27 @@ async function main() {
         assert.deepEqual((await adapter.structured.invoke('question')).parsed, {
           answer: 'test',
         });
+        assert.equal(
+          await adapter.callbackTool.invoke('tool-value'),
+          'tool-value'
+        );
         assert.equal(module.Runnable.prototype.asTool, adapter.asTool);
         assert.equal(module.RunnablePassthrough.assign, adapter.assignFactory);
       }
-      assert.equal(exporter.getFinishedSpans().length, 22);
+      const spans = exporter.getFinishedSpans();
+      assert.equal(spans.length, 20);
+      assert.equal(
+        spans.filter(
+          span => span.attributes['gen_ai.operation.name'] === 'invoke_workflow'
+        ).length,
+        18
+      );
+      assert.equal(
+        spans.filter(
+          span => span.attributes['gen_ai.operation.name'] === 'execute_tool'
+        ).length,
+        2
+      );
       const collected = await reader.collect();
       assert.deepEqual(collected.errors, []);
       const metric = collected.resourceMetrics.scopeMetrics.flatMap(
@@ -278,7 +291,7 @@ async function main() {
           (total, point) => total + point.value.count,
           0
         ),
-        22 * (cycle + 1)
+        18 * (cycle + 1)
       );
       exporter.reset();
       instrumentation.disable();
@@ -292,14 +305,6 @@ async function main() {
           module.RunnableSequence.prototype.batch,
           originals[index].batch
         );
-        assert.equal(
-          module.RunnableSequence.prototype.stream,
-          originals[index].stream
-        );
-        assert.equal(
-          module.RunnableMap.prototype.transform,
-          originals[index].transform
-        );
       }
     }
 
@@ -307,7 +312,10 @@ async function main() {
     const exporters = [exporter, secondExporter];
     const check = async owner => {
       for (const current of exporters) current.reset();
-      for (const { RunnableLambda, RunnableMap, RunnableSequence } of modules) {
+      for (const [
+        moduleIndex,
+        { RunnableLambda, RunnableMap, RunnableSequence },
+      ] of modules.entries()) {
         const sequence = RunnableSequence.from([
           RunnableLambda.from(value => value),
           RunnableLambda.from(value => value),
@@ -320,19 +328,20 @@ async function main() {
           }).invoke('input'),
           { value: 'input' }
         );
-        for await (const chunk of await sequence.stream('input'))
-          assert.equal(chunk, 'input');
-        async function* input() {
-          yield 'input';
-        }
-        for await (const chunk of sequence.transform(input(), {}))
-          assert.equal(chunk, 'input');
+        assert.equal(
+          await adapters[moduleIndex].callbackTool.invoke('input'),
+          'input'
+        );
       }
       for (const [index, current] of exporters.entries()) {
         const spans = current.getFinishedSpans();
-        assert.equal(spans.length, index === owner ? modules.length * 5 : 0);
+        assert.equal(spans.length, index === owner ? modules.length * 4 : 0);
         for (const span of spans) {
-          assert.equal('gen_ai.input.messages' in span.attributes, owner === 1);
+          const content =
+            span.attributes['gen_ai.operation.name'] === 'execute_tool'
+              ? 'gen_ai.tool.call.arguments'
+              : 'gen_ai.input.messages';
+          assert.equal(content in span.attributes, owner === 1);
         }
       }
     };
@@ -345,8 +354,6 @@ async function main() {
         module.RunnableSequence.prototype.invoke,
         module.RunnableSequence.prototype.batch,
         module.RunnableMap.prototype.invoke,
-        module.RunnableSequence.prototype.stream,
-        module.RunnableMap.prototype.transform,
       ]);
       await check(1);
       instances[firstDisabled].disable();
@@ -357,8 +364,6 @@ async function main() {
             module.RunnableSequence.prototype.invoke,
             module.RunnableSequence.prototype.batch,
             module.RunnableMap.prototype.invoke,
-            module.RunnableSequence.prototype.stream,
-            module.RunnableMap.prototype.transform,
           ],
           wrappers[index]
         );

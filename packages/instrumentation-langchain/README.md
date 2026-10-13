@@ -3,7 +3,7 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for composed workflows in
+This module provides automatic instrumentation for composed workflows and tool execution in
 [`@langchain/core`](https://www.npmjs.com/package/@langchain/core).
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
@@ -72,12 +72,9 @@ Batch output is normalized one result at a time, in result order: generated
 strings are assistant messages, while explicit SDK roles and nested message
 histories retain their roles. Input string-message shorthand remains user content.
 
-`RunnableSequence.stream`, `RunnableMap.stream` and their `transform` methods
-also create workflow telemetry when consumed as async iterators. See
-[Iterator streaming](#iterator-streaming) for lifecycle and content behavior.
-
-This layer does **not** instrument tools, agents, LangGraph operations or
-retrieval. Internal graph adapter sequences are excluded.
+This layer does **not** instrument workflow `stream` or `transform`, agents,
+LangGraph operations or retrieval. Internal graph adapter sequences are excluded.
+Streaming methods retain their original behavior without workflow stream telemetry.
 Provider inference remains the responsibility of provider-specific instrumentation.
 Workflows emit spans and the `gen_ai.invoke_workflow.duration` histogram in
 seconds, not `gen_ai.client.*` metrics or content events. Each completed
@@ -101,56 +98,59 @@ Configuration observation reads only own data properties. Accessor-backed
 `runName`, `metadata`, `configurable` and conversation aliases are omitted with
 content-free diagnostics, without invoking getters or changing SDK options.
 
-## Iterator streaming
+### Tool execution
 
-Consume streaming workflows with `for await`, or their `next`, `return` and
-`throw` methods:
+Tool execution uses the donated OpenInference package's callback-manager
+integration and tool start/end/error lifecycle. It adds `INTERNAL`
+`execute_tool {name}` spans for SDK tool callbacks, including `tool`,
+`DynamicTool` and `DynamicStructuredTool`. It does not wrap tool methods or
+replace their returned Promises or results.
 
 ```js
-const chunks = await greeting.stream('hello');
-for await (const chunk of chunks) {
-  console.log(chunk);
-}
+const { tool } = require('@langchain/core/tools');
+
+const echo = tool(async value => value, {
+  name: 'echo',
+  description: 'Return the supplied text',
+});
+await echo.invoke('hello');
 ```
 
-`stream` begins telemetry at invocation because LangChain eagerly prepares its
-first chunk. `transform` remains lazy and begins telemetry on its first `next`.
-Both retain the context in which the workflow method was called. Producer work
-and SDK callbacks run in the workflow context, without changing the consumer's
-active context. Map streaming creates one workflow span, not an extra span for
-its internal delegation to `transform`. Application-owned nested and recursive
-workflows remain separate spans.
+The tool name uses the callback's serialized name when available, otherwise its
+run name, then its serialized class ID. Descriptions are included only when
+the callback exposes them. Known dynamic function tools include
+`gen_ai.tool.type=function`. Tool-call IDs come from the start callback, or
+from the final ToolMessage on early 1.x releases. Available IDs and the first non-empty
+`metadata.session_id`, `metadata.thread_id` or `metadata.conversation_id` are
+recorded without copying arbitrary metadata.
 
-The original stream, generator, chunks, iterator results and Promises are
-preserved. Observation never pulls extra chunks. Span duration includes iterator
-consumption and records one workflow histogram sample when exhaustion, early
-return or an error is observed. A `break` or successful `return` is not an error.
-Rejected iterator calls, including observed aborts, use the same content-free
-error classification as non-streaming workflows. Recoverable `throw` calls and
-`return` calls yielding from `finally` keep the span open until termination.
-Abandoning a map also finishes its outstanding child workflow telemetry without
-forcing SDK cancellation or additional iterator calls.
+`captureMessageContent: 'span_only'` also enables `gen_ai.tool.call.arguments`
+and `gen_ai.tool.call.result`. JSON-object strings are decoded, and non-object
+values are wrapped as `{"input": value}` or `{"output": value}` to satisfy the
+official object schemas. SDK result objects, including ToolMessage envelopes,
+retain their serialized structure. Failed executions omit results.
 
-Content remains opt-in. Capture accumulates string chunks, SDK message chunks
-(including split tool calls), arrays and plain-object map deltas, then uses the
-existing message adapters. Transform input is observed only as the SDK consumes
-it, never pre-read. Unsupported chunk combinations are omitted with content-free
-diagnostics. Early termination and failures omit partial output rather than
-presenting it as a complete response.
+Each observed tool end/error callback records `gen_ai.execute_tool.duration`
+in seconds, matching its span duration. Metric attributes contain the tool
+name, known type and error type, never arguments, results or conversation IDs.
+No tool events or provider inference metrics are added.
 
-Native Web Stream consumption through `getReader`, `pipeTo`, `pipeThrough`,
-`tee`, `values` or direct `cancel` is deferred to a separate follow-up. Those
-methods are not patched, and consuming only through them does not finish the
-outer workflow telemetry in this phase. Use the async-iterator API for supported
-telemetry. Dropping an iterator without exhausting or closing it likewise cannot
-report completion. Abort signals are observed through SDK iterator failures,
-not by adding signal listeners or changing cancellation behavior.
+Tool span parentage follows the incoming OpenTelemetry context and the
+donation's parent-run-ID lookup for nested tools. Existing callbacks and
+callback collections are preserved. Configuration changes and disablement do
+not abandon operations that already emitted a tool-start callback.
+
+This migration follows the SDK callback boundary. Validation failures before
+tool-start do not create spans, and completion requires a tool-end/error
+notification. It does not add a cancellation protocol or iterator observation
+to compensate for missing SDK notifications. Runnable `.asTool()` adapters
+that emit only chain callbacks do not gain tool spans from this slice.
 
 ## Configuration Options
 
 | Option                  | Type      | Default | Description                            |
 |-------------------------|-----------|---------|----------------------------------------|
-| `captureMessageContent` | `'span_only' \| 'none'` | `'none'` | Capture prompt and completion content on spans, or disable capture. |
+| `captureMessageContent` | `'span_only' \| 'none'` | `'none'` | Capture workflow messages and tool arguments/results on spans, or disable capture. |
 
 `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=span_only|none` overrides the
 constructor option. Environment values are trimmed and case-insensitive; unset,
@@ -168,8 +168,7 @@ deliberately.
 
 Workflow spans use the standard OpenTelemetry tracer, span and context APIs
 directly, with the instrumentation-owned tracer (including `setTracerProvider`).
-Config/provider updates apply to future invocations, or to transforms that have
-not started iterating. In-flight invocations finish
+Config/provider updates apply to future invocations. In-flight invocations finish
 with their original span, content setting and duration histogram. Disabling
 instrumentation does not abandon in-flight spans or duration recordings.
 `setMeterProvider` configures the provider used for workflow duration metrics.
@@ -227,7 +226,7 @@ lifecycle uses them only when content capture is enabled.
 ## Collector regression tests
 
 After building this package and its workspace dependencies, run the opt-in
-workflow regression harness with Docker available:
+workflow-only regression harness with Docker available:
 
 ```bash
 npm run test:collector --workspace @opentelemetry/instrumentation-langchain
@@ -239,8 +238,7 @@ Collector file output. It checks configuration getter behavior against disabled
 instrumentation, canonical capture modes, invalid/boolean-like settings and
 environment precedence, batch roles/order, privacy, errors, active context, and complete
 4 MiB synthetic image bytes plus sibling text through both base64 fields and
-data URLs. Iterator scenarios cover sequence and map streaming and transforms,
-capture off and on, early return, and errors. No provider requests are made.
+data URLs. No provider requests are made.
 
 Only loopback ephemeral ports are published. The Collector receiver sets
 `max_recv_msg_size_mib: 64`: two full base64 message attributes exceed the default
@@ -262,6 +260,30 @@ This package uses the experimental GenAI conventions
 `gen_ai.invoke_workflow.duration`. Their exact provenance is pinned in this
 package's `src/semconv.ts`. Stable `error.type` is imported from
 `@opentelemetry/semantic-conventions`.
+
+Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
+`gen_ai.tool.type`, `gen_ai.tool.call.id`, `gen_ai.tool.call.arguments`,
+`gen_ai.tool.call.result`, and `gen_ai.execute_tool.duration`. Their provenance
+is pinned separately in `src/semconv.ts`.
+
+### Tool conformance
+
+The tool scenarios use the upstream
+[semantic-conventions-conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance/tree/main/tools/gen-ai/runner),
+not a package-specific validation framework. Install that runner and its
+pinned Weaver executable, build this package, then run:
+
+```bash
+npm run test:conformance --workspace @opentelemetry/instrumentation-langchain
+```
+
+The scenario registry is pinned alongside the tool conventions in `semconv.ts`.
+The scenarios execute real offline tools and export spans and metrics through
+OTLP/gRPC to Weaver. They cover capture disabled, capture enabled and execution
+failure. Reports are written under the package's ignored `coverage` directory.
+The package-wide missing instrumentation-scope schema URL is declared as a
+specific expected violation, not silently skipped. No provider requests or
+Docker containers are needed.
 
 ## Useful links
 

@@ -1,0 +1,77 @@
+runner: genai-conformance
+instrumented_library: '@langchain/core'
+instrumentation_library: '@opentelemetry/instrumentation-langchain'
+
+weaver:
+  registry: https://github.com/open-telemetry/semantic-conventions-genai.git@4e8a2812139b2a999d959e3650e24dfc64e21943[model]
+
+env:
+  LANGSMITH_TRACING: 'false'
+  LANGCHAIN_TRACING_V2: 'false'
+  LANGCHAIN_TRACING: 'false'
+
+expected_violations:
+  - id: instrumentation_scope_schema_url_missing
+    reason: >-
+      InstrumentationBase does not set a schema URL on the instrumentation-owned
+      tracer and meter. This existing package-wide gap is outside the tool migration.
+
+scenarios:
+  tool_content_disabled:
+    run: node tool.cjs
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.type: function
+            gen_ai.tool.call.arguments: {present: false}
+            gen_ai.tool.call.result: {present: false}
+            error.type: {present: false}
+    metrics: [gen_ai.execute_tool.duration]
+    events: []
+
+  tool_content_enabled:
+    run: node tool.cjs
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.type: function
+            gen_ai.tool.call.arguments: '{"input":"hello"}'
+            gen_ai.tool.call.result: '{"output":"tool result"}'
+            error.type: {present: false}
+    metrics: [gen_ai.execute_tool.duration]
+    events: []
+
+  tool_error:
+    run: node tool.cjs error
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.call.arguments: '{"input":"hello"}'
+            gen_ai.tool.call.result: {present: false}
+            error.type: TypeError
+    metrics: [gen_ai.execute_tool.duration]
+    events: []
