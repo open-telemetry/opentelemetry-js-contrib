@@ -288,10 +288,10 @@ describe('ExpressInstrumentation', () => {
       // so those layers are request handlers, not middleware. Ignoring them
       // used to leave their path in the layers store, and http.route became
       // `{/*splat}/users/:id`.
-      it('should not leave the path of an ignored request handler in http.route', async () => {
+      it('should not leave the path of an ignored request handler in http.route', async function () {
         // `{/*splat}` is Express v5 syntax
         if (!isExpressV5) {
-          return;
+          this.skip();
         }
         instrumentation.setConfig({ ignoreLayers: [/\{\/\*splat\}$/] });
         let rpcMetadata: RPCMetadata | undefined;
