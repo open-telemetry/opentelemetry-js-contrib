@@ -54,7 +54,7 @@
     "@opentelemetry/instrumentation-http": "^0.223.0",
     "@opentelemetry/sdk-trace": "^2.9.0",
     "@types/koa": "3.0.2",
-    "@types/koa__router": "12.0.5",
+    "@types/koa__router": "15.0.0",
     "koa": "3.1.2"
   },
   "dependencies": {
