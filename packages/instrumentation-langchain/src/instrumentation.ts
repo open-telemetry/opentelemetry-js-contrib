@@ -337,27 +337,30 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           .reverse()
           .find(instance => instance.isEnabled());
       const handler = manager.fromHandlers(
-        createToolCallbacks(() => {
-          const owner = currentOwner();
-          return owner
-            ? {
-                tracer: owner.tracer,
-                duration: owner._toolDuration,
-                capture:
-                  owner.getConfig().captureMessageContent === 'span_only',
-              }
-            : undefined;
-        }, this._diag)
+        createToolCallbacks(
+          () => {
+            const owner = currentOwner();
+            return owner
+              ? {
+                  tracer: owner.tracer,
+                  duration: owner._toolDuration,
+                  capture:
+                    owner.getConfig().captureMessageContent === 'span_only',
+                }
+              : undefined;
+          },
+          () => currentOwner()?._diag ?? diag
+        )
       ).handlers[0];
       handler.name = 'opentelemetry_langchain_tools';
       handler.awaitHandlers = true;
-      const logger = this._diag;
       return original =>
         function (
           this: typeof CallbackManager,
           ...args: Parameters<typeof original>
         ) {
-          if (!currentOwner()) {
+          const owner = currentOwner();
+          if (!owner) {
             restore();
             return original.apply(this, args);
           }
@@ -365,7 +368,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           try {
             return addToolHandler(result ?? new manager(), handler);
           } catch {
-            logger.warn('LangChain: could not register tool callbacks');
+            owner._diag.warn('LangChain: could not register tool callbacks');
             return result;
           }
         };

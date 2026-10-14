@@ -57,6 +57,7 @@ interface ToolRun {
   callId: string | undefined;
   duration: Histogram | undefined;
   capture: boolean;
+  diag: DiagLogger;
 }
 
 // CJS/ESM handlers share callback run IDs, including nested tool executions.
@@ -97,7 +98,7 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
  */
 export function createToolCallbacks(
   telemetry: () => ToolTelemetry | undefined,
-  diag: DiagLogger
+  getDiag: () => DiagLogger
 ): CallbackHandlerMethods {
   const end = (
     runId: string,
@@ -106,6 +107,7 @@ export function createToolCallbacks(
   ) => {
     const run = runs.get(runId);
     if (!run) return;
+    const { diag } = run;
     runs.delete(runId);
     const endTime = hrTime();
     try {
@@ -165,6 +167,7 @@ export function createToolCallbacks(
         typeof optionalId === 'string' ? optionalId : undefined;
       const active = context.active();
       if (isTracingSuppressed(active)) return;
+      const diag = getDiag();
       try {
         const current = telemetry();
         if (!current) return;
@@ -219,6 +222,7 @@ export function createToolCallbacks(
         runs.set(runId, {
           duration: current.duration,
           capture: current.capture,
+          diag,
           span,
           startTime,
           metricAttributes,

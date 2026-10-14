@@ -47,6 +47,10 @@ async function main() {
       mode === 'cjs'
         ? require('@langchain/core/tools')
         : await import('@langchain/core/tools');
+    const { CallbackManager } =
+      mode === 'cjs'
+        ? require('@langchain/core/callbacks/manager')
+        : await import('@langchain/core/callbacks/manager');
     const { BaseChatModel } =
       mode === 'cjs'
         ? require('@langchain/core/language_models/chat_models')
@@ -145,6 +149,7 @@ async function main() {
         description: 'Local tool loading scenario',
         func: async value => value,
       }),
+      CallbackManager,
       asTool: module.Runnable.prototype.asTool,
       assignFactory: module.RunnablePassthrough.assign,
     });
@@ -386,6 +391,74 @@ async function main() {
         );
         assert.equal(module.RunnableMap.prototype.invoke, originals[index].map);
       }
+    }
+
+    const warnings = [[], []];
+    const originalWarn = instances.map(instance => instance._diag.warn);
+    for (const [index, instance] of instances.entries()) {
+      instance.setConfig({ captureMessageContent: 'span_only' });
+      instance._diag.warn = message => warnings[index].push(message);
+    }
+    try {
+      const output = {};
+      output.circular = output;
+      for (const { callbackTool, CallbackManager } of adapters) {
+        instrumentation.enable();
+        second.enable();
+        callbackTool.func = async () => output;
+        const checkWarnings = (owner, message) => {
+          for (const [index, messages] of warnings.entries()) {
+            assert.deepEqual(messages, index === owner ? [message] : []);
+            messages.length = 0;
+          }
+        };
+        for (const owner of [1, 0]) {
+          if (owner === 0) second.disable();
+          assert.equal(await callbackTool.invoke('input'), output);
+          checkWarnings(
+            owner,
+            'LangChain: could not extract tool result telemetry'
+          );
+          const addHandler = CallbackManager.prototype.addHandler;
+          try {
+            CallbackManager.prototype.addHandler = function (handler, inherit) {
+              if (handler.name === 'opentelemetry_langchain_tools')
+                throw new Error('synthetic registration failure');
+              return addHandler.call(this, handler, inherit);
+            };
+            assert.equal(await callbackTool.invoke('input'), output);
+            checkWarnings(
+              owner,
+              'LangChain: could not register tool callbacks'
+            );
+          } finally {
+            CallbackManager.prototype.addHandler = addHandler;
+          }
+        }
+        second.enable();
+        let enter;
+        let finish;
+        const started = new Promise(resolve => {
+          enter = resolve;
+        });
+        const pending = new Promise(resolve => {
+          finish = resolve;
+        });
+        callbackTool.func = async () => {
+          enter();
+          return pending;
+        };
+        const result = callbackTool.invoke('input');
+        await started;
+        second.disable();
+        instrumentation.disable();
+        finish(output);
+        assert.equal(await result, output);
+        checkWarnings(1, 'LangChain: could not extract tool result telemetry');
+      }
+    } finally {
+      for (const [index, instance] of instances.entries())
+        instance._diag.warn = originalWarn[index];
     }
   } finally {
     instrumentation.disable();

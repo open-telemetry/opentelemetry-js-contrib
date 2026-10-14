@@ -141,6 +141,8 @@ Tool span parentage follows the incoming OpenTelemetry context and the
 donation's parent-run-ID lookup for nested tools. Existing callbacks and
 callback collections are preserved. Configuration changes and disablement do
 not abandon operations that already emitted a tool-start callback.
+Tool diagnostics use the selected instrumentation instance's logger.
+In-flight tool operations keep that logger even if the instance is disabled.
 
 This migration follows the SDK callback boundary. Validation failures before
 tool-start do not create spans, and completion requires a tool-end/error
