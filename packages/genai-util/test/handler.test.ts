@@ -591,7 +591,7 @@ describe('TelemetryHandler', () => {
       yield 'chunk2';
     }
 
-    const wrapped = handler.wrapAsyncStream(gen(), invocation);
+    const wrapped = handler.wrapAsyncStream(gen(), { invocation });
     const chunks: string[] = [];
     for await (const c of wrapped) {
       chunks.push(c);
