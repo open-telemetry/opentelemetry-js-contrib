@@ -5,7 +5,6 @@
 
 import {
   SpanKind,
-  type AttributeValue,
   type Attributes,
   type HrTime,
   type TimeInput,
@@ -162,9 +161,7 @@ export class InferenceInvocation extends BaseInvocation {
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
     this._choiceCount = options.requestOptions?.choiceCount;
-    this._isStreaming =
-      Boolean(options.requestOptions?.stream) ||
-      options.attributes?.[ATTR_GEN_AI_REQUEST_STREAM] === true;
+    this._isStreaming = options.requestOptions?.stream === true;
     this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages = options.inputMessages
       ? [...options.inputMessages]
@@ -172,18 +169,15 @@ export class InferenceInvocation extends BaseInvocation {
     this._systemInstructions = options.systemInstructions;
   }
 
-  public override setAttribute(key: string, value: AttributeValue): this {
-    if (key === ATTR_GEN_AI_REQUEST_STREAM && value === true) {
-      this._isStreaming = true;
-    }
-    return super.setAttribute(key, value);
-  }
-
-  public override setAttributes(attributes: Attributes): this {
-    if (attributes[ATTR_GEN_AI_REQUEST_STREAM] === true) {
-      this._isStreaming = true;
-    }
-    return super.setAttributes(attributes);
+  /**
+   * Set the request streaming attribute to true.
+   *
+   * This is a convenience method for the case when the user is streaming the response.
+   */
+  public setStreaming(): this {
+    this.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    this._isStreaming = true;
+    return this;
   }
 
   /**
@@ -297,11 +291,10 @@ export class InferenceInvocation extends BaseInvocation {
       )
     );
     this._lastChunkTime = now;
-    this._isStreaming = true;
     const attrs = this._getMetricAttributes();
 
     if (isFirstChunk) {
-      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+      this.setStreaming();
       this._span.setAttribute(ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK, gap);
       this._handler.recordTimeToFirstChunk(gap, attrs, this._context);
     } else {

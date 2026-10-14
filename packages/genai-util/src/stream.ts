@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { diag } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
-import { ATTR_GEN_AI_REQUEST_STREAM } from './semconv';
 import { InferenceInvocation } from './invocations/inference';
 
 /**
@@ -53,7 +53,7 @@ class AsyncStreamWrapper<
     this._stream = stream;
     this._options = options;
     this._invocation = options.invocation;
-    this._invocation.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    this._invocation.setStreaming();
 
     // Return a Proxy so the wrapper transparently forwards SDK-specific stream members.
     return new Proxy(this, {
@@ -168,7 +168,11 @@ class AsyncStreamWrapper<
    */
   private async _processChunk(chunk: TChunk): Promise<void> {
     if (this._options.onChunk) {
-      await this._options.onChunk(chunk);
+      try {
+        await this._options.onChunk(chunk);
+      } catch (err) {
+        diag.error('Error in GenAI stream onChunk hook', err);
+      }
     }
   }
 
@@ -176,22 +180,32 @@ class AsyncStreamWrapper<
    * Hook called on successful stream completion.
    */
   private async _onStreamEnd(): Promise<void> {
-    if (this._options.onEnd) {
-      await this._options.onEnd();
+    try {
+      if (this._options.onEnd) {
+        await this._options.onEnd();
+      }
+    } catch (err) {
+      diag.error('Error in GenAI stream onEnd hook', err);
+    } finally {
+      this._invocation.stop();
     }
-    this._invocation.stop();
   }
 
   /**
    * Hook called on stream error.
    */
   private async _onStreamError(error: unknown): Promise<void> {
-    if (this._options.onError) {
-      await this._options.onError(error);
+    try {
+      if (this._options.onError) {
+        await this._options.onError(error);
+      }
+    } catch (err) {
+      diag.error('Error in GenAI stream onError hook', err);
+    } finally {
+      this._invocation.fail({
+        exception: error instanceof Error ? error : undefined,
+      });
     }
-    this._invocation.fail({
-      exception: error instanceof Error ? error : undefined,
-    });
   }
 
   /**
