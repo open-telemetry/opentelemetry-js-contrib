@@ -572,4 +572,62 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
   });
+
+  it('should isolate errors thrown in onChunk, onEnd, and onError hooks without leaking spans', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // 1. Throwing onChunk and onEnd on a successful stream
+    const invocation1 = handler.startInference({ providerName: 'openai' });
+    const wrappedSuccess = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['a', 'b']),
+      {
+        invocation: invocation1,
+        onChunk: () => {
+          throw new Error('onChunk bug');
+        },
+        onEnd: () => {
+          throw new Error('onEnd bug');
+        },
+      }
+    );
+
+    const received: string[] = [];
+    for await (const chunk of wrappedSuccess) {
+      received.push(chunk);
+    }
+    assert.deepStrictEqual(received, ['a', 'b']);
+    assert.strictEqual(invocation1.isEnded(), true);
+
+    // 2. Throwing onError on a failing stream preserves original stream error and ends span
+    const invocation2 = handler.startInference({ providerName: 'openai' });
+    const wrappedFailure = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['x'], new Error('Original stream error')),
+      {
+        invocation: invocation2,
+        onError: () => {
+          throw new Error('onError bug');
+        },
+      }
+    );
+
+    await assert.rejects(
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedFailure) {
+          // iterate
+        }
+      },
+      (err: Error) => err.message === 'Original stream error'
+    );
+    assert.strictEqual(invocation2.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
+  });
 });
