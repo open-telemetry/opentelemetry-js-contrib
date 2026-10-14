@@ -13,7 +13,11 @@ import type { AddressInfo } from 'net';
 import { URL } from 'url';
 import { createGunzip } from 'zlib';
 
-import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { IInstrumentationScope, IResource, ISpan } from './otlp-types';
 
@@ -29,12 +33,12 @@ export function createTestNodeSdk(opts: {
   serviceName?: string;
   instrumentations: (Instrumentation | Instrumentation[])[];
 }) {
-  const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+  const spanProcessors = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
-    : new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter());
+    : [new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() })];
   const sdk = new NodeSDK({
     serviceName: opts.serviceName || 'test-service',
-    spanProcessor,
+    spanProcessors,
     instrumentations: opts.instrumentations,
   });
   return sdk;
