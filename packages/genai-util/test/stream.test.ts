@@ -12,7 +12,6 @@ import {
   ERROR_TYPE_VALUE_OTHER,
 } from '@opentelemetry/semantic-conventions';
 import { TelemetryHandler } from '../src/handler';
-import { AsyncStreamWrapper, wrapAsyncStream } from '../src/stream';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -68,27 +67,7 @@ class FakeSDKStream<T> implements AsyncIterable<T> {
   }
 }
 
-class CustomStreamSubclass<TChunk> extends AsyncStreamWrapper<TChunk> {
-  public processedChunks: TChunk[] = [];
-  public endCalled = false;
-  public errorCalledWith: unknown = null;
-
-  protected override async _processChunk(chunk: TChunk): Promise<void> {
-    this.processedChunks.push(chunk);
-  }
-
-  protected override async _onStreamEnd(): Promise<void> {
-    this.endCalled = true;
-    await super._onStreamEnd();
-  }
-
-  protected override async _onStreamError(error: unknown): Promise<void> {
-    this.errorCalledWith = error;
-    await super._onStreamError(error);
-  }
-}
-
-describe('AsyncStreamWrapper & wrapAsyncStream', () => {
+describe('TelemetryHandler.wrapAsyncStream', () => {
   let ctx: TestTelemetryContext;
 
   beforeEach(() => {
@@ -118,7 +97,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     let endHookCalled = false;
 
     const rawStream = createAsyncChunkGenerator(['Hello', ' ', 'world', '!']);
-    const wrappedStream = wrapAsyncStream(rawStream, {
+    const wrappedStream = handler.wrapAsyncStream(rawStream, {
       invocation,
       onChunk: chunk => {
         processed.push(chunk);
@@ -176,7 +155,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       ['chunk1', 'chunk2'],
       streamError
     );
-    const wrappedStream = wrapAsyncStream(rawStream, {
+    const wrappedStream = handler.wrapAsyncStream(rawStream, {
       invocation,
       onError: err => {
         errorHookCalledWith = err;
@@ -228,7 +207,9 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
         throw thrown;
       }
 
-      const wrappedStream = wrapAsyncStream(throwingGen(), { invocation });
+      const wrappedStream = handler.wrapAsyncStream(throwingGen(), {
+        invocation,
+      });
 
       await assert.rejects(async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -282,7 +263,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const rawStream = createAsyncChunkGenerator(['1', '2', '3', '4']);
-    const wrapped = wrapAsyncStream(rawStream, { invocation });
+    const wrapped = handler.wrapAsyncStream(rawStream, { invocation });
 
     const received: string[] = [];
     for await (const chunk of wrapped) {
@@ -293,31 +274,6 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     }
 
     assert.deepStrictEqual(received, ['1', '2']);
-
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
-  });
-
-  it('should support subclassing AsyncStreamWrapper with custom hooks', async () => {
-    const handler = new TelemetryHandler({
-      instrumentationName: 'test',
-      instrumentationVersion: '1.2.3',
-      tracerProvider: ctx.tracerProvider,
-    });
-    const invocation = handler.startInference({ providerName: 'openai' });
-
-    const rawStream = createAsyncChunkGenerator(['x', 'y', 'z']);
-    const customWrapper = new CustomStreamSubclass(rawStream, { invocation });
-
-    const received: string[] = [];
-    for await (const chunk of customWrapper) {
-      received.push(chunk);
-    }
-
-    assert.deepStrictEqual(received, ['x', 'y', 'z']);
-    assert.deepStrictEqual(customWrapper.processedChunks, ['x', 'y', 'z']);
-    assert.strictEqual(customWrapper.endCalled, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -337,7 +293,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       undefined,
       new Error('Close failed')
     );
-    const wrapped = wrapAsyncStream(sdkStream, { invocation });
+    const wrapped = handler.wrapAsyncStream(sdkStream, { invocation });
 
     // Test proxy property set trap
     wrapped.customProp = 'updated_val';
@@ -364,7 +320,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const rawStream = createAsyncChunkGenerator(['a', 'b']);
-    const wrapped = wrapAsyncStream(rawStream, { invocation });
+    const wrapped = handler.wrapAsyncStream(rawStream, { invocation });
 
     const iter = wrapped[Symbol.asyncIterator]();
     const item1 = await iter.next();
@@ -396,7 +352,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     }
 
     const processed: string[] = [];
-    const wrapped = wrapAsyncStream(recoveringGen(), {
+    const wrapped = handler.wrapAsyncStream(recoveringGen(), {
       invocation,
       onChunk: c => {
         processed.push(c);
@@ -435,7 +391,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     });
 
     const rawStream = createAsyncChunkGenerator(['chunk-1', 'chunk-2']);
-    const wrapped = wrapAsyncStream(rawStream, {
+    const wrapped = handler.wrapAsyncStream(rawStream, {
       invocation,
       onChunk: () => {
         invocation.setResponseModel('gpt-4o-2024-08-06');
@@ -490,7 +446,9 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithoutReturnOrThrow, { invocation });
+    const wrapped = handler.wrapAsyncStream(streamWithoutReturnOrThrow, {
+      invocation,
+    });
     const iter = wrapped[Symbol.asyncIterator]();
 
     // Call return() when underlying iterator has no return()
@@ -527,7 +485,9 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithThrowingReturn, { invocation });
+    const wrapped = handler.wrapAsyncStream(streamWithThrowingReturn, {
+      invocation,
+    });
     await assert.rejects(
       async () => {
         for await (const chunk of wrapped) {
@@ -563,7 +523,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithoutThrow, { invocation });
+    const wrapped = handler.wrapAsyncStream(streamWithoutThrow, { invocation });
     const iter = wrapped[Symbol.asyncIterator]();
 
     // Call throw() when underlying iterator has no throw()
@@ -599,7 +559,9 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(directIterator as any, { invocation });
+    const wrapped = handler.wrapAsyncStream(directIterator as any, {
+      invocation,
+    });
     const received: string[] = [];
     for await (const chunk of wrapped) {
       received.push(chunk as string);
