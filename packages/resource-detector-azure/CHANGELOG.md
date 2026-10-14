@@ -1,6 +1,39 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.30.0...resource-detector-azure-v0.31.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.69.0 to ^0.70.0
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.29.0...resource-detector-azure-v0.30.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **resource-detector-azure:** read AKS cluster metadata from a mounted ConfigMap ([#3649](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3649)) ([ab50f97](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ab50f97aec410f888640ffc41c70dbf110a44597))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.28.0...resource-detector-azure-v0.29.0) (2026-07-23)
 
 

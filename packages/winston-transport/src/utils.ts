@@ -47,8 +47,40 @@ const cliLevels: Record<string, number> = {
   silly: SeverityNumber.TRACE,
 };
 
-function getSeverityNumber(level: string): SeverityNumber | undefined {
-  return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
+export const otelLogLevels: Record<string, number> = {
+  fatal: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+  trace: 5,
+};
+
+export const otelSeverityMapping: Record<string, SeverityNumber> = {
+  fatal: SeverityNumber.FATAL,
+  error: SeverityNumber.ERROR,
+  warn: SeverityNumber.WARN,
+  info: SeverityNumber.INFO,
+  debug: SeverityNumber.DEBUG,
+  trace: SeverityNumber.TRACE,
+};
+
+const OTEL_CONTEXT_SYMBOL = Symbol.for(
+  'opentelemetry.js.contrib.winston.context'
+);
+const LOG_CORRELATION_FIELDS = new Set(['trace_id', 'span_id', 'trace_flags']);
+
+function getSeverityNumber(
+  level: string,
+  severityMapping?: Record<string, SeverityNumber>
+): SeverityNumber | undefined {
+  return (
+    severityMapping?.[level] ??
+    otelSeverityMapping[level] ??
+    npmLevels[level] ??
+    sysLoglevels[level] ??
+    cliLevels[level]
+  );
 }
 
 const CIRCULAR_REFERENCE_VALUE = '[Circular]';
@@ -301,15 +333,25 @@ function getExceptionPayload(record: Record<string | symbol, any>): {
 
 export function emitLogRecord(
   record: Record<string | symbol, any>,
-  logger: Logger
+  logger: Logger,
+  severityMapping?: Record<string, SeverityNumber>,
+  logSeverity?: SeverityNumber
 ): void {
+  const levelSym = record[Symbol.for('level')];
+  const severityNumber = getSeverityNumber(levelSym, severityMapping);
+  if (
+    logSeverity != null &&
+    (severityNumber ?? SeverityNumber.UNSPECIFIED) < logSeverity
+  ) {
+    return;
+  }
+
   const { message, level, ...splat } = record;
   const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
   const attributes: LogAttributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
   // property.
-  const levelSym = record[Symbol.for('level')];
   const exceptionPayload = getExceptionPayload(record);
   const excludedAttributes = new Set(
     exceptionPayload?.excludedAttributes ?? []
@@ -317,7 +359,8 @@ export function emitLogRecord(
   for (const key in rest) {
     if (
       Object.prototype.hasOwnProperty.call(rest, key) &&
-      !excludedAttributes.has(key)
+      !excludedAttributes.has(key) &&
+      !LOG_CORRELATION_FIELDS.has(key)
     ) {
       attributes[key] = normalizeAttributeValue(rest[key]);
     }
@@ -336,12 +379,14 @@ export function emitLogRecord(
   }
   const normalizedEventName =
     typeof eventName === 'string' ? eventName : undefined;
+  const context = record[OTEL_CONTEXT_SYMBOL];
 
   const logRecord: LogRecord = {
-    severityNumber: getSeverityNumber(levelSym),
+    severityNumber,
     severityText: levelSym,
     body: message,
     attributes: attributes,
+    ...(context ? { context } : {}),
     ...(exceptionPayload ? { exception: exceptionPayload.exception } : {}),
     ...(normalizedEventName !== undefined
       ? { eventName: normalizedEventName }

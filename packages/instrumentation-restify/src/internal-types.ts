@@ -7,8 +7,8 @@ import type * as restify from 'restify';
 import { LayerType } from './types';
 
 declare interface RequestWithRoute extends restify.Request {
-  route: { path: string };
-  getRoute: () => { path: string };
+  route: restify.Route & { path: string };
+  getRoute: () => restify.Route & { path: string };
 }
 
 export declare type Request = RequestWithRoute;

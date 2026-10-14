@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [Nest framework][pkg-web-url] module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,7 +17,9 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 ### Supported Versions
 
-- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <12`
+- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <13`
+
+NestJS 12 is published as ESM. CommonJS applications that `require('@nestjs/core')` are instrumented without further setup. ESM applications need the loader hook described in the [ESM support](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md) guide, as with any other instrumentation.
 
 ## Usage
 

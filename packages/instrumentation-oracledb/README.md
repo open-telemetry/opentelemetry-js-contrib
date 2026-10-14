@@ -23,6 +23,8 @@ npm install --save @opentelemetry/instrumentation-oracledb
 
 - [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0 <8`
 
+> **Note:** Metrics are only emitted when using `oracledb` versions `>=7.0.0`.
+
 ## Usage
 
 OpenTelemetry OracleInstrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [oracledb](https://www.npmjs.com/package/oracledb). This module works with both Thin and Thick modes of the oracledb
@@ -87,6 +89,44 @@ For Thin mode, additional internal round-trip spans will be emitted, such as:
 | `responseHook` | `OracleInstrumentationExecutionResponseHook` | `undefined` | Hook for adding custom span attributes based on the database response. |
 | `requireParentSpan` | `boolean` | `false` | If true, only creates spans when there is an active parent span. |
 | `propagateTraceContextToSessionAction` | `boolean` | `false` | If true, injects W3C Trace Context into the Oracle `V$SESSION.ACTION` field so database-side tracing can be correlated with application spans. |
+
+### Metrics
+
+Metrics are emitted for `oracledb` versions `>=7.0.0`, because the driver
+metrics APIs used by this instrumentation are available from that version
+onwards.
+
+| Metric | Instrument | Unit | Description |
+| ------ | ---------- | ---- | ----------- |
+| `db.client.operation.duration` | Histogram | `s` | Duration of database client operations. |
+| `db.client.connection.count` | UpDownCounter | `{connection}` | Number of pool connections currently in the state described by `db.client.connection.state`. |
+| `db.client.connection.pending_requests` | UpDownCounter | `{request}` | Number of requests currently waiting for a pool connection. |
+| `db.client.connection.timeouts` | Counter | `{timeout}` | Number of connection requests that timed out while waiting for a pool connection. |
+
+The `db.client.operation.duration` metric includes these attributes when
+available:
+
+| Attribute | Description |
+| --------- | ----------- |
+| `db.system.name` | Always `oracle.db`. |
+| `db.namespace` | Oracle database identifier. |
+| `server.address` | Remote database host. |
+| `server.port` | Remote database port. |
+| `db.operation.name` | Parsed SQL operation name, such as `SELECT`, `PLSQL`, `BATCH INSERT`, or `BATCH PLSQL`. |
+| `error.type` | Oracle error code when the operation fails. |
+
+Pool metrics are updated when the driver reports pool lifecycle events,
+including pool growth, shrink, acquire, release, wait, request timeout, and
+close. `db.client.connection.count` emits one datapoint per pool state using
+`db.client.connection.state` with values `idle` and `used`. Pool metrics include
+`db.client.connection.pool.name`.
+
+Pool names should be unique within the instrumented application. This
+instrumentation uses `poolAlias` as `db.client.connection.pool.name` when it is
+set. If `poolAlias` is not set, it falls back to the pool `connectString`, and
+then to `default`. Applications that create multiple pools with the same
+connection string should set distinct `poolAlias` values so those pools are
+reported separately.
 
 ## OracleDB-specific Notes
 

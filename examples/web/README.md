@@ -1,6 +1,6 @@
 # Overview
 
-This example shows how to use [@opentelemetry/sdk-trace-web][] with different instrumentations from contrib repo in a browser.
+This example shows how to use tracing in a browser application, using various instrumentations from this repo.
 
 ## Installation
 
@@ -29,15 +29,6 @@ npm start
 - Click around in each of the example sub-paths to create some tracing data.
 - Open Zipkin at <http://127.0.0.1:9411/zipkin/> and search for some traces (click "Run Query").
 
-
-## More information
-
-- [OpenTelemetry](https://opentelemetry.io)
-- [Web tracing][opentelemetry-sdk-trace-web]
-
-## LICENSE
+## License
 
 Apache License 2.0
-
-[@opentelemetry/sdk-trace-web]: https://www.npmjs.com/package/@opentelemetry/sdk-trace-web
-[opentelemetry-sdk-trace-web]: https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-web

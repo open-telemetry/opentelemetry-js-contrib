@@ -55,6 +55,14 @@ export const METRIC_DB_CLIENT_CONNECTION_COUNT =
   'db.client.connection.count' as const;
 
 /**
+ * The maximum number of open connections allowed
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_DB_CLIENT_CONNECTION_MAX =
+  'db.client.connection.max' as const;
+
+/**
  * The number of current pending requests for an open connection
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.

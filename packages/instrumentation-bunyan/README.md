@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation of the [`bunyan`](https://www.npmjs.com/package/bunyan) module to inject trace-context into Bunyan log records (log correlation) and to send Bunyan logging to the OpenTelemetry Logging SDK (log sending).
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -117,8 +117,8 @@ const { OpenTelemetryBunyanStream } = require('@opentelemetry/instrumentation-bu
 const bunyan = require('bunyan');
 
 // You must register an OpenTelemetry LoggerProvider, otherwise log records will
-// be sent to a no-op implementation. "examples/telemetry.js" shows one way
-// to configure one.
+// be sent to a no-op implementation. "examples/bunyan/telemetry.js" shows one
+// way to configure one.
 // ...
 
 const logger = bunyan.createLogger({

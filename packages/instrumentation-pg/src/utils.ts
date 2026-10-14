@@ -38,7 +38,7 @@ import {
   PgParsedConnectionParams,
   PgPoolOptionsParams,
 } from './internal-types';
-import { PgInstrumentationConfig } from './types';
+import { PgConnectionHookInformation, PgInstrumentationConfig } from './types';
 import type * as pgTypes from 'pg';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { SpanNames } from './enums/SpanNames';
@@ -168,6 +168,50 @@ export function getSemanticAttributesFromPoolConnection(
   };
 
   return attributes;
+}
+
+export function getConnectionInfoFromPoolConnection(
+  params: PgPoolOptionsParams
+): PgConnectionHookInformation['connection'] {
+  let url: URL | undefined;
+  try {
+    url = params.connectionString
+      ? new URL(params.connectionString)
+      : undefined;
+  } catch (e) {
+    url = undefined;
+  }
+
+  return {
+    database: url?.pathname.slice(1) ?? params.database,
+    host: url?.hostname ?? params.host,
+    port: Number(url?.port) || getPort(params.port),
+    user: (url && decodeURIComponent(url.username)) || params.user,
+  };
+}
+
+export function handleConnectionHook(
+  instrumentationConfig: PgInstrumentationConfig,
+  span: Span,
+  getConnection: () => PgConnectionHookInformation['connection'],
+  onError: (err: Error) => void
+) {
+  const { connectionHook } = instrumentationConfig;
+  if (typeof connectionHook !== 'function') {
+    return;
+  }
+
+  safeExecuteInTheMiddle(
+    () => {
+      connectionHook(span, { connection: getConnection() });
+    },
+    err => {
+      if (err) {
+        onError(err);
+      }
+    },
+    true
+  );
 }
 
 export function shouldSkipInstrumentation(

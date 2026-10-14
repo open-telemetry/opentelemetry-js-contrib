@@ -25,7 +25,7 @@ import { isPromise, isAsyncFunction } from './utils';
 import { getRPCMetadata, RPCType } from '@opentelemetry/core';
 import type { RestifyInstrumentationConfig } from './types';
 
-const supportedVersions = ['>=4.1.0 <12'];
+const supportedVersions = ['>=4.1.0 <13'];
 
 export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumentationConfig> {
   constructor(config: RestifyInstrumentationConfig = {}) {
@@ -194,7 +194,7 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
           span.end();
           next(err);
         };
-        patchedNext.ifError = next.ifError;
+        patchedNext.ifError = (next as any).ifError;
 
         const wrapPromise = (promise: Promise<unknown>) => {
           return promise

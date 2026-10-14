@@ -1,6 +1,35 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.23.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-typeorm-v0.22.0...instrumentation-typeorm-v0.23.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.69.0 to ^0.70.0
+
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-typeorm-v0.21.0...instrumentation-typeorm-v0.22.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+* **instrumentation-typeorm:** add support for typeorm@1.x ([#3619](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3619)) ([16edd18](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/16edd1873ec0cf47da105a7216d24ed4fd39c8b1))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-typeorm-v0.20.0...instrumentation-typeorm-v0.21.0) (2026-07-23)
 
 

@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation of the [`winston`](https://www.npmjs.com/package/winston) module to inject trace-context into Winston log records (log correlation) and to send Winston logging to the OpenTelemetry Logging SDK (log sending).
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -57,14 +57,21 @@ logger.info('foobar');
 
 | Option                  | Type              | Description                                                                                                                                                |
 |-------------------------|-------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `disableLogSending`     | `boolean`         | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
-| `logSeverity`           | `SeverityNumber`  | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
-| `disableLogCorrelation` | `boolean`         | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
+| `disableLogSending`     | `boolean`                        | Whether to disable [log sending](#log-sending). Default `false`.                                                                                           |
+| `logSeverity`           | `SeverityNumber`                 | Control severity level for [log sending](#log-sending). Default `SeverityNumber.UNSPECIFIED`, it will use Winston Logger's current level when unspecified. |
+| `severityMapping`       | `Record<string, SeverityNumber>` | Custom mapping of Winston log level names to OpenTelemetry `SeverityNumber`.                                                                               |
+| `disableLogCorrelation` | `boolean`                        | Whether to disable [log correlation](#log-correlation). Default `false`.                                                                                   |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false.         |
 
 ### Log sending
 
 Winston Logger will automatically send log records to the OpenTelemetry Logs SDK if not explicitly disabled in config and @opentelemetry/winston-transport npm package is installed in the project. The OpenTelemetry SDK can be configured to handle those records, for example, sending them on to an OpenTelemetry collector for log archiving and processing. The example above shows a minimal configuration that emits OpenTelemetry log records to the console for debugging.
+
+When a Winston log call is made in an active span, the instrumentation preserves
+that context for log sending even if Winston processes the transport
+asynchronously. The OpenTelemetry LogRecord uses its native trace context fields;
+the `trace_id`, `span_id`, and `trace_flags` fields added for log correlation are
+not duplicated as LogRecord attributes.
 
 If the OpenTelemetry SDK is not configured with a Logger provider, then this will be a no-op.
 
@@ -130,7 +137,7 @@ const logger = winston.createLogger({
 ```
 
 > [!IMPORTANT]
-> Logs will be **duplicated** if `OpenTelemetryTransportV3` is explicitly added as a Winston logger transport **and** `@opentelemetry/instrumentation-winston` is active with the [Log sending](#log-sending) feature (the default). If you are both using `OpenTelemetryTransportV3` and instrumentation-winston, be sure to either disable instrumentation-winston completely, or disable its Log sending feature (`disableLogSending: false`). For example:
+> Logs will be **duplicated** if `OpenTelemetryTransportV3` is explicitly added as a Winston logger transport **and** `@opentelemetry/instrumentation-winston` is active with the [Log sending](#log-sending) feature (the default). If you are both using `OpenTelemetryTransportV3` and instrumentation-winston, be sure to either disable instrumentation-winston completely, or disable its Log sending feature (`disableLogSending: true`). For example:
 >
 > ```js
 > const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
@@ -149,6 +156,41 @@ const logger = winston.createLogger({
 > // ...
 > const logger = winston.createLogger(...);
 > ```
+
+### OpenTelemetry Log Levels & Severity Mapping
+
+#### OpenTelemetry Log Levels
+
+You can import `otelLogLevels` to configure Winston with native OpenTelemetry log levels (`fatal`, `error`, `warn`, `info`, `debug`, `trace`):
+
+```js
+const { otelLogLevels } = require('@opentelemetry/instrumentation-winston');
+const winston = require('winston');
+
+const logger = winston.createLogger({
+  levels: otelLogLevels, // { fatal: 0, error: 1, warn: 2, info: 3, debug: 4, trace: 5 }
+  level: 'info',
+  transports: [new winston.transports.Console()],
+});
+```
+
+#### Custom Severity Mapping
+
+For projects using custom Winston log levels, you can configure `severityMapping` on `WinstonInstrumentation`:
+
+```js
+const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
+
+new WinstonInstrumentation({
+  severityMapping: {
+    emergency: SeverityNumber.FATAL,
+    alert: SeverityNumber.ERROR,
+    notice: SeverityNumber.INFO,
+  },
+  logSeverity: SeverityNumber.INFO,
+});
+```
 
 ## Semantic Conventions
 

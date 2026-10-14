@@ -5,7 +5,7 @@
 
 This module provides automatic instrumentation for the [`router`](https://github.com/pillarjs/router) module. It allows the user to automatically collect trace data and export them to their backend of choice.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-router
 
 ### Supported Versions
 
-- [`router`](https://www.npmjs.com/package/router) versions `>=1.0.0 <2`
+- [`router`](https://www.npmjs.com/package/router) versions `>=1.0.0 <3`
 
 ## Usage
 
