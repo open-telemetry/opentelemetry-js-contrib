@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-browser-navigation",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "description": "OpenTelemetry instrumentation for browser navigation events (page load and same-document navigations)",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -39,7 +39,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "README.md",
@@ -54,8 +54,8 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/api-logs": "^0.222.0",
-    "@opentelemetry/sdk-logs": "^0.222.0",
+    "@opentelemetry/api-logs": "^0.223.0",
+    "@opentelemetry/sdk-logs": "^0.223.0",
     "@rollup/plugin-commonjs": "^29.0.3",
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@types/chai": "^5.2.2",
@@ -65,7 +65,7 @@
     "chai": "^6.2.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.222.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-browser-navigation#readme"

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-nestjs-core",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "description": "OpenTelemetry instrumentation for NestJS server side applications framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -46,7 +46,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "README.md",
@@ -71,7 +71,7 @@
     "rxjs-compat": "6.6.7"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.222.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
     "@opentelemetry/semantic-conventions": "^1.30.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-nestjs-core#readme"

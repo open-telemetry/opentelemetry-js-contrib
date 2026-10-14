@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/resource-detector-container",
-  "version": "0.8.13",
+  "version": "0.8.14",
   "description": "Opentelemetry resource detector to get container resource attributes",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -35,7 +35,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "README.md",
@@ -47,8 +47,8 @@
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.69.0",
-    "@opentelemetry/instrumentation-fs": "^0.41.0",
+    "@opentelemetry/contrib-test-utils": "^0.70.0",
+    "@opentelemetry/instrumentation-fs": "^0.42.0",
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "peerDependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/baggage-log-record-processor",
-  "version": "0.23.0",
+  "version": "0.24.0",
   "description": "OpenTelemetry Baggage Log Record Processor",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -43,7 +43,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "README.md",
@@ -57,7 +57,7 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-logs": "^0.222.0"
+    "@opentelemetry/sdk-logs": "^0.223.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.0.0"

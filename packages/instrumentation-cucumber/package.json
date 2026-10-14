@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cucumber",
-  "version": "0.38.0",
+  "version": "0.39.0",
   "description": "OpenTelemetry instrumentation for `@cucumber/cucumber` automated tests runner",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -23,7 +23,7 @@
     "directory": "packages/instrumentation-cucumber"
   },
   "scripts": {
-    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test": "SKIP_TEST_IF_NODE_OLDER_THAN=20 nyc mocha --require '../../scripts/skip-test-if.js' nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "clean": "rimraf dist build",
@@ -44,7 +44,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22.15.0"
+    "node": "^18.19.0 || >=20.6.0"
   },
   "files": [
     "README.md",
@@ -66,7 +66,7 @@
     "@opentelemetry/sdk-trace": "^2.9.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.222.0",
+    "@opentelemetry/instrumentation": "^0.223.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cucumber#readme"
