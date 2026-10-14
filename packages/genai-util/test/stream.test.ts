@@ -228,7 +228,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
         throw thrown;
       }
 
-      const wrappedStream = wrapAsyncStream(throwingGen(), invocation);
+      const wrappedStream = wrapAsyncStream(throwingGen(), { invocation });
 
       await assert.rejects(async () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -257,7 +257,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const sdkStream = new FakeSDKStream(['a', 'b']);
-    const wrapped = handler.wrapAsyncStream(sdkStream, invocation);
+    const wrapped = handler.wrapAsyncStream(sdkStream, { invocation });
 
     // Test property access
     assert.strictEqual(wrapped.customProp, 'custom_value');
@@ -282,7 +282,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const rawStream = createAsyncChunkGenerator(['1', '2', '3', '4']);
-    const wrapped = wrapAsyncStream(rawStream, invocation);
+    const wrapped = wrapAsyncStream(rawStream, { invocation });
 
     const received: string[] = [];
     for await (const chunk of wrapped) {
@@ -308,7 +308,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const rawStream = createAsyncChunkGenerator(['x', 'y', 'z']);
-    const customWrapper = new CustomStreamSubclass(rawStream, invocation);
+    const customWrapper = new CustomStreamSubclass(rawStream, { invocation });
 
     const received: string[] = [];
     for await (const chunk of customWrapper) {
@@ -337,7 +337,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       undefined,
       new Error('Close failed')
     );
-    const wrapped = wrapAsyncStream(sdkStream, invocation);
+    const wrapped = wrapAsyncStream(sdkStream, { invocation });
 
     // Test proxy property set trap
     wrapped.customProp = 'updated_val';
@@ -364,7 +364,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
     const invocation = handler.startInference({ providerName: 'openai' });
 
     const rawStream = createAsyncChunkGenerator(['a', 'b']);
-    const wrapped = wrapAsyncStream(rawStream, invocation);
+    const wrapped = wrapAsyncStream(rawStream, { invocation });
 
     const iter = wrapped[Symbol.asyncIterator]();
     const item1 = await iter.next();
@@ -490,7 +490,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithoutReturnOrThrow, invocation);
+    const wrapped = wrapAsyncStream(streamWithoutReturnOrThrow, { invocation });
     const iter = wrapped[Symbol.asyncIterator]();
 
     // Call return() when underlying iterator has no return()
@@ -527,7 +527,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithThrowingReturn, invocation);
+    const wrapped = wrapAsyncStream(streamWithThrowingReturn, { invocation });
     await assert.rejects(
       async () => {
         for await (const chunk of wrapped) {
@@ -563,7 +563,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(streamWithoutThrow, invocation);
+    const wrapped = wrapAsyncStream(streamWithoutThrow, { invocation });
     const iter = wrapped[Symbol.asyncIterator]();
 
     // Call throw() when underlying iterator has no throw()
@@ -599,7 +599,7 @@ describe('AsyncStreamWrapper & wrapAsyncStream', () => {
       },
     };
 
-    const wrapped = wrapAsyncStream(directIterator as any, invocation);
+    const wrapped = wrapAsyncStream(directIterator as any, { invocation });
     const received: string[] = [];
     for await (const chunk of wrapped) {
       received.push(chunk as string);

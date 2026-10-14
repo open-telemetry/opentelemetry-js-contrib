@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { hrTime } from '@opentelemetry/core';
 import { ATTR_GEN_AI_REQUEST_STREAM } from './semconv';
 import { InferenceInvocation } from './invocations/inference';
 
@@ -20,10 +21,10 @@ export interface AsyncStream<TChunk> extends AsyncIterable<TChunk> {
  */
 export interface AsyncStreamWrapperOptions<TChunk> {
   /** The active invocation (InferenceInvocation). */
-  invocation?: InferenceInvocation;
+  invocation: InferenceInvocation;
   /** Hook called for each stream chunk. */
   onChunk?: (chunk: TChunk) => void | Promise<void>;
-  /** Hook called when the stream ends successfully. */
+  /** Hook called when the stream ends or is closed cleanly. */
   onEnd?: () => void | Promise<void>;
   /** Hook called when the stream encounters an error. */
   onError?: (error: unknown) => void | Promise<void>;
@@ -46,41 +47,34 @@ export class AsyncStreamWrapper<
 > implements AsyncIterable<TChunk>
 {
   protected readonly _stream: TStream;
-  protected readonly _invocation?: InferenceInvocation;
-  protected readonly _options?: AsyncStreamWrapperOptions<TChunk>;
+  protected readonly _invocation: InferenceInvocation;
+  protected readonly _options: AsyncStreamWrapperOptions<TChunk>;
   private _isFinalized = false;
 
-  constructor(
-    stream: TStream,
-    optionsOrInvocation?:
-      | AsyncStreamWrapperOptions<TChunk>
-      | InferenceInvocation
-  ) {
+  constructor(stream: TStream, options: AsyncStreamWrapperOptions<TChunk>) {
     this._stream = stream;
+    this._options = options;
+    this._invocation = options.invocation;
+    this._invocation.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
 
-    if (optionsOrInvocation instanceof InferenceInvocation) {
-      this._invocation = optionsOrInvocation;
-    } else if (optionsOrInvocation) {
-      this._options = optionsOrInvocation;
-      this._invocation = this._options.invocation;
-    }
-
-    if (this._invocation) {
-      this._invocation.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
-    }
-
+    // Return a Proxy so the wrapper transparently forwards SDK-specific stream members.
     return new Proxy(this, {
       get(target, prop, receiver) {
+        // Use the wrapper's own properties/methods first (e.g. close, Symbol.asyncIterator).
         if (prop in target) {
           return Reflect.get(target, prop, receiver);
         }
+        // Fall back to the underlying SDK stream for SDK-specific members.
         const val = Reflect.get(target._stream, prop);
         if (typeof val === 'function') {
+          // Bind SDK methods to the underlying stream so their internal `this` context is preserved.
+          // Without bind, calling `wrapped.sdkMethod()` would set `this` to the Proxy instead of `_stream`.
           return (val as (...args: unknown[]) => unknown).bind(target._stream);
         }
         return val;
       },
       set(target, prop, value) {
+        // Update wrapper properties on `target`, or forward SDK property mutations to `_stream`.
         if (prop in target) {
           return Reflect.set(target, prop, value);
         }
@@ -110,9 +104,11 @@ export class AsyncStreamWrapper<
           return result;
         }
 
+        const chunkTime = hrTime();
         await self._processChunk(result.value);
-        // Record after _processChunk so response.model set during chunk processing is included on metrics.
-        self._invocation?.recordStreamChunk();
+        // Record after _processChunk so response.model set during chunk processing is included on metrics,
+        // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
+        self._invocation.recordStreamChunk(chunkTime);
         return result;
       } catch (error) {
         await self._finalizeFailure(error);
@@ -127,10 +123,15 @@ export class AsyncStreamWrapper<
 
       async return(value?: unknown): Promise<IteratorResult<TChunk>> {
         try {
-          const result: IteratorResult<TChunk> =
-            typeof iterator.return === 'function'
-              ? await iterator.return(value)
-              : { done: true, value: value as unknown as TChunk };
+          let result: IteratorResult<TChunk>;
+          if (typeof iterator.return === 'function') {
+            result = await iterator.return(value);
+          } else {
+            if (typeof self._stream.close === 'function') {
+              await self._stream.close();
+            }
+            result = { done: true, value: value as unknown as TChunk };
+          }
           await self._finalizeSuccess();
           return result;
         } catch (error) {
@@ -168,7 +169,7 @@ export class AsyncStreamWrapper<
    * Hook called for each chunk. Subclasses can override to process chunk data.
    */
   protected async _processChunk(chunk: TChunk): Promise<void> {
-    if (this._options?.onChunk) {
+    if (this._options.onChunk) {
       await this._options.onChunk(chunk);
     }
   }
@@ -177,26 +178,22 @@ export class AsyncStreamWrapper<
    * Hook called on successful stream completion.
    */
   protected async _onStreamEnd(): Promise<void> {
-    if (this._options?.onEnd) {
+    if (this._options.onEnd) {
       await this._options.onEnd();
     }
-    if (this._invocation) {
-      this._invocation.stop();
-    }
+    this._invocation.stop();
   }
 
   /**
    * Hook called on stream error.
    */
   protected async _onStreamError(error: unknown): Promise<void> {
-    if (this._options?.onError) {
+    if (this._options.onError) {
       await this._options.onError(error);
     }
-    if (this._invocation) {
-      this._invocation.fail({
-        exception: error instanceof Error ? error : undefined,
-      });
-    }
+    this._invocation.fail({
+      exception: error instanceof Error ? error : undefined,
+    });
   }
 
   /**
@@ -237,22 +234,9 @@ export class AsyncStreamWrapper<
  *
  * @experimental This function is experimental and subject to change.
  */
-export function wrapAsyncStream<TStream extends AsyncIterable<unknown>>(
-  stream: TStream,
-  optionsOrInvocation?:
-    | AsyncStreamWrapperOptions<
-        TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
-      >
-    | InferenceInvocation
-): TStream {
-  return new AsyncStreamWrapper(
-    stream as unknown as AsyncStream<
-      TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
-    >,
-    optionsOrInvocation as
-      | AsyncStreamWrapperOptions<
-          TStream extends AsyncIterable<infer TChunk> ? TChunk : unknown
-        >
-      | InferenceInvocation
-  ) as unknown as TStream;
+export function wrapAsyncStream<
+  TStream extends AsyncStream<TChunk>,
+  TChunk = TStream extends AsyncIterable<infer C> ? C : unknown,
+>(stream: TStream, options: AsyncStreamWrapperOptions<TChunk>): TStream {
+  return new AsyncStreamWrapper(stream, options) as unknown as TStream;
 }

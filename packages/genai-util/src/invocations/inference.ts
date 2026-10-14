@@ -3,8 +3,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SpanKind, type Attributes, type HrTime } from '@opentelemetry/api';
-import { hrTime, hrTimeDuration, hrTimeToSeconds } from '@opentelemetry/core';
+import {
+  SpanKind,
+  type AttributeValue,
+  type Attributes,
+  type HrTime,
+  type TimeInput,
+} from '@opentelemetry/api';
+import {
+  hrTime,
+  hrTimeDuration,
+  hrTimeToSeconds,
+  timeInputToHrTime,
+} from '@opentelemetry/core';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -27,6 +38,7 @@ import {
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  GEN_AI_FINISH_REASON_VALUE_ERROR,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from '../semconv';
 import type {
@@ -115,8 +127,11 @@ export class InferenceInvocation extends BaseInvocation {
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
+  private readonly _choiceCount?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
+  private _isStreaming: boolean;
   private _responseModel?: string;
+  private _finishReasons?: (FinishReason | undefined | null)[];
   private _usage?: TokenUsageDetails;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
@@ -146,11 +161,29 @@ export class InferenceInvocation extends BaseInvocation {
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
+    this._choiceCount = options.requestOptions?.choiceCount;
+    this._isStreaming =
+      Boolean(options.requestOptions?.stream) ||
+      options.attributes?.[ATTR_GEN_AI_REQUEST_STREAM] === true;
     this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages = options.inputMessages
       ? [...options.inputMessages]
       : undefined;
     this._systemInstructions = options.systemInstructions;
+  }
+
+  public override setAttribute(key: string, value: AttributeValue): this {
+    if (key === ATTR_GEN_AI_REQUEST_STREAM && value === true) {
+      this._isStreaming = true;
+    }
+    return super.setAttribute(key, value);
+  }
+
+  public override setAttributes(attributes: Attributes): this {
+    if (attributes[ATTR_GEN_AI_REQUEST_STREAM] === true) {
+      this._isStreaming = true;
+    }
+    return super.setAttributes(attributes);
   }
 
   /**
@@ -172,10 +205,16 @@ export class InferenceInvocation extends BaseInvocation {
 
   /**
    * Set finish reasons for the response choices.
+   *
+   * Finalized onto `gen_ai.response.finish_reasons` when the invocation ends. Any
+   * expected choice position whose finish reason was not received (`undefined`,
+   * `null`, `''`, or omitted when fewer reasons than expected choices are supplied)
+   * is reported as `'error'`.
    */
-  public setFinishReasons(reasons: readonly FinishReason[]): this {
-    const arr = [...reasons];
-    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, arr);
+  public setFinishReasons(
+    reasons: readonly (FinishReason | undefined | null)[]
+  ): this {
+    this._finishReasons = [...reasons];
     return this;
   }
 
@@ -241,13 +280,15 @@ export class InferenceInvocation extends BaseInvocation {
    * (measured from the invocation start); each later call records the gap since the
    * previous chunk as time-per-output-chunk. Calls after the invocation has ended are
    * ignored.
+   *
+   * @param chunkTime - Time when the chunk arrived, or `undefined` to use the current time.
    */
-  public recordStreamChunk(): this {
+  public recordStreamChunk(chunkTime?: TimeInput): this {
     if (this._isEnded) {
       return this;
     }
 
-    const now = hrTime();
+    const now = chunkTime != null ? timeInputToHrTime(chunkTime) : hrTime();
     const isFirstChunk = this._lastChunkTime === undefined;
     const gap = Math.max(
       0,
@@ -256,6 +297,7 @@ export class InferenceInvocation extends BaseInvocation {
       )
     );
     this._lastChunkTime = now;
+    this._isStreaming = true;
     const attrs = this._getMetricAttributes();
 
     if (isFirstChunk) {
@@ -316,7 +358,8 @@ export class InferenceInvocation extends BaseInvocation {
   }
 
   /**
-   * Finalize token usage and serialize the invocation's content onto the span.
+   * Finalize finish reasons, token usage, and serialize the invocation's content
+   * onto the span.
    *
    * Token usage is finalized here (before `_recordMetrics` runs) so that the
    * span attributes and the token metrics are derived from the same merged usage.
@@ -327,8 +370,16 @@ export class InferenceInvocation extends BaseInvocation {
    */
   protected override _onInvocationEnd(
     _endTime: HrTime,
-    _errorType?: string
+    errorType?: string
   ): void {
+    if (
+      this._finishReasons !== undefined ||
+      errorType !== undefined ||
+      this._isStreaming
+    ) {
+      this._setFinishReasonsAttribute();
+    }
+
     if (this._usage) {
       this._usage = inferMissingModalityCounts(this._usage);
       this.setUsageAttributes(this._usage);
@@ -357,6 +408,29 @@ export class InferenceInvocation extends BaseInvocation {
     if (outputMessages) {
       this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
     }
+  }
+
+  /**
+   * Populate `gen_ai.response.finish_reasons` on the span, filling any expected
+   * choice position that did not receive a finish reason with `'error'`.
+   */
+  private _setFinishReasonsAttribute(): void {
+    const expectedCount = Math.max(
+      1,
+      this._choiceCount ?? 1,
+      this._outputMessages?.length ?? 0,
+      this._finishReasons?.length ?? 0
+    );
+    const reasons: FinishReason[] = [];
+    for (let i = 0; i < expectedCount; i++) {
+      const reason = this._finishReasons?.[i];
+      reasons.push(
+        reason != null && reason !== ''
+          ? reason
+          : GEN_AI_FINISH_REASON_VALUE_ERROR
+      );
+    }
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, reasons);
   }
 
   /**
