@@ -31,24 +31,22 @@ export interface AsyncStreamWrapperOptions<TChunk> {
 }
 
 /**
- * Base class and proxy wrapper for asynchronous GenAI stream responses.
- *
- * @experimental This class is experimental and subject to change.
+ * Proxy wrapper for asynchronous GenAI stream responses.
  *
  * Wraps an SDK async iterable/stream and intercepts iteration to:
  * 1. Track stream lifecycle (start -> chunks -> end/error) and complete the active invocation.
  * 2. Record stream metrics (`time_to_first_chunk` and `time_per_output_chunk`).
- * 3. Invoke telemetry hooks (`_processChunk`, `_onStreamEnd`, `_onStreamError`).
+ * 3. Invoke telemetry hooks (`onChunk`, `onEnd`, `onError`).
  * 4. Transparently proxy underlying SDK methods and properties (via ES6 Proxy).
  */
-export class AsyncStreamWrapper<
+class AsyncStreamWrapper<
   TChunk,
   TStream extends AsyncStream<TChunk> = AsyncStream<TChunk>,
 > implements AsyncIterable<TChunk>
 {
-  protected readonly _stream: TStream;
-  protected readonly _invocation: InferenceInvocation;
-  protected readonly _options: AsyncStreamWrapperOptions<TChunk>;
+  private readonly _stream: TStream;
+  private readonly _invocation: InferenceInvocation;
+  private readonly _options: AsyncStreamWrapperOptions<TChunk>;
   private _isFinalized = false;
 
   constructor(stream: TStream, options: AsyncStreamWrapperOptions<TChunk>) {
@@ -166,9 +164,9 @@ export class AsyncStreamWrapper<
   }
 
   /**
-   * Hook called for each chunk. Subclasses can override to process chunk data.
+   * Hook called for each chunk.
    */
-  protected async _processChunk(chunk: TChunk): Promise<void> {
+  private async _processChunk(chunk: TChunk): Promise<void> {
     if (this._options.onChunk) {
       await this._options.onChunk(chunk);
     }
@@ -177,7 +175,7 @@ export class AsyncStreamWrapper<
   /**
    * Hook called on successful stream completion.
    */
-  protected async _onStreamEnd(): Promise<void> {
+  private async _onStreamEnd(): Promise<void> {
     if (this._options.onEnd) {
       await this._options.onEnd();
     }
@@ -187,7 +185,7 @@ export class AsyncStreamWrapper<
   /**
    * Hook called on stream error.
    */
-  protected async _onStreamError(error: unknown): Promise<void> {
+  private async _onStreamError(error: unknown): Promise<void> {
     if (this._options.onError) {
       await this._options.onError(error);
     }
