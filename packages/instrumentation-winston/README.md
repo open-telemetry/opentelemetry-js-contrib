@@ -31,7 +31,7 @@ const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winst
 
 const sdk = new NodeSDK({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
   logRecordProcessors: [
     new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
@@ -118,7 +118,7 @@ const winston = require('winston');
 
 const sdk = new NodeSDK({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
   logRecordProcessors: [
     new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
