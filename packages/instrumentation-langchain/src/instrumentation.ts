@@ -366,6 +366,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           }
           const result = original.apply(this, args);
           try {
+            // Undefined means no SDK callbacks were configured, not an opt-out.
+            // A fresh manager adds only our handler, not LangSmith tracing.
             return addToolHandler(result ?? new manager(), handler);
           } catch {
             owner._diag.warn('LangChain: could not register tool callbacks');
