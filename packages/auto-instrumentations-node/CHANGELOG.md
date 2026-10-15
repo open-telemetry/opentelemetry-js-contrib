@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.81.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.81.0...auto-instrumentations-node-v0.81.1) (2026-10-15)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-express bumped from ^0.71.0 to ^0.71.1
+    * @opentelemetry/instrumentation-mysql bumped from ^0.69.0 to ^0.69.1
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.69.0 to ^0.70.0
+    * @opentelemetry/instrumentation-pg bumped from ^0.75.0 to ^0.76.0
+    * @opentelemetry/instrumentation-runtime-node bumped from ^0.36.0 to ^0.36.1
+    * @opentelemetry/instrumentation-winston bumped from ^0.67.0 to ^0.68.0
+
 ## [0.81.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.80.0...auto-instrumentations-node-v0.81.0) (2026-10-06)
 
 

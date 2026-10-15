@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.2.0...genai-util-v0.3.0) (2026-10-15)
+
+
+### Features
+
+* **genai-util:** add support for core invocations ([#3762](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3762)) ([fe18c40](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fe18c40b42aaed5707acaa2eb4af75a3e5d2a4bb))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.1.0...genai-util-v0.2.0) (2026-10-06)
 
 

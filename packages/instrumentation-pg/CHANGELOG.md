@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.76.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.75.0...instrumentation-pg-v0.76.0) (2026-10-15)
+
+
+### Features
+
+* **instrumentation-pg:** add connectionHook for connect spans ([#3799](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3799)) ([ffbf8e5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/ffbf8e5af1c0cc44a93b651f29b6a3f27534d0a6))
+
 ## [0.75.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.74.0...instrumentation-pg-v0.75.0) (2026-10-06)
 
 
