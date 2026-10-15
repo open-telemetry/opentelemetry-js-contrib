@@ -18,7 +18,7 @@ npm uninstall @opentelemetry/instrumentation-web-exception
 npm install --save @opentelemetry/browser-instrumentation
 ```
 
-Change the import and class name from `ExceptionInstrumentation` to `ErrorsInstrumentation`. The `enabled` and `applyCustomAttributes` options are unchanged. The callback still accepts `Error | string` and returns attributes to add to the exception log record.
+Change the import and class name from `ExceptionInstrumentation` to `ErrorsInstrumentation`. If you import the config type, rename `GlobalErrorsInstrumentationConfig` to `ErrorsInstrumentationConfig`, imported from the same replacement export. The `enabled` and `applyCustomAttributes` options are unchanged. The callback still accepts `Error | string` and returns attributes to add to the exception log record.
 
 Before:
 
@@ -61,6 +61,8 @@ registerInstrumentations({
   ],
 });
 ```
+
+The instrumentation scope name changes from `@opentelemetry/instrumentation-web-exception` to `@opentelemetry/browser-instrumentation/errors`. Update queries, dashboards and filters that select logs by instrumentation scope name.
 
 Keep your OpenTelemetry Logs SDK setup and logger provider. The replacement still emits `exception` log records for uncaught errors and unhandled promise rejections. Register only the replacement errors instrumentation to avoid capturing the same error twice.
 
