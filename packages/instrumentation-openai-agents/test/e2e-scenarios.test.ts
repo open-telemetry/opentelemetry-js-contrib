@@ -13,6 +13,8 @@
  */
 
 import * as assert from 'assert';
+import * as fs from 'fs';
+import * as path from 'path';
 // @openai/agents 0.14 loads this optional MCP module from its Node.js shim.
 // Keep this explicit import and dev dependency so Node.js 18 CI can resolve it.
 import '@modelcontextprotocol/sdk/shared/protocol.js';
@@ -27,6 +29,24 @@ import {
 type Agents = typeof import('@openai/agents');
 type AgentOutputItem = import('@openai/agents').AgentOutputItem;
 type Model = import('@openai/agents').Model;
+
+// @openai/agents-core 0.19+ redacts the error details its default tool error
+// handler reports on the function span, so the original error name is not
+// available and `error.type` falls back to `_OTHER`.
+const TOOL_ERROR = (() => {
+  const pkg = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        path.dirname(require.resolve('@openai/agents-core')),
+        '..',
+        'package.json'
+      ),
+      'utf8'
+    )
+  );
+  const [major, minor] = pkg.version.split('.').map(Number);
+  return major > 0 || minor >= 19 ? '_OTHER' : 'Error';
+})();
 
 describe('OpenAI Agents end-to-end scenarios', function () {
   this.timeout(20000);
@@ -396,7 +416,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       assert.deepStrictEqual(tree(), [
         'openai.agents.run',
         '  invoke_agent helper',
-        '    execute_tool boom [ERROR Error]',
+        `    execute_tool boom [ERROR ${TOOL_ERROR}]`,
       ]);
     });
 
@@ -426,7 +446,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       assert.deepStrictEqual(tree(), [
         'openai.agents.run',
         '  invoke_agent outer',
-        '    execute_tool ask_inner [ERROR Error]',
+        `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',
       ]);
     });
@@ -456,7 +476,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       assert.deepStrictEqual(tree(), [
         'openai.agents.run [ERROR Error]',
         '  invoke_agent outer [ERROR Error]',
-        '    execute_tool ask_inner [ERROR Error]',
+        `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',
       ]);
     });
@@ -619,7 +639,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       assert.deepStrictEqual(tree(), [
         'openai.agents.run',
         '  invoke_agent outer',
-        '    execute_tool ask_inner [ERROR Error]',
+        `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',
       ]);
     });
