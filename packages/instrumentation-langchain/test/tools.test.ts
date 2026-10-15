@@ -399,6 +399,85 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(getTestSpans()[3].parentSpanContext, undefined);
   });
 
+  it('caps pending runs at 1000 and ignores late completion after eviction', async function () {
+    this.timeout(15000);
+    const warn = sinon.spy();
+    diag.setLogger(
+      { warn, error() {}, info() {}, debug() {}, verbose() {} },
+      DiagLogLevel.WARN
+    );
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
+    const releases: Array<() => void> = [];
+    const results: Array<Promise<string>> = [];
+    let entered: () => void;
+    const operation = new DynamicTool({
+      name: 'pending',
+      description: '',
+      func: input =>
+        new Promise<string>(resolve => {
+          releases.push(() => resolve(input));
+          entered();
+        }),
+    });
+    try {
+      for (let index = 0; index < 1003; index++) {
+        const started = new Promise<void>(resolve => {
+          entered = resolve;
+        });
+        results.push(
+          operation.invoke(`private-input-${index}`, {
+            runName: `pending-${index}`,
+          })
+        );
+        await started;
+        assert.equal(getTestSpans().length, Math.max(0, index + 1 - 1000));
+      }
+      assert.deepEqual(
+        getTestSpans().map(span => span.name),
+        [
+          'execute_tool pending-0',
+          'execute_tool pending-1',
+          'execute_tool pending-2',
+        ]
+      );
+      for (const span of getTestSpans()) {
+        assert.equal(span.status.code, SpanStatusCode.UNSET);
+        assert.equal(span.attributes['error.type'], undefined);
+        assert.equal(span.attributes['gen_ai.tool.call.result'], undefined);
+        assert.deepEqual(span.events, []);
+      }
+      assert.deepEqual(await points(), []);
+      assert.equal(warn.callCount, 3);
+      assert.equal(JSON.stringify(warn.args).includes('private-input'), false);
+      for (const release of releases.slice(0, 3)) release();
+      assert.deepEqual(await Promise.all(results.slice(0, 3)), [
+        'private-input-0',
+        'private-input-1',
+        'private-input-2',
+      ]);
+      assert.equal(getTestSpans().length, 3);
+      assert.deepEqual(await points(), []);
+    } finally {
+      for (const release of releases) release();
+      await Promise.all(results);
+    }
+    assert.equal(getTestSpans().length, 1003);
+    const recorded = await points();
+    assert.equal(
+      recorded.reduce((count, point) => count + point.value.count, 0),
+      1000
+    );
+    assert.ok(
+      recorded.every(
+        point =>
+          !['pending-0', 'pending-1', 'pending-2'].includes(
+            String(point.attributes['gen_ai.tool.name'])
+          )
+      )
+    );
+    assert.equal(warn.callCount, 3);
+  });
+
   for (const capture of ['none', 'span_only'] as const) {
     it(`preserves SDK failures and records only content-free errors (capture=${capture})`, async () => {
       instrumentation.setConfig({ captureMessageContent: capture });

@@ -62,7 +62,23 @@ interface ToolRun {
 
 // CJS/ESM handlers share callback run IDs, including nested tool executions.
 const runs = new Map<string, ToolRun>();
+const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
+
+function evictOldestRun() {
+  if (runs.size <= MAX_PENDING_TOOL_RUNS) return;
+  const oldest = runs.entries().next();
+  if (oldest.done) return;
+  const [runId, run] = oldest.value;
+  runs.delete(runId);
+  run.diag.warn('LangChain: pending tool limit reached, releasing oldest run');
+  try {
+    // Eviction is not an observed completion, so do not record a duration.
+    run.span.end();
+  } catch {
+    run.diag.warn('LangChain: could not end evicted tool telemetry');
+  }
+}
 
 /** Register on the manager already copied by the SDK, not user collections. */
 export function addToolHandler(
@@ -230,6 +246,7 @@ export function createToolCallbacks(
           callId: toolCallId,
           context: trace.setSpan(parent, span),
         });
+        evictOldestRun();
       } catch {
         diag.warn('LangChain: could not start tool telemetry');
       }
