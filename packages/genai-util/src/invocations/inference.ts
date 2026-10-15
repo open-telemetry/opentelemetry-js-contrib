@@ -126,11 +126,10 @@ export class InferenceInvocation extends BaseInvocation {
   private readonly _requestModel?: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
-  private readonly _choiceCount?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
   private _isStreaming: boolean;
   private _responseModel?: string;
-  private _finishReasons?: (FinishReason | undefined | null)[];
+  private _finishReasons?: FinishReason[];
   private _usage?: TokenUsageDetails;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
@@ -160,7 +159,6 @@ export class InferenceInvocation extends BaseInvocation {
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-    this._choiceCount = options.requestOptions?.choiceCount;
     this._isStreaming = options.requestOptions?.stream === true;
     this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages = options.inputMessages
@@ -201,13 +199,10 @@ export class InferenceInvocation extends BaseInvocation {
    * Set finish reasons for the response choices.
    *
    * Finalized onto `gen_ai.response.finish_reasons` when the invocation ends. Any
-   * expected choice position whose finish reason was not received (`undefined`,
-   * `null`, `''`, or omitted when fewer reasons than expected choices are supplied)
-   * is reported as `'error'`.
+   * expected choice position whose finish reason was not received (`''`, or omitted
+   * when fewer reasons than expected choices are supplied) is reported as `'error'`.
    */
-  public setFinishReasons(
-    reasons: readonly (FinishReason | undefined | null)[]
-  ): this {
+  public setFinishReasons(reasons: readonly FinishReason[]): this {
     this._finishReasons = [...reasons];
     return this;
   }
@@ -365,6 +360,9 @@ export class InferenceInvocation extends BaseInvocation {
     _endTime: HrTime,
     errorType?: string
   ): void {
+    // Avoids putting ['error'] on a successful non-streaming span when
+    // setFinishReasons() wasn't called, while still defaulting to ['error'] if
+    // a stream ends early (e.g. break before the final chunk) or if fail() is called.
     if (
       this._finishReasons !== undefined ||
       errorType !== undefined ||
@@ -410,7 +408,6 @@ export class InferenceInvocation extends BaseInvocation {
   private _setFinishReasonsAttribute(): void {
     const expectedCount = Math.max(
       1,
-      this._choiceCount ?? 1,
       this._outputMessages?.length ?? 0,
       this._finishReasons?.length ?? 0
     );

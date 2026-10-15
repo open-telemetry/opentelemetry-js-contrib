@@ -92,6 +92,12 @@ class AsyncStreamWrapper<
 
     const self = this;
 
+    // Shared step runner for `next()` and `throw()`. Both iterator methods can
+    // advance the underlying generator to yield a chunk (e.g. if `throw()` is
+    // caught inside the generator), complete cleanly (`done: true`), or reject.
+    // Centralizing this handles chunk processing, stream timing metrics
+    // (`time_to_first_chunk` and `time_per_output_chunk`), and success/failure
+    // finalization uniformly across both paths.
     const advance = async (
       step: () => Promise<IteratorResult<TChunk>>
     ): Promise<IteratorResult<TChunk>> => {
@@ -128,7 +134,7 @@ class AsyncStreamWrapper<
             if (typeof self._stream.close === 'function') {
               await self._stream.close();
             }
-            result = { done: true, value: value as unknown as TChunk };
+            result = { done: true, value };
           }
           await self._finalizeSuccess();
           return result;
