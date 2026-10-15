@@ -14,12 +14,19 @@ import {
 import { TelemetryHandler } from '../src/handler';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_REQUEST_MODEL,
   ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
   ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
+  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+  GEN_AI_FINISH_REASON_VALUE_ERROR,
+  GEN_AI_FINISH_REASON_VALUE_STOP,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
 } from '../src/semconv';
 import {
@@ -74,12 +81,13 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     await ctx.shutdown();
   });
 
-  it('should wrap async iterable and track chunks, stream attribute, and completion', async () => {
+  it('should wrap async iterable, track chunks, and flush telemetry set in onEnd before stopping the invocation', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
       instrumentationVersion: '1.2.3',
       tracerProvider: ctx.tracerProvider,
       meterProvider: ctx.meterProvider,
+      contentCaptureMode: 'span_only',
     });
 
     const invocation = handler.startInference({
@@ -90,7 +98,6 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     });
 
     const processed: string[] = [];
-    let endHookCalled = false;
 
     const rawStream = createAsyncChunkGenerator(['Hello', ' ', 'world', '!']);
     const wrappedStream = handler.wrapAsyncStream(rawStream, {
@@ -99,7 +106,15 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
         processed.push(chunk);
       },
       onEnd: () => {
-        endHookCalled = true;
+        invocation.addOutputMessages([
+          {
+            role: 'assistant',
+            parts: [{ type: 'text', content: processed.join('') }],
+            finish_reason: GEN_AI_FINISH_REASON_VALUE_STOP,
+          },
+        ]);
+        invocation.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+        invocation.setUsage({ inputTokenCount: 10, outputTokenCount: 4 });
       },
     });
 
@@ -110,7 +125,6 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
 
     assert.deepStrictEqual(received, ['Hello', ' ', 'world', '!']);
     assert.deepStrictEqual(processed, ['Hello', ' ', 'world', '!']);
-    assert.strictEqual(endHookCalled, true);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -130,6 +144,21 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
     assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
+    assert.deepStrictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS], [
+      GEN_AI_FINISH_REASON_VALUE_STOP,
+    ]);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 4);
+    assert.deepStrictEqual(
+      JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string),
+      [
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Hello world!' }],
+          finish_reason: GEN_AI_FINISH_REASON_VALUE_STOP,
+        },
+      ]
+    );
   });
 
   it('should handle stream error and fail the invocation without leaking raw error message on span status', async () => {
@@ -356,7 +385,7 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
   });
 
-  it('should record time_to_first_chunk metric after onChunk so response.model is included', async () => {
+  it('should record time_to_first_chunk and time_per_output_chunk metrics after onChunk so response.model is included', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
       instrumentationVersion: '1.2.3',
@@ -369,7 +398,11 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
       requestModel: 'gpt-4o',
     });
 
-    const rawStream = createAsyncChunkGenerator(['chunk-1', 'chunk-2']);
+    const rawStream = createAsyncChunkGenerator([
+      'chunk-1',
+      'chunk-2',
+      'chunk-3',
+    ]);
     const wrapped = handler.wrapAsyncStream(rawStream, {
       invocation,
       onChunk: () => {
@@ -388,18 +421,105 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
         m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
     );
     assert.ok(ttftMetric, 'time_to_first_chunk metric should be recorded');
-    const dataPoint = ttftMetric.dataPoints[0];
+    const ttftPoint = ttftMetric.dataPoints[0];
+    assert.strictEqual((ttftPoint.value as { count: number }).count, 1);
     assert.strictEqual(
-      dataPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
+      ttftPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
       'openai'
     );
     assert.strictEqual(
-      dataPoint.attributes[ATTR_GEN_AI_REQUEST_MODEL],
+      ttftPoint.attributes[ATTR_GEN_AI_REQUEST_MODEL],
       'gpt-4o'
     );
     assert.strictEqual(
-      dataPoint.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
+      ttftPoint.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
       'gpt-4o-2024-08-06'
+    );
+
+    const tpocMetric = metrics.find(
+      m =>
+        m.descriptor.name ===
+        METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+    );
+    assert.ok(tpocMetric, 'time_per_output_chunk metric should be recorded');
+    const tpocPoint = tpocMetric.dataPoints[0];
+    assert.strictEqual((tpocPoint.value as { count: number }).count, 2);
+    assert.strictEqual(
+      tpocPoint.attributes[ATTR_GEN_AI_PROVIDER_NAME],
+      'openai'
+    );
+    assert.strictEqual(
+      tpocPoint.attributes[ATTR_GEN_AI_REQUEST_MODEL],
+      'gpt-4o'
+    );
+    assert.strictEqual(
+      tpocPoint.attributes[ATTR_GEN_AI_RESPONSE_MODEL],
+      'gpt-4o-2024-08-06'
+    );
+  });
+
+  it('should handle empty stream (0 chunks) by setting stream attribute, omitting chunk timing, and finalizing', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+
+    let chunkCalled = false;
+    let endCalled = false;
+    const wrapped = handler.wrapAsyncStream(createAsyncChunkGenerator([]), {
+      invocation,
+      onChunk: () => {
+        chunkCalled = true;
+      },
+      onEnd: () => {
+        endCalled = true;
+      },
+    });
+
+    for await (const _chunk of wrapped) {
+      assert.fail('should not yield any chunks');
+    }
+
+    assert.strictEqual(chunkCalled, false);
+    assert.strictEqual(endCalled, true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    const span = spans[0];
+    assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
+      undefined
+    );
+    assert.deepStrictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS], [
+      GEN_AI_FINISH_REASON_VALUE_ERROR,
+    ]);
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+      ),
+      undefined
+    );
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+      ),
+      undefined
     );
   });
 
