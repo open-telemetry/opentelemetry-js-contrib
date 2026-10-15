@@ -161,7 +161,8 @@ export function createToolCallbacks(
       >
     ) {
       const [serialized, input, runId, parentRunId, , metadata, runName] = args;
-      // Early 1.x callbacks expose the ID only in the final ToolMessage.
+      // Core 1.1.28 added toolCallId as argument 8. Using slice also compiles
+      // against older seven-argument types, where we use the final ToolMessage.
       const optionalId: unknown = args.slice(7)[0];
       const toolCallId =
         typeof optionalId === 'string' ? optionalId : undefined;
