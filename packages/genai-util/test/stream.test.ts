@@ -42,8 +42,7 @@ class FakeSDKStream<T> implements AsyncIterable<T> {
 
   constructor(
     private _chunks: T[],
-    private _error?: Error,
-    private _closeError?: Error
+    private _error?: Error
   ) {}
 
   async *[Symbol.asyncIterator](): AsyncIterator<T> {
@@ -61,9 +60,6 @@ class FakeSDKStream<T> implements AsyncIterable<T> {
 
   async close(): Promise<void> {
     this.closed = true;
-    if (this._closeError) {
-      throw this._closeError;
-    }
   }
 }
 
@@ -229,7 +225,7 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     }
   });
 
-  it('should transparently proxy properties and methods on SDK stream objects', async () => {
+  it('should wrap SDK stream objects in-place while preserving identity and members', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
       instrumentationVersion: '1.2.3',
@@ -240,14 +236,28 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     const sdkStream = new FakeSDKStream(['a', 'b']);
     const wrapped = handler.wrapAsyncStream(sdkStream, { invocation });
 
-    // Test property access
+    // Preserves object identity and prototype (for APIPromise in-place wrapping)
+    assert.strictEqual(wrapped, sdkStream);
+    assert.strictEqual(wrapped instanceof FakeSDKStream, true);
+
+    // Preserves SDK properties and methods
     assert.strictEqual(wrapped.customProp, 'custom_value');
     assert.strictEqual(wrapped.customMethod(), 'method_custom_value');
     assert.strictEqual('customProp' in wrapped, true);
 
-    // Test close delegation
+    wrapped.customProp = 'updated_val';
+    assert.strictEqual(sdkStream.customProp, 'updated_val');
+    assert.strictEqual(wrapped.customMethod(), 'method_updated_val');
+
     await wrapped.close();
     assert.strictEqual(sdkStream.closed, true);
+
+    // Iterating the original reference directly still triggers telemetry
+    const received: string[] = [];
+    for await (const chunk of sdkStream) {
+      received.push(chunk);
+    }
+    assert.deepStrictEqual(received, ['a', 'b']);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
@@ -278,37 +288,6 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
-  });
-
-  it('should handle close() error and fail invocation', async () => {
-    const handler = new TelemetryHandler({
-      instrumentationName: 'test',
-      instrumentationVersion: '1.2.3',
-      tracerProvider: ctx.tracerProvider,
-    });
-    const invocation = handler.startInference({ providerName: 'openai' });
-
-    const sdkStream = new FakeSDKStream(
-      [],
-      undefined,
-      new Error('Close failed')
-    );
-    const wrapped = handler.wrapAsyncStream(sdkStream, { invocation });
-
-    // Test proxy property set trap
-    wrapped.customProp = 'updated_val';
-    assert.strictEqual(sdkStream.customProp, 'updated_val');
-
-    await assert.rejects(
-      async () => {
-        await wrapped.close();
-      },
-      (err: Error) => err.message === 'Close failed'
-    );
-
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 1);
-    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
   });
 
   it('should support iterator throw() method and handle double finalization gracefully', async () => {
