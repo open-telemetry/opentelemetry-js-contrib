@@ -144,9 +144,10 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MODEL], 'gpt-4o');
     assert.strictEqual(span.attributes[ATTR_SERVER_ADDRESS], 'api.openai.com');
     assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
-    assert.deepStrictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS], [
-      GEN_AI_FINISH_REASON_VALUE_STOP,
-    ]);
+    assert.deepStrictEqual(
+      span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_STOP]
+    );
     assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 10);
     assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 4);
     assert.deepStrictEqual(
@@ -293,7 +294,7 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
   });
 
-  it('should support early break (return) in for await loop', async () => {
+  it('should support early break (return) in for await loop, process chunk before yielding, and default finish_reasons to error', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
       instrumentationVersion: '1.2.3',
@@ -301,11 +302,21 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     });
     const invocation = handler.startInference({ providerName: 'openai' });
 
+    const events: string[] = [];
     const rawStream = createAsyncChunkGenerator(['1', '2', '3', '4']);
-    const wrapped = handler.wrapAsyncStream(rawStream, { invocation });
+    const wrapped = handler.wrapAsyncStream(rawStream, {
+      invocation,
+      onChunk: chunk => {
+        events.push(`onChunk:${chunk}`);
+      },
+      onEnd: () => {
+        events.push('onEnd');
+      },
+    });
 
     const received: string[] = [];
     for await (const chunk of wrapped) {
+      events.push(`body:${chunk}`);
       received.push(chunk);
       if (chunk === '2') {
         break; // triggers iterator.return()
@@ -313,10 +324,21 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     }
 
     assert.deepStrictEqual(received, ['1', '2']);
+    assert.deepStrictEqual(events, [
+      'onChunk:1',
+      'body:1',
+      'onChunk:2',
+      'body:2',
+      'onEnd',
+    ]);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+    assert.deepStrictEqual(
+      spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_ERROR]
+    );
   });
 
   it('should support iterator throw() method and handle double finalization gracefully', async () => {
@@ -499,9 +521,10 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
       span.attributes[ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK],
       undefined
     );
-    assert.deepStrictEqual(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS], [
-      GEN_AI_FINISH_REASON_VALUE_ERROR,
-    ]);
+    assert.deepStrictEqual(
+      span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_ERROR]
+    );
 
     const { resourceMetrics } = await ctx.metricReader.collect();
     const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
@@ -728,5 +751,108 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans.length, 2);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
     assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
+  });
+
+  it('should await async hooks and capture chunk arrival time before awaiting onChunk', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+
+    let onChunkFinishedHrTime: [number, number] | undefined;
+    let recordedChunkTime: unknown;
+    const origRecordStreamChunk = invocation.recordStreamChunk.bind(invocation);
+    invocation.recordStreamChunk = chunkTime => {
+      recordedChunkTime = chunkTime;
+      return origRecordStreamChunk(chunkTime);
+    };
+
+    const wrapped = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['chunk-1']),
+      {
+        invocation,
+        onChunk: async () => {
+          await new Promise(resolve => setTimeout(resolve, 25));
+          onChunkFinishedHrTime = process.hrtime();
+          invocation.setResponseModel('gpt-4o-2024-08-06');
+        },
+        onEnd: async () => {
+          await Promise.resolve();
+          invocation.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+        },
+      }
+    );
+
+    for await (const chunk of wrapped) {
+      assert.strictEqual(chunk, 'chunk-1');
+    }
+
+    assert.ok(Array.isArray(recordedChunkTime));
+    assert.ok(onChunkFinishedHrTime);
+    // Verify TTFT on the span is smaller than the 25ms sleep inside onChunk
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    const ttft = spans[0].attributes[
+      ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK
+    ] as number;
+    assert.strictEqual(typeof ttft, 'number');
+    assert.ok(
+      ttft < 0.02,
+      `Expected TTFT (${ttft}s) to exclude the 25ms async onChunk delay`
+    );
+    assert.deepStrictEqual(
+      spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_STOP]
+    );
+  });
+
+  it('should preserve failure status if onEnd marks the invocation as failed (e.g. silent stream abort)', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'anthropic',
+      requestModel: 'claude-sonnet-4-20250514',
+    });
+
+    // Simulate an SDK stream that swallows an abort and exits with { done: true }
+    const wrapped = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['partial']),
+      {
+        invocation,
+        onEnd: () => {
+          invocation.fail({ errorType: 'APIUserAbortError' });
+        },
+      }
+    );
+
+    const received: string[] = [];
+    for await (const chunk of wrapped) {
+      received.push(chunk);
+    }
+
+    assert.deepStrictEqual(received, ['partial']);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'APIUserAbortError'
+    );
+    assert.deepStrictEqual(
+      spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_ERROR]
+    );
   });
 });
