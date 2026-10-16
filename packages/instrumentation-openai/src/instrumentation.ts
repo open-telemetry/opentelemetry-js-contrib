@@ -6,13 +6,22 @@
 // avoids a dependency on @opentelemetry/core for hrTime utilities
 import { performance } from 'perf_hooks';
 
-import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { Attributes, Context, Histogram, Span } from '@opentelemetry/api';
+import {
+  context,
+  SeverityNumber,
+  SpanKind,
+  SpanStatusCode,
+  trace,
+  type AnyValue,
+  type Attributes,
+  type Context,
+  type Histogram,
+  type Span,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
-import { type AnyValue, SeverityNumber } from '@opentelemetry/api-logs';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
