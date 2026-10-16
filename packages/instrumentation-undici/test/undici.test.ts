@@ -18,6 +18,7 @@ import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-ho
 import {
   ATTR_ERROR_TYPE,
   ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_URL_QUERY,
 } from '@opentelemetry/semantic-conventions';
 import {
   InMemorySpanExporter,
@@ -289,7 +290,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: firstQueryResponse!.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -304,7 +305,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         spanName: 'HTTP',
         httpMethod: '_OTHER',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -319,7 +320,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         spanName: 'QUERY',
         httpMethod: 'QUERY',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -368,7 +369,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -432,7 +433,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -504,7 +505,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -584,7 +585,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -653,7 +654,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
     });
 
@@ -775,6 +776,28 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.ok(span, 'a span is present');
       assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
       assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], undefined);
+    });
+
+    it('should set url.query without the leading "?" and only when present', async function () {
+      const withQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`
+      );
+      await withQuery.body.dump();
+      const withoutQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/`
+      );
+      await withoutQuery.body.dump();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      assert.deepStrictEqual(
+        spans.map(span =>
+          ATTR_URL_QUERY in span.attributes
+            ? span.attributes[ATTR_URL_QUERY]
+            : '<not set>'
+        ),
+        ['query=test', '<not set>']
+      );
     });
 
     it('should capture errors while doing request', async function () {
@@ -925,7 +948,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
           httpStatusCode: queryResponse.statusCode,
           httpMethod: 'GET',
           path: '/',
-          query: '?query=test',
+          query: 'query=test',
           reqHeaders: testCase.headers,
         });
         assert.strictEqual(
@@ -957,7 +980,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: res.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
     });
