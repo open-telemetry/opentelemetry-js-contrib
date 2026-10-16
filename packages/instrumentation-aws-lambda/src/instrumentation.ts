@@ -38,6 +38,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
+import { LoggerProvider } from '@opentelemetry/api-logs';
 import {
   ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
@@ -121,6 +122,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
   private readonly _xrayPropagator = new AWSXRayPropagator();
   declare private _traceForceFlusher?: () => Promise<void>;
   declare private _metricForceFlusher?: () => Promise<void>;
+  declare private _logForceFlusher?: () => Promise<void>;
 
   constructor(config: AwsLambdaInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -729,6 +731,35 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     return undefined;
   }
 
+  override setLoggerProvider(loggerProvider: LoggerProvider) {
+    super.setLoggerProvider(loggerProvider);
+    this._logForceFlusher = this._logForceFlush(loggerProvider);
+  }
+
+  private _logForceFlush(loggerProvider: LoggerProvider) {
+    if (!loggerProvider) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let currentProvider: any = loggerProvider;
+
+    // A LoggerProvider obtained via @opentelemetry/api-logs is a delegating
+    // proxy (ProxyLoggerProvider), like ProxyTracerProvider, so unwrap it to
+    // reach the SDK provider that actually has forceFlush. The logs proxy
+    // exposes the delegate as _getDelegate(); fall back to getDelegate() for
+    // any provider that uses the non-underscore name.
+    if (typeof currentProvider._getDelegate === 'function') {
+      currentProvider = currentProvider._getDelegate();
+    } else if (typeof currentProvider.getDelegate === 'function') {
+      currentProvider = currentProvider.getDelegate();
+    }
+
+    if (typeof currentProvider.forceFlush === 'function') {
+      return currentProvider.forceFlush.bind(currentProvider);
+    }
+
+    return undefined;
+  }
+
   private _wrapCallback(
     original: Callback,
     span: Span,
@@ -798,6 +829,13 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     } else {
       diag.debug(
         'Metrics may not be exported for the lambda function because we are not force flushing before handler completion.'
+      );
+    }
+    if (this._logForceFlusher) {
+      flushers.push(this._logForceFlusher());
+    } else {
+      diag.debug(
+        'Logs may not be exported for the lambda function because we are not force flushing before handler completion.'
       );
     }
 
