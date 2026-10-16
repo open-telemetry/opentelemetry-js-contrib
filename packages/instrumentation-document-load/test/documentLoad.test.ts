@@ -11,6 +11,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import {
+  hrTimeToNanoseconds,
   W3CTraceContextPropagator,
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
