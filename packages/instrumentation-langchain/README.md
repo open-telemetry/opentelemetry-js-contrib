@@ -152,8 +152,9 @@ to compensate for missing SDK notifications. Pending tool state is capped at
 starting another run releases the oldest entry and ends its span with a
 content-free warning. This is telemetry cleanup, not SDK cancellation or an
 observed completion, so it records no result, error or duration metric.
-Late callbacks for an evicted run are ignored. Long-running tools can lose
-completion telemetry if this limit is exceeded.
+Each invocation has its own callback token, so late callbacks for an evicted
+run are ignored even if its run ID or callback manager is reused. Long-running
+tools can lose completion telemetry if this limit is exceeded.
 Runnable `.asTool()` adapters
 that emit only chain callbacks do not gain tool spans from this slice.
 

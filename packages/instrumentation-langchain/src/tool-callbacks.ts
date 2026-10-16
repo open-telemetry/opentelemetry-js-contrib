@@ -50,6 +50,7 @@ interface ToolTelemetry {
 }
 
 interface ToolRun {
+  runId: string;
   span: Span;
   context: Context;
   startTime: HrTime;
@@ -60,17 +61,23 @@ interface ToolRun {
   diag: DiagLogger;
 }
 
-// CJS/ESM handlers share callback run IDs, including nested tool executions.
-const runs = new Map<string, ToolRun>();
+// Run IDs are only a parent lookup. Completion uses an invocation's token.
+const runs = new Map<symbol, ToolRun>();
+const runTokens = new Map<string, symbol>();
 const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
+
+function removeRun(token: symbol, run: ToolRun) {
+  runs.delete(token);
+  if (runTokens.get(run.runId) === token) runTokens.delete(run.runId);
+}
 
 function evictOldestRun() {
   if (runs.size <= MAX_PENDING_TOOL_RUNS) return;
   const oldest = runs.entries().next();
   if (oldest.done) return;
-  const [runId, run] = oldest.value;
-  runs.delete(runId);
+  const [token, run] = oldest.value;
+  removeRun(token, run);
   run.diag.warn('LangChain: pending tool limit reached, releasing oldest run');
   try {
     // Eviction is not an observed completion, so do not record a duration.
@@ -80,7 +87,7 @@ function evictOldestRun() {
   }
 }
 
-/** Register on the manager already copied by the SDK, not user collections. */
+/** Register on an invocation's copied manager, not user collections. */
 export function addToolHandler(
   configured: CallbackManager,
   handler: BaseCallbackHandler
@@ -89,7 +96,8 @@ export function addToolHandler(
   for (const callback of configured.handlers) {
     if (handlers.has(callback)) configured.removeHandler(callback);
   }
-  configured.addHandler(handler, true);
+  // An uninstrumented child must not complete its parent's invocation.
+  configured.addHandler(handler, false);
   return configured;
 }
 
@@ -116,15 +124,12 @@ export function createToolCallbacks(
   telemetry: () => ToolTelemetry | undefined,
   getDiag: () => DiagLogger
 ): CallbackHandlerMethods {
-  const end = (
-    runId: string,
-    output?: unknown,
-    failure?: { error: unknown }
-  ) => {
-    const run = runs.get(runId);
+  const token = Symbol();
+  const end = (output?: unknown, failure?: { error: unknown }) => {
+    const run = runs.get(token);
     if (!run) return;
     const { diag } = run;
-    runs.delete(runId);
+    removeRun(token, run);
     const endTime = hrTime();
     try {
       if (failure) {
@@ -225,9 +230,11 @@ export function createToolCallbacks(
           if (arguments_ !== undefined)
             attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = arguments_;
         }
-        const parent = parentRunId
-          ? (runs.get(parentRunId)?.context ?? active)
-          : active;
+        const parentToken = parentRunId
+          ? runTokens.get(parentRunId)
+          : undefined;
+        const parent =
+          (parentToken ? runs.get(parentToken)?.context : undefined) ?? active;
         const startTime = hrTime();
         const span = current.tracer.startSpan(
           name
@@ -236,7 +243,8 @@ export function createToolCallbacks(
           { kind: SpanKind.INTERNAL, attributes, startTime },
           parent
         );
-        runs.set(runId, {
+        runs.set(token, {
+          runId,
           duration: current.duration,
           capture: current.capture,
           diag,
@@ -246,16 +254,17 @@ export function createToolCallbacks(
           callId: toolCallId,
           context: trace.setSpan(parent, span),
         });
+        runTokens.set(runId, token);
         evictOldestRun();
       } catch {
         diag.warn('LangChain: could not start tool telemetry');
       }
     },
-    handleToolEnd(output: unknown, runId) {
-      end(runId, output);
+    handleToolEnd(output: unknown) {
+      end(output);
     },
-    handleToolError(error: unknown, runId) {
-      end(runId, undefined, { error });
+    handleToolError(error: unknown) {
+      end(undefined, { error });
     },
   };
 }

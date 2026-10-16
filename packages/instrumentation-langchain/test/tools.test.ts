@@ -399,7 +399,7 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(getTestSpans()[3].parentSpanContext, undefined);
   });
 
-  it('caps pending runs at 1000 and ignores late completion after eviction', async function () {
+  it('caps pending runs at 1000 and ignores late completion after an evicted ID is reused', async function () {
     this.timeout(15000);
     const warn = sinon.spy();
     diag.setLogger(
@@ -427,6 +427,9 @@ describe('LangChain donated tool callbacks', () => {
         results.push(
           operation.invoke(`private-input-${index}`, {
             runName: `pending-${index}`,
+            runId: `00000000-0000-4000-8000-${String(
+              index === 1002 ? 0 : index
+            ).padStart(12, '0')}`,
           })
         );
         await started;
@@ -478,6 +481,111 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(warn.callCount, 3);
   });
 
+  for (const ending of ['end', 'error'] as const) {
+    it(`ignores late ${ending} callbacks after eviction with a reused callback manager and run ID`, async function () {
+      this.timeout(15000);
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const callbacks = CallbackManager.configure();
+      assert.ok(callbacks);
+      const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
+        [];
+      const serialized = echo().toJSON();
+      const start = async (runId: string) => {
+        const run = await callbacks.handleToolStart(serialized, runId, runId);
+        pending.push(run);
+        return run;
+      };
+      try {
+        const evicted = await start('reused');
+        for (let index = 0; index < 1000; index++) {
+          await start(`pending-${index}`);
+        }
+        const replacement = await start('reused');
+        assert.equal(getTestSpans().length, 2);
+        assert.deepEqual(await points(), []);
+
+        if (ending === 'end') await evicted.handleToolEnd('stale-result');
+        else await evicted.handleToolError(new TypeError('stale-error'));
+        assert.equal(getTestSpans().length, 2);
+        assert.deepEqual(await points(), []);
+
+        await replacement.handleToolEnd('current-result');
+        const span = getTestSpans()[2];
+        assert.equal(span.status.code, SpanStatusCode.UNSET);
+        assert.equal(span.attributes['error.type'], undefined);
+        assert.equal(
+          span.attributes['gen_ai.tool.call.result'],
+          '{"output":"current-result"}'
+        );
+        assert.equal((await points())[0].value.count, 1);
+        await replacement.handleToolEnd('duplicate-result');
+        assert.equal(getTestSpans().length, 3);
+        assert.equal((await points())[0].value.count, 1);
+      } finally {
+        await Promise.all(pending.map(run => run.handleToolEnd('cleanup')));
+      }
+      assert.equal(getTestSpans().length, 1002);
+      assert.equal((await points())[0].value.count, 1000);
+    });
+  }
+
+  for (const first of ['older', 'newer'] as const) {
+    it(`keeps overlapping runs with the same ID independent when the ${first} run finishes first`, async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const callbacks = CallbackManager.configure();
+      assert.ok(callbacks);
+      const serialized = echo().toJSON();
+      const older = await callbacks.handleToolStart(
+        serialized,
+        'older-input',
+        'reused'
+      );
+      const newer = await callbacks.handleToolStart(
+        serialized,
+        'newer-input',
+        'reused'
+      );
+      try {
+        const failOlder = () =>
+          older.handleToolError(new TypeError('older-error'));
+        const finishNewer = () => newer.handleToolEnd('newer-result');
+        await (first === 'older' ? failOlder() : finishNewer());
+        assert.equal(getTestSpans().length, 1);
+        await (first === 'older' ? finishNewer() : failOlder());
+        const spans = getTestSpans();
+        assert.equal(spans.length, 2);
+        const failed = spans.find(
+          span => span.attributes['error.type'] === 'TypeError'
+        )!;
+        assert.equal(failed.status.code, SpanStatusCode.ERROR);
+        assert.equal(
+          failed.attributes['gen_ai.tool.call.arguments'],
+          '{"input":"older-input"}'
+        );
+        const succeeded = spans.find(span => span !== failed)!;
+        assert.equal(succeeded.status.code, SpanStatusCode.UNSET);
+        assert.equal(
+          succeeded.attributes['gen_ai.tool.call.arguments'],
+          '{"input":"newer-input"}'
+        );
+        assert.equal(
+          succeeded.attributes['gen_ai.tool.call.result'],
+          '{"output":"newer-result"}'
+        );
+        assert.equal(
+          (await points()).reduce(
+            (count, point) => count + point.value.count,
+            0
+          ),
+          2
+        );
+      } finally {
+        await older.handleToolEnd('cleanup');
+        await newer.handleToolEnd('cleanup');
+      }
+    });
+  }
+
   for (const capture of ['none', 'span_only'] as const) {
     it(`preserves SDK failures and records only content-free errors (capture=${capture})`, async () => {
       instrumentation.setConfig({ captureMessageContent: capture });
@@ -505,6 +613,54 @@ describe('LangChain donated tool callbacks', () => {
       assert.equal((await points())[0].attributes['error.type'], 'TypeError');
     });
   }
+
+  it('keeps the newer parent lookup when an older run with the same ID completes', async () => {
+    const callbacks = CallbackManager.configure();
+    assert.ok(callbacks);
+    const serialized = echo().toJSON();
+    const older = await callbacks.handleToolStart(serialized, '', 'reused');
+    const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+    try {
+      await older.handleToolEnd('older');
+      const child = await newer
+        .getChild()
+        .handleToolStart(serialized, '', 'child');
+      await child.handleToolEnd('child');
+      await newer.handleToolEnd('newer');
+      const spans = getTestSpans();
+      assert.equal(spans.length, 3);
+      assert.equal(
+        spans[1].parentSpanContext?.spanId,
+        spans[2].spanContext().spanId
+      );
+    } finally {
+      await older.handleToolEnd('cleanup');
+      await newer.handleToolEnd('cleanup');
+    }
+  });
+
+  it('does not pass an in-flight parent token to a child started while disabled', async () => {
+    const runId = '00000000-0000-4000-8000-000000000001';
+    const outer = new DynamicTool({
+      name: 'outer',
+      description: '',
+      func: async (input, runManager) => {
+        assert.ok(runManager);
+        instrumentation.disable();
+        await echo().invoke(input, {
+          callbacks: runManager.getChild(),
+          runId,
+        });
+        assert.equal(getTestSpans().length, 0);
+        assert.deepEqual(await points(), []);
+        return input;
+      },
+    });
+    assert.equal(await outer.invoke('input', { runId }), 'input');
+    assert.equal(getTestSpans().length, 1);
+    assert.equal(getTestSpans()[0].name, 'execute_tool outer');
+    assert.equal((await points())[0].value.count, 1);
+  });
 
   it('keeps in-flight callbacks on their original provider and capture mode', async () => {
     instrumentation.setConfig({ captureMessageContent: 'span_only' });

@@ -275,8 +275,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         `${MODULE_NAME}/dist/callbacks/manager.${extension}`,
         (module: { CallbackManager: typeof CallbackManager }) =>
           this._patchToolCallbacks(module.CallbackManager),
-        (module: { CallbackManager: typeof CallbackManager }) =>
-          this._unpatchMethod(module.CallbackManager, '_configureSync')
+        (module: { CallbackManager: typeof CallbackManager }) => {
+          this._unpatchMethod(module.CallbackManager, '_configureSync');
+          this._unpatchMethod(
+            module.CallbackManager.prototype,
+            'handleToolStart'
+          );
+        }
       ),
     ]);
     return [
@@ -331,35 +336,17 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _patchToolCallbacks(manager: typeof CallbackManager) {
-    this._patchMethod(manager, '_configureSync', (owners, restore) => {
-      const currentOwner = () =>
-        Array.from(owners)
-          .reverse()
-          .find(instance => instance.isEnabled());
-      const handler = manager.fromHandlers(
-        createToolCallbacks(
-          () => {
-            const owner = currentOwner();
-            return owner
-              ? {
-                  tracer: owner.tracer,
-                  duration: owner._toolDuration,
-                  capture:
-                    owner.getConfig().captureMessageContent === 'span_only',
-                }
-              : undefined;
-          },
-          () => currentOwner()?._diag ?? diag
-        )
-      ).handlers[0];
-      handler.name = 'opentelemetry_langchain_tools';
-      handler.awaitHandlers = true;
-      return original =>
+    this._patchMethod(
+      manager,
+      '_configureSync',
+      (owners, restore) => original =>
         function (
           this: typeof CallbackManager,
           ...args: Parameters<typeof original>
         ) {
-          const owner = currentOwner();
+          const owner = Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
           if (!owner) {
             restore();
             return original.apply(this, args);
@@ -367,14 +354,63 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           const result = original.apply(this, args);
           try {
             // Undefined means no SDK callbacks were configured, not an opt-out.
-            // A fresh manager adds only our handler, not LangSmith tracing.
-            return addToolHandler(result ?? new manager(), handler);
+            // Keep tool callbacks active without enabling LangSmith tracing.
+            return result ?? new manager();
           } catch {
             owner._diag.warn('LangChain: could not register tool callbacks');
             return result;
           }
-        };
-    });
+        }
+    );
+    this._patchMethod(
+      manager.prototype,
+      'handleToolStart',
+      (owners, restore) => {
+        const currentOwner = () =>
+          Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+        return original =>
+          function (
+            this: CallbackManager,
+            ...args: Parameters<typeof original>
+          ) {
+            const owner = currentOwner();
+            if (!owner) {
+              restore();
+              return original.apply(this, args);
+            }
+            let invocation = this;
+            try {
+              const handler = manager.fromHandlers(
+                createToolCallbacks(
+                  () => {
+                    const selected = currentOwner();
+                    return selected
+                      ? {
+                          tracer: selected.tracer,
+                          duration: selected._toolDuration,
+                          capture:
+                            selected.getConfig().captureMessageContent ===
+                            'span_only',
+                        }
+                      : undefined;
+                  },
+                  () => currentOwner()?._diag ?? diag
+                )
+              ).handlers[0];
+              handler.name = 'opentelemetry_langchain_tools';
+              handler.awaitHandlers = true;
+              // The SDK run manager retains this invocation's handler, even
+              // when the caller reuses its callback manager or run ID.
+              invocation = addToolHandler(this.copy(), handler);
+            } catch {
+              owner._diag.warn('LangChain: could not register tool callbacks');
+            }
+            return original.apply(invocation, args);
+          };
+      }
+    );
   }
 
   private _trackRunnableFactories(module: typeof Runnables) {
@@ -510,7 +546,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _unpatchMethod(
     target: object,
-    method: 'invoke' | 'batch' | '_configureSync'
+    method: 'invoke' | 'batch' | '_configureSync' | 'handleToolStart'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
