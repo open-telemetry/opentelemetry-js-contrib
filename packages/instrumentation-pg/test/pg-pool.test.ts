@@ -27,6 +27,7 @@ import {
 import * as assert from 'assert';
 import * as pg from 'pg';
 import * as pgPool from 'pg-pool';
+import stringify from 'safe-stable-stringify';
 import { AttributeNames } from '../src/enums/AttributeNames';
 import { TimedEvent } from './types';
 import {
@@ -417,6 +418,146 @@ describe('pg-pool', () => {
 
       // Reset config for subsequent tests
       create({});
+    });
+
+    describe('when specifying a connectionHook configuration', () => {
+      const dataAttributeName = 'pg_connection_data';
+      const connectionData = stringify({
+        connection: {
+          database: CONFIG.database,
+          port: CONFIG.port,
+          host: CONFIG.host,
+          user: CONFIG.user,
+        },
+      });
+      let newPool: pgPool<pg.Client>;
+
+      beforeEach(() => {
+        // The pool gets shared between tests. We need to create a separate
+        // one so that each test also opens a new client connection.
+        newPool = new pgPool(CONFIG);
+      });
+
+      afterEach(async () => {
+        await newPool.end();
+        // Reset config for subsequent tests
+        create({});
+      });
+
+      describe('AND valid connectionHook', () => {
+        beforeEach(() => {
+          create({
+            connectionHook: (span, connectionInfo) => {
+              span.setAttribute(dataAttributeName, stringify(connectionInfo));
+            },
+          });
+        });
+
+        it('should attach connection hook data to pool and client connect spans for connect returning a Promise', async () => {
+          const client = await newPool.connect();
+          client.release();
+
+          const spans = memoryExporter.getFinishedSpans();
+          const poolConnectSpan = spans.find(s => s.name === 'pg-pool.connect');
+          const clientConnectSpan = spans.find(s => s.name === 'pg.connect');
+          assert.ok(poolConnectSpan, 'Expected a pg-pool.connect span');
+          assert.ok(clientConnectSpan, 'Expected a pg.connect span');
+          assert.strictEqual(
+            poolConnectSpan.attributes[dataAttributeName],
+            connectionData
+          );
+          assert.strictEqual(
+            clientConnectSpan.attributes[dataAttributeName],
+            connectionData
+          );
+        });
+
+        it('should read connection hook data from a connection string in pool options', async () => {
+          await newPool.end();
+          newPool = new pgPool({
+            connectionString: `postgresql://${CONFIG.user}:${CONFIG.password}@${CONFIG.host}:${CONFIG.port}/${CONFIG.database}`,
+          });
+
+          const client = await newPool.connect();
+          client.release();
+
+          const poolConnectSpan = memoryExporter
+            .getFinishedSpans()
+            .find(s => s.name === 'pg-pool.connect');
+          assert.ok(poolConnectSpan, 'Expected a pg-pool.connect span');
+          assert.strictEqual(
+            poolConnectSpan.attributes[dataAttributeName],
+            connectionData
+          );
+        });
+
+        it('should attach connection hook data to the pool connect span for connect with callback', done => {
+          const res = newPool.connect((err, client, release) => {
+            if (err) {
+              return done(err);
+            }
+            if (!release) {
+              throw new Error('Did not receive release function');
+            }
+            release();
+            const poolConnectSpan = memoryExporter
+              .getFinishedSpans()
+              .find(s => s.name === 'pg-pool.connect');
+            assert.ok(poolConnectSpan, 'Expected a pg-pool.connect span');
+            assert.strictEqual(
+              poolConnectSpan.attributes[dataAttributeName],
+              connectionData
+            );
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+      });
+
+      describe('AND invalid connectionHook', () => {
+        beforeEach(() => {
+          create({
+            connectionHook: (_span, _connectionInfo) => {
+              throw 'some kind of failure!';
+            },
+          });
+        });
+
+        it('should not do any harm when throwing an exception', async () => {
+          const client = await newPool.connect();
+          try {
+            await client.query('SELECT NOW()');
+          } finally {
+            client.release();
+          }
+
+          const spans = memoryExporter.getFinishedSpans();
+          const poolConnectSpan = spans.find(s => s.name === 'pg-pool.connect');
+          assert.ok(poolConnectSpan, 'Expected a pg-pool.connect span');
+          assert.strictEqual(poolConnectSpan.status.code, SpanStatusCode.UNSET);
+          assert.strictEqual(
+            poolConnectSpan.attributes[dataAttributeName],
+            undefined
+          );
+        });
+      });
+
+      describe('AND ignoreConnectSpans=true', () => {
+        it('should not call the connection hook', async () => {
+          let hookCalls = 0;
+          create({
+            ignoreConnectSpans: true,
+            connectionHook: () => {
+              hookCalls++;
+            },
+          });
+
+          const client = await newPool.connect();
+          client.release();
+
+          assert.strictEqual(hookCalls, 0);
+        });
+      });
     });
   });
 

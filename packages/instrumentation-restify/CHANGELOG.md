@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.67.0...instrumentation-restify-v0.68.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+* **instrumentation-restify:** add support for restify v12 ([#3782](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3782)) ([b3282e4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b3282e4143711bfbe6a77c988b241b286dfccf89))
+
 ## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-restify-v0.66.0...instrumentation-restify-v0.67.0) (2026-08-31)
 
 

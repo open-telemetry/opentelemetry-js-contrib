@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.33.0...winston-transport-v0.34.0) (2026-10-15)
+
+
+### Features
+
+* **winston:** support native OpenTelemetry log levels and custom severity mapping ([#3345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3345)) ([#3740](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3740)) ([6089306](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/60893066c1b6326bdd22384f150f7e742b839d15))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.32.0...winston-transport-v0.33.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/winston-transport-v0.31.0...winston-transport-v0.32.0) (2026-08-31)
 
 
