@@ -55,6 +55,7 @@
   "packages/instrumentation-nestjs-core": "0.70.0",
   "packages/instrumentation-net": "0.67.0",
   "packages/instrumentation-openai": "0.21.0",
+  "packages/instrumentation-openai-agents": "0.1.0",
   "packages/instrumentation-oracledb": "0.48.0",
   "packages/instrumentation-pg": "0.76.0",
   "packages/instrumentation-pino": "0.69.0",
