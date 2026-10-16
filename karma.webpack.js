@@ -22,10 +22,35 @@ module.exports = {
       util: require.resolve('util/'),
       // Polyfill Node's process for browser bundles
       process: require.resolve('process/browser'),
+      // Only node-only platform code uses `path`; browser code paths never reach
+      // it. If that breaks: `TypeError: path.normalize is not a function`.
+      path: false,
     },
   },
   devtool: 'eval-source-map',
   plugins: [
+    // Karma+webpack bundles each package's src/ directly, so package.json#browser
+    // doesn't apply; rewrite platform(/index) requests to /browser/ equivalents.
+    new webpack.NormalModuleReplacementPlugin(
+      /(^|[\\/])platform([\\/]index(\.ts)?)?$/,
+      function (resource) {
+        if (/[\\/]browser([\\/]|$)/.test(resource.request)) return;
+        const issuer = resource.contextInfo && resource.contextInfo.issuer;
+        if (!issuer || /[\\/]node_modules[\\/]/.test(issuer)) return;
+        const original = resource.request;
+        const rewritten = original.replace(
+          /platform([\\/]index(?:\.ts)?)?$/,
+          'platform/browser$1'
+        );
+        if (rewritten === original) {
+          throw new Error(
+            `karma platform-swap: outer regex matched ${JSON.stringify(original)} ` +
+              'but inner replace did not rewrite it. The two regexes have drifted out of sync.'
+          );
+        }
+        resource.request = rewritten;
+      }
+    ),
     new webpack.ProvidePlugin({
       // Make a global `process` variable that points to the `process` package,
       // because the `util` package expects there to be a global variable named `process`.

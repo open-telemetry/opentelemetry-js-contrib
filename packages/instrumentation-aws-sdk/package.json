@@ -14,13 +14,25 @@
   "bugs": {
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts",
-    "doc"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -31,16 +43,16 @@
     "directory": "packages/instrumentation-aws-sdk"
   },
   "scripts": {
-    "clean": "rimraf build/*",
+    "clean": "rimraf dist build",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-aws-sdk",
-    "compile": "tsc -p .",
+    "compile": "tsdown",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
-    "watch": "tsc -w"
+    "watch": "tsdown --watch --no-clean"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.3.0"
