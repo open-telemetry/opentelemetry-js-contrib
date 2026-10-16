@@ -382,11 +382,21 @@ describe('DocumentLoad Instrumentation', () => {
 
       setTimeout(() => {
         const fetchSpan = exporter.getFinishedSpans()[0] as ReadableSpan;
-
         const eventNames = fetchSpan.events.map(event => event.name);
 
+        assert.strictEqual(fetchSpan.name, 'documentFetch');
         assert.notInclude(eventNames, PTN.SECURE_CONNECTION_START);
-
+        assert.includeMembers(eventNames, [
+          PTN.FETCH_START,
+          PTN.DOMAIN_LOOKUP_START,
+          PTN.CONNECT_START,
+          PTN.REQUEST_START,
+          PTN.RESPONSE_END,
+        ]);
+        const spanStart = hrTimeToNanoseconds(fetchSpan.startTime);
+        fetchSpan.events.forEach(event => {
+          assert.isAtLeast(hrTimeToNanoseconds(event.time), spanStart);
+        });
         done();
       });
     });

@@ -109,6 +109,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
               fetchSpan,
               entries,
               this.getConfig().ignoreNetworkEvents,
+              // navigation startTime is always 0, so the default keeps zero timings that precede fetchStart
               true
             );
             this._addCustomAttributesOnSpan(
