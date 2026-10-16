@@ -35,6 +35,9 @@ export interface GlobalErrorsInstrumentationConfig
   applyCustomAttributes?: (error: Error | string) => Attributes;
 }
 
+/**
+ * @deprecated Use ErrorsInstrumentation from @opentelemetry/browser-instrumentation/experimental/errors.
+ */
 export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsInstrumentationConfig> {
   declare private _onErrorHandler?: (
     event: ErrorEvent | PromiseRejectionEvent
