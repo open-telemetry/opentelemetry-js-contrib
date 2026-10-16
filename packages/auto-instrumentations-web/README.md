@@ -3,6 +3,13 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-url]
 
+> [!NOTE]
+> `@opentelemetry/auto-instrumentations-web` is deprecated.
+> Vendors and users should plan moving to [instrumentations being developed in the opentelemetry-browser repository](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#readme),
+> available as individual subpath exports of `@opentelemetry/browser-instrumentation`.
+> Note that while these instrumentations cover the same browser technologies, the emitted telemetry differs significantly.
+> This is not a drop-in replacement for `getWebAutoInstrumentations`, see the replacement package's [usage example](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#usage).
+
 ## Installation
 
 ```bash
