@@ -6,7 +6,7 @@
 
 ### Reverts
 
-* "feat(instrumentation-winston): add @opentelemetry/winston-transport as peer dependency ([#3771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3771)) ([#3776](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3776))" ([#3842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3842)) ([5bdb354](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5bdb35488bd6321f1dc8e34f381252f4174610a3))
+* revert "feat(instrumentation-winston): add @opentelemetry/winston-transport as peer dependency ([#3771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3771)) ([#3776](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3776))" ([#3842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3842)) ([5bdb354](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5bdb35488bd6321f1dc8e34f381252f4174610a3))
 
 ## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.67.0...instrumentation-winston-v0.68.0) (2026-10-15)
 
