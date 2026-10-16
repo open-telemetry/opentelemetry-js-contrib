@@ -18,14 +18,11 @@ const loggerProvider = new LoggerProvider({
   resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'navigation-example-app',
   }),
+  processors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
+    new SimpleLogRecordProcessor({ exporter: new OTLPLogExporter() }),
+  ],
 });
-
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
-);
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(new OTLPLogExporter())
-);
 logs.setGlobalLoggerProvider(loggerProvider);
 
 registerInstrumentations({

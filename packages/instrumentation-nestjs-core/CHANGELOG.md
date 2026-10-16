@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.69.0...instrumentation-nestjs-core-v0.70.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-nestjs-core:** "feat(instrumentation-nestjs-core): add support for NestJS 12 ([#3733](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3733))" (#3836)
+
+### Reverts
+
+* **instrumentation-nestjs-core:** "feat(instrumentation-nestjs-core): add support for NestJS 12 ([#3733](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3733))" ([#3836](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3836)) ([086158f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/086158fc91d6380aeea3f5b0f3207a685a4667d6))
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.68.0...instrumentation-nestjs-core-v0.69.0) (2026-10-06)
 
 
