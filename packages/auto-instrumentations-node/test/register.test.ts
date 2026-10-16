@@ -10,7 +10,11 @@ import { Readable } from 'stream';
 
 const execFilePromise = promisify(execFile);
 
-function runWithRegister(path: string): PromiseWithChild<{
+function runWithRegister(
+  path: string,
+  timeout = 5000,
+  extraEnv: NodeJS.ProcessEnv = {}
+): PromiseWithChild<{
   stdout: string;
   stderr: string;
 }> {
@@ -19,20 +23,25 @@ function runWithRegister(path: string): PromiseWithChild<{
     ['--require', '../build/src/register.js', path],
     {
       cwd: __dirname,
-      timeout: 5000,
+      timeout,
       killSignal: 'SIGKILL', // SIGTERM is not sufficient to terminate some hangs
-      env: Object.assign({}, process.env, {
-        OTEL_TRACES_EXPORTER: 'console',
-        OTEL_METRICS_EXPORTER: 'none',
-        OTEL_LOG_LEVEL: 'debug',
-        // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
-        // node v18.17.0, v20.3.0 and later results in ANSI color escapes
-        // in the ConsoleSpanExporter output that is checked below.
-        FORCE_COLOR: '0',
-        // Cloud resource detectors can take a few seconds, resulting in hitting
-        // a test timeout.
-        OTEL_NODE_RESOURCE_DETECTORS: 'none',
-      }),
+      env: Object.assign(
+        {},
+        process.env,
+        {
+          OTEL_TRACES_EXPORTER: 'console',
+          OTEL_METRICS_EXPORTER: 'none',
+          OTEL_LOG_LEVEL: 'debug',
+          // nx (used by lerna run) defaults `FORCE_COLOR=true`, which in
+          // node v18.17.0, v20.3.0 and later results in ANSI color escapes
+          // in the ConsoleSpanExporter output that is checked below.
+          FORCE_COLOR: '0',
+          // Cloud resource detectors can take a few seconds, resulting in hitting
+          // a test timeout.
+          OTEL_NODE_RESOURCE_DETECTORS: 'none',
+        },
+        extraEnv
+      ),
     }
   );
 }
@@ -95,6 +104,8 @@ describe('Register', function () {
     await waitForString(child.stdout!, 'Finished request');
     child.kill('SIGTERM');
     const { stdout } = await runPromise;
+    assert.strictEqual(child.exitCode, 0);
+    assert.strictEqual(child.signalCode, null);
 
     assert.ok(
       stdout.includes('OpenTelemetry SDK terminated'),
@@ -103,5 +114,44 @@ describe('Register', function () {
 
     // Check a span has been generated for the GET request done in app.js
     assert.ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
+  });
+
+  it('exits after shutting down the NodeSDK when SIGTERM has no app listener', async () => {
+    const runPromise = runWithRegister('./test-app/app-server.js', 4000, {
+      OTEL_NODE_REGISTER_TEST_NO_SIGTERM_HANDLER: 'true',
+      OTEL_TRACES_EXPORTER: 'none',
+    });
+    const { child } = runPromise;
+    let stdout = '';
+    child.stdout!.on('data', chunk => {
+      stdout += chunk.toString();
+    });
+
+    await waitForString(child.stdout!, 'Finished request');
+    assert.ok(child.kill('SIGTERM'));
+    const result = await runPromise.then(
+      () => ({ code: child.exitCode, signal: child.signalCode }),
+      error => {
+        const execError = error as {
+          code?: number;
+          signal?: NodeJS.Signals | null;
+        };
+        return {
+          code: execError.code ?? null,
+          signal: execError.signal ?? null,
+        };
+      }
+    );
+
+    assert.strictEqual(
+      result.code,
+      128 + 15,
+      `Unexpected process termination: ${JSON.stringify(result)}\n${stdout}`
+    );
+    assert.strictEqual(result.signal, null);
+    assert.ok(
+      stdout.includes('OpenTelemetry SDK terminated'),
+      `Process exited before the SDK shutdown completed, got stdout:\n${stdout}`
+    );
   });
 });
