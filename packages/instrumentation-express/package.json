@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-express",
-  "version": "0.71.0",
+  "version": "0.71.1",
   "description": "OpenTelemetry instrumentation for `express` http web application framework",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
