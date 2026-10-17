@@ -11,6 +11,7 @@ import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
+  METRIC_V8JS_MEMORY_HEAP_MAX,
   METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
@@ -47,10 +48,22 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
         unit: 'By',
       }
     );
+    const heapMax = meter.createObservableUpDownCounter(
+      METRIC_V8JS_MEMORY_HEAP_MAX,
+      {
+        description: 'Maximum size the V8 heap can grow to.',
+        unit: 'By',
+      }
+    );
 
     meter.addBatchObservableCallback(
       observableResult => {
         if (!this._config.enabled) return;
+
+        observableResult.observe(
+          heapMax,
+          v8.getHeapStatistics().heap_size_limit
+        );
 
         const data = this.scrape();
         if (data === undefined) return;
@@ -82,7 +95,13 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           );
         }
       },
-      [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
+      [
+        heapMax,
+        heapSpaceSize,
+        heapSpaceUsed,
+        heapSpaceAvailable,
+        heapSpacePhysical,
+      ]
     );
   }
 

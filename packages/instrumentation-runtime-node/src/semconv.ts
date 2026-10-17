@@ -147,6 +147,15 @@ export const METRIC_V8JS_GC_DURATION = 'v8js.gc.duration' as const;
 export const METRIC_V8JS_MEMORY_HEAP_LIMIT = 'v8js.memory.heap.limit' as const;
 
 /**
+ * Maximum size the V8 heap can grow to.
+ *
+ * @note The value can be retrieved from value `heap_size_limit` of [`v8.getHeapStatistics()`](https://nodejs.org/api/v8.html#v8getheapstatistics). It is controlled by `--max-old-space-size` or V8 defaults.
+ *
+ * @experimental This metric is not yet defined in `@opentelemetry/semantic-conventions` and is subject to breaking changes.
+ */
+export const METRIC_V8JS_MEMORY_HEAP_MAX = 'v8js.memory.heap.max' as const;
+
+/**
  * Heap space available size.
  *
  * @note Value can be retrieved from value `space_available_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
