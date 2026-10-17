@@ -24,6 +24,10 @@ pkg:contrib-test-utils:
   - changed-files:
       - any-glob-to-any-file:
           - packages/contrib-test-utils/**
+pkg:genai-util:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/genai-util/**
 pkg:host-metrics:
   - changed-files:
       - any-glob-to-any-file:
@@ -135,6 +139,11 @@ pkg:instrumentation-langchain:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-langchain/**
+          - packages/contrib-test-utils/**
+pkg:instrumentation-llama-index:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-llama-index/**
           - packages/contrib-test-utils/**
 pkg:instrumentation-long-task:
   - changed-files:
