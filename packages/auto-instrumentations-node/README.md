@@ -126,9 +126,9 @@ Notes:
 
 ### Flush telemetry on crash
 
-By default, the SDK only shuts down on `SIGTERM` or normal `beforeExit`. Uncaught exceptions, unhandled promise rejections, and `SIGINT` bypass `beforeExit`, so any spans/metrics/logs still buffered in a Batch processor are dropped — this is the typical "logs visible in stdout but never reach the collector" symptom.
+By default, the SDK is shut down when the process receives `SIGTERM` or exits normally (`beforeExit`). An uncaught exception terminates the process without either, so telemetry still buffered in a batch processor is dropped. This includes the exception log emitted by `@opentelemetry/instrumentation-runtime-node` when `captureUncaughtException` is enabled.
 
-Set `OTEL_NODE_FLUSH_ON_CRASH=true` to register handlers for `uncaughtException`, `unhandledRejection`, and `SIGINT` that race `sdk.shutdown()` against a bounded timeout before exiting. The original error is written to `stderr` first, and the process still exits non-zero so the crash semantics are preserved.
+Set `OTEL_NODE_FLUSH_ON_CRASH=true` to shut down the SDK before the process exits on an uncaught exception. Shutdown waits at most `OTEL_NODE_FLUSH_ON_CRASH_TIMEOUT_MS` (default `5000`). The error is printed to `stderr` and the process exits with status `1`, as it would without the register script. With Node's default `--unhandled-rejections=throw` mode, unhandled promise rejections are raised as uncaught exceptions and are covered too.
 
 ```shell
 export OTEL_NODE_FLUSH_ON_CRASH=true
@@ -136,7 +136,7 @@ export OTEL_NODE_FLUSH_ON_CRASH=true
 export OTEL_NODE_FLUSH_ON_CRASH_TIMEOUT_MS=3000
 ```
 
-Caveat: registering an `uncaughtException` handler suppresses Node's default behavior of terminating on unhandled errors. The handler always calls `process.exit(1)` after flushing to keep that semantics — but if you also register your own `uncaughtException` handler that swallows errors, the process can be left in an undefined state. Don't enable this flag unless you're comfortable with that trade-off.
+If the application registers its own `uncaughtException` listener, the register script does nothing on an uncaught exception and leaves the application in control.
 
 ## Usage: Instrumentation Initialization
 

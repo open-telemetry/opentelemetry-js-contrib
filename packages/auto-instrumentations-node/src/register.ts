@@ -56,12 +56,11 @@ process.on('SIGTERM', shutdown);
 // Gracefully shutdown SDK if Node.js is exiting normally
 process.once('beforeExit', shutdown);
 
-// Opt-in: flush telemetry before the process dies on a crash signal.
-// `beforeExit` does not fire on uncaught exceptions, unhandled rejections,
-// or process.exit(), so batched logs/spans/metrics in the BatchProcessor
-// queues are lost. When OTEL_NODE_FLUSH_ON_CRASH=true, register handlers
-// that race sdk.shutdown() against a bounded timeout, then re-raise the
-// original termination semantics by exiting non-zero.
+// Opt-in: shut down the SDK before the process dies from an uncaught
+// exception. `beforeExit` does not fire in that case, so telemetry still
+// buffered in batch processors is dropped. Unhandled promise rejections are
+// covered too: with Node's default `--unhandled-rejections=throw` they are
+// raised as uncaught exceptions.
 const flushOnCrash =
   getStringFromEnv('OTEL_NODE_FLUSH_ON_CRASH')?.toLowerCase() === 'true';
 
@@ -71,44 +70,29 @@ if (flushOnCrash) {
   const timeoutMs =
     Number.isFinite(parsedTimeout) && parsedTimeout > 0 ? parsedTimeout : 5000;
 
-  const shutdownWithTimeout = (): Promise<void> => {
-    return Promise.race([
-      shutdown(),
-      new Promise<void>(resolve => {
-        // unref() so a wedged exporter doesn't keep the process alive
-        // longer than the user's timeout budget.
-        setTimeout(resolve, timeoutMs).unref();
-      }),
-    ]);
-  };
-
   let crashing = false;
-  const handleFatal = async (
-    label: 'uncaughtException' | 'unhandledRejection',
-    err: unknown
-  ): Promise<void> => {
-    // Re-entrancy guard: if shutdown itself throws, don't recurse forever.
+  const onUncaughtException = async (error: Error): Promise<void> => {
+    // Another listener means the application handles uncaught exceptions
+    // itself and decides whether the process keeps running.
+    if (process.listenerCount('uncaughtException') > 1) {
+      return;
+    }
+    // An exception thrown while shutting down: give up on flushing.
     if (crashing) {
       process.exit(1);
     }
     crashing = true;
+    // Registering this listener suppresses Node's default error output and
+    // exit, so reproduce both: print the error, then exit with status 1.
+    process.exitCode = 1;
+    console.error(error);
 
-    // Preserve the original crash output — users still need to see the error.
-    // eslint-disable-next-line no-console
-    console.error(`[otel] flushing telemetry before exit (${label}):`, err);
-
-    await shutdownWithTimeout();
+    await Promise.race([
+      shutdown(),
+      new Promise<void>(resolve => setTimeout(resolve, timeoutMs)),
+    ]);
     process.exit(1);
   };
 
-  process.on('uncaughtException', err => {
-    void handleFatal('uncaughtException', err);
-  });
-  process.on('unhandledRejection', reason => {
-    void handleFatal('unhandledRejection', reason);
-  });
-  process.on('SIGINT', async () => {
-    await shutdownWithTimeout();
-    process.exit(130); // 128 + SIGINT(2)
-  });
+  process.on('uncaughtException', onUncaughtException);
 }
