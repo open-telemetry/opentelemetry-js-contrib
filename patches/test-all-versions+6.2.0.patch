@@ -1,0 +1,174 @@
+diff --git a/node_modules/test-all-versions/index.js b/node_modules/test-all-versions/index.js
+index 7e35bc2..01c392d 100755
+--- a/node_modules/test-all-versions/index.js
++++ b/node_modules/test-all-versions/index.js
+@@ -20,9 +20,12 @@ const install = require('spawn-npm-install')
+ const differ = require('ansi-diff-stream')
+ const cliSpinners = require('cli-spinners')
+ const which = require('which')
++const path = require('path')
++const npa = require('npm-package-arg')
+ const argv = require('minimist')(process.argv.slice(2))
+ 
+ const npm5plus = semver.gte(execSync('npm -v', { encoding: 'utf-8' }).trim(), '5.0.0')
++const npm9plus = semver.gte(execSync('npm -v', { encoding: 'utf-8' }).trim(), '9.0.0')
+ 
+ // in case npm ever gets installed as a dependency, make sure we always access
+ // it from it's original location
+@@ -34,14 +37,15 @@ if (argv.help || argv.h) {
+   console.log('Usage: tav [options] [<module> <semver> <command> [args...]]')
+   console.log()
+   console.log('Options:')
+-  console.log('  -h, --help        show this help')
+-  console.log('  -v, --version     show the tav version and exit')
+-  console.log('  -q, --quiet       don\'t output stdout from tests unless an error occurs')
+-  console.log('  --registry=<url>  use a custom registry (e.g. --registry=https://registry.example.com)')
+-  console.log('  --verbose         output a lot of information while running')
+-  console.log('  --dry-run         do a dry-run (no tests will be executed)')
+-  console.log('  --compat          output just module version compatibility - no errors')
+-  console.log('  --ci              only run on CI servers when using .tav.yml file')
++  console.log('  -h, --help                        show this help')
++  console.log('  -v, --version                     show the tav version and exit')
++  console.log('  -q, --quiet                       don\'t output stdout from tests unless an error occurs')
++  console.log('  --registry=<url>                  use a custom registry (e.g. --registry=https://registry.example.com)')
++  console.log('  --verbose                         output a lot of information while running')
++  console.log('  --dry-run                         do a dry-run (no tests will be executed)')
++  console.log('  --compat                          output just module version compatibility - no errors')
++  console.log('  --ci                              only run on CI servers when using .tav.yml file')
++  console.log('  --experimental-isolated-installs  install packages into a separate directory and then link them')
+   process.exit()
+ } else if (argv.version || argv.v) {
+   console.log('tav ' + require('./package.json').version)
+@@ -270,6 +274,11 @@ function execute (cmd, name, opts, cb) {
+ function ensurePackages (packages, registry, cb) {
+   log('-- required packages %j', packages)
+ 
++  if (npm9plus && true /*argv['experimental-isolated-installs']*/) {
++    attemptIsolatedInstall(packages, registry, cb)
++    return
++  }
++
+   if (npm5plus) {
+     // npm5 will uninstall everything that's not in the local package.json and
+     // not in the install string. This might make tests fail. So if we detect
+@@ -347,6 +356,120 @@ function attemptInstall (packages, registry, cb, attempts = 1) {
+   install(packages, opts, done).on('error', done)
+ }
+ 
++const walkUp = function * (p) {
++  for (p = path.resolve(p); p;) {
++    yield p
++    const parent = path.dirname(p)
++    if (parent === p) {
++      break
++    } else {
++      p = parent
++    }
++  }
++}
++function fileExistsSync (path) {
++  try {
++    const stats = fs.statSync(path)
++    return stats.isFile()
++  } catch (_err) {
++    return false
++  }
++}
++function findPackagePathSync (cwd) {
++  for (const p of walkUp(cwd)) {
++    const packagePath = path.resolve(p, 'package.json')
++    const hasPackageJson = fileExistsSync(packagePath)
++    if (hasPackageJson) {
++      return packagePath
++    }
++  }
++  return null
++}
++function attemptIsolatedInstall (packages, registry, cb, attempts = 1) {
++  log('-- installing %j', packages)
++  if (argv['dry-run']) {
++    // Dry-run.
++    setImmediate(cb, 0)
++    return
++  }
++
++  const packagePath = path.dirname(findPackagePathSync(process.cwd()))
++  const installPath = path.join(
++    packagePath,
++    'node_modules',
++    '.tav',
++    packages[packages.length - 1]
++  )
++  /** @type {(err?: Error) => void} */
++  const done = once(function (err) {
++    clearTimeout(timeout)
++
++    if (!err) {
++      for (const pkg of packages) {
++        const parsed = npa(pkg)
++
++        if (parsed.scope) {
++          // ensure the deep scope path exists
++          fs.mkdirSync(path.join(packagePath, 'node_modules', parsed.scope), {
++            recursive: true
++          })
++        }
++
++        fs.rmSync(path.join(packagePath, 'node_modules', parsed.name), {
++          recursive: true,
++          force: true
++        })
++        fs.symlinkSync(
++          path.join(installPath, 'node_modules', parsed.name),
++          path.join(packagePath, 'node_modules', parsed.name)
++        )
++      }
++      return cb()
++    }
++
++    if (++attempts <= 10) {
++      fs.rmSync(installPath, {
++        recursive: true,
++        force: true
++      })
++      console.warn('-- error installing %j (%s) - retrying (%d/10)...', packages, err.message, attempts)
++      attemptIsolatedInstall(packages, registry, cb, attempts)
++    } else {
++      console.error('-- error installing %j - aborting!', packages)
++      console.error(err.stack)
++      cb(err.code || 1)
++    }
++  })
++
++  // create a synthetic package directory
++  fs.mkdirSync(installPath, { recursive: true })
++  fs.writeFileSync(
++    path.join(installPath, 'package.json'),
++    JSON.stringify({ name: 'tav' }, null, 2)
++  )
++
++  // make sure legacy_peer_deps option is unset
++  process.env.npm_config_legacy_peer_deps = undefined
++
++  const opts = {
++    command: npmCmd,
++    'install-strategy': 'linked',
++    cwd: installPath
++  }
++  if (argv.verbose) opts.stdio = 'inherit'
++  if (argv.registry || registry) opts.registry = argv.registry || registry
++
++  // npm on Travis have a tendency to hang every once in a while
++  // (https://twitter.com/wa7son/status/1006859826549477378). We'll use a
++  // timeout to abort and retry the install in case it hasn't finished within 2
++  // minutes.
++  const timeout = setTimeout(function () {
++    done(new Error('npm install took too long'))
++  }, 2 * 60 * 1000)
++
++  install(packages, opts, done).on('error', done)
++}
++
+ function getSpinner (str) {
+   const frames = cliSpinners.dots.frames
+   let i = 0
