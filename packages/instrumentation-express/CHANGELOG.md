@@ -1,6 +1,27 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.71.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.71.0...instrumentation-express-v0.71.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **instrumentation-express:** don't leave an ignored request handler's path in http.route ([#3802](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3802)) ([a5ee809](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a5ee809657265a0e30518084173ddb3f0ebeaa4d))
+
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.70.0...instrumentation-express-v0.71.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.69.0 to ^0.70.0
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-express-v0.69.0...instrumentation-express-v0.70.0) (2026-08-31)
 
 

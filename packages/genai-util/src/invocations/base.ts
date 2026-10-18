@@ -24,6 +24,7 @@ import {
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import type { TelemetryHandler } from '../handler';
 import { getErrorType } from '../utils';
+import { InvocationError } from '../types';
 
 /**
  * Options shared by all GenAI invocations.
@@ -57,10 +58,11 @@ export interface BaseInvocationOptions {
    * low cardinality: never put message content, user identifiers, request identifiers, or
    * other unbounded values here.
    *
-   * Concrete invocations seed this with their operation's semantic convention dimensions,
-   * spreading the caller's own metric attributes last so that explicit caller values win.
-   * Dimensions that are only known later (e.g. `gen_ai.response.model`) are added to
-   * `_metricAttributes` as they arrive.
+   * These override the semantic convention dimensions that the concrete invocation
+   * reports (see {@link BaseInvocation._getSemconvMetricAttributes()}): when both define
+   * the same key, the value given here (or later via
+   * {@link BaseInvocation.setMetricAttribute}) wins. The only exception is `error.type`,
+   * which always reflects the resolved failure.
    */
   metricAttributes?: Attributes;
   /**
@@ -106,7 +108,17 @@ export interface BaseInvocationOptions {
  *   invocation.stop();
  *   return response;
  * } catch (error) {
- *   invocation.fail(error);
+ *   if (error instanceof OpenAI.APIError) {
+ *     invocation.fail({
+ *       errorType: error.type,
+ *       statusDescription: getLowCardinalityStatus(error),
+ *     });
+ *   } else {
+ *     // Non-API errors (e.g., local networking bugs or code typos)
+ *     invocation.fail({
+ *       exception: error instanceof Error ? error : undefined,
+ *     });
+ *   }
  *   throw error;
  * }
  * ```
@@ -256,9 +268,13 @@ export abstract class BaseInvocation {
    * invocation's telemetry are logged through the handler's diagnostic logger and are
    * never thrown at the caller, so calling this from a `catch` block cannot replace the
    * application's own error; the span is ended either way.
+   *
+   * @param error Error details describing the failure (an `InvocationError` with
+   *   predictable, non-sensitive status description and/or error type).
+   * @param endTime End time of the invocation, or `undefined` to use the current time.
    */
-  public fail(error: unknown, endTime?: TimeInput): void {
-    this._end(endTime, { error });
+  public fail(error: InvocationError, endTime?: TimeInput): void {
+    this._end(endTime, error);
   }
 
   /**
@@ -270,11 +286,9 @@ export abstract class BaseInvocation {
    * {@link fail} from its own error path.
    *
    * @param endTime End time of the invocation, or `undefined` to use the current time.
-   * @param failure The failure to record, or `undefined` for a successful invocation.
-   *   Boxed because `error` is `unknown` and may legitimately be `undefined`, so a bare
-   *   optional parameter could not distinguish success from a failure with no value.
+   * @param error The error to record, or `undefined` for a successful invocation.
    */
-  private _end(endTime?: TimeInput, failure?: { error: unknown }): void {
+  private _end(endTime?: TimeInput, error?: InvocationError): void {
     if (this._isEnded) {
       return;
     }
@@ -286,33 +300,32 @@ export abstract class BaseInvocation {
     const endHr = endTime != null ? timeInputToHrTime(endTime) : hrTime();
     this._isEnded = true;
 
+    let errorType: string | undefined;
     try {
       const durationSec = hrTimeToSeconds(
         hrTimeDuration(this._startTime, endHr)
       );
-      let errorType: string | undefined;
 
-      if (failure) {
+      if (error) {
         // The span's error state is recorded before the subclass hooks run so that a hook
         // that throws cannot leave a failed invocation reported as a span without an error
         // status.
-        errorType = getErrorType(failure.error);
-        const errorMessage =
-          failure.error instanceof Error
-            ? failure.error.message
-            : typeof failure.error === 'string'
-              ? failure.error
-              : String(failure.error);
+        const statusDescription: string | undefined = error.statusDescription;
+        errorType = error.errorType ?? getErrorType(error.exception);
 
         this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
-        this._span.setStatus({
-          code: SpanStatusCode.ERROR,
-          message: errorMessage,
-        });
+        this._span.setStatus(
+          statusDescription !== undefined
+            ? {
+                code: SpanStatusCode.ERROR,
+                message: statusDescription,
+              }
+            : { code: SpanStatusCode.ERROR }
+        );
       }
 
+      this._onInvocationEnd(endHr, errorType);
       this._recordMetrics(durationSec, errorType);
-
       this._emitContentEvent(endHr);
     } catch (err) {
       // Reached when a subclass hook or error introspection throws. Telemetry is
@@ -327,17 +340,57 @@ export abstract class BaseInvocation {
   }
 
   /**
+   * Return the semantic convention metric dimensions for this invocation.
+   *
+   * Called every time metrics are recorded, so dimensions that only become known after
+   * the invocation starts (e.g. `gen_ai.response.model`) should be read from the
+   * invocation's current state rather than cached. Do NOT include `error.type`: it is
+   * added by {@link _getMetricAttributes}.
+   *
+   * Subclasses should override this instead of merging {@link _metricAttributes}
+   * themselves, so that caller-supplied metric attributes consistently take precedence.
+   */
+  protected abstract _getSemconvMetricAttributes(): Attributes;
+
+  /**
+   * Build the attributes shared by the metrics recorded for this invocation.
+   *
+   * Precedence, from lowest to highest:
+   * 1. semantic convention dimensions from {@link _getSemconvMetricAttributes};
+   * 2. caller-supplied metric attributes ({@link _metricAttributes}), so an explicit
+   *    caller value overrides the value the invocation would otherwise report;
+   * 3. `error.type`, when `errorType` is given, so that it always reflects the resolved
+   *    failure.
+   *
+   * A new object is returned on every call, so callers may add per-measurement
+   * dimensions to it without affecting other measurements or {@link _metricAttributes}.
+   *
+   * @param errorType The resolved `error.type` value, or `undefined` to omit it (on
+   *   success, or for metrics that do not define the `error.type` dimension).
+   */
+  protected _getMetricAttributes(errorType?: string): Attributes {
+    const attributes: Attributes = {
+      ...this._getSemconvMetricAttributes(),
+      ...this._metricAttributes,
+    };
+    if (errorType) {
+      attributes[ATTR_ERROR_TYPE] = errorType;
+    }
+    return attributes;
+  }
+
+  /**
    * Emit the operation-specific metrics for this invocation on stop/fail.
    *
    * Every concrete invocation must implement this: each GenAI operation has at least an
    * operation duration metric defined by the semantic conventions. A subclass with
    * nothing to record must say so explicitly with an empty body.
    *
-   * Record with {@link _metricAttributes}, spreading it when a measurement needs an extra
-   * dimension of its own (e.g. `{ ...this._metricAttributes, [ATTR_GEN_AI_TOKEN_TYPE]:
-   * 'input' }`) so that the dimension does not leak into the invocation's other
-   * measurements. Pass `this._context` to the recording call so that exemplars are
-   * associated with the invocation span.
+   * Record with the attributes returned by {@link _getMetricAttributes}, passing
+   * `errorType` for metrics that define the `error.type` dimension. Add any
+   * per-measurement dimension (e.g. `gen_ai.token.modality`) to a copy so that it does not
+   * leak into the invocation's other measurements. Pass `this._context` to the
+   * recording call so that exemplars are associated with the invocation span.
    *
    * @param durationSec Duration of the invocation in seconds.
    * @param errorType The resolved `error.type` value, or `undefined` if the invocation
@@ -362,4 +415,9 @@ export abstract class BaseInvocation {
    * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
+
+  /**
+   * Hook for subclasses to emit invocation specific telemetry.
+   */
+  protected _onInvocationEnd(_endTime: HrTime, _errorType?: string): void {}
 }
