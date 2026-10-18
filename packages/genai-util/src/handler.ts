@@ -1,0 +1,496 @@
+/*
+ * Copyright The OpenTelemetry Authors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import {
+  diag,
+  metrics,
+  trace,
+  type Attributes,
+  type Context,
+  type Counter,
+  type DiagLogger,
+  type Histogram,
+  type Meter,
+  type MeterProvider,
+  type Tracer,
+  type TracerProvider,
+} from '@opentelemetry/api';
+import {
+  getContentCaptureMode,
+  parseContentCaptureMode,
+} from './environment-variables';
+import { EmbeddingInvocation } from './invocations/embedding';
+import { InferenceInvocation } from './invocations/inference';
+import { ToolInvocation } from './invocations/tool';
+import {
+  createCacheReadInputTokenUsageCounter,
+  createCacheWriteInputTokenUsageCounter,
+  createDurationHistogram,
+  createExecuteToolDurationHistogram,
+  createInputTokenOperationHistogram,
+  createInputTokenUsageCounter,
+  createOutputTokenOperationHistogram,
+  createOutputTokenUsageCounter,
+  createReasoningOutputTokenUsageCounter,
+  createTimePerOutputChunkHistogram,
+  createTimeToFirstChunkHistogram,
+} from './metrics';
+import {
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_SCHEMA_URL,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+} from './semconv';
+import type {
+  ContentCaptureMode,
+  EmbeddingInvocationOptions,
+  GenAIInstrumentationConfig,
+  InferenceInvocationOptions,
+  TokenCountsByModality,
+  TokenModality,
+  TokenUsageDetails,
+  ToolInvocationOptions,
+} from './types';
+import { inferMissingModalityCounts } from './utils';
+
+/**
+ * Options for initializing a TelemetryHandler.
+ *
+ * @experimental This interface is experimental and subject to change.
+ */
+export interface TelemetryHandlerOptions {
+  /**
+   * Name of the instrumentation emitting the telemetry, used as the OpenTelemetry
+   * instrumentation scope name (e.g. `'@opentelemetry/instrumentation-openai'`).
+   *
+   * Required so that telemetry is always attributable to the instrumentation that
+   * produced it rather than to this shared utility package.
+   */
+  instrumentationName: string;
+  /**
+   * Version of the instrumentation emitting the telemetry, used as the OpenTelemetry
+   * instrumentation scope version.
+   */
+  instrumentationVersion: string;
+  /** TracerProvider instance used to create the tracer. If not provided, standard global tracer provider is used. */
+  tracerProvider?: TracerProvider;
+  /** MeterProvider instance used to create the meter. If not provided, standard global meter provider is used. */
+  meterProvider?: MeterProvider;
+  /** Diagnostic logger. */
+  diag?: DiagLogger;
+  /** Instrumentation configuration. */
+  config?: GenAIInstrumentationConfig;
+  /** Explicit content capture mode override. */
+  contentCaptureMode?: ContentCaptureMode;
+}
+
+const ALL_TOKEN_MODALITIES: readonly TokenModality[] = [
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+];
+
+/**
+ * Central lifecycle handler and façade for GenAI telemetry collection.
+ *
+ * @experimental This class is experimental and subject to change.
+ */
+export class TelemetryHandler {
+  private _tracer: Tracer;
+  private _meter: Meter;
+  private _diag: DiagLogger;
+  private _contentCaptureMode: ContentCaptureMode;
+  private readonly _operationDurationHistogram: Histogram;
+  private readonly _inputTokenOperationHistogram: Histogram;
+  private readonly _outputTokenOperationHistogram: Histogram;
+  private readonly _inputTokenUsageCounter: Counter;
+  private readonly _outputTokenUsageCounter: Counter;
+  private readonly _cacheReadInputTokenUsageCounter: Counter;
+  private readonly _cacheWriteInputTokenUsageCounter: Counter;
+  private readonly _reasoningOutputTokenUsageCounter: Counter;
+  private readonly _timeToFirstChunkHistogram: Histogram;
+  private readonly _timePerOutputChunkHistogram: Histogram;
+  private readonly _executeToolDurationHistogram: Histogram;
+
+  constructor(options: TelemetryHandlerOptions) {
+    const { instrumentationName, instrumentationVersion } = options;
+
+    const tracerProvider = options.tracerProvider ?? trace.getTracerProvider();
+    this._tracer = tracerProvider.getTracer(
+      instrumentationName,
+      instrumentationVersion,
+      { schemaUrl: GEN_AI_SCHEMA_URL }
+    );
+
+    const meterProvider = options.meterProvider ?? metrics.getMeterProvider();
+    this._meter = meterProvider.getMeter(
+      instrumentationName,
+      instrumentationVersion,
+      { schemaUrl: GEN_AI_SCHEMA_URL }
+    );
+
+    this._diag = options.diag ?? diag;
+
+    if (options.contentCaptureMode) {
+      this._contentCaptureMode = parseContentCaptureMode(
+        options.contentCaptureMode
+      );
+    } else {
+      this._contentCaptureMode = getContentCaptureMode(
+        options.config?.captureMessageContent
+      );
+    }
+
+    this._operationDurationHistogram = createDurationHistogram(this._meter);
+    this._inputTokenOperationHistogram = createInputTokenOperationHistogram(
+      this._meter
+    );
+    this._outputTokenOperationHistogram = createOutputTokenOperationHistogram(
+      this._meter
+    );
+    this._inputTokenUsageCounter = createInputTokenUsageCounter(this._meter);
+    this._outputTokenUsageCounter = createOutputTokenUsageCounter(this._meter);
+    this._cacheReadInputTokenUsageCounter =
+      createCacheReadInputTokenUsageCounter(this._meter);
+    this._cacheWriteInputTokenUsageCounter =
+      createCacheWriteInputTokenUsageCounter(this._meter);
+    this._reasoningOutputTokenUsageCounter =
+      createReasoningOutputTokenUsageCounter(this._meter);
+    this._timeToFirstChunkHistogram = createTimeToFirstChunkHistogram(
+      this._meter
+    );
+    this._timePerOutputChunkHistogram = createTimePerOutputChunkHistogram(
+      this._meter
+    );
+    this._executeToolDurationHistogram = createExecuteToolDurationHistogram(
+      this._meter
+    );
+  }
+
+  /**
+   * Return the Tracer instance.
+   */
+  public getTracer(): Tracer {
+    return this._tracer;
+  }
+
+  /**
+   * Return the Meter instance.
+   */
+  public getMeter(): Meter {
+    return this._meter;
+  }
+
+  /**
+   * Return the DiagLogger instance.
+   */
+  public getDiag(): DiagLogger {
+    return this._diag;
+  }
+
+  /**
+   * Return the active ContentCaptureMode.
+   */
+  public getContentCaptureMode(): ContentCaptureMode {
+    return this._contentCaptureMode;
+  }
+
+  /**
+   * Return whether message content (prompts, completions, tool calls) should be captured.
+   */
+  public shouldCaptureContent(): boolean {
+    return this._contentCaptureMode !== 'none';
+  }
+
+  /**
+   * Start an LLM / GenAI inference invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startInference(
+    options: InferenceInvocationOptions
+  ): InferenceInvocation {
+    return new InferenceInvocation(this, options);
+  }
+
+  /**
+   * Start an Embedding invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startEmbedding(
+    options: EmbeddingInvocationOptions
+  ): EmbeddingInvocation {
+    return new EmbeddingInvocation(this, options);
+  }
+
+  /**
+   * Start a Tool execution invocation.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startTool(options: ToolInvocationOptions): ToolInvocation {
+    return new ToolInvocation(this, options);
+  }
+
+  /**
+   * Record operation duration metric.
+   *
+   * @param durationSeconds - The duration of the operation, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Pass the invocation's context explicitly, since the
+   *   measurement is often recorded after the invocation's context is no
+   *   longer active. Defaults to the currently active context.
+   */
+  public recordOperationDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._operationDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record the token usage metrics of a single inference operation.
+   *
+   * Call once per operation with its final usage. Input and output tokens are
+   * recorded on both metric families defined by the semantic conventions: once
+   * on the `gen_ai.client.inference.operation.*` histograms, and on the
+   * `gen_ai.client.inference.usage.*` counters split by `gen_ai.token.modality`
+   * Negative counts are skipped.
+   *
+   * Intended to be called by {@link InferenceInvocation} when the invocation
+   * ends. This method does not infer missing token counts: if usage is missing
+   * or undefined, a count of 0 is recorded for the input / output histograms,
+   * and for the usage counters with `gen_ai.token.modality` set to `'unknown'`.
+   *
+   * @param usage - Token counts of the operation, or undefined if not reported.
+   * @param attributes - Metric attributes. Token metrics do not define
+   *   `error.type`, so leave it out even when the operation failed.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
+   */
+  public recordInferenceTokenUsage(
+    usage: TokenUsageDetails | undefined,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    // Record operation-level input tokens on histogram, defaulting missing counts to 0.
+    const inputTokens = usage?.inputTokenCount ?? 0;
+    if (inputTokens >= 0) {
+      this._inputTokenOperationHistogram.record(
+        inputTokens,
+        attributes,
+        context
+      );
+    }
+
+    // Record operation-level output tokens on histogram, defaulting missing counts to 0.
+    const outputTokens = usage?.outputTokenCount ?? 0;
+    if (outputTokens >= 0) {
+      this._outputTokenOperationHistogram.record(
+        outputTokens,
+        attributes,
+        context
+      );
+    }
+
+    const effectiveUsage = usage
+      ? inferMissingModalityCounts(usage)
+      : undefined;
+    const modalityUsage = effectiveUsage?.tokenUsageByModality;
+
+    this.recordTokenUsageCounter(
+      this._inputTokenUsageCounter,
+      modalityUsage?.inputTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._outputTokenUsageCounter,
+      modalityUsage?.outputTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._cacheReadInputTokenUsageCounter,
+      modalityUsage?.cacheReadTokens,
+      attributes,
+      context
+    );
+    this.recordTokenUsageCounter(
+      this._cacheWriteInputTokenUsageCounter,
+      modalityUsage?.cacheWriteTokens,
+      attributes,
+      context
+    );
+
+    // Special handling for reasoning tokens since they are always recorded
+    // with modality 'text'
+    this.recordReasoningTokenUsage(
+      effectiveUsage?.reasoningTokenCount,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record time to first chunk metric for streaming responses.
+   *
+   * @param durationSeconds - Time elapsed until the first chunk, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
+   */
+  public recordTimeToFirstChunk(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._timeToFirstChunkHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record time per output chunk metric for streaming responses.
+   *
+   * Called once per output chunk after the first, with the time elapsed since the
+   * previous chunk.
+   *
+   * @param durationSeconds - Time elapsed between this chunk and the previous one, in
+   *   seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Defaults to the currently active context.
+   */
+  public recordTimePerOutputChunk(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._timePerOutputChunkHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record the `gen_ai.execute_tool.duration` metric for a single tool execution.
+   *
+   * @param durationSeconds - The duration of the tool execution, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the
+   *   measurement. Pass the invocation's context explicitly, since the
+   *   measurement is often recorded after the invocation's context is no
+   *   longer active. Defaults to the currently active context.
+   */
+  public recordExecuteToolDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._executeToolDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record a token usage counter across reported modalities.
+   *
+   * If token counts are reported for specific modalities, each non-negative count
+   * is recorded under its modality. If no valid counts were reported for any modality
+   * (or if the breakdown is missing/unreported), 0 is recorded under the 'unknown' modality.
+   */
+  private recordTokenUsageCounter(
+    tokenCounter: Counter,
+    counts?: TokenCountsByModality,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    let hasRecorded = false;
+    if (counts) {
+      for (const modality of ALL_TOKEN_MODALITIES) {
+        const count = counts[modality];
+        if (isValidTokenCount(count)) {
+          tokenCounter.add(
+            count,
+            {
+              ...attributes,
+              [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+            },
+            context
+          );
+          hasRecorded = true;
+        }
+      }
+    }
+
+    if (!hasRecorded) {
+      tokenCounter.add(
+        0,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+        },
+        context
+      );
+    }
+  }
+
+  /**
+   * Record reasoning output token usage.
+   *
+   * Reasoning tokens are always inferred as tokens with modality 'text' when reported.
+   * When no reasoning usage was reported (or response was not received), 0 is recorded
+   * under the 'unknown' modality.
+   */
+  private recordReasoningTokenUsage(
+    count?: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    if (isValidTokenCount(count)) {
+      this._reasoningOutputTokenUsageCounter.add(
+        count,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+        },
+        context
+      );
+    } else {
+      this._reasoningOutputTokenUsageCounter.add(
+        0,
+        {
+          ...attributes,
+          [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+        },
+        context
+      );
+    }
+  }
+}
+
+/**
+ * Return whether `value` is a valid token count to record: non-negative counts
+ * (including explicit zero) are valid, while undefined and negative counts are skipped.
+ */
+function isValidTokenCount(value: number | undefined): value is number {
+  return value !== undefined && value >= 0;
+}

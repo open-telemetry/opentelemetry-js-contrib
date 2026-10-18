@@ -75,7 +75,6 @@
     "packages/instrumentation-long-task": {},
     "packages/instrumentation-user-interaction": {},
     "packages/instrumentation-web-exception": {},
-    "packages/plugin-react-load": {},
     "packages/propagator-instana": {},
     "packages/propagator-ot-trace": {},
     "packages/propagator-aws-xray": {},

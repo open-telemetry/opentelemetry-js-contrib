@@ -172,8 +172,6 @@ components:
     - martinkuba
     - pkanal
     - wolfgangcodes
-  packages/plugin-react-load:
-    - martinkuba
   packages/instrumentation-browser-navigation:
     - Abinet18
     - martinkuba
