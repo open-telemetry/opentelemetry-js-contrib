@@ -1245,21 +1245,41 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           });
         }
 
-        // Non-streaming.
-        apiPromise
-          .then(result => {
-            self._onResponsesCreateResult(
-              span,
-              startNow,
-              commonAttrs,
-              result as Response,
-              config,
-              ctx
-            );
-          })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
+        // Non-streaming. Observe the APIPromise without starting its parser, as
+        // for chat completions: a `.then()` here parsed the body, and
+        // `responses.parse()` then read it a second time.
+        const onResult = (result: Response) => {
+          self._onResponsesCreateResult(
+            span,
+            startNow,
+            commonAttrs,
+            result,
+            config,
+            ctx
           );
+        };
+        const onError = self._createAPIPromiseRejectionHandler(
+          startNow,
+          span,
+          commonAttrs
+        );
+        const onResponse = () => {
+          try {
+            self._genaiClientOperationDuration.record(
+              (performance.now() - startNow) / 1000,
+              commonAttrs
+            );
+          } finally {
+            span.end();
+          }
+        };
+
+        self._observeAPIPromise(
+          apiPromise as unknown as OpenAIAPIPromiseInternals<Response>,
+          onResult,
+          onError,
+          onResponse
+        );
 
         return apiPromise;
       };

@@ -3915,6 +3915,44 @@ describe('OpenAI', function () {
       instrumentation.disable();
     });
 
+    const itResponsesParse =
+      typeof client.responses.parse === 'function' ? it : it.skip;
+
+    itResponsesParse(
+      'parses structured outputs without consuming the response twice',
+      async () => {
+        const response = await client.responses.parse({
+          model,
+          input,
+          text: {
+            format: {
+              type: 'json_schema',
+              name: 'ocean_response',
+              strict: true,
+              schema: {
+                type: 'object',
+                properties: {
+                  ocean: { type: 'string' },
+                },
+                required: ['ocean'],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+
+        expect(response.output_parsed).toEqual({ ocean: 'Atlantic Ocean' });
+        await waitForTestSpans(1);
+        const spans = getTestSpans();
+        expect(spans).toHaveLength(1);
+        expect(spans[0].attributes).toMatchObject({
+          [ATTR_GEN_AI_RESPONSE_ID]: 'resp_structured_output',
+          [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
+          [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 7,
+        });
+      }
+    );
+
     it('adds genai conventions', async () => {
       const response = await client.responses.create({
         model,
