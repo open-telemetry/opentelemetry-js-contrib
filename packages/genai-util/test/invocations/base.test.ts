@@ -26,10 +26,17 @@ import {
   BaseInvocation,
   type BaseInvocationOptions,
 } from '../../src/invocations/base';
+import type { InvocationError } from '../../src/types';
 import {
-  ATTR_GEN_AI_TOKEN_TYPE,
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
+  GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
 } from '../../src/semconv';
 import {
   createTestTelemetryContext,
@@ -86,11 +93,18 @@ describe('BaseInvocation', () => {
       metricAttributes: Attributes;
     }> = [];
     public emitContentEventCalls: Array<{ endTime?: HrTime }> = [];
+    public onInvocationEndCalls: Array<{
+      endTime: HrTime;
+      errorType?: string;
+    }> = [];
+    /** Order in which the completion hooks ran, for the ordering assertions below. */
+    public hookOrder: string[] = [];
 
     protected override _recordMetrics(
       durationSec: number,
       errorType?: string
     ): void {
+      this.hookOrder.push('_recordMetrics');
       // Snapshot the attributes as they stand when metrics are recorded.
       this.recordMetricsCalls.push({
         durationSec,
@@ -99,8 +113,22 @@ describe('BaseInvocation', () => {
       });
     }
 
+    protected override _getSemconvMetricAttributes(): Attributes {
+      this.hookOrder.push('_getSemconvMetricAttributes');
+      return {};
+    }
+
     protected override _emitContentEvent(endTime?: HrTime): void {
+      this.hookOrder.push('_emitContentEvent');
       this.emitContentEventCalls.push({ endTime });
+    }
+
+    protected override _onInvocationEnd(
+      endTime: HrTime,
+      errorType?: string
+    ): void {
+      this.hookOrder.push('_onInvocationEnd');
+      this.onInvocationEndCalls.push({ endTime, errorType });
     }
   }
 
@@ -136,6 +164,9 @@ describe('BaseInvocation', () => {
     // _emitContentEvent is optional and defaults to a no-op.
     class MinimalInvocation extends BaseInvocation {
       protected override _recordMetrics(): void {}
+      protected override _getSemconvMetricAttributes(): Attributes {
+        return {};
+      }
     }
 
     const inv = new MinimalInvocation('minimal-span', handler, {
@@ -179,10 +210,12 @@ describe('BaseInvocation', () => {
   it('should handle fail lifecycle with error and double fail protection', () => {
     const inv = new CustomInvocation('custom-fail-span', handler);
 
-    const testError = new Error('Test failure');
-    inv.fail(testError);
+    inv.fail({ statusDescription: 'Test failure', errorType: 'Error' });
     // Double fail should be a no-op
-    inv.fail(new Error('Second failure'));
+    inv.fail({
+      statusDescription: 'Failure Type #2',
+      errorType: 'Error',
+    });
 
     // Verify the extension points ran exactly once with error and duration
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
@@ -199,13 +232,14 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[0].status.message, 'Test failure');
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+    assert.strictEqual(spans[0].events.length, 0);
   });
 
-  it('should handle custom explicit endTime array and string errors', () => {
+  it('should handle custom explicit endTime array and errors without errorType', () => {
     const inv = new CustomInvocation('custom-endtime-span', handler);
 
     const customEndTime: HrTime = [1000, 500000000];
-    inv.fail('String error message', customEndTime);
+    inv.fail({ statusDescription: 'String error message' }, customEndTime);
 
     assert.strictEqual(inv.recordMetricsCalls.length, 1);
     assert.strictEqual(inv.recordMetricsCalls[0].errorType, '_OTHER');
@@ -217,6 +251,120 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[0].status.message, 'String error message');
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should support explicit errorType without statusDescription', () => {
+    const inv = new CustomInvocation('explicit-error-type-span', handler);
+
+    inv.fail({
+      errorType: 'rate_limit_exceeded',
+    });
+
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'rate_limit_exceeded'
+    );
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'rate_limit_exceeded'
+    );
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should support both explicit errorType and statusDescription', () => {
+    const inv = new CustomInvocation('explicit-both-span', handler);
+
+    inv.fail({
+      statusDescription: 'Rate limit hit',
+      errorType: 'rate_limit_exceeded',
+    });
+
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'rate_limit_exceeded'
+    );
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'rate_limit_exceeded'
+    );
+    assert.strictEqual(spans[0].status.message, 'Rate limit hit');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should derive errorType from exception in InvocationError when errorType is omitted', () => {
+    const inv = new CustomInvocation('exception-in-obj-span', handler);
+    inv.fail({ exception: new TypeError('Invalid parameter') });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'TypeError');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'TypeError');
+    assert.strictEqual(spans[0].events.length, 0);
+  });
+
+  it('should prioritize explicit errorType over exception in InvocationError', () => {
+    const inv = new CustomInvocation('error-type-precedence-span', handler);
+    inv.fail({
+      exception: new TypeError('Invalid parameter'),
+      errorType: 'custom_validation_error',
+    });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(
+      inv.recordMetricsCalls[0].errorType,
+      'custom_validation_error'
+    );
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_ERROR_TYPE],
+      'custom_validation_error'
+    );
+  });
+
+  it('should support exception with statusDescription in InvocationError', () => {
+    const inv = new CustomInvocation('exception-with-desc-span', handler);
+    inv.fail({
+      exception: new Error('Underlying message'),
+      statusDescription: 'Predictable error description',
+    });
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, 'Error');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(
+      spans[0].status.message,
+      'Predictable error description'
+    );
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'Error');
+  });
+
+  it('should fall back to _OTHER when InvocationError has neither errorType nor exception', () => {
+    const inv = new CustomInvocation('empty-err-span', handler);
+    inv.fail({});
+
+    assert.strictEqual(inv.recordMetricsCalls.length, 1);
+    assert.strictEqual(inv.recordMetricsCalls[0].errorType, '_OTHER');
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].status.message, undefined);
     assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], '_OTHER');
   });
 
@@ -273,6 +421,56 @@ describe('BaseInvocation', () => {
         hrTimeToMicroseconds(finishedSpan.endTime)
     );
     assert.ok(durationMs > 0, `Expected durationMs (${durationMs}) to be > 0`);
+  });
+
+  describe('_onInvocationEnd', () => {
+    it('should run before the metrics and content hooks', () => {
+      const inv = new CustomInvocation('hook-order-span', handler);
+
+      inv.stop();
+
+      // `_onInvocationEnd` writes span attributes, so it deliberately runs first: a
+      // throwing `_recordMetrics` must not be able to strip data off the span.
+      assert.deepStrictEqual(inv.hookOrder, [
+        '_onInvocationEnd',
+        '_recordMetrics',
+        '_emitContentEvent',
+      ]);
+    });
+
+    it('should receive the end time and no error type on stop', () => {
+      const endTime: HrTime = [1000, 500000000];
+      const inv = new CustomInvocation('hook-stop-span', handler);
+
+      inv.stop(endTime);
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+      assert.deepStrictEqual(inv.onInvocationEndCalls[0].endTime, endTime);
+      assert.strictEqual(inv.onInvocationEndCalls[0].errorType, undefined);
+    });
+
+    it('should receive the resolved error type on fail', () => {
+      const inv = new CustomInvocation('hook-fail-span', handler);
+
+      inv.fail({ statusDescription: 'boom', errorType: 'Error' });
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+      assert.strictEqual(inv.onInvocationEndCalls[0].errorType, 'Error');
+      // The same value the base class puts on the span, so subclasses never have to
+      // re-derive it.
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
+    });
+
+    it('should run exactly once even when the invocation is completed twice', () => {
+      const inv = new CustomInvocation('hook-once-span', handler);
+
+      inv.stop();
+      inv.stop();
+      inv.fail({ statusDescription: 'too late', errorType: 'Error' });
+
+      assert.strictEqual(inv.onInvocationEndCalls.length, 1);
+    });
   });
 
   describe('shouldCaptureContent', () => {
@@ -351,7 +549,7 @@ describe('BaseInvocation', () => {
       });
 
       inv.setMetricAttribute('added.later', 'value');
-      inv.fail(new Error('boom'));
+      inv.fail({ statusDescription: 'boom', errorType: 'Error' });
 
       assert.deepStrictEqual(callerAttributes, {
         'gen_ai.provider.name': 'openai',
@@ -363,7 +561,10 @@ describe('BaseInvocation', () => {
         metricAttributes: { 'gen_ai.provider.name': 'openai' },
       });
 
-      inv.fail(new Error('Test failure'));
+      inv.fail({
+        statusDescription: 'Test failure',
+        errorType: 'Error',
+      });
 
       // The conventions define `error.type` on some metrics only, so it must not be in
       // the shared bag: a subclass that spreads the bag into every measurement would
@@ -380,52 +581,77 @@ describe('BaseInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], 'Error');
     });
 
-    it('should let subclasses seed metric attributes and emit them on metrics', async () => {
+    it('should let caller metric attributes override the semantic convention dimensions of subclasses', async () => {
       class MetricRecordingInvocation extends BaseInvocation {
+        private _responseModel?: string;
+
         constructor(
           handlerArg: TelemetryHandler,
           options: Partial<BaseInvocationOptions> = {}
         ) {
           super('metric-recording-span', handlerArg, {
             kind: SpanKind.CLIENT,
-            metricAttributes: {
-              // The concrete invocation contributes its semantic convention dimensions;
-              // caller-supplied values are merged last so that they win.
-              'gen_ai.operation.name': 'chat',
-              'gen_ai.request.model': 'default-model',
-              ...options.metricAttributes,
-            },
+            metricAttributes: options.metricAttributes,
           });
         }
 
         public setResponseModel(model: string): void {
-          this._metricAttributes['gen_ai.response.model'] = model;
+          this._responseModel = model;
         }
 
-        protected override _recordMetrics(durationSec: number): void {
+        protected override _getSemconvMetricAttributes(): Attributes {
+          const attrs: Attributes = {
+            'gen_ai.operation.name': 'chat',
+            'gen_ai.request.model': 'default-model',
+          };
+          if (this._responseModel) {
+            attrs['gen_ai.response.model'] = this._responseModel;
+          }
+          return attrs;
+        }
+
+        protected override _recordMetrics(
+          durationSec: number,
+          errorType?: string
+        ): void {
+          const metricAttrs = this._getMetricAttributes(errorType);
           this._handler.recordOperationDuration(
             durationSec,
-            this._metricAttributes,
+            metricAttrs,
             this._context
           );
-          this._handler.recordTokenUsage(
-            { inputTokens: 10, outputTokens: 5 },
-            this._metricAttributes,
+          this._handler.recordInferenceTokenUsage(
+            {
+              inputTokenCount: 15,
+              outputTokenCount: 8,
+              tokenUsageByModality: {
+                inputTokens: { text: 10, image: 5 },
+                outputTokens: { text: 5, audio: 3 },
+              },
+            },
+            metricAttrs,
             this._context
           );
         }
       }
 
       const inv = new MetricRecordingInvocation(handler, {
-        metricAttributes: { 'gen_ai.request.model': 'gpt-4' },
+        metricAttributes: {
+          'gen_ai.request.model': 'gpt-4',
+          [ATTR_ERROR_TYPE]: 'caller-value',
+        },
       });
       inv.setResponseModel('gpt-4-0613');
-      inv.stop();
+      // Overrides a dimension the subclass only learns after the invocation starts.
+      inv.setMetricAttribute('gen_ai.response.model', 'gpt-4-normalized');
+      inv.fail({ statusDescription: 'boom', errorType: 'RangeError' });
 
       const expectedAttributes = {
         'gen_ai.operation.name': 'chat',
         'gen_ai.request.model': 'gpt-4',
-        'gen_ai.response.model': 'gpt-4-0613',
+        'gen_ai.response.model': 'gpt-4-normalized',
+        // `error.type` always reflects the resolved failure.
+        [ATTR_ERROR_TYPE]: 'RangeError',
       };
 
       const metrics = (
@@ -441,17 +667,38 @@ describe('BaseInvocation', () => {
         ...expectedAttributes,
       });
 
-      // The per-measurement token type must not leak back onto the other measurements.
-      const tokenUsage = metrics.find(
-        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_TOKEN_USAGE
-      );
-      assert.ok(tokenUsage);
+      // The per-measurement token modality must not leak back onto the other
+      // measurements, including the token histograms recorded after a counter.
+      const attributesOf = (name: string) =>
+        metrics
+          .find(m => m.descriptor.name === name)
+          ?.dataPoints.map(dp => dp.attributes);
+      for (const name of [
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+        METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+      ]) {
+        assert.deepStrictEqual(attributesOf(name), [expectedAttributes], name);
+      }
+      // order of array matters - it is deterministic
+      const withModality = (modality: string): Attributes => ({
+        ...expectedAttributes,
+        [ATTR_GEN_AI_TOKEN_MODALITY]: modality,
+      });
       assert.deepStrictEqual(
-        tokenUsage.dataPoints.map(dp => dp.attributes),
+        attributesOf(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS),
         [
-          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'input' },
-          { ...expectedAttributes, [ATTR_GEN_AI_TOKEN_TYPE]: 'output' },
-        ]
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT),
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE),
+        ],
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS
+      );
+      assert.deepStrictEqual(
+        attributesOf(METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS),
+        [
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_TEXT),
+          withModality(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO),
+        ],
+        METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS
       );
     });
   });
@@ -647,18 +894,23 @@ describe('BaseInvocation', () => {
     class HookFailureInvocation extends BaseInvocation {
       public static readonly METRICS_ERROR = new Error('metrics hook exploded');
       public static readonly CONTENT_ERROR = new Error('content hook exploded');
+      public static readonly INVOCATION_END_ERROR = new Error(
+        'invocation end hook exploded'
+      );
 
       public emitContentEventCalled = false;
+      public recordMetricsCalled = false;
 
       constructor(
         spanName: string,
         handlerArg: TelemetryHandler,
-        private readonly _failIn: 'metrics' | 'content'
+        private readonly _failIn: 'metrics' | 'content' | 'invocation-end'
       ) {
         super(spanName, handlerArg, { kind: SpanKind.CLIENT });
       }
 
       protected override _recordMetrics(): void {
+        this.recordMetricsCalled = true;
         if (this._failIn === 'metrics') {
           throw HookFailureInvocation.METRICS_ERROR;
         }
@@ -668,6 +920,16 @@ describe('BaseInvocation', () => {
         this.emitContentEventCalled = true;
         if (this._failIn === 'content') {
           throw HookFailureInvocation.CONTENT_ERROR;
+        }
+      }
+
+      protected override _getSemconvMetricAttributes(): Attributes {
+        return {};
+      }
+
+      protected override _onInvocationEnd(): void {
+        if (this._failIn === 'invocation-end') {
+          throw HookFailureInvocation.INVOCATION_END_ERROR;
         }
       }
     }
@@ -704,7 +966,12 @@ describe('BaseInvocation', () => {
         'metrics'
       );
 
-      assert.doesNotThrow(() => inv.fail(new RangeError('upstream failure')));
+      assert.doesNotThrow(() =>
+        inv.fail({
+          statusDescription: 'upstream failure',
+          errorType: 'RangeError',
+        })
+      );
 
       // The span's error state is recorded before the hooks run, so a hook that throws
       // cannot downgrade a failed invocation to a span without an error status.
@@ -737,6 +1004,55 @@ describe('BaseInvocation', () => {
       );
     });
 
+    it('should end the span and report the bug when _onInvocationEnd throws', () => {
+      const { logger, errors } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'invocation-end-throw-span',
+        createHandlerWithDiag(logger),
+        'invocation-end'
+      );
+
+      assert.doesNotThrow(() => inv.stop());
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].name, 'invocation-end-throw-span');
+      assert.strictEqual(inv.isEnded(), true);
+
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(
+        errors[0].args[0],
+        HookFailureInvocation.INVOCATION_END_ERROR
+      );
+
+      // The hook runs first, so the later hooks are skipped. Telemetry is best-effort:
+      // losing the metrics is acceptable, leaking an unfinished span is not.
+      assert.strictEqual(inv.recordMetricsCalled, false);
+      assert.strictEqual(inv.emitContentEventCalled, false);
+    });
+
+    it('should keep the span error status when _onInvocationEnd throws on fail', () => {
+      const { logger } = createRecordingDiag();
+      const inv = new HookFailureInvocation(
+        'invocation-end-throw-fail-span',
+        createHandlerWithDiag(logger),
+        'invocation-end'
+      );
+
+      assert.doesNotThrow(() =>
+        inv.fail({
+          statusDescription: 'upstream failure',
+          errorType: 'RangeError',
+        })
+      );
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+      assert.strictEqual(spans[0].status.message, 'upstream failure');
+      assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'RangeError');
+    });
+
     it('should end the span when the thrown value cannot be stringified', () => {
       const { logger, errors } = createRecordingDiag();
       const inv = new CustomInvocation(
@@ -744,9 +1060,13 @@ describe('BaseInvocation', () => {
         createHandlerWithDiag(logger)
       );
 
-      // `fail` accepts `unknown`, and a null-prototype object cannot be converted to a
-      // string at all, so deriving the status description throws.
-      const hostileError = Object.create(null);
+      // If an InvocationError throws during property access, the failure is caught
+      // and logged to diagnostics, while still ending the span.
+      const hostileError = {
+        get statusDescription(): string {
+          throw new Error('Hostile getter error');
+        },
+      } as unknown as InvocationError;
       assert.doesNotThrow(() => inv.fail(hostileError));
 
       // The span is still ended and the caller is still shielded, but the failure is

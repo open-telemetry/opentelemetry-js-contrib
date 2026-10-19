@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// @ts-expect-error cjs still works
+// @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 import { isHashChange, defaultSanitizeUrl } from '../src/utils';
 

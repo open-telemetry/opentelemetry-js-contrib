@@ -13,11 +13,16 @@
  * 2. Ensure the API is generic across GenAI libraries, not tailored to a single SDK.
  * 3. Remove the temporary "packages/genai-util" entry override from the root `knip.jsonc` file.
  *
+ * Invocations are created through the {@link TelemetryHandler} factory methods
+ * (`startInference`, `startEmbedding`, `startTool`), so export the invocation classes with
+ * `export type` when consumers need to name the returned type: that keeps the type usable
+ * in annotations without exposing a constructor that would bypass the handler.
+ *
  * @example
  * ```typescript
  * // In this file: index.ts
  * export { TelemetryHandler } from './handler';
- * export { InferenceInvocation } from './invocations';
+ * export type { InferenceInvocation } from './invocations/inference';
  * export type { InferenceInvocationOptions } from './types';
  * export * from './semconv';
  * ```

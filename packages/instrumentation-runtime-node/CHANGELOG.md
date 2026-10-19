@@ -1,6 +1,20 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.36.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.36.0...instrumentation-runtime-node-v0.36.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **instrumentation-runtime-node:** record all GC entries in each observer callback ([#3813](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3813)) ([05e0cbd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/05e0cbd6c7c47a95922a5eed7e53c5ca67a66cc0))
+
+## [0.36.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.35.0...instrumentation-runtime-node-v0.36.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-runtime-node-v0.34.0...instrumentation-runtime-node-v0.35.0) (2026-08-31)
 
 
