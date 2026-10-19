@@ -8,8 +8,13 @@ import {
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { context, INVALID_SPAN_CONTEXT, trace } from '@opentelemetry/api';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  context,
+  INVALID_SPAN_CONTEXT,
+  trace,
+  logs,
+  SeverityNumber,
+} from '@opentelemetry/api';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,

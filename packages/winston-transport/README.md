@@ -22,7 +22,7 @@ package there is no need to instantiate the transport as the instrumentation wil
 For example:
 
 ```js
-const logsAPI = require('@opentelemetry/api-logs');
+const logsAPI = require('@opentelemetry/api');
 const {
     LoggerProvider,
     SimpleLogRecordProcessor,
@@ -77,7 +77,7 @@ const logger = winston.createLogger({
 For custom Winston log levels, you can supply a custom `severityMapping`:
 
 ```js
-const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { SeverityNumber } = require('@opentelemetry/api');
 const { OpenTelemetryTransportV3 } = require('@opentelemetry/winston-transport');
 const winston = require('winston');
 

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SeverityNumber, logs } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
@@ -14,7 +13,14 @@ import {
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { context, trace, Span, INVALID_SPAN_CONTEXT } from '@opentelemetry/api';
+import {
+  context,
+  trace,
+  Span,
+  INVALID_SPAN_CONTEXT,
+  SeverityNumber,
+  logs,
+} from '@opentelemetry/api';
 import { isWrapped } from '@opentelemetry/instrumentation';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as assert from 'assert';

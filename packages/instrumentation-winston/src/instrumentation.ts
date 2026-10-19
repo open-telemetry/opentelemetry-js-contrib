@@ -3,8 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  context,
+  trace,
+  isSpanContextValid,
+  Span,
+  SeverityNumber,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
