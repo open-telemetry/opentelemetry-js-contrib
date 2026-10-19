@@ -23,7 +23,7 @@
     "directory": "packages/instrumentation-cucumber"
   },
   "scripts": {
-    "test": "SKIP_TEST_IF_NODE_OLDER_THAN=20 nyc mocha --require '../../scripts/skip-test-if.js' nyc --no-clean mocha 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "clean": "rimraf dist build",
@@ -44,7 +44,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": "^18.19.0 || >=20.6.0"
+    "node": ">=22.15.0"
   },
   "files": [
     "README.md",

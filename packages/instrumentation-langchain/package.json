@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-langchain",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "description": "OpenTelemetry instrumentation for the `langchain` LangChain.js library",
   "main": "./dist/index.cjs",
@@ -29,7 +29,7 @@
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
-    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test": "nyc --no-clean mocha 'test/**/*.test.ts' --require '@opentelemetry/contrib-test-utils'",
     "test-all-versions": "tav",
     "test:collector": "node test/collector/run.cjs",
     "version:update": "node ../../scripts/version-update.js",
@@ -46,7 +46,7 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": "^18.19.0 || >=20.6.0"
+    "node": ">=22.15.0"
   },
   "files": [
     "README.md",
