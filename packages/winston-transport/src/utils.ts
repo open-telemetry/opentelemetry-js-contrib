@@ -11,7 +11,7 @@ import {
   Logger,
   SeverityNumber,
 } from '@opentelemetry/api-logs';
-import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
+import { ATTR_OTEL_EVENT_NAME } from './semconv';
 
 const npmLevels: Record<string, number> = {
   error: SeverityNumber.ERROR,
