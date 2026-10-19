@@ -3,7 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
-import { ATTR_AWS_SNS_TOPIC_ARN, ATTR_MESSAGING_SYSTEM } from '../semconv';
+import {
+  ATTR_AWS_SNS_TOPIC_ARN,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from '../semconv';
 import {
   ATTR_MESSAGING_DESTINATION,
   ATTR_MESSAGING_DESTINATION_KIND,
@@ -16,6 +20,11 @@ import {
 } from '../types';
 import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
+
+// A raw phone number is personally identifiable information and must never be
+// recorded as a span attribute or span name. SMS `SNS.publish` calls use this
+// low-cardinality placeholder in place of the real number.
+const PHONE_NUMBER_DESTINATION = 'phone_number';
 
 export class SnsServiceExtension implements ServiceExtension {
   requestPreSpanHook(
@@ -39,15 +48,13 @@ export class SnsServiceExtension implements ServiceExtension {
         TargetArn,
         PhoneNumber
       );
-      // ToDO: Use ATTR_MESSAGING_DESTINATION_NAME when implemented
-      spanAttributes['messaging.destination.name'] =
-        TopicArn || TargetArn || PhoneNumber || 'unknown';
+      // Redact a phone-number destination (see PHONE_NUMBER_DESTINATION).
+      spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
+        TopicArn ||
+        TargetArn ||
+        (PhoneNumber ? PHONE_NUMBER_DESTINATION : 'unknown');
 
-      spanName = `${
-        PhoneNumber
-          ? 'phone_number'
-          : spanAttributes[ATTR_MESSAGING_DESTINATION]
-      } send`;
+      spanName = `${spanAttributes[ATTR_MESSAGING_DESTINATION]} send`;
     }
 
     const topicArn = request.commandInput?.TopicArn;
@@ -93,14 +100,15 @@ export class SnsServiceExtension implements ServiceExtension {
     phoneNumber: string
   ): string {
     if (topicArn || targetArn) {
-      const arn = topicArn ?? targetArn;
+      const arn = topicArn || targetArn;
       try {
         return arn.substring(arn.lastIndexOf(':') + 1);
       } catch (err) {
         return arn;
       }
     } else if (phoneNumber) {
-      return phoneNumber;
+      // Redact the phone number (PII); never return the raw value.
+      return PHONE_NUMBER_DESTINATION;
     } else {
       return 'unknown';
     }

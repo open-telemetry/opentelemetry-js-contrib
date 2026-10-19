@@ -10,6 +10,7 @@ import * as nock from 'nock';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_SYSTEM,
   ATTR_RPC_METHOD,
   ATTR_AWS_SNS_TOPIC_ARN,
@@ -63,7 +64,7 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
         topicV3Name
       );
-      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
         topicV3ARN
       );
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicV3ARN);
@@ -72,8 +73,33 @@ describe('SNS - v3', () => {
       expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
     });
 
-    it('phone number', async () => {
-      const PhoneNumber = 'my phone number';
+    it('uses target arn when topic arn is empty', async () => {
+      const targetArn =
+        'arn:aws:sns:us-east-1:000000000:endpoint/GCM/app/device';
+
+      await sns.publish({
+        Message: 'sns message',
+        TopicArn: '',
+        TargetArn: targetArn,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'endpoint/GCM/app/device send'
+      );
+      expect(publishSpans.length).toBe(1);
+
+      const publishSpan = publishSpans[0];
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        'endpoint/GCM/app/device'
+      );
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        targetArn
+      );
+      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
+    });
+
+    it('phone number is redacted and never recorded as a span attribute', async () => {
+      const PhoneNumber = '+15555550100';
       await sns.publish({
         Message: 'sns message',
         PhoneNumber,
@@ -84,9 +110,24 @@ describe('SNS - v3', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
+
+      // The raw phone number is PII and must never be written to any span
+      // attribute. Both the obsolete `messaging.destination` and the current
+      // `messaging.destination.name` must be the redacted placeholder, not the
+      // real number.
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
-        PhoneNumber
+        'phone_number'
       );
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        'phone_number'
+      );
+
+      // Defensively assert the raw value does not appear in ANY attribute value.
+      const leaks = Object.values(publishSpan.attributes).filter(
+        v => typeof v === 'string' && v.includes(PhoneNumber)
+      );
+      expect(leaks).toEqual([]);
+
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
     });
   });
