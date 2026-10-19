@@ -7,7 +7,7 @@ const path = require('path');
 
 module.exports = {
   require: [
-    'ts-node/register',
+    'ts-node/register/transpile-only',
     path.join(__dirname, 'scripts/mocha-otel-condition.cjs'),
   ],
   timeout: 4000,

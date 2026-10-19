@@ -27,7 +27,7 @@
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/host-metrics",
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc mocha 'test/**/*.test.ts'",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsdown --watch --no-clean"
   },
