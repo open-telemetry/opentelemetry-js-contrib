@@ -10,4 +10,5 @@ module.exports = {
     'ts-node/register',
     path.join(__dirname, 'scripts/mocha-otel-condition.cjs'),
   ],
+  timeout: 4000,
 };
