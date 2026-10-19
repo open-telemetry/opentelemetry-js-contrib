@@ -42,7 +42,7 @@
     "clean": "rimraf dist build",
     "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc mocha 'test/**/*.test.ts' --exclude 'test/browser/**/*.test.ts'",
     "test:browser": "nyc karma start --single-run",
     "watch": "tsdown --watch --no-clean",
     "prepublishOnly": "npm run compile"

@@ -7,7 +7,7 @@ import * as sinon from 'sinon';
 
 import { INVALID_SPANID, INVALID_TRACEID } from '@opentelemetry/api';
 
-import { AWSXRayIdGenerator } from '../src';
+import { AWSXRayIdGenerator } from '../../src';
 
 const idGenerator = new AWSXRayIdGenerator();
 
