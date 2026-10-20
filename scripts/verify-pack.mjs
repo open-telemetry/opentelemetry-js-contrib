@@ -26,9 +26,12 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..'
 );
-// As for now there is a package that does not export anything. It is possible new packages
-// might take the same approach (empty exports and gradually add them).
+// genai-util exports nothing yet (incremental export policy), so its empty entry is expected.
 const SKIP_PACKAGES = ['@opentelemetry/genai-util'];
+// Exempt from the empty-module check: these entries register at load and export nothing.
+const SIDE_EFFECT_ENTRIES = {
+  '@opentelemetry/auto-instrumentations-node': ['./register'],
+};
 
 const failures = [];
 const targets = [];
@@ -68,14 +71,16 @@ for (const { dir, pkg } of targets) {
         );
         continue;
       }
+      const mayBeEmpty = SIDE_EFFECT_ENTRIES[pkg.name]?.includes(subpath);
       if (kind === 'require') {
         try {
           const req = createRequire(path.join(extracted, 'package.json'));
           const mod = req(filePath);
           // A bare `module.exports = fn/class` has no enumerable keys but is valid.
           if (
-            !mod ||
-            (typeof mod !== 'function' && Object.keys(mod).length === 0)
+            !mayBeEmpty &&
+            (!mod ||
+              (typeof mod !== 'function' && Object.keys(mod).length === 0))
           ) {
             failures.push(
               `${label} :: require("${subpath}") resolved an empty module`
@@ -87,7 +92,7 @@ for (const { dir, pkg } of targets) {
       } else if (kind === 'import') {
         try {
           const mod = await import(pathToFileURL(filePath).href);
-          if (!mod || Object.keys(mod).length === 0) {
+          if (!mayBeEmpty && (!mod || Object.keys(mod).length === 0)) {
             failures.push(
               `${label} :: import("${subpath}") resolved an empty module`
             );
@@ -157,8 +162,6 @@ function walk(dir, out, depth) {
     )
       continue;
     if (ent.name.startsWith('.')) continue;
-    // Scratch dirs hold extracted npm tarballs.
-    if (ent.name.startsWith('tmp-')) continue;
     const full = path.join(dir, ent.name);
     if (ent.isDirectory()) {
       walk(full, out, depth + 1);
