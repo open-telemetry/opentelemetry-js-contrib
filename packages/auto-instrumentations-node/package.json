@@ -54,14 +54,14 @@
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.10.0",
-    "@opentelemetry/core": "^3.0.0-rc.0"
+    "@opentelemetry/core": "^3.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.10.0-rc.0",
-    "@opentelemetry/core": "^3.0.0-rc.0"
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/core": "^3.0.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.300.0-rc.0",
+    "@opentelemetry/instrumentation": "^0.300.0",
     "@opentelemetry/instrumentation-amqplib": "^0.70.0",
     "@opentelemetry/instrumentation-aws-lambda": "^0.75.0",
     "@opentelemetry/instrumentation-aws-sdk": "^0.78.0",
@@ -75,10 +75,10 @@
     "@opentelemetry/instrumentation-fs": "^0.42.0",
     "@opentelemetry/instrumentation-generic-pool": "^0.66.0",
     "@opentelemetry/instrumentation-graphql": "^0.71.0",
-    "@opentelemetry/instrumentation-grpc": "^0.300.0-rc.0",
+    "@opentelemetry/instrumentation-grpc": "^0.300.0",
     "@opentelemetry/instrumentation-hapi": "^0.69.0",
     "@opentelemetry/instrumentation-host-metrics": "^0.6.0",
-    "@opentelemetry/instrumentation-http": "^0.300.0-rc.0",
+    "@opentelemetry/instrumentation-http": "^0.300.0",
     "@opentelemetry/instrumentation-ioredis": "^0.71.0",
     "@opentelemetry/instrumentation-kafkajs": "^0.32.0",
     "@opentelemetry/instrumentation-knex": "^0.67.0",
@@ -108,8 +108,8 @@
     "@opentelemetry/resource-detector-azure": "^0.31.0",
     "@opentelemetry/resource-detector-container": "^0.8.14",
     "@opentelemetry/resource-detector-gcp": "^0.58.0",
-    "@opentelemetry/resources": "^3.0.0-rc.0",
-    "@opentelemetry/sdk-node": "^0.300.0-rc.0"
+    "@opentelemetry/resources": "^3.0.0",
+    "@opentelemetry/sdk-node": "^0.300.0"
   },
   "files": [
     "README.md",
