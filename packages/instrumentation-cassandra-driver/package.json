@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-cassandra-driver",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "description": "OpenTelemetry instrumentation for `cassandra-driver` database client library for Apache Cassandra",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
@@ -65,7 +65,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/context-async-hooks": "^3.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.70.0",
+    "@opentelemetry/contrib-test-utils": "^0.71.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
     "cassandra-driver": "4.6.4"
   },

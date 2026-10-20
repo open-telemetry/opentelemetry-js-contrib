@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/contrib-test-utils",
-  "version": "0.70.0",
+  "version": "0.71.0",
   "description": "Test utilities for opentelemetry components",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

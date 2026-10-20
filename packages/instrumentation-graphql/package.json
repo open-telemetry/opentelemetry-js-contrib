@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-graphql",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "OpenTelemetry instrumentation for `graphql` gql query language and runtime for GraphQL",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

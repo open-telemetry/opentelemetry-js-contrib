@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
