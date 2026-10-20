@@ -56,10 +56,10 @@
     "@opentelemetry/api": "^1.0.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-logs": "^0.223.0"
+    "@opentelemetry/sdk-logs": "^3.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.0.0"
+    "@opentelemetry/api": "^1.10.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/baggage-log-record-processor#readme"
 }

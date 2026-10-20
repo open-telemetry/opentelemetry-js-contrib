@@ -5,12 +5,11 @@
 
 import {
   AnyValue,
-  AnyValueMap,
-  LogAttributes,
+  Attributes,
   LogRecord,
   Logger,
   SeverityNumber,
-} from '@opentelemetry/api-logs';
+} from '@opentelemetry/api';
 import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 const npmLevels: Record<string, number> = {
@@ -98,8 +97,8 @@ function isPlainObject(value: object): value is Record<string, unknown> {
   return constructor === Object || constructor === undefined;
 }
 
-function serializeError(error: Error, ancestors: Set<object>): AnyValueMap {
-  const serialized: AnyValueMap = {};
+function serializeError(error: Error, ancestors: Set<object>): Attributes {
+  const serialized: Attributes = {};
   const propertyNames = new Set([
     ...ERROR_PROPERTY_NAMES,
     ...Object.getOwnPropertyNames(error),
@@ -161,7 +160,7 @@ function normalizeAttributeValue(
 
   if (isPlainObject(value)) {
     ancestors.add(value);
-    const normalized: AnyValueMap = {};
+    const normalized: Attributes = {};
     for (const key in value) {
       if (Object.prototype.hasOwnProperty.call(value, key)) {
         normalized[key] = normalizeAttributeValue(
@@ -209,7 +208,7 @@ function isSdkLogsExceptionCandidate(value: unknown): boolean {
 function extractCauseAttributes(
   key: 'err' | 'error',
   value: unknown
-): LogAttributes {
+): Attributes {
   if (value == null || typeof value !== 'object' || !('cause' in value)) {
     return {};
   }
@@ -219,7 +218,7 @@ function extractCauseAttributes(
     return {};
   }
 
-  const attributes: LogAttributes = {};
+  const attributes: Attributes = {};
   if (typeof cause === 'string' || typeof cause === 'number') {
     attributes[`${key}.cause`] = cause as AnyValue;
     return attributes;
@@ -277,7 +276,7 @@ function extractCauseAttributes(
 function getExceptionPayload(record: Record<string | symbol, any>): {
   exception: unknown;
   excludedAttributes: string[];
-  additionalAttributes?: LogAttributes;
+  additionalAttributes?: Attributes;
 } | null {
   for (const key of ['err', 'error'] as const) {
     const value = record[key];
@@ -348,7 +347,7 @@ export function emitLogRecord(
 
   const { message, level, ...splat } = record;
   const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
-  const attributes: LogAttributes = {};
+  const attributes: Attributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
   // property.

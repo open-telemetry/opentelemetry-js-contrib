@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Logger, SeverityNumber, logs } from '@opentelemetry/api-logs';
+import { Logger, SeverityNumber, logs } from '@opentelemetry/api';
 import type { TransportStreamOptions } from 'winston-transport';
 import TransportStream = require('winston-transport');
 /** @knipignore */
