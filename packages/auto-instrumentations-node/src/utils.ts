@@ -12,6 +12,7 @@ import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
 import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
 import { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
 import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
+import { ConsoleInstrumentation } from '@opentelemetry/instrumentation-console';
 import { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber';
 import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
 import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
@@ -91,6 +92,7 @@ const InstrumentationMap = {
   '@opentelemetry/instrumentation-cassandra-driver':
     CassandraDriverInstrumentation,
   '@opentelemetry/instrumentation-connect': ConnectInstrumentation,
+  '@opentelemetry/instrumentation-console': ConsoleInstrumentation,
   '@opentelemetry/instrumentation-cucumber': CucumberInstrumentation,
   '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
   '@opentelemetry/instrumentation-dns': DnsInstrumentation,
@@ -129,6 +131,7 @@ const InstrumentationMap = {
 };
 
 const defaultExcludedInstrumentations = [
+  '@opentelemetry/instrumentation-console',
   '@opentelemetry/instrumentation-fs',
   '@opentelemetry/instrumentation-host-metrics',
 ];
