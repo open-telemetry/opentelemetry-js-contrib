@@ -93,6 +93,7 @@ export class TestCollector {
   /**
    * Return the spans sorted by which started first, for testing convenience.
    *
+   * This sorting is a *best effort*.
    * `span.startTimeUnixNano` has millisecond accuracy, so spans that start in
    * the same millisecond are additionally ordered so that every span follows
    * its ancestors. Unrelated spans with the same start time keep the order in
