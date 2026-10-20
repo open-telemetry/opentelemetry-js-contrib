@@ -12,8 +12,14 @@
 // for viewing and analysis.
 
 const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
-const { ConsoleLogRecordExporter, SimpleLogRecordProcessor } = require('@opentelemetry/sdk-logs');
+const {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} = require('@opentelemetry/sdk-trace');
+const {
+  ConsoleLogRecordExporter,
+  SimpleLogRecordProcessor,
+} = require('@opentelemetry/sdk-logs');
 const {
   envDetector,
   hostDetector,
