@@ -46,7 +46,7 @@ const sdk = new NodeSDK({
   spanProcessors: [
     new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
-  logRecordProcessor: [
+  logRecordProcessors: [
     new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
   ],
   instrumentations: [new BunyanInstrumentation()],
