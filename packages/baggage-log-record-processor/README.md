@@ -30,7 +30,7 @@ import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemet
 import { ALLOW_ALL_BAGGAGE_KEYS, BaggageLogRecordProcessor } from '@opentelemetry/baggage-log-record-processor';
 
 const logRecordProcessor = [
-  new SimpleLogRecordProcessor({ exporter: logs.ConsoleLogRecordExporter() }),
+  new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
   new BaggageLogRecordProcessor(ALLOW_ALL_BAGGAGE_KEYS)];
 
 const sdk = new NodeSDK({
