@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-dns",
-  "version": "0.66.0",
+  "version": "0.67.0",
   "description": "OpenTelemetry instrumentation for `node:dns` name resolution module",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

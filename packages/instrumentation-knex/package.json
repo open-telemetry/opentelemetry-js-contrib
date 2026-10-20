@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-knex",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "description": "OpenTelemetry instrumentation for `knex` database SQL query builder",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

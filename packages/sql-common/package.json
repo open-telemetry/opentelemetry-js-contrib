@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/sql-common",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "description": "Utilities for SQL instrumentations",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

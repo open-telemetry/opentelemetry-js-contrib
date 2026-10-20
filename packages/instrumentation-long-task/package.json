@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-long-task",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "description": "OpenTelemetry instrumentation for long task Web API",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

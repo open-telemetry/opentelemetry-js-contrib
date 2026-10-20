@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-bunyan",
-  "version": "0.68.0",
+  "version": "0.69.0",
   "description": "OpenTelemetry instrumentation for `bunyan` logger",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

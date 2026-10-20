@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-aws-xray",
-  "version": "2.2.0",
+  "version": "3.0.0",
   "description": "OpenTelemetry AWS Xray propagator provides context propagation for systems that are using AWS X-Ray format.",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

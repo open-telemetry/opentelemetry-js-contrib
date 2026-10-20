@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-hapi",
-  "version": "0.69.0",
+  "version": "0.70.0",
   "description": "OpenTelemetry instrumentation for `@hapi/hapi` http web application framework",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
@@ -60,7 +60,7 @@
     "@hapi/hapi": "21.3.12",
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/context-async-hooks": "^3.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.70.0",
+    "@opentelemetry/contrib-test-utils": "^0.71.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
     "joi": "17.12.2"
   },
