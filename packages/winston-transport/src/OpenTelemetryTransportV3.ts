@@ -22,6 +22,8 @@ export interface OpenTelemetryTransportV3Options
   logSeverity?: SeverityNumber;
 }
 
+// tsdown turns `import X = require()` into `import * as X` in the .d.ts, which ESM and
+// esModuleInterop consumers cannot extend; `typeof import()` survives as written.
 const TransportStreamBase: typeof import('winston-transport') = TransportStream;
 
 export class OpenTelemetryTransportV3 extends TransportStreamBase {
