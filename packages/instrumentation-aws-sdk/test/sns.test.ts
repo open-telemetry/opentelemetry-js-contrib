@@ -122,6 +122,13 @@ describe('SNS - v3', () => {
         'phone_number'
       );
 
+      // Both destination attributes must redact to the same value so the
+      // redaction decision cannot drift between them and leak the real number
+      // from one while hiding it in the other.
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]
+      );
+
       // Defensively assert the raw value does not appear in ANY attribute value.
       const leaks = Object.values(publishSpan.attributes).filter(
         v => typeof v === 'string' && v.includes(PhoneNumber)
