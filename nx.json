@@ -3,8 +3,18 @@
   "targetDefaults": {
     "compile": {
       "dependsOn": ["version:update", "^compile"],
-      "inputs": ["{projectRoot}/src/**/*.ts", "{projectRoot}/test/**/*.ts"],
-      "outputs": ["{projectRoot}/build"],
+      "inputs": [
+        "{projectRoot}/src/**/*.ts",
+        "{projectRoot}/test/**/*.ts",
+        "{projectRoot}/package.json",
+        "{projectRoot}/tsconfig.json",
+        "{projectRoot}/tsdown.config.ts",
+        "{projectRoot}/tsdown.*.config.ts",
+        "{workspaceRoot}/tsconfig.json",
+        "{workspaceRoot}/tsdown.config.ts",
+        "{workspaceRoot}/package-lock.json"
+      ],
+      "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
     "watch": {

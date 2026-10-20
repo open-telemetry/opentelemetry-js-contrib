@@ -61,13 +61,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      # Although compilation is done in a previous step the toolkit requires
+      # a compatible Node.js version even to restore the cached results
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 24
       - name: Install
-        # Post install scripts are required for some deps for successful test
-        # runs: sqlite3, better-sqlite3, and possibly esbuild.
-        run: npm ci
+        run: npm ci --ignore-scripts
         timeout-minutes: 10
       - name: Download Build Artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -76,6 +76,14 @@ jobs:
           path: .nx
       - name: Build
         run: npm run compile
+      # Switch to the matrix Node.js version so tests exercise every supported runtime.
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ matrix.node }}
+      # Post install scripts & builds are required for some deps for successful test
+      # runs: sqlite3, better-sqlite3, and possibly esbuild.
+      - name: Rebuild deps
+        run: npm rebuild
       - name: Start Test Services
         run: npm run test-services:start
       - name: Run test-all-versions
