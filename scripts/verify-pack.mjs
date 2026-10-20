@@ -375,13 +375,19 @@ function checkConditions(extracted, pkg, label) {
 
 // A declaration that still names #platform came from a dts build whose resolver
 // skipped the otel condition; node10 consumers cannot resolve it.
+// rolldown-plugin-dts emits `import X = require()` as `import * as X`, which ESM and
+// esModuleInterop consumers cannot extend when the module uses `export =`.
 function checkDeclarations(extracted, label) {
   for (const file of readdirSync(extracted, { recursive: true })) {
     if (!/\.d\.[cm]?ts$/.test(file)) continue;
-    if (
-      /['"]#platform['"]/.test(readFileSync(path.join(extracted, file), 'utf8'))
-    ) {
+    const code = readFileSync(path.join(extracted, file), 'utf8');
+    if (/['"]#platform['"]/.test(code)) {
       failures.push(`${label} :: ${file} references #platform`);
+    }
+    for (const [, name] of code.matchAll(/^import \* as (\w+) from /gm)) {
+      if (new RegExp(`\\bextends ${name}\\b(?!\\.)`).test(code)) {
+        failures.push(`${label} :: ${file} extends namespace import ${name}`);
+      }
     }
   }
 }
