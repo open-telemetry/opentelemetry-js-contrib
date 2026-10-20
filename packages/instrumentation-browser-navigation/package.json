@@ -63,7 +63,6 @@
     "chai": "^6.2.0"
   },
   "dependencies": {
-    "@opentelemetry/api-logs": "^0.223.0",
     "@opentelemetry/instrumentation": "^0.300.0-rc.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
