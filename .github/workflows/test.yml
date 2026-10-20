@@ -57,8 +57,8 @@ jobs:
   verify-pack:
     # Unit tests run against TS source via ts-node, so they never exercise
     # the published dist/ artifact. This job packs every workspace package,
-    # loads the require/import targets of its `exports` map, and existence
-    # checks types/browser/main/module files in the tarball.
+    # loads every exports/imports target from the tarball, checks condition
+    # order and fallbacks, and rejects declarations that still name #platform.
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
