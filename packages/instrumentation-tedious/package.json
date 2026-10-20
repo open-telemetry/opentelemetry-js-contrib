@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-tedious",
-  "version": "0.42.0",
+  "version": "0.43.0",
   "description": "OpenTelemetry instrumentation for `tedious` database client for Microsoft SQL Server",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
@@ -67,7 +67,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/context-async-hooks": "^3.0.0",
-    "@opentelemetry/contrib-test-utils": "^0.70.0",
+    "@opentelemetry/contrib-test-utils": "^0.71.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
     "@types/tedious": "^4.0.14",
     "tedious": "17.0.0"

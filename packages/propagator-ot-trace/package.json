@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/propagator-ot-trace",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "The OpenTelemetry OTTracepropagator implements the propagation format used by the \"basic tracer\" implementations from the OpenTracing project",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

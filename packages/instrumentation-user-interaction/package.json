@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-user-interaction",
-  "version": "0.67.0",
+  "version": "0.68.0",
   "description": "OpenTelemetry instrumentation for user interactions as click events in a web application",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

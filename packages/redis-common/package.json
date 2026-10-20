@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/redis-common",
-  "version": "0.38.3",
+  "version": "0.39.0",
   "description": "Redis utilities for redis instrumentations",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
