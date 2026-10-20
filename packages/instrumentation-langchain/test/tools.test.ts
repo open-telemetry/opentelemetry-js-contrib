@@ -661,30 +661,124 @@ describe('LangChain donated tool callbacks', () => {
     });
   }
 
-  it('keeps the newer parent lookup when an older run with the same ID completes', async () => {
-    const callbacks = CallbackManager.configure();
-    assert.ok(callbacks);
-    const serialized = echo().toJSON();
-    const older = await callbacks.handleToolStart(serialized, '', 'reused');
-    const newer = await callbacks.handleToolStart(serialized, '', 'reused');
-    try {
-      await older.handleToolEnd('older');
-      const child = await newer
-        .getChild()
-        .handleToolStart(serialized, '', 'child');
-      await child.handleToolEnd('child');
-      await newer.handleToolEnd('newer');
-      const spans = getTestSpans();
-      assert.equal(spans.length, 3);
-      assert.equal(
-        spans[1].parentSpanContext?.spanId,
-        spans[2].spanContext().spanId
-      );
-    } finally {
-      await older.handleToolEnd('cleanup');
-      await newer.handleToolEnd('cleanup');
-    }
-  });
+  for (const mode of ['direct', 'copied', 'configured', 'invoke'] as const) {
+    it(`parents the older run's child to its own invocation when run IDs overlap (${mode})`, async () => {
+      const callbacks = CallbackManager.configure();
+      assert.ok(callbacks);
+      const serialized = echo().toJSON();
+      const older = await callbacks.handleToolStart(serialized, '', 'reused');
+      const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+      try {
+        let childCallbacks = older.getChild();
+        if (mode === 'copied') childCallbacks = childCallbacks.copy();
+        if (mode === 'configured') {
+          const configured = CallbackManager.configure(childCallbacks);
+          assert.ok(configured);
+          childCallbacks = configured;
+        }
+        if (mode === 'invoke') {
+          assert.equal(
+            await echo().invoke('child', { callbacks: childCallbacks }),
+            'child'
+          );
+        } else {
+          const child = await childCallbacks.handleToolStart(
+            serialized,
+            '',
+            'child'
+          );
+          await child.handleToolEnd('child');
+        }
+        await older.handleToolEnd('older');
+        await newer.handleToolEnd('newer');
+        const spans = getTestSpans();
+        assert.equal(spans.length, 3);
+        assert.equal(
+          spans[0].parentSpanContext?.spanId,
+          spans[1].spanContext().spanId
+        );
+      } finally {
+        await older.handleToolEnd('cleanup');
+        await newer.handleToolEnd('cleanup');
+      }
+    });
+  }
+
+  for (const first of ['older', 'newer'] as const) {
+    it(`keeps the surviving parent's invocation when the ${first} same-ID run completes`, async () => {
+      const callbacks = CallbackManager.configure();
+      assert.ok(callbacks);
+      const serialized = echo().toJSON();
+      const older = await callbacks.handleToolStart(serialized, '', 'reused');
+      const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+      try {
+        const completed = first === 'older' ? older : newer;
+        const survivor = first === 'older' ? newer : older;
+        await completed.handleToolEnd('completed');
+        const child = await survivor
+          .getChild()
+          .handleToolStart(serialized, '', 'child');
+        await child.handleToolEnd('child');
+        await survivor.handleToolEnd('survivor');
+        const spans = getTestSpans();
+        assert.equal(spans.length, 3);
+        assert.equal(
+          spans[1].parentSpanContext?.spanId,
+          spans[2].spanContext().spanId
+        );
+      } finally {
+        await older.handleToolEnd('cleanup');
+        await newer.handleToolEnd('cleanup');
+      }
+    });
+  }
+
+  for (const state of ['completed', 'evicted'] as const) {
+    it(`does not reparent a ${state} invocation's child to a reused run ID`, async function () {
+      this.timeout(15000);
+      const callbacks = CallbackManager.configure();
+      assert.ok(callbacks);
+      const serialized = echo().toJSON();
+      const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
+        [];
+      const older = await callbacks.handleToolStart(serialized, '', 'reused');
+      pending.push(older);
+      const childCallbacks = older.getChild();
+      try {
+        if (state === 'completed') {
+          await older.handleToolEnd('older');
+        } else {
+          for (let index = 0; index < 999; index++) {
+            pending.push(
+              await callbacks.handleToolStart(
+                serialized,
+                '',
+                `pending-${index}`
+              )
+            );
+          }
+        }
+        const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+        pending.push(newer);
+        // Leave room for the child without evicting another pending run.
+        if (state === 'evicted') await pending[1].handleToolEnd('cleanup');
+        const before = getTestSpans().length;
+        const child = await childCallbacks.handleToolStart(
+          serialized,
+          '',
+          'child'
+        );
+        pending.push(child);
+        await child.handleToolEnd('child');
+        await newer.handleToolEnd('newer');
+        const spans = getTestSpans();
+        assert.equal(spans.length, before + 2);
+        assert.equal(spans[before].parentSpanContext, undefined);
+      } finally {
+        await Promise.all(pending.map(run => run.handleToolEnd('cleanup')));
+      }
+    });
+  }
 
   it('does not pass an in-flight parent token to a child started while disabled', async () => {
     const runId = '00000000-0000-4000-8000-000000000001';

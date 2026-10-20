@@ -3,10 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type {
-  BaseCallbackHandler,
-  CallbackHandlerMethods,
-} from '@langchain/core/callbacks/base';
+import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
 import type { CallbackManager } from '@langchain/core/callbacks/manager';
 import {
   context,
@@ -61,11 +58,17 @@ interface ToolRun {
   diag: DiagLogger;
 }
 
-// Run IDs are only a parent lookup. Completion uses an invocation's token.
+interface ToolInvocation {
+  token: symbol;
+  runId?: string;
+}
+
+// Run IDs are a fallback when no parent invocation identity is inherited.
 const runs = new Map<symbol, ToolRun>();
 const runTokens = new Map<string, symbol>();
 const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
+const parentInvocations = new WeakMap<object, ToolInvocation>();
 
 function removeRun(token: symbol, run: ToolRun) {
   runs.delete(token);
@@ -88,16 +91,32 @@ function evictOldestRun() {
 }
 
 /** Register on an invocation's copied manager, not user collections. */
-export function addToolHandler(
+export function addToolCallbacks(
   configured: CallbackManager,
-  handler: BaseCallbackHandler
+  manager: typeof CallbackManager,
+  telemetry: () => ToolTelemetry | undefined,
+  getDiag: () => DiagLogger
 ): CallbackManager {
-  handlers.add(handler);
+  let parentInvocation: ToolInvocation | undefined;
   for (const callback of configured.handlers) {
+    parentInvocation = parentInvocations.get(callback) ?? parentInvocation;
     if (handlers.has(callback)) configured.removeHandler(callback);
   }
+  const invocation: ToolInvocation = { token: Symbol() };
+  const handler = manager.fromHandlers(
+    createToolCallbacks(telemetry, getDiag, invocation, parentInvocation)
+  ).handlers[0];
+  handler.name = 'opentelemetry_langchain_tools';
+  handler.awaitHandlers = true;
+  handlers.add(handler);
   // An uninstrumented child must not complete its parent's invocation.
   configured.addHandler(handler, false);
+  // The SDK preserves this inert identity through getChild() and copy().
+  const parentHandler = manager.fromHandlers({}).handlers[0];
+  parentHandler.name = 'opentelemetry_langchain_tool_parent';
+  handlers.add(parentHandler);
+  parentInvocations.set(parentHandler, invocation);
+  configured.addHandler(parentHandler, true);
   return configured;
 }
 
@@ -121,11 +140,13 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
  * Migrate the donation's tool start/end/error and parent-run bookkeeping.
  * Other callback operation types remain owned by their existing instrumentation.
  */
-export function createToolCallbacks(
+function createToolCallbacks(
   telemetry: () => ToolTelemetry | undefined,
-  getDiag: () => DiagLogger
+  getDiag: () => DiagLogger,
+  invocation: ToolInvocation,
+  parentInvocation: ToolInvocation | undefined
 ): CallbackHandlerMethods {
-  const token = Symbol();
+  const { token } = invocation;
   const end = (output?: unknown, failure?: { error: unknown }) => {
     const run = runs.get(token);
     if (!run) return;
@@ -183,6 +204,7 @@ export function createToolCallbacks(
       >
     ) {
       const [serialized, input, runId, parentRunId, , metadata, runName] = args;
+      invocation.runId = runId;
       // Core 1.1.28 added toolCallId as argument 8. Using slice also compiles
       // against older seven-argument types, where we use the final ToolMessage.
       const optionalId: unknown = args.slice(7)[0];
@@ -231,9 +253,12 @@ export function createToolCallbacks(
           if (arguments_ !== undefined)
             attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = arguments_;
         }
-        const parentToken = parentRunId
-          ? runTokens.get(parentRunId)
-          : undefined;
+        const parentToken =
+          parentInvocation && parentInvocation.runId === parentRunId
+            ? parentInvocation.token
+            : parentRunId
+              ? runTokens.get(parentRunId)
+              : undefined;
         const parent =
           (parentToken ? runs.get(parentToken)?.context : undefined) ?? active;
         const startTime = hrTime();

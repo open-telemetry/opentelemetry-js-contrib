@@ -44,7 +44,7 @@ import type { CallbackManager } from '@langchain/core/callbacks/manager';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
-import { addToolHandler, createToolCallbacks } from './tool-callbacks';
+import { addToolCallbacks } from './tool-callbacks';
 import {
   isInternalWorkflow,
   isTrackingFactory,
@@ -382,28 +382,25 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             }
             let invocation = this;
             try {
-              const handler = manager.fromHandlers(
-                createToolCallbacks(
-                  () => {
-                    const selected = currentOwner();
-                    return selected
-                      ? {
-                          tracer: selected.tracer,
-                          duration: selected._toolDuration,
-                          capture:
-                            selected.getConfig().captureMessageContent ===
-                            'span_only',
-                        }
-                      : undefined;
-                  },
-                  () => currentOwner()?._diag ?? diag
-                )
-              ).handlers[0];
-              handler.name = 'opentelemetry_langchain_tools';
-              handler.awaitHandlers = true;
               // The SDK run manager retains this invocation's handler, even
               // when the caller reuses its callback manager or run ID.
-              invocation = addToolHandler(this.copy(), handler);
+              invocation = addToolCallbacks(
+                this.copy(),
+                manager,
+                () => {
+                  const selected = currentOwner();
+                  return selected
+                    ? {
+                        tracer: selected.tracer,
+                        duration: selected._toolDuration,
+                        capture:
+                          selected.getConfig().captureMessageContent ===
+                          'span_only',
+                      }
+                    : undefined;
+                },
+                () => currentOwner()?._diag ?? diag
+              );
             } catch {
               owner._diag.warn('LangChain: could not register tool callbacks');
             }

@@ -139,8 +139,12 @@ in seconds, matching its span duration. Metric attributes contain the tool
 name, known type and error type, never arguments, results or conversation IDs.
 No tool events or provider inference metrics are added.
 
-Tool span parentage follows the incoming OpenTelemetry context and the
-donation's parent-run-ID lookup for nested tools. Existing callbacks and
+Tool span parentage follows the incoming OpenTelemetry context and inherited
+parent invocation identity, with parent-run-ID lookup as a fallback. An inert
+callback marker preserves that identity through `getChild()` and manager copies,
+so overlapping runs with the same ID keep their children attached to the correct
+span. Completed or evicted parent identities do not resolve to a replacement run
+with the same ID. Completion callbacks are not inherited. Existing callbacks and
 callback collections are preserved. Configuration changes and disablement do
 not abandon operations that already emitted a tool-start callback.
 Tool diagnostics use the selected instrumentation instance's logger.

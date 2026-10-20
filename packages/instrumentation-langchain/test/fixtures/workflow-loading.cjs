@@ -313,6 +313,35 @@ async function main() {
       }
     }
 
+    instrumentation.enable();
+    for (const { callbackTool, CallbackManager } of adapters) {
+      exporter.reset();
+      const callbacks = CallbackManager.configure();
+      const serialized = callbackTool.toJSON();
+      const older = await callbacks.handleToolStart(serialized, '', 'reused');
+      const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+      try {
+        assert.equal(
+          await callbackTool.invoke('child', {
+            callbacks: older.getChild().copy(),
+          }),
+          'child'
+        );
+        await older.handleToolEnd('older');
+        await newer.handleToolEnd('newer');
+        const spans = exporter.getFinishedSpans();
+        assert.equal(spans.length, 3);
+        assert.equal(
+          spans[0].parentSpanContext?.spanId,
+          spans[1].spanContext().spanId
+        );
+      } finally {
+        await older.handleToolEnd('cleanup');
+        await newer.handleToolEnd('cleanup');
+      }
+    }
+    instrumentation.disable();
+
     const instances = [instrumentation, second];
     const exporters = [exporter, secondExporter];
     const check = async owner => {
