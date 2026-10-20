@@ -48,11 +48,13 @@ export class SnsServiceExtension implements ServiceExtension {
         TargetArn,
         PhoneNumber
       );
-      // Redact a phone-number destination (see PHONE_NUMBER_DESTINATION).
+      // Use the full ARN as the destination name when available. A phone-number
+      // destination is redacted to the low-cardinality placeholder; the raw
+      // number is PII and must never be recorded. Both destination attributes
+      // share the same redaction decision (see redactPhoneNumberDestination) so
+      // they can never drift and leak the real number from one of them.
       spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
-        TopicArn ||
-        TargetArn ||
-        (PhoneNumber ? PHONE_NUMBER_DESTINATION : 'unknown');
+        TopicArn || TargetArn || this.redactPhoneNumberDestination(PhoneNumber);
 
       spanName = `${spanAttributes[ATTR_MESSAGING_DESTINATION]} send`;
     }
@@ -108,9 +110,18 @@ export class SnsServiceExtension implements ServiceExtension {
       }
     } else if (phoneNumber) {
       // Redact the phone number (PII); never return the raw value.
-      return PHONE_NUMBER_DESTINATION;
+      return this.redactPhoneNumberDestination(phoneNumber);
     } else {
       return 'unknown';
     }
+  }
+
+  // Single source of truth for how a (possibly phone-number) SNS destination is
+  // represented as a span attribute. A raw phone number is PII and is replaced
+  // by the low-cardinality placeholder; a missing destination is 'unknown'.
+  // Keeping this decision in one place ensures every destination attribute
+  // redacts identically and the real number cannot leak from any of them.
+  private redactPhoneNumberDestination(phoneNumber: string): string {
+    return phoneNumber ? PHONE_NUMBER_DESTINATION : 'unknown';
   }
 }
