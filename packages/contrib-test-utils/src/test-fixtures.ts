@@ -101,8 +101,8 @@ export class TestCollector {
    */
   public get sortedSpans(): Array<TestSpan> {
     const byStart = this.spans.slice().sort((a, b) => {
-      assert(typeof a.startTimeUnixNano === 'string');
-      assert(typeof b.startTimeUnixNano === 'string');
+      assert.ok(typeof a.startTimeUnixNano === 'string');
+      assert.ok(typeof b.startTimeUnixNano === 'string');
       const aStartInt = BigInt(a.startTimeUnixNano);
       const bStartInt = BigInt(b.startTimeUnixNano);
       return aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0;

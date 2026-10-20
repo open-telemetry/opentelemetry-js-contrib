@@ -16,7 +16,7 @@ function runWithRegister(path: string): PromiseWithChild<{
 }> {
   return execFilePromise(
     process.execPath,
-    ['--require', '../build/src/register.js', path],
+    ['--require', '../dist/register.cjs', path],
     {
       cwd: __dirname,
       timeout: 5000,
