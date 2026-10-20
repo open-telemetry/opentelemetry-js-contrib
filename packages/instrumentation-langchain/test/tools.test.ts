@@ -145,7 +145,54 @@ describe('LangChain donated tool callbacks', () => {
     );
   });
 
-  for (const output of ['text', ['one', 'two'], 0, false, null, undefined]) {
+  for (const capture of ['none', 'span_only'] as const) {
+    for (const input of [
+      42,
+      0,
+      true,
+      false,
+      null,
+      [],
+      ['one', 42, false, null],
+      'plain text',
+      '{invalid json',
+    ]) {
+      it(`retains scalar and array tool arguments (${JSON.stringify(input)}, capture=${capture})`, async () => {
+        instrumentation.setConfig({ captureMessageContent: capture });
+        const operation = new DynamicStructuredTool({
+          name: 'argument-shapes',
+          description: 'Scalar and array arguments',
+          schema: {},
+          func: async (value: unknown) => value,
+        });
+        assert.equal(await operation.invoke(input), input);
+        const spans = getTestSpans();
+        assert.equal(spans.length, 1);
+        assert.equal(
+          spans[0].attributes['gen_ai.tool.call.arguments'],
+          capture === 'none' ? undefined : JSON.stringify({ input })
+        );
+        assert.equal(
+          spans[0].attributes['gen_ai.tool.call.result'],
+          capture === 'none' ? undefined : JSON.stringify({ output: input })
+        );
+      });
+    }
+  }
+
+  for (const output of [
+    'text',
+    '42',
+    'false',
+    'null',
+    '["one","two"]',
+    '"quoted"',
+    ['one', 'two'],
+    0,
+    false,
+    null,
+    undefined,
+  ]) {
     it(`retains the SDK result and represents non-object content (${JSON.stringify(output)})`, async () => {
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
       const operation = new DynamicStructuredTool({

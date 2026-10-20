@@ -105,7 +105,8 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
   if (typeof value === 'string') {
     try {
       const parsed: unknown = JSON.parse(value);
-      if (isRecord(parsed)) value = parsed;
+      // LangChain serializes non-string arguments before invoking callbacks.
+      if (key === 'input' || isRecord(parsed)) value = parsed;
     } catch {
       // A plain text tool argument or result is not serialized JSON.
     }

@@ -125,10 +125,12 @@ from the final ToolMessage on early 1.x releases. Available IDs and the first no
 recorded without copying arbitrary metadata.
 
 `captureMessageContent: 'span_only'` also enables `gen_ai.tool.call.arguments`
-and `gen_ai.tool.call.result`. JSON-object strings are decoded, and non-object
-values are wrapped as `{"input": value}` or `{"output": value}` to satisfy the
-official object schemas. SDK result objects, including ToolMessage envelopes,
-retain their serialized structure. The object-shape check is applied after
+and `gen_ai.tool.call.result`. Argument strings are JSON-decoded when possible,
+preserving scalar and array types inside `{"input": value}`. Plain-text arguments
+retain their text. JSON-object result strings are decoded, while other result
+strings remain strings. Non-object results are wrapped as `{"output": value}`
+to satisfy the official object schemas. SDK result objects, including ToolMessage
+envelopes, retain their serialized structure. The object-shape check is applied after
 `toJSON`, so dates and other scalar or array serializations are wrapped too.
 Failed executions omit results.
 
