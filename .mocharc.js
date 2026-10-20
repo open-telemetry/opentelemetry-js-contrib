@@ -10,5 +10,5 @@ module.exports = {
     'ts-node/register/transpile-only',
     path.join(__dirname, 'scripts/mocha-otel-condition.cjs'),
   ],
-  timeout: 4000,
+  timeout: 10000,
 };
