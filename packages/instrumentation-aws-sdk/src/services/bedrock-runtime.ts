@@ -601,6 +601,9 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     response.data.body = async function* (
       this: BedrockRuntimeServiceExtension
     ) {
+      // Streamed chunks carry text deltas, so the estimated output tokens
+      // have to be computed over the text of the whole stream.
+      const streamedText = { length: 0 };
       try {
         for await (const chunk of stream) {
           const parsedChunk = this.parseChunk(chunk?.chunk?.bytes);
@@ -630,17 +633,20 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           } else if (modelId.includes('cohere.command-r')) {
             BedrockRuntimeServiceExtension.recordCohereRAttributes(
               parsedChunk,
-              span
+              span,
+              streamedText
             );
           } else if (modelId.includes('cohere.command')) {
             BedrockRuntimeServiceExtension.recordCohereAttributes(
               parsedChunk,
-              span
+              span,
+              streamedText
             );
           } else if (modelId.includes('mistral')) {
             BedrockRuntimeServiceExtension.recordMistralAttributes(
               parsedChunk,
-              span
+              span,
+              streamedText
             );
           }
           yield chunk;
@@ -744,16 +750,46 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     }
   }
 
-  private static recordMistralAttributes(parsedChunk: any, span: Span) {
-    if (parsedChunk.outputs?.[0]?.text !== undefined) {
+  /**
+   * Records the output tokens of a streamed chunk for the models whose chunks only carry
+   * text. The last chunk reports the real count in `amazon-bedrock-invocationMetrics`;
+   * until then the count is approximated over the text received so far.
+   */
+  private static recordStreamedOutputTokens(
+    parsedChunk: {
+      'amazon-bedrock-invocationMetrics'?: { outputTokenCount?: unknown };
+    },
+    span: Span,
+    streamedText: { length: number },
+    text: string | undefined
+  ) {
+    const outputTokenCount =
+      parsedChunk['amazon-bedrock-invocationMetrics']?.outputTokenCount;
+    if (typeof outputTokenCount === 'number') {
+      span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, outputTokenCount);
+    } else if (text !== undefined) {
+      streamedText.length += text.length;
       span.setAttribute(
         ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
         // NOTE: We approximate the token count since this value is not directly available in the body
         // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
         // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
-        Math.ceil(parsedChunk.outputs[0].text.length / 6)
+        Math.ceil(streamedText.length / 6)
       );
     }
+  }
+
+  private static recordMistralAttributes(
+    parsedChunk: any,
+    span: Span,
+    streamedText: { length: number }
+  ) {
+    BedrockRuntimeServiceExtension.recordStreamedOutputTokens(
+      parsedChunk,
+      span,
+      streamedText,
+      parsedChunk.outputs?.[0]?.text
+    );
     if (parsedChunk.outputs?.[0]?.stop_reason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         parsedChunk.outputs[0].stop_reason,
@@ -761,16 +797,17 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     }
   }
 
-  private static recordCohereAttributes(parsedChunk: any, span: Span) {
-    if (parsedChunk.generations?.[0]?.text !== undefined) {
-      span.setAttribute(
-        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-        // NOTE: We approximate the token count since this value is not directly available in the body
-        // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
-        // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
-        Math.ceil(parsedChunk.generations[0].text.length / 6)
-      );
-    }
+  private static recordCohereAttributes(
+    parsedChunk: any,
+    span: Span,
+    streamedText: { length: number }
+  ) {
+    BedrockRuntimeServiceExtension.recordStreamedOutputTokens(
+      parsedChunk,
+      span,
+      streamedText,
+      parsedChunk.generations?.[0]?.text
+    );
     if (parsedChunk.generations?.[0]?.finish_reason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         parsedChunk.generations[0].finish_reason,
@@ -778,16 +815,17 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     }
   }
 
-  private static recordCohereRAttributes(parsedChunk: any, span: Span) {
-    if (parsedChunk.text !== undefined) {
-      // NOTE: We approximate the token count since this value is not directly available in the body
-      // According to Bedrock docs they use (total_chars / 6) to approximate token count for pricing.
-      // https://docs.aws.amazon.com/bedrock/latest/userguide/model-customization-prepare.html
-      span.setAttribute(
-        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-        Math.ceil(parsedChunk.text.length / 6)
-      );
-    }
+  private static recordCohereRAttributes(
+    parsedChunk: any,
+    span: Span,
+    streamedText: { length: number }
+  ) {
+    BedrockRuntimeServiceExtension.recordStreamedOutputTokens(
+      parsedChunk,
+      span,
+      streamedText,
+      parsedChunk.text
+    );
     if (parsedChunk.finish_reason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         parsedChunk.finish_reason,
