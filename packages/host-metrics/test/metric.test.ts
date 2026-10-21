@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as Network from 'systeminformation/lib/network';
+import * as Network from 'systeminformation/lib/network.js';
 import type { Systeminformation } from 'systeminformation';
 import { Attributes } from '@opentelemetry/api';
 import {

@@ -2,4 +2,4 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-export { AWSXRayIdGenerator } from './platform';
+export { AWSXRayIdGenerator } from '#platform';

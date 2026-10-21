@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
-import { SequelizeInstrumentation } from '../src';
+import { SequelizeInstrumentation } from '../src/index';
 import { extractTableFromQuery } from '../src/utils';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {

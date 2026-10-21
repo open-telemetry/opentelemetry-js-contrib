@@ -3,23 +3,49 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Logger, logs } from '@opentelemetry/api-logs';
+import { Logger, SeverityNumber, logs } from '@opentelemetry/api';
+import type { TransportStreamOptions } from 'winston-transport';
 import TransportStream = require('winston-transport');
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { emitLogRecord } from './utils';
 
-export class OpenTelemetryTransportV3 extends TransportStream {
-  private _logger: Logger;
+export interface OpenTelemetryTransportV3Options
+  extends TransportStreamOptions {
+  /**
+   * Custom mapping of winston log level names to OpenTelemetry SeverityNumber.
+   */
+  severityMapping?: Record<string, SeverityNumber>;
+  /**
+   * Minimum OpenTelemetry severity level to emit.
+   */
+  logSeverity?: SeverityNumber;
+}
 
-  constructor(options?: TransportStream.TransportStreamOptions) {
+// tsdown turns `import X = require()` into `import * as X` in the .d.ts, which ESM and
+// esModuleInterop consumers cannot extend; `typeof import()` survives as written.
+const TransportStreamBase: typeof import('winston-transport') = TransportStream;
+
+export class OpenTelemetryTransportV3 extends TransportStreamBase {
+  private _logger: Logger;
+  private _severityMapping?: Record<string, SeverityNumber>;
+  private _logSeverity?: SeverityNumber;
+
+  constructor(options?: OpenTelemetryTransportV3Options) {
     super(options);
     this._logger = logs.getLogger(PACKAGE_NAME, PACKAGE_VERSION);
+    this._severityMapping = options?.severityMapping;
+    this._logSeverity = options?.logSeverity;
   }
 
   public override log(info: any, callback: () => void) {
     try {
-      emitLogRecord(info, this._logger);
+      emitLogRecord(
+        info,
+        this._logger,
+        this._severityMapping,
+        this._logSeverity
+      );
     } catch (error) {
       this.emit('warn', error);
     }

@@ -15,7 +15,7 @@ import nock from 'nock';
 const nockBack = nock.back;
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
-import { AnthropicInstrumentation } from '../../build/src/index.js';
+import { AnthropicInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-anthropic',

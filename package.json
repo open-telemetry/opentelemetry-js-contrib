@@ -35,7 +35,8 @@
     "lint:prettier:fix": "prettier --write .",
     "lint:readme": "nx run-many -t lint:readme",
     "lint:release-please": "node scripts/check-release-please.mjs",
-    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts"
+    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts",
+    "verify-pack": "node scripts/verify-pack.mjs"
   },
   "keywords": [
     "opentelemetry",
@@ -52,6 +53,7 @@
     "@babel/preset-env": "7.28.5",
     "@eslint/js": "9.39.4",
     "@nx/eslint": "20.8.4",
+    "@opentelemetry/api": "^1.10.0",
     "@types/mocha": "10.0.10",
     "@types/node": "22.17.1",
     "@types/semver": "7.7.1",
@@ -76,7 +78,7 @@
     "karma-mocha": "2.0.1",
     "karma-spec-reporter": "0.0.36",
     "karma-webpack": "5.0.1",
-    "knip": "6.23.0",
+    "knip": "6.41.0",
     "lerna": "9.0.7",
     "markdownlint-cli2": "0.19.1",
     "minimatch": "10.2.5",
@@ -86,6 +88,7 @@
     "nyc": "17.1.0",
     "prettier": "3.6.2",
     "process": "0.11.10",
+    "publint": "0.3.24",
     "rimraf": "5.0.10",
     "safe-stable-stringify": "2.5.0",
     "semver": "7.7.4",
@@ -93,6 +96,7 @@
     "test-all-versions": "6.2.0",
     "ts-loader": "9.5.7",
     "ts-node": "10.9.2",
+    "tsdown": "0.23.0",
     "typescript": "5.0.4",
     "typescript-eslint": "8.41.0",
     "util": "0.12.5",
@@ -102,5 +106,17 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^24.11.1 || >=26.0.0",
+      "onFail": "warn"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.10.0",
+      "onFail": "warn"
+    }
+  }
 }

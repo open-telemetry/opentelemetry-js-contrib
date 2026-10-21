@@ -13,7 +13,7 @@ const nock = require('nock');
 const nockBack = nock.back;
 const { createTestNodeSdk } = require('@opentelemetry/contrib-test-utils');
 
-const { AnthropicInstrumentation } = require('../../build/src');
+const { AnthropicInstrumentation } = require('../../dist/index.cjs');
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-anthropic-subpath',
