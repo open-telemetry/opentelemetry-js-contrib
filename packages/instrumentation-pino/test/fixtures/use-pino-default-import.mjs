@@ -9,7 +9,7 @@
 import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
-import { PinoInstrumentation } from '../../build/src/index.js';
+import { PinoInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-pino',

@@ -5,60 +5,24 @@
 
 import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
 import type { CallbackManager } from '@langchain/core/callbacks/manager';
-import {
-  context,
-  trace,
-  SpanKind,
-  SpanStatusCode,
-  type Attributes,
-  type Context,
-  type DiagLogger,
-  type Histogram,
-  type HrTime,
-  type Span,
-  type Tracer,
-} from '@opentelemetry/api';
-import {
-  hrTime,
-  hrTimeDuration,
-  hrTimeToSeconds,
-  isTracingSuppressed,
-} from '@opentelemetry/core';
-import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { context, type DiagLogger } from '@opentelemetry/api';
+import { isTracingSuppressed } from '@opentelemetry/core';
+import type {
+  TelemetryHandler,
+  ToolInvocation,
+} from '@opentelemetry/genai-util';
 import { isRecord } from './content';
 import { ownValue } from './internal-workflows';
-import {
-  ATTR_GEN_AI_CONVERSATION_ID,
-  ATTR_GEN_AI_OPERATION_NAME,
-  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
-  ATTR_GEN_AI_TOOL_CALL_ID,
-  ATTR_GEN_AI_TOOL_CALL_RESULT,
-  ATTR_GEN_AI_TOOL_DESCRIPTION,
-  ATTR_GEN_AI_TOOL_NAME,
-  ATTR_GEN_AI_TOOL_TYPE,
-  GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
-  GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
-} from './semconv';
-
-interface ToolTelemetry {
-  tracer: Tracer;
-  duration: Histogram | undefined;
-  capture: boolean;
-}
+import { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
 
 interface ToolRun {
   runId: string;
-  span: Span;
-  context: Context;
-  startTime: HrTime;
-  metricAttributes: Attributes;
+  invocation: ToolInvocation;
   callId: string | undefined;
-  duration: Histogram | undefined;
-  capture: boolean;
   diag: DiagLogger;
 }
 
-interface ToolInvocation {
+interface CallbackInvocation {
   token: symbol;
   runId?: string;
 }
@@ -68,7 +32,7 @@ const runs = new Map<symbol, ToolRun>();
 const runTokens = new Map<string, symbol>();
 const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
-const parentInvocations = new WeakMap<object, ToolInvocation>();
+const parentInvocations = new WeakMap<object, CallbackInvocation>();
 
 function removeRun(token: symbol, run: ToolRun) {
   runs.delete(token);
@@ -83,8 +47,7 @@ function evictOldestRun() {
   removeRun(token, run);
   run.diag.warn('LangChain: pending tool limit reached, releasing oldest run');
   try {
-    // Eviction is not an observed completion, so do not record a duration.
-    run.span.end();
+    run.invocation.abandon();
   } catch {
     run.diag.warn('LangChain: could not end evicted tool telemetry');
   }
@@ -94,15 +57,15 @@ function evictOldestRun() {
 export function addToolCallbacks(
   configured: CallbackManager,
   manager: typeof CallbackManager,
-  telemetry: () => ToolTelemetry | undefined,
+  telemetry: () => TelemetryHandler | undefined,
   getDiag: () => DiagLogger
 ): CallbackManager {
-  let parentInvocation: ToolInvocation | undefined;
+  let parentInvocation: CallbackInvocation | undefined;
   for (const callback of configured.handlers) {
     parentInvocation = parentInvocations.get(callback) ?? parentInvocation;
     if (handlers.has(callback)) configured.removeHandler(callback);
   }
-  const invocation: ToolInvocation = { token: Symbol() };
+  const invocation: CallbackInvocation = { token: Symbol() };
   const handler = manager.fromHandlers(
     createToolCallbacks(telemetry, getDiag, invocation, parentInvocation)
   ).handlers[0];
@@ -141,18 +104,17 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
  * Other callback operation types remain owned by their existing instrumentation.
  */
 function createToolCallbacks(
-  telemetry: () => ToolTelemetry | undefined,
+  telemetry: () => TelemetryHandler | undefined,
   getDiag: () => DiagLogger,
-  invocation: ToolInvocation,
-  parentInvocation: ToolInvocation | undefined
+  invocation: CallbackInvocation,
+  parentInvocation: CallbackInvocation | undefined
 ): CallbackHandlerMethods {
   const { token } = invocation;
   const end = (output?: unknown, failure?: { error: unknown }) => {
     const run = runs.get(token);
     if (!run) return;
-    const { diag } = run;
+    const { diag, invocation: tool } = run;
     removeRun(token, run);
-    const endTime = hrTime();
     try {
       if (failure) {
         let errorType = '_OTHER';
@@ -163,35 +125,23 @@ function createToolCallbacks(
         } catch {
           diag.warn('LangChain: could not classify tool failure');
         }
-        run.span.setStatus({ code: SpanStatusCode.ERROR });
-        run.span.setAttribute(ATTR_ERROR_TYPE, errorType);
-        run.metricAttributes[ATTR_ERROR_TYPE] = errorType;
+        tool.fail({ errorType });
       } else {
         if (!run.callId && ownValue(output, 'lc_direct_tool_output') === true) {
           const callId = ownValue(output, 'tool_call_id');
           if (typeof callId === 'string' && callId)
-            run.span.setAttribute(ATTR_GEN_AI_TOOL_CALL_ID, callId);
+            tool.setAttribute(ATTR_GEN_AI_TOOL_CALL_ID, callId);
         }
-        if (run.capture) {
+        if (tool.shouldCaptureContent()) {
           const result = content(output, 'output');
-          if (result !== undefined)
-            run.span.setAttribute(ATTR_GEN_AI_TOOL_CALL_RESULT, result);
+          if (result !== undefined) tool.setResult(result);
         }
       }
     } catch {
       diag.warn('LangChain: could not extract tool result telemetry');
     } finally {
       try {
-        run.duration?.record(
-          hrTimeToSeconds(hrTimeDuration(run.startTime, endTime)),
-          run.metricAttributes,
-          run.context
-        );
-      } catch {
-        diag.warn('LangChain: could not record tool duration');
-      }
-      try {
-        run.span.end(endTime);
+        tool.stop();
       } catch {
         diag.warn('LangChain: could not end tool telemetry');
       }
@@ -222,37 +172,10 @@ function createToolCallbacks(
             ? serializedName
             : (runName ?? serialized.id[serialized.id.length - 1]);
         const description = ownValue(serialized, 'description');
-        const attributes: Attributes = {
-          [ATTR_GEN_AI_OPERATION_NAME]:
-            GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
-        };
-        const metricAttributes: Attributes = {};
-        if (typeof name === 'string') {
-          attributes[ATTR_GEN_AI_TOOL_NAME] = name;
-          metricAttributes[ATTR_GEN_AI_TOOL_NAME] = name;
-        }
-        if (typeof description === 'string')
-          attributes[ATTR_GEN_AI_TOOL_DESCRIPTION] = description;
         const className = serialized.id[serialized.id.length - 1];
-        if (
-          className === 'DynamicTool' ||
-          className === 'DynamicStructuredTool'
-        ) {
-          attributes[ATTR_GEN_AI_TOOL_TYPE] = GEN_AI_TOOL_TYPE_VALUE_FUNCTION;
-          metricAttributes[ATTR_GEN_AI_TOOL_TYPE] =
-            GEN_AI_TOOL_TYPE_VALUE_FUNCTION;
-        }
-        if (toolCallId) attributes[ATTR_GEN_AI_TOOL_CALL_ID] = toolCallId;
         const conversation = ['session_id', 'thread_id', 'conversation_id']
           .map(key => ownValue(metadata, key))
           .find(value => typeof value === 'string' && value.length > 0);
-        if (typeof conversation === 'string')
-          attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
-        if (current.capture) {
-          const arguments_ = content(input, 'input');
-          if (arguments_ !== undefined)
-            attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = arguments_;
-        }
         const parentToken =
           parentInvocation && parentInvocation.runId === parentRunId
             ? parentInvocation.token
@@ -260,25 +183,30 @@ function createToolCallbacks(
               ? runTokens.get(parentRunId)
               : undefined;
         const parent =
-          (parentToken ? runs.get(parentToken)?.context : undefined) ?? active;
-        const startTime = hrTime();
-        const span = current.tracer.startSpan(
-          name
-            ? `${GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL} ${name}`
-            : GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
-          { kind: SpanKind.INTERNAL, attributes, startTime },
-          parent
-        );
+          (parentToken
+            ? runs.get(parentToken)?.invocation.getContext()
+            : undefined) ?? active;
+        const tool = current.startTool({
+          toolName: name,
+          toolDescription:
+            typeof description === 'string' ? description : undefined,
+          toolType:
+            className === 'DynamicTool' || className === 'DynamicStructuredTool'
+              ? 'function'
+              : undefined,
+          toolCallId,
+          conversationId:
+            typeof conversation === 'string' ? conversation : undefined,
+          toolArguments: current.shouldCaptureContent()
+            ? content(input, 'input')
+            : undefined,
+          parentContext: parent,
+        });
         runs.set(token, {
           runId,
-          duration: current.duration,
-          capture: current.capture,
           diag,
-          span,
-          startTime,
-          metricAttributes,
+          invocation: tool,
           callId: toolCallId,
-          context: trace.setSpan(parent, span),
         });
         runTokens.set(runId, token);
         evictOldestRun();

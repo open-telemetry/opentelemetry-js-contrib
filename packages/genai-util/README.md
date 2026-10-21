@@ -20,7 +20,7 @@ npm install --save @opentelemetry/genai-util
 
 ## Features
 
-- **Semantic Conventions**: Complete constants and enumerations for OpenTelemetry GenAI semantic conventions (attributes, operation names, providers, finish reasons, token types, metrics, events).
+- **Semantic Conventions**: Complete constants and enumerations for OpenTelemetry GenAI semantic conventions (attributes, operation names, providers, finish reasons, token modalities, metrics, events).
 - **TelemetryHandler**: Central lifecycle façade managing spans, metrics, and events for LLM and GenAI operations.
 - **Invocations Lifecycle**: Structured handlers for all GenAI operations:
   - `InferenceInvocation`: Chat completions, text completions, and multimodal content generation (`chat`, `text_completion`, `generate_content`).
@@ -36,17 +36,48 @@ npm install --save @opentelemetry/genai-util
   - Records **Time To First Chunk (TTFT)** (`gen_ai.client.operation.time_to_first_chunk`), sets `gen_ai.response.time_to_first_chunk`, and sets `gen_ai.request.stream = true` on the first chunk.
   - Supports per-chunk callbacks (`onChunk`), completion hooks (`onEnd`), error handling (`onError`), and early iterator break (`return()`).
   - Automatically finalizes spans and computes overall duration metrics.
-- **Metrics Helpers**: Pre-configured histograms with standard explicit bucket boundaries:
+- **Metrics Helpers**: Pre-configured histograms (with standard explicit bucket boundaries) and counters:
   - `gen_ai.client.operation.duration` (in seconds)
-  - `gen_ai.client.token.usage` (input & output tokens)
+  - `gen_ai.client.inference.operation.input_tokens` / `output_tokens` (per-operation token histograms)
+  - `gen_ai.client.inference.usage.*` (input, output, cache read / write input and reasoning output token counters, split by `gen_ai.token.modality`)
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
+  - `gen_ai.client.operation.time_per_output_chunk` (in seconds)
+  - `gen_ai.execute_tool.duration` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
 
 ---
 
 ## Usage Examples
 
-These will be added soon.
+`TelemetryHandler` is exported for instrumentation integrations. Use its
+`startTool` factory to create a `ToolInvocation` rather than constructing one
+directly. The invocation type is also exported for type annotations.
+
+```typescript
+import { TelemetryHandler } from '@opentelemetry/genai-util';
+
+const handler = new TelemetryHandler({
+  instrumentationName: '@opentelemetry/instrumentation-example',
+  instrumentationVersion: '1.0.0',
+  contentCaptureMode: 'none',
+});
+const invocation = handler.startTool({ toolName: 'lookup' });
+try {
+  const result = invocation.withContext(() => lookup());
+  invocation.setResult(result);
+  invocation.stop();
+} catch (error) {
+  invocation.fail({ exception: error instanceof Error ? error : undefined });
+  throw error;
+}
+```
+
+Callback-based integrations can keep the invocation until the SDK reports
+success or failure. Pass its `getContext()` as a child's `parentContext` to
+preserve explicit callback parentage without requiring an active context manager.
+If completion can no longer be observed, `abandon()` ends
+the span without emitting results, errors, or duration metrics. It does not
+cancel the underlying operation, and later completion calls are ignored.
 
 ## Useful links
 

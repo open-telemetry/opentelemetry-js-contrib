@@ -9,7 +9,7 @@ const {
   SimpleSpanProcessor,
   TracerProvider,
 } = require('@opentelemetry/sdk-trace');
-const { LangChainInstrumentation } = require('../../build/src');
+const { LangChainInstrumentation } = require('../../dist/index.cjs');
 const { TestMetricReader } = require('@opentelemetry/contrib-test-utils');
 const { MeterProvider, DataPointType } = require('@opentelemetry/sdk-metrics');
 

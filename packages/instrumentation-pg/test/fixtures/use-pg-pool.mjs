@@ -10,7 +10,7 @@ import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 import assert from 'assert';
 
-import { PgInstrumentation } from '../../build/src/index.js';
+import { PgInstrumentation } from '../../dist/index.mjs';
 
 const CONFIG = {
   user: process.env.POSTGRES_USER || 'postgres',

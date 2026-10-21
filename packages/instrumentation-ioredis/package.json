@@ -1,23 +1,35 @@
 {
   "name": "@opentelemetry/instrumentation-ioredis",
-  "version": "0.71.0",
+  "version": "0.72.0",
   "description": "OpenTelemetry instrumentation for `ioredis` database redis client for Redis",
-  "main": "build/src/index.js",
-  "types": "build/src/index.d.ts",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
     "directory": "packages/instrumentation-ioredis"
   },
   "scripts": {
-    "clean": "rimraf build/*",
-    "compile": "tsc -p .",
+    "clean": "rimraf dist build",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-ioredis",
     "lint:readme": "node ../../scripts/lint-readme.js",
     "prepublishOnly": "npm run compile",
     "test": "nyc --no-clean mocha 'test/**/*.test.ts'",
     "test-all-versions": "tav",
-    "tdd": "npm run test -- --watch-extensions ts --watch",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test:debug": "cross-env RUN_REDIS_TESTS=true mocha --inspect-brk --no-timeouts 'test/**/*.test.ts'",
     "test:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm test",
     "test-all-versions:with-services-env": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=../../test/test-services.env npm run test-all-versions",
@@ -38,12 +50,12 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": "^18.19.0 || >=20.6.0"
+    "node": ">=22.15.0"
   },
   "files": [
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
@@ -52,16 +64,16 @@
     "@opentelemetry/api": "^1.3.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.3.0",
-    "@opentelemetry/context-async-hooks": "^2.9.0",
-    "@opentelemetry/contrib-test-utils": "^0.70.0",
-    "@opentelemetry/sdk-trace": "^2.9.0",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/context-async-hooks": "^3.0.0",
+    "@opentelemetry/contrib-test-utils": "^0.71.0",
+    "@opentelemetry/sdk-trace": "^3.0.0",
     "@types/ioredis4": "npm:@types/ioredis@4.28.10",
     "ioredis": "5.8.2"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.223.0",
-    "@opentelemetry/redis-common": "^0.38.3",
+    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/redis-common": "^0.39.0",
     "@opentelemetry/semantic-conventions": "^1.33.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-ioredis#readme"

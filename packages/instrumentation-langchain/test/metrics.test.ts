@@ -13,11 +13,7 @@ import {
   trace,
   type Histogram,
 } from '@opentelemetry/api';
-import {
-  hrTimeToSeconds,
-  otperformance,
-  suppressTracing,
-} from '@opentelemetry/core';
+import { hrTimeToSeconds, suppressTracing } from '@opentelemetry/core';
 import {
   getTestSpans,
   resetMemoryExporter,
@@ -89,7 +85,7 @@ describe('LangChain workflow duration metrics', () => {
   for (const capture of ['none', 'span_only'] as const) {
     it(`uses workflow buckets and seconds matching the span (capture=${capture})`, async () => {
       let now = 1000;
-      sinon.stub(otperformance, 'now').callsFake(() => now);
+      sinon.stub(performance, 'now').callsFake(() => now);
       instrumentation.setConfig({ captureMessageContent: capture });
       const flow = RunnableSequence.from([
         RunnableLambda.from((value: string) => {
@@ -298,7 +294,7 @@ describe('LangChain workflow duration metrics', () => {
 
   it('freezes duration before output serialization or histogram recording overhead', async () => {
     let now = 1000;
-    sinon.stub(otperformance, 'now').callsFake(() => now);
+    sinon.stub(performance, 'now').callsFake(() => now);
     const meter = provider.getMeter('slow-recorder');
     const actualHistogram = meter.createHistogram(metricName);
     const record = (...args: Parameters<Histogram['record']>) => {

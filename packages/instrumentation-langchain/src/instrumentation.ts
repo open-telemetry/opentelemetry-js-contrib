@@ -13,7 +13,9 @@ import {
   type Context,
   type Histogram,
   type HrTime,
+  type MeterProvider,
   type Span,
+  type TracerProvider,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -22,6 +24,7 @@ import {
   isTracingSuppressed,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -34,7 +37,6 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
   METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
@@ -120,7 +122,9 @@ function createTrackedModuleFile<T extends object>(
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _workflowDuration: Histogram | undefined;
-  declare private _toolDuration: Histogram | undefined;
+  declare private _toolTelemetry: TelemetryHandler | undefined;
+  declare private _toolTracerProvider: TracerProvider | undefined;
+  declare private _toolMeterProvider: MeterProvider | undefined;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -139,6 +143,30 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       ...config,
       captureMessageContent: this._captureMode(config.captureMessageContent),
     });
+    this._toolTelemetry = undefined;
+  }
+
+  override setTracerProvider(provider: TracerProvider) {
+    super.setTracerProvider(provider);
+    this._toolTracerProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  override setMeterProvider(provider: MeterProvider) {
+    super.setMeterProvider(provider);
+    this._toolMeterProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  private _getToolTelemetry(): TelemetryHandler {
+    return (this._toolTelemetry ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider: this._toolTracerProvider,
+      meterProvider: this._toolMeterProvider,
+      diag: this._diag,
+      contentCaptureMode: this.getConfig().captureMessageContent ?? 'none',
+    }));
   }
 
   override _updateMetricInstruments() {
@@ -158,24 +186,6 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     } catch {
       this._workflowDuration = undefined;
       this._diag.warn('LangChain: could not create workflow duration metric');
-    }
-    try {
-      this._toolDuration = this.meter.createHistogram(
-        METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
-        {
-          description: 'The duration of a single tool execution.',
-          unit: 's',
-          advice: {
-            explicitBucketBoundaries: [
-              0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24,
-              20.48, 40.96, 81.92,
-            ],
-          },
-        }
-      );
-    } catch {
-      this._toolDuration = undefined;
-      this._diag.warn('LangChain: could not create tool duration metric');
     }
   }
 
@@ -387,18 +397,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               invocation = addToolCallbacks(
                 this.copy(),
                 manager,
-                () => {
-                  const selected = currentOwner();
-                  return selected
-                    ? {
-                        tracer: selected.tracer,
-                        duration: selected._toolDuration,
-                        capture:
-                          selected.getConfig().captureMessageContent ===
-                          'span_only',
-                      }
-                    : undefined;
-                },
+                () => currentOwner()?._getToolTelemetry(),
                 () => currentOwner()?._diag ?? diag
               );
             } catch {

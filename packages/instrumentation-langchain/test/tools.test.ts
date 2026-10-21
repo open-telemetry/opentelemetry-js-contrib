@@ -15,6 +15,7 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { hrTimeToSeconds, suppressTracing } from '@opentelemetry/core';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
   getTestSpans,
   resetMemoryExporter,
@@ -80,17 +81,28 @@ describe('LangChain donated tool callbacks', () => {
 
   for (const capture of ['none', 'span_only'] as const) {
     it(`migrates the donated public tool invocation (capture=${capture})`, async () => {
+      const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
       instrumentation.setConfig({ captureMessageContent: capture });
       const sourceTool = tool(async () => 'this is a test tool', {
         name: 'test_tool',
         description: 'Local donated scenario',
       });
       assert.equal(await sourceTool.invoke('hello'), 'this is a test tool');
+      assert.equal(startTool.callCount, 1);
       const spans = getTestSpans();
       assert.equal(spans.length, 1);
       assert.equal(spans[0].name, 'execute_tool test_tool');
       assert.equal(spans[0].kind, SpanKind.INTERNAL);
       assert.deepEqual(spans[0].status, { code: SpanStatusCode.UNSET });
+      assert.equal(
+        spans[0].instrumentationScope.name,
+        instrumentation.instrumentationName
+      );
+      assert.equal(
+        spans[0].instrumentationScope.version,
+        instrumentation.instrumentationVersion
+      );
+      assert.ok(spans[0].instrumentationScope.schemaUrl);
       const attributes = {
         'gen_ai.operation.name': 'execute_tool',
         'gen_ai.tool.name': 'test_tool',
@@ -417,6 +429,7 @@ describe('LangChain donated tool callbacks', () => {
   });
 
   it('does not emit native or instrumented tool telemetry while disabled or suppressed', async () => {
+    const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
     instrumentation.disable();
     await echo().invoke('hello');
     instrumentation.enable();
@@ -425,6 +438,7 @@ describe('LangChain donated tool callbacks', () => {
     );
     assert.equal(getTestSpans().length, 0);
     assert.deepEqual(await points(), []);
+    assert.equal(startTool.callCount, 0);
   });
 
   it('removes completed run state and supports repeated enable/disable', async () => {
@@ -827,8 +841,11 @@ describe('LangChain donated tool callbacks', () => {
     const provider = new TracerProvider({
       spanProcessors: [new SimpleSpanProcessor({ exporter })],
     });
+    const nextReader = new TestMetricReader();
+    const nextMeter = new MeterProvider({ readers: [nextReader] });
     try {
       instrumentation.setTracerProvider(provider);
+      instrumentation.setMeterProvider(nextMeter);
       instrumentation.setConfig({ captureMessageContent: 'none' });
       instrumentation.disable();
       finish('output');
@@ -840,8 +857,38 @@ describe('LangChain donated tool callbacks', () => {
       );
       assert.equal(exporter.getFinishedSpans().length, 0);
       assert.equal((await points())[0].value.count, 1);
+      assert.deepEqual(
+        (await nextReader.collect()).resourceMetrics.scopeMetrics,
+        []
+      );
+
+      instrumentation.enable();
+      await echo().invoke('next');
+      const nextSpans = exporter.getFinishedSpans();
+      assert.equal(nextSpans.length, 1);
+      assert.equal(
+        nextSpans[0].attributes['gen_ai.tool.call.arguments'],
+        undefined
+      );
+      assert.equal(
+        nextSpans[0].attributes['gen_ai.tool.call.result'],
+        undefined
+      );
+      const scopes = (await nextReader.collect()).resourceMetrics.scopeMetrics;
+      assert.equal(scopes.length, 1);
+      assert.equal(
+        scopes[0].scope.schemaUrl,
+        nextSpans[0].instrumentationScope.schemaUrl
+      );
+      assert.equal(
+        scopes[0].metrics[0].descriptor.name,
+        'gen_ai.execute_tool.duration'
+      );
+      assert.equal(getTestSpans().length, 1);
+      assert.equal((await points())[0].value.count, 1);
     } finally {
       await provider.shutdown();
+      await nextMeter.shutdown();
     }
   });
 

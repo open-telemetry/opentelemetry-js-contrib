@@ -17,12 +17,6 @@ npm install --save @opentelemetry/instrumentation-langchain
 ## Supported Versions
 
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions `>=1.0.0 <2`
-- LangChain 1.x requires Node.js 20 or later.
-
-The package test command selects SDK suites before importing them. On Node.js
-18 it runs only SDK-independent configuration and module-registration tests and
-reports that SDK suites are skipped. On Node.js 20+ it runs the full suite,
-including real CommonJS and ESM loading.
 
 ## Usage
 
@@ -101,7 +95,11 @@ content-free diagnostics, without invoking getters or changing SDK options.
 ### Tool execution
 
 Tool execution uses the donated OpenInference package's callback-manager
-integration and tool start/end/error lifecycle. It adds `INTERNAL`
+integration and tool start/end/error lifecycle. The callbacks delegate to
+`@opentelemetry/genai-util`'s `TelemetryHandler.startTool`, `setResult`, `stop`
+and `fail` APIs for spans, attributes, content capture and duration metrics.
+Only SDK value normalization, callback registration and parentage remain
+LangChain-specific. This adds `INTERNAL`
 `execute_tool {name}` spans for SDK tool callbacks, including `tool`,
 `DynamicTool` and `DynamicStructuredTool`. It does not wrap tool methods or
 replace their returned Promises or results.
@@ -189,7 +187,9 @@ directly, with the instrumentation-owned tracer (including `setTracerProvider`).
 Config/provider updates apply to future invocations. In-flight invocations finish
 with their original span, content setting and duration histogram. Disabling
 instrumentation does not abandon in-flight spans or duration recordings.
-`setMeterProvider` configures the provider used for workflow duration metrics.
+`setMeterProvider` configures the provider used for workflow and tool duration
+metrics. Tool invocations use the same configured providers through the shared
+GenAI telemetry handler, with its GenAI schema URL.
 
 Multiple instrumentation instances share one workflow wrapper per method.
 The most recently enabled instance supplies configuration and providers, without
@@ -204,10 +204,8 @@ created during that time can still be recognized after re-enabling. These hooks
 do not emit telemetry and wrap the current method without removing wrappers
 installed by other code.
 
-This workflow-only phase intentionally does not depend on `@opentelemetry/genai-util`.
-Adoption of its concrete workflow API is deferred to a follow-up once that API is
-ready. Public GenAI utility exports and system-instruction handling are outside
-the scope of this phase.
+The existing workflow implementation remains unchanged. Its adoption of a
+shared workflow API is deferred until that API is ready.
 
 Failed operations record `error.type` (the error name, or `_OTHER`) and ERROR
 status, but never the original error message, stack or exception event, even
@@ -281,8 +279,9 @@ package's `src/semconv.ts`. Stable `error.type` is imported from
 
 Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
 `gen_ai.tool.type`, `gen_ai.tool.call.id`, `gen_ai.tool.call.arguments`,
-`gen_ai.tool.call.result`, and `gen_ai.execute_tool.duration`. Their provenance
-is pinned separately in `src/semconv.ts`.
+`gen_ai.tool.call.result`, and `gen_ai.execute_tool.duration`. These are emitted
+by `@opentelemetry/genai-util`. Only the late ToolMessage call-ID mapping needs
+a local constant in `src/semconv.ts`.
 
 ### Tool conformance
 
@@ -295,14 +294,14 @@ pinned Weaver executable, build this package, then run:
 npm run test:conformance --workspace @opentelemetry/instrumentation-langchain
 ```
 
-The scenario registry is pinned alongside the tool conventions in `semconv.ts`.
+The scenario registry is pinned in `test/conformance/conformance.yaml`.
 The scenarios execute real offline tools and export spans and metrics through
 OTLP/gRPC to Weaver. They cover capture disabled, capture enabled and execution
 failure, and results whose JSON serialization is not an object. Reports are
 written under the package's ignored `coverage` directory.
-The package-wide missing instrumentation-scope schema URL is declared as a
-specific expected violation, not silently skipped. No provider requests or
-Docker containers are needed.
+Tool spans and metrics include the shared handler's schema URL, so no missing
+schema-URL exception is needed. No provider requests or Docker containers are
+needed.
 
 ## Useful links
 

@@ -1226,7 +1226,6 @@ describe('LangChain non-streaming workflows', () => {
         await expect(broken.invoke('input')).rejects.toBe(failure);
         expect(create.args.map(args => args[0])).toEqual([
           'gen_ai.invoke_workflow.duration',
-          'gen_ai.execute_tool.duration',
         ]);
         expect(getMeter.calledOnce).toBe(true);
         expect(record.callCount).toBe(3);

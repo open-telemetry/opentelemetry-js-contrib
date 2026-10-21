@@ -10,12 +10,6 @@ env:
   LANGCHAIN_TRACING_V2: 'false'
   LANGCHAIN_TRACING: 'false'
 
-expected_violations:
-  - id: instrumentation_scope_schema_url_missing
-    reason: >-
-      InstrumentationBase does not set a schema URL on the instrumentation-owned
-      tracer and meter. This existing package-wide gap is outside the tool migration.
-
 scenarios:
   tool_content_disabled:
     run: node tool.cjs

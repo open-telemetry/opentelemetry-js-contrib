@@ -4,7 +4,7 @@
  */
 
 const assert = require('node:assert/strict');
-const { LangChainInstrumentation } = require('../../build/src');
+const { LangChainInstrumentation } = require('../../dist/index.cjs');
 const {
   TracerProvider,
   SimpleSpanProcessor,
