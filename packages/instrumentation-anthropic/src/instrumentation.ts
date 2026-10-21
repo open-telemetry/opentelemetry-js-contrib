@@ -131,9 +131,14 @@ function getProviderName(client: unknown): string {
     if (/\.amazonaws\.com$/.test(host) && host.includes('bedrock')) {
       return 'aws.bedrock';
     }
-    // Regional endpoints are `<region>-aiplatform.googleapis.com`; the global
-    // endpoint has no region prefix.
-    if (/(^|[.-])aiplatform\.googleapis\.com$/.test(host)) {
+    // `AnthropicBedrockMantle` uses `bedrock-mantle.<region>.api.aws`.
+    if (/^bedrock-mantle\.[a-z0-9-]+\.api\.aws$/.test(host)) {
+      return 'aws.bedrock';
+    }
+    // Regional endpoints are `<region>-aiplatform.googleapis.com`, the global
+    // endpoint has no region prefix, and the `us` and `eu` multi-region
+    // endpoints are `aiplatform.<name>.rep.googleapis.com`.
+    if (/(^|[.-])aiplatform\.([a-z0-9-]+\.rep\.)?googleapis\.com$/.test(host)) {
       return 'gcp.vertex_ai';
     }
   }

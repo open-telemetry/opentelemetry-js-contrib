@@ -410,6 +410,12 @@ describe('Anthropic instrumentation', function () {
       expected: 'aws.bedrock',
     },
     {
+      title: 'Bedrock Mantle',
+      baseURL: 'https://bedrock-mantle.us-east-1.api.aws/anthropic',
+      cassette: 'anthropic-messages-create-bedrock-mantle.json',
+      expected: 'aws.bedrock',
+    },
+    {
       title: 'regional Vertex',
       baseURL: 'https://us-east5-aiplatform.googleapis.com/v1',
       cassette: 'anthropic-messages-create-vertex-regional.json',
@@ -419,6 +425,18 @@ describe('Anthropic instrumentation', function () {
       title: 'global Vertex',
       baseURL: 'https://aiplatform.googleapis.com/v1',
       cassette: 'anthropic-messages-create-vertex-global.json',
+      expected: 'gcp.vertex_ai',
+    },
+    {
+      title: 'us multi-region Vertex',
+      baseURL: 'https://aiplatform.us.rep.googleapis.com/v1',
+      cassette: 'anthropic-messages-create-vertex-us.json',
+      expected: 'gcp.vertex_ai',
+    },
+    {
+      title: 'eu multi-region Vertex',
+      baseURL: 'https://aiplatform.eu.rep.googleapis.com/v1',
+      cassette: 'anthropic-messages-create-vertex-eu.json',
       expected: 'gcp.vertex_ai',
     },
   ];
