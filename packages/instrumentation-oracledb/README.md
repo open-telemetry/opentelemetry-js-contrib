@@ -21,9 +21,10 @@ npm install --save @opentelemetry/instrumentation-oracledb
 
 ## Supported Versions
 
-- [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0 <8`
+- [`oracledb`](https://www.npmjs.com/package/oracledb) versions `>=6.7.0 <27`
 
 > **Note:** Metrics are only emitted when using `oracledb` versions `>=7.0.0`.
+> Oracle jumped the major version from 7 directly to 26 (aligning with the database release year), so versions 8–25 do not exist.
 
 ## Usage
 

@@ -70,8 +70,8 @@
     "@opentelemetry/context-async-hooks": "^3.0.0",
     "@opentelemetry/contrib-test-utils": "^0.71.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
-    "@types/oracledb": "^6.10.4",
-    "oracledb": "^6.7.0"
+    "@types/oracledb": "^7.0.3",
+    "oracledb": "^26.0.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",
