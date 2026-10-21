@@ -587,7 +587,6 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
   private _endSpanWithError(state: SpanState, error: unknown): void {
     if (state.ended) return;
     const err = error instanceof Error ? error : new Error(String(error));
-    state.span.recordException(err);
     state.span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
     state.span.setAttribute('error.type', err.constructor.name);
     this._endSpan(state);

@@ -584,7 +584,7 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
     expect(spans[0].attributes['error.type']).not.toBe('APIUserAbortError');
-    expect(spans[0].events.map(event => event.name)).toContain('exception');
+    expect(spans[0].events).toHaveLength(0);
   });
 
   it('ends the span when a suspended iterator is cancelled', async () => {
