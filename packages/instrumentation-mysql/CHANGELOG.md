@@ -1,6 +1,33 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.69.1...instrumentation-mysql-v0.70.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.70.0 to ^0.71.0
+
+## [0.69.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.69.0...instrumentation-mysql-v0.69.1) (2026-10-15)
+
+
+### Bug Fixes
+
+* **instrumentation-mysql:** use isEnabled() instead of reading _enabled ([#3820](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3820)) ([84c1b1b](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/84c1b1b93e0a7996133c322be4a5822894d7485d))
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-mysql-v0.68.0...instrumentation-mysql-v0.69.0) (2026-10-06)
 
 

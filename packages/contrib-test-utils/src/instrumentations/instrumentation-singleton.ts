@@ -2,24 +2,29 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import type {
+  InstrumentationBase,
+  InstrumentationConfig,
+} from '@opentelemetry/instrumentation';
 
 const OTEL_TESTING_INSTRUMENTATION_SINGLETON = Symbol.for(
   'opentelemetry.testing.instrumentation_singleton'
 );
 
 type OTelInstrumentationSingletonGlobal = {
-  [OTEL_TESTING_INSTRUMENTATION_SINGLETON]?: InstrumentationBase;
+  [OTEL_TESTING_INSTRUMENTATION_SINGLETON]?: InstrumentationBase<InstrumentationConfig>;
 };
 const _global = global as OTelInstrumentationSingletonGlobal;
 
-export const getInstrumentation = <T extends InstrumentationBase>():
-  | T
-  | undefined => {
+export const getInstrumentation = <
+  T extends InstrumentationBase<InstrumentationConfig>,
+>(): T | undefined => {
   return _global[OTEL_TESTING_INSTRUMENTATION_SINGLETON] as T;
 };
 
-export const registerInstrumentationTesting = <T extends InstrumentationBase>(
+export const registerInstrumentationTesting = <
+  T extends InstrumentationBase<InstrumentationConfig>,
+>(
   instrumentation: T
 ): T => {
   const existing = getInstrumentation<T>();

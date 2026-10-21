@@ -23,12 +23,16 @@ npm install --save @opentelemetry/instrumentation-pino
 ## Usage
 
 ```js
-const { NodeSDK, tracing, logs, api } = require('@opentelemetry/sdk-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { ConsoleSpanExporter, SimpleSpanProcessor } = require('@opentelemetry/sdk-trace');
+const { ConsoleLogRecordExporter, SimpleLogRecordProcessor } = require('@opentelemetry/sdk-logs');
 const { PinoInstrumentation } = require('@opentelemetry/instrumentation-pino');
 const sdk = new NodeSDK({
-  spanProcessor: new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter()),
+  spanProcessors: [
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
+  ],
   logRecordProcessors: [
-    new logs.SimpleLogRecordProcessor({ exporter: new logs.ConsoleLogRecordExporter() }),
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
   ],
   instrumentations: [
     new PinoInstrumentation({
@@ -38,6 +42,7 @@ const sdk = new NodeSDK({
 })
 sdk.start();
 
+const { trace } = require('@opentelemetry/api');
 const pino = require('pino');
 const logger = pino();
 
@@ -45,7 +50,7 @@ logger.info('hi');
 // 1. Log records will be sent to the SDK-registered log record processor, if any.
 //    This is called "log sending".
 
-const tracer = api.trace.getTracer('example');
+const tracer = trace.getTracer('example');
 tracer.startActiveSpan('manual-span', span => {
   logger.info('in a span');
   // 2. Fields identifying the current span will be added to log records:

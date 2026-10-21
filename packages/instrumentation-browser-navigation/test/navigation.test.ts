@@ -20,7 +20,7 @@ import {
   ATTR_BROWSER_NAVIGATION_TYPE,
 } from '../src/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 // @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 // registerInstrumentations removed - using plugin.enable() directly
