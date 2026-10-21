@@ -17,6 +17,12 @@ import type { AnthropicInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 /**
+ * From 0.134.0 the SDK traces its own API calls with GenAI semantic
+ * conventions, so patching those versions would emit a second span per call.
+ */
+const SUPPORTED_VERSIONS = ['>=0.65.0 <0.134.0'];
+
+/**
  * Depth of `messages.stream()` calls on the stack. The helper invokes
  * `messages.create()` synchronously, so a non-zero depth means the span being
  * started belongs to that helper.
@@ -172,7 +178,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
       name =>
         new InstrumentationNodeModuleFile(
           name,
-          ['>=0.65.0 <1'],
+          SUPPORTED_VERSIONS,
           (moduleExports: MessagesModule) => {
             this._wrap(
               moduleExports.Messages.prototype,
@@ -196,7 +202,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     return [
       new InstrumentationNodeModuleDefinition(
         '@anthropic-ai/sdk',
-        ['>=0.65.0 <1'],
+        SUPPORTED_VERSIONS,
         undefined,
         undefined,
         messagesFiles
@@ -450,7 +456,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     // `Symbol.asyncIterator`, so wrap the internal iterator method.
     this._wrap(stream, 'iterator', originalIterator => {
       // Call with the stream as receiver: `iterator` is an own-property closure
-      // in current SDK versions, but the supported range is `>=0.65.0 <1`.
+      // in current SDK versions, but the supported range is `>=0.65.0 <0.134.0`.
       return () =>
         this._streamIterator(originalIterator.call(stream), state, stream);
     });

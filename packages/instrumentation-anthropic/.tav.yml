@@ -1,5 +1,5 @@
 "@anthropic-ai/sdk":
   versions:
-    include: ">=0.65.0 <1"
+    include: ">=0.65.0 <0.134.0"
     mode: max-5
   commands: npm test

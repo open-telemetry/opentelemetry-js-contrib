@@ -17,7 +17,12 @@ npm install --save @opentelemetry/instrumentation-anthropic
 
 ## Supported Versions
 
-- `@anthropic-ai/sdk` versions `>=0.65.0 <1`
+- `@anthropic-ai/sdk` versions `>=0.65.0 <0.134.0`
+
+`@anthropic-ai/sdk` 0.134.0 and later trace their own API calls with the GenAI
+semantic conventions whenever a tracer provider is registered, so this
+instrumentation does not patch those versions. Use the SDK's built-in tracing
+instead; see its `openTelemetry` client option.
 
 ## Supported APIs
 
