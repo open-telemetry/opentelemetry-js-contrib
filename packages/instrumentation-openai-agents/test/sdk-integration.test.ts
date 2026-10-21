@@ -12,9 +12,6 @@
 
 import * as assert from 'assert';
 import { SpanStatusCode } from '@opentelemetry/api';
-// @openai/agents 0.14 loads this optional MCP module from its Node.js shim.
-// Keep this explicit import and dev dependency so Node.js 18 CI can resolve it.
-import '@modelcontextprotocol/sdk/shared/protocol.js';
 import { type Definition, back as nockBack } from 'nock';
 import * as path from 'node:path';
 import { z } from 'zod';
