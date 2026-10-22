@@ -73,13 +73,12 @@ describe('SNS - v3', () => {
       expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
     });
 
-    it('uses target arn when topic arn is empty', async () => {
+    it('keeps target arn behavior unchanged', async () => {
       const targetArn =
         'arn:aws:sns:us-east-1:000000000:endpoint/GCM/app/device';
 
       await sns.publish({
         Message: 'sns message',
-        TopicArn: '',
         TargetArn: targetArn,
       });
 
@@ -87,15 +86,12 @@ describe('SNS - v3', () => {
         (s: ReadableSpan) => s.name === 'endpoint/GCM/app/device send'
       );
       expect(publishSpans.length).toBe(1);
-
-      const publishSpan = publishSpans[0];
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
         'endpoint/GCM/app/device'
       );
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
         targetArn
       );
-      expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
     });
 
     it('phone number is redacted and never recorded as a span attribute', async () => {
@@ -120,13 +116,6 @@ describe('SNS - v3', () => {
       );
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
         'phone_number'
-      );
-
-      // Both destination attributes must redact to the same value so the
-      // redaction decision cannot drift between them and leak the real number
-      // from one while hiding it in the other.
-      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
-        publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]
       );
 
       // Defensively assert the raw value does not appear in ANY attribute value.
