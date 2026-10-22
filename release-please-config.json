@@ -57,6 +57,9 @@
     "packages/instrumentation-langchain": {
       "skip-github-release": true
     },
+    "packages/instrumentation-llama-index": {
+      "skip-github-release": true
+    },
     "packages/instrumentation-memcached": {},
     "packages/instrumentation-mongodb": {},
     "packages/instrumentation-mysql": {},

@@ -122,6 +122,8 @@ components:
     - hectorhdzg
     - yiyuan-he
     - mxiamxia
+  packages/instrumentation-llama-index:
+    - Yashisinghal285
   packages/instrumentation-memcached: []
     # Unmaintained
   packages/instrumentation-mongodb:
