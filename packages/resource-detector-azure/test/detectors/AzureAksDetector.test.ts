@@ -13,13 +13,14 @@ import {
   ATTR_CLOUD_PROVIDER,
   ATTR_K8S_CLUSTER_NAME,
   ATTR_K8S_POD_NAME,
+  ATTR_K8S_POD_UID,
   ATTR_SERVICE_INSTANCE_ID,
 } from '../../src/semconv';
 import {
   AKS_METADATA_FILE_PATH,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
 } from '../../src/types';
-import { detectResources } from '@opentelemetry/resources';
+import { detectResources, envDetector } from '@opentelemetry/resources';
 
 const TEST_RESOURCE_ID =
   '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.ContainerService/managedClusters/test-aks-cluster';
@@ -58,6 +59,7 @@ describe('AzureAksDetector', () => {
       '/subscriptions/test-sub/resourceGroups/test-rg/providers/Microsoft.ContainerService/managedClusters/test-aks-cluster'
     );
     assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
+    assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
     assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
   });
 
@@ -99,7 +101,7 @@ describe('AzureAksDetector', () => {
       process.env.CLUSTER_RESOURCE_ID = TEST_RESOURCE_ID;
     });
 
-    it('should populate pod name and service instance ID from the Downward API environment variables', () => {
+    it('should populate pod name and UID from the Downward API environment variables', () => {
       process.env.K8S_POD_NAME = TEST_POD_NAME;
       process.env.K8S_POD_UID = TEST_POD_UID;
 
@@ -108,7 +110,8 @@ describe('AzureAksDetector', () => {
       }).attributes;
 
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
-      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
       assert.strictEqual(
         attributes[CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE],
         TEST_RESOURCE_ID
@@ -123,10 +126,11 @@ describe('AzureAksDetector', () => {
       }).attributes;
 
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
       assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
-    it('should populate service instance ID without a pod name', () => {
+    it('should populate pod UID without a pod name', () => {
       process.env.K8S_POD_UID = TEST_POD_UID;
 
       const attributes = detectResources({
@@ -134,7 +138,25 @@ describe('AzureAksDetector', () => {
       }).attributes;
 
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
-      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
+    });
+
+    it('should preserve explicit service instance IDs when merged after environment detection', () => {
+      process.env.K8S_POD_NAME = TEST_POD_NAME;
+      process.env.K8S_POD_UID = TEST_POD_UID;
+
+      for (const instanceId of ['worker-1', 'worker-2']) {
+        process.env.OTEL_RESOURCE_ATTRIBUTES = `service.name=test-service,service.instance.id=${instanceId}`;
+
+        const attributes = detectResources({
+          detectors: [envDetector, azureAksDetector],
+        }).attributes;
+
+        assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
+        assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+        assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], instanceId);
+      }
     });
 
     it('should omit pod identity when the environment variables are empty', () => {
@@ -146,6 +168,7 @@ describe('AzureAksDetector', () => {
       }).attributes;
 
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
       assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
@@ -157,6 +180,7 @@ describe('AzureAksDetector', () => {
       }).attributes;
 
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
       assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
   });
@@ -239,7 +263,8 @@ describe('AzureAksDetector', () => {
         TEST_RESOURCE_ID
       );
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
-      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
     it('should detect AKS when the ConfigMap key is mounted with subPath', () => {
@@ -256,7 +281,8 @@ describe('AzureAksDetector', () => {
         TEST_RESOURCE_ID
       );
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
-      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
     it('should detect AKS from a key=value metadata file', () => {
@@ -275,7 +301,8 @@ describe('AzureAksDetector', () => {
         TEST_RESOURCE_ID
       );
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], TEST_POD_NAME);
-      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], TEST_POD_UID);
+      assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
     it('should return an empty resource when the mounted directory has no clusterResourceId key', () => {
@@ -292,6 +319,7 @@ describe('AzureAksDetector', () => {
         undefined
       );
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
       assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 
@@ -325,6 +353,7 @@ describe('AzureAksDetector', () => {
         undefined
       );
       assert.strictEqual(attributes[ATTR_K8S_POD_NAME], undefined);
+      assert.strictEqual(attributes[ATTR_K8S_POD_UID], undefined);
       assert.strictEqual(attributes[ATTR_SERVICE_INSTANCE_ID], undefined);
     });
 

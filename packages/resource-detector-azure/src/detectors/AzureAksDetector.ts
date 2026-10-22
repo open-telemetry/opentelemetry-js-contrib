@@ -13,7 +13,7 @@ import {
   ATTR_CLOUD_PROVIDER,
   ATTR_K8S_CLUSTER_NAME,
   ATTR_K8S_POD_NAME,
-  ATTR_SERVICE_INSTANCE_ID,
+  ATTR_K8S_POD_UID,
   CLOUD_PLATFORM_VALUE_AZURE_AKS,
   CLOUD_PROVIDER_VALUE_AZURE,
 } from '../semconv';
@@ -77,7 +77,7 @@ class AzureAksDetector implements ResourceDetector {
       if (podUid) {
         attributes = {
           ...attributes,
-          [ATTR_SERVICE_INSTANCE_ID]: podUid,
+          [ATTR_K8S_POD_UID]: podUid,
         };
       }
 

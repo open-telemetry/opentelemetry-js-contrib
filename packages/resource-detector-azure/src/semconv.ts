@@ -84,6 +84,15 @@ export const ATTR_K8S_CLUSTER_NAME = 'k8s.cluster.name' as const;
 export const ATTR_K8S_POD_NAME = 'k8s.pod.name' as const;
 
 /**
+ * The UID of the Pod.
+ *
+ * @example 275ecb36-5aa8-4c2a-9c47-d8bb681b9aff
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_K8S_POD_UID = 'k8s.pod.uid' as const;
+
+/**
  * The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
  *
  * @example 2021/06/28/[$LATEST]2f399eb14537447da05ab2a2e39309de
