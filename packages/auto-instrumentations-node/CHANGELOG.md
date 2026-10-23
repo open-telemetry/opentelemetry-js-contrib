@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.82.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.82.0...auto-instrumentations-node-v0.82.1) (2026-10-23)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-oracledb bumped from ^0.49.0 to ^0.50.0
+    * @opentelemetry/resource-detector-azure bumped from ^0.32.0 to ^0.33.0
+
 ## [0.82.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.81.2...auto-instrumentations-node-v0.82.0) (2026-10-20)
 
 

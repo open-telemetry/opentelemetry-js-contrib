@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-openai-agents",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenTelemetry instrumentation for the OpenAI Agents SDK for JavaScript",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
