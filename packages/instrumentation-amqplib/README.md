@@ -40,6 +40,8 @@ const sdk = new NodeSDK({
       // consumeHook: (span: Span, consumeInfo: ConsumeInfo) => { },
       // consumeEndHook: (span: Span, consumeEndInfo: ConsumeEndInfo) => { },
       // useLinksForConsume: boolean,
+      // captureClusterName: boolean,
+      // captureVhostName: boolean,
     }),
   ],
 });
@@ -59,6 +61,8 @@ amqplib instrumentation has few options available to choose from. You can set th
 | `consumeEndHook`     | `AmqplibConsumeEndCustomAttributeFunction`     | hook for adding custom attributes after consumer message is acked to server.        |
 | `consumeTimeoutMs`   | `number`                                       | read [Consume Timeout](#consume-timeout) below                                      |
 | `useLinksForConsume` | `boolean`                                      | read [Links for Consume](#links-for-consume) below                                  |
+| `captureClusterName` | `boolean`                                      | capture `messaging.rabbitmq.cluster.name` span attribute. Default is `false`.       |
+| `captureVhostName`   | `boolean`                                      | capture `messaging.rabbitmq.vhost.name` span attribute. Default is `false`.         |
 
 ### Consume Timeout
 
