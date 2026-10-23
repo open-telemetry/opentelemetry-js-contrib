@@ -1043,4 +1043,47 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
       1
     );
   });
+
+  it('should return an iterable iterator from [Symbol.asyncIterator]() so passing the iterator to for-await works', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+
+    const seen: string[] = [];
+    const sdkStream = new FakeSDKStream(['chunk-1', 'chunk-2', 'chunk-3']);
+    const wrapped = handler.wrapAsyncStream(sdkStream, {
+      invocation,
+      onChunk: c => {
+        seen.push(c);
+      },
+      onEnd: () => {
+        invocation.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+      },
+    });
+
+    const iter = wrapped[
+      Symbol.asyncIterator
+    ]() as AsyncIterableIterator<string>;
+    assert.strictEqual(iter[Symbol.asyncIterator](), iter);
+
+    const first = await iter.next();
+    assert.deepStrictEqual(first, { done: false, value: 'chunk-1' });
+
+    const remaining: string[] = [];
+    for await (const chunk of iter) {
+      remaining.push(chunk);
+    }
+
+    assert.deepStrictEqual(remaining, ['chunk-2', 'chunk-3']);
+    assert.deepStrictEqual(seen, ['chunk-1', 'chunk-2', 'chunk-3']);
+    assert.strictEqual(invocation.isEnded(), true);
+  });
 });
