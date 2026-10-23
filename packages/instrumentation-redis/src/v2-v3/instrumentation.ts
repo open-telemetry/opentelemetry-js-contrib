@@ -27,7 +27,14 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { DB_SYSTEM_NAME_VALUE_REDIS } from '../semconv';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import {
+  createDbStatementSerializer,
+  defaultDbStatementMaskingHook,
+  defaultDbStatementSerializer,
+} from '@opentelemetry/redis-common';
+
+// built once, the option is read per command but the serializer is stateless
+const keySerializer = createDbStatementSerializer({ serializeKeys: true });
 
 export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
@@ -118,14 +125,24 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
           return original.apply(this, arguments);
         }
 
-        const dbStatementSerializer =
-          config?.dbStatementSerializer || defaultDbStatementSerializer;
+        const serializer =
+          config?.dbStatementSerializer ||
+          (config?.serializeKeys
+            ? keySerializer
+            : defaultDbStatementSerializer);
+
+        let dbQueryText = serializer(cmd.command, cmd.args);
+        if (config?.serializeKeys) {
+          dbQueryText = (
+            config.maskStatementHook || defaultDbStatementMaskingHook
+          )(dbQueryText);
+        }
 
         const attributes: Attributes = {};
         Object.assign(attributes, {
           [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
           [ATTR_DB_OPERATION_NAME]: cmd.command,
-          [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
+          [ATTR_DB_QUERY_TEXT]: dbQueryText,
         });
 
         const span = instrumentation.tracer.startSpan(
