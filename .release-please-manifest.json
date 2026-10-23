@@ -48,6 +48,7 @@
   "packages/instrumentation-knex": "0.68.0",
   "packages/instrumentation-koa": "0.72.0",
   "packages/instrumentation-langchain": "0.14.0",
+  "packages/instrumentation-llama-index": "0.1.0",
   "packages/instrumentation-memcached": "0.67.0",
   "packages/instrumentation-mongodb": "0.77.0",
   "packages/instrumentation-mysql": "0.70.0",
