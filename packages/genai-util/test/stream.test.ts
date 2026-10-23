@@ -855,4 +855,98 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
       [GEN_AI_FINISH_REASON_VALUE_ERROR]
     );
   });
+
+  it('should record telemetry and end the span when a wrapped generator is consumed via direct .next(), .return(), or .throw() calls', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    // 1. Drain completely via direct .next() calls
+    const invocation1 = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    const chunks1: string[] = [];
+    let endCalled1 = false;
+    const gen1 = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['a', 'b']),
+      {
+        invocation: invocation1,
+        onChunk: c => {
+          chunks1.push(c);
+        },
+        onEnd: () => {
+          endCalled1 = true;
+          invocation1.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+        },
+      }
+    );
+
+    assert.deepStrictEqual(await gen1.next(), { done: false, value: 'a' });
+    assert.deepStrictEqual(await gen1.next(), { done: false, value: 'b' });
+    assert.deepStrictEqual(await gen1.next(), {
+      done: true,
+      value: undefined,
+    });
+    assert.deepStrictEqual(chunks1, ['a', 'b']);
+    assert.strictEqual(endCalled1, true);
+    assert.strictEqual(invocation1.isEnded(), true);
+
+    // 2. Peek first chunk via .next(), then consume remainder via `for await` without double-counting
+    const invocation2 = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+    const chunks2: string[] = [];
+    const gen2 = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['first', 'second', 'third']),
+      {
+        invocation: invocation2,
+        onChunk: c => {
+          chunks2.push(c);
+        },
+      }
+    );
+
+    const peeked = await gen2.next();
+    assert.deepStrictEqual(peeked, { done: false, value: 'first' });
+    const rest: string[] = [];
+    for await (const chunk of gen2) {
+      rest.push(chunk);
+    }
+    assert.deepStrictEqual(rest, ['second', 'third']);
+    assert.deepStrictEqual(chunks2, ['first', 'second', 'third']);
+    assert.strictEqual(invocation2.isEnded(), true);
+
+    // 3. Direct .return() and .throw() on wrapped generator
+    const invocation3 = handler.startInference({ providerName: 'openai' });
+    const gen3 = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['x', 'y']),
+      { invocation: invocation3 }
+    );
+    await gen3.next();
+    await gen3.return(undefined);
+    assert.strictEqual(invocation3.isEnded(), true);
+
+    const invocation4 = handler.startInference({ providerName: 'openai' });
+    const gen4 = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['x', 'y']),
+      { invocation: invocation4 }
+    );
+    await gen4.next();
+    await assert.rejects(async () => {
+      await gen4.throw(new Error('Direct generator abort'));
+    });
+    assert.strictEqual(invocation4.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 4);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(spans[2].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(spans[3].status.code, SpanStatusCode.ERROR);
+  });
 });

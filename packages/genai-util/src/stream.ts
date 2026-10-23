@@ -106,7 +106,104 @@ export function wrapAsyncStream<
     }
   };
 
+  const wrapIterator = (
+    iterator: AsyncIterator<TChunk>
+  ): AsyncIterator<TChunk> => {
+    const originalNext = iterator.next.bind(iterator);
+    const originalReturn =
+      typeof iterator.return === 'function'
+        ? iterator.return.bind(iterator)
+        : undefined;
+    const originalThrow =
+      typeof iterator.throw === 'function'
+        ? iterator.throw.bind(iterator)
+        : undefined;
+
+    // Shared step runner for `next()` and `throw()`. Both iterator methods can
+    // advance the underlying generator to yield a chunk (e.g. if `throw()` is
+    // caught inside the generator), complete cleanly (`done: true`), or reject.
+    // Centralizing this handles chunk processing, stream timing metrics
+    // (`time_to_first_chunk` and `time_per_output_chunk`), and success/failure
+    // finalization uniformly across both paths.
+    const advance = async (
+      step: () => Promise<IteratorResult<TChunk>>
+    ): Promise<IteratorResult<TChunk>> => {
+      try {
+        const result = await step();
+        if (result.done) {
+          await finalizeSuccess();
+          return result;
+        }
+
+        const chunkTime = hrTime();
+        await processChunk(result.value);
+        // Record after processChunk so response.model set during chunk processing is included on metrics,
+        // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
+        invocation.recordStreamChunk(chunkTime);
+        return result;
+      } catch (error) {
+        await finalizeFailure(error);
+        throw error;
+      }
+    };
+
+    return {
+      async next(...args): Promise<IteratorResult<TChunk>> {
+        return advance(() => originalNext(...args));
+      },
+
+      async return(value?: unknown): Promise<IteratorResult<TChunk>> {
+        try {
+          const result: IteratorResult<TChunk> = originalReturn
+            ? await originalReturn(value)
+            : { done: true, value };
+          await finalizeSuccess();
+          return result;
+        } catch (error) {
+          await finalizeFailure(error);
+          throw error;
+        }
+      },
+
+      async throw(error?: unknown): Promise<IteratorResult<TChunk>> {
+        if (originalThrow) {
+          return advance(() => originalThrow(error));
+        }
+        await finalizeFailure(error);
+        throw error;
+      },
+    };
+  };
+
   const originalAsyncIterator = stream[Symbol.asyncIterator];
+  const streamAsIterator = stream as unknown as AsyncIterator<TChunk>;
+  const wrappedSelfIterator =
+    typeof streamAsIterator.next === 'function'
+      ? wrapIterator(streamAsIterator)
+      : undefined;
+
+  if (wrappedSelfIterator) {
+    Object.defineProperties(stream, {
+      next: {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: wrappedSelfIterator.next,
+      },
+      return: {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: wrappedSelfIterator.return,
+      },
+      throw: {
+        configurable: true,
+        enumerable: false,
+        writable: true,
+        value: wrappedSelfIterator.throw,
+      },
+    });
+  }
 
   // Use Object.defineProperty directly rather than shimmer: stream instances are
   // ephemeral per-request objects that never need unwrap bookkeeping, and this
@@ -116,66 +213,13 @@ export function wrapAsyncStream<
     enumerable: false,
     writable: true,
     value(this: TStream): AsyncIterator<TChunk> {
-      const iterator =
-        typeof originalAsyncIterator === 'function'
-          ? originalAsyncIterator.call(this)
-          : (this as unknown as AsyncIterator<TChunk>);
-
-      // Shared step runner for `next()` and `throw()`. Both iterator methods can
-      // advance the underlying generator to yield a chunk (e.g. if `throw()` is
-      // caught inside the generator), complete cleanly (`done: true`), or reject.
-      // Centralizing this handles chunk processing, stream timing metrics
-      // (`time_to_first_chunk` and `time_per_output_chunk`), and success/failure
-      // finalization uniformly across both paths.
-      const advance = async (
-        step: () => Promise<IteratorResult<TChunk>>
-      ): Promise<IteratorResult<TChunk>> => {
-        try {
-          const result = await step();
-          if (result.done) {
-            await finalizeSuccess();
-            return result;
-          }
-
-          const chunkTime = hrTime();
-          await processChunk(result.value);
-          // Record after processChunk so response.model set during chunk processing is included on metrics,
-          // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
-          invocation.recordStreamChunk(chunkTime);
-          return result;
-        } catch (error) {
-          await finalizeFailure(error);
-          throw error;
+      if (typeof originalAsyncIterator === 'function') {
+        const iterator = originalAsyncIterator.call(this);
+        if ((iterator as unknown) !== this) {
+          return wrapIterator(iterator);
         }
-      };
-
-      return {
-        async next(...args): Promise<IteratorResult<TChunk>> {
-          return advance(() => iterator.next(...args));
-        },
-
-        async return(value?: unknown): Promise<IteratorResult<TChunk>> {
-          try {
-            const result: IteratorResult<TChunk> =
-              typeof iterator.return === 'function'
-                ? await iterator.return(value)
-                : { done: true, value };
-            await finalizeSuccess();
-            return result;
-          } catch (error) {
-            await finalizeFailure(error);
-            throw error;
-          }
-        },
-
-        async throw(error?: unknown): Promise<IteratorResult<TChunk>> {
-          if (typeof iterator.throw === 'function') {
-            return advance(() => iterator.throw!(error));
-          }
-          await finalizeFailure(error);
-          throw error;
-        },
-      };
+      }
+      return wrappedSelfIterator!;
     },
   });
 
