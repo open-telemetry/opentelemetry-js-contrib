@@ -10,12 +10,14 @@ import {
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import {
+  AttributeValue,
   Attributes,
   context,
   Span,
   SpanKind,
   SpanStatus,
   SpanStatusCode,
+  trace,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -398,5 +400,102 @@ describe('CassandraDriverInstrumentation', () => {
         done();
       });
     });
+  });
+});
+
+// These tests cover the patched RequestExecution._sendOnConnection wrapper
+// directly, so they do not require a Cassandra server.
+describe('_sendOnConnection', () => {
+  let instrumentation: CassandraDriverInstrumentation;
+
+  beforeEach(() => {
+    instrumentation = new CassandraDriverInstrumentation();
+  });
+
+  afterEach(() => {
+    instrumentation.disable();
+  });
+
+  function createMockSpan(isRecording: boolean) {
+    const attributes: Attributes = {};
+    const span = {
+      isRecording: () => isRecording,
+      setAttribute: (key: string, value: AttributeValue) => {
+        attributes[key] = value;
+        return span;
+      },
+    };
+    return { span: span as unknown as Span, attributes };
+  }
+
+  function patchSendOnConnection() {
+    let originalCallCount = 0;
+    const original = function () {
+      originalCallCount++;
+      return 'originalResult';
+    };
+    const patched = (instrumentation as any)._getPatchedSendOnConnection()(
+      original
+    );
+    return { patched, getOriginalCallCount: () => originalCallCount };
+  }
+
+  const requestExecution = {
+    _connection: { address: '1.2.3.4', port: '9042' },
+  };
+
+  it('sets address attributes on a recording span and calls the original', () => {
+    const { patched, getOriginalCallCount } = patchSendOnConnection();
+    const { span, attributes } = createMockSpan(true);
+
+    const result = context.with(
+      trace.setSpan(context.active(), span),
+      () => patched.call(requestExecution) as unknown
+    );
+
+    assert.strictEqual(result, 'originalResult');
+    assert.strictEqual(getOriginalCallCount(), 1);
+    assert.deepStrictEqual(attributes, {
+      [ATTR_SERVER_ADDRESS]: '1.2.3.4',
+      [ATTR_SERVER_PORT]: 9042,
+    });
+  });
+
+  // https://github.com/open-telemetry/opentelemetry-js-contrib/issues/2780
+  it('does not set attributes on an ended span and still calls the original', () => {
+    const { patched, getOriginalCallCount } = patchSendOnConnection();
+    const { span, attributes } = createMockSpan(false);
+
+    const result = context.with(
+      trace.setSpan(context.active(), span),
+      () => patched.call(requestExecution) as unknown
+    );
+
+    assert.strictEqual(result, 'originalResult');
+    assert.strictEqual(getOriginalCallCount(), 1);
+    assert.deepStrictEqual(attributes, {});
+  });
+
+  it('calls the original when there is no span in context', () => {
+    const { patched, getOriginalCallCount } = patchSendOnConnection();
+
+    const result = patched.call(requestExecution) as unknown;
+
+    assert.strictEqual(result, 'originalResult');
+    assert.strictEqual(getOriginalCallCount(), 1);
+  });
+
+  it('calls the original when the connection is not set', () => {
+    const { patched, getOriginalCallCount } = patchSendOnConnection();
+    const { span, attributes } = createMockSpan(true);
+
+    const result = context.with(
+      trace.setSpan(context.active(), span),
+      () => patched.call({}) as unknown
+    );
+
+    assert.strictEqual(result, 'originalResult');
+    assert.strictEqual(getOriginalCallCount(), 1);
+    assert.deepStrictEqual(attributes, {});
   });
 });
