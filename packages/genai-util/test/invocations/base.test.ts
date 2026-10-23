@@ -152,6 +152,57 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.isEnded(), true);
   });
 
+  it('abandons unobserved invocations without running completion hooks', () => {
+    const inv = new CustomInvocation('abandoned', handler);
+    inv.abandon();
+    inv.abandon();
+    inv.stop();
+    inv.fail({ errorType: 'TypeError' });
+
+    assert.strictEqual(inv.isEnded(), true);
+    assert.deepStrictEqual(inv.hookOrder, []);
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.deepStrictEqual(spans[0].status, { code: SpanStatusCode.UNSET });
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], undefined);
+    assert.deepStrictEqual(spans[0].events, []);
+  });
+
+  it('exposes callback parentage even without a registered context manager', () => {
+    context.disable();
+    try {
+      const parent = new CustomInvocation('parent', handler);
+      const child = new CustomInvocation('child', handler, {
+        context: parent.getContext(),
+      });
+      assert.strictEqual(trace.getSpan(parent.getContext()), parent.getSpan());
+      assert.strictEqual(trace.getSpan(context.active()), undefined);
+      child.stop();
+      parent.stop();
+      const [childSpan, parentSpan] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        childSpan.parentSpanContext?.spanId,
+        parentSpan.spanContext().spanId
+      );
+    } finally {
+      context.setGlobalContextManager(contextManager.enable());
+    }
+  });
+
+  for (const completion of ['stop', 'fail'] as const) {
+    it(`does not abandon an invocation already completed by ${completion}`, () => {
+      const inv = new CustomInvocation('completed', handler);
+      if (completion === 'stop') inv.stop();
+      else inv.fail({ errorType: 'TypeError' });
+      const hooks = inv.hookOrder.slice();
+      inv.abandon();
+
+      assert.deepStrictEqual(inv.hookOrder, hooks);
+      assert.strictEqual(inv.recordMetricsCalls.length, 1);
+      assert.strictEqual(ctx.memoryExporter.getFinishedSpans().length, 1);
+    });
+  }
+
   it('should use the span kind supplied by the concrete invocation', () => {
     new CustomInvocation('subclass-kind-span', handler).stop();
 

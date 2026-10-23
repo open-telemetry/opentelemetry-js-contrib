@@ -47,6 +47,10 @@ async function main() {
       mode === 'cjs'
         ? require('@langchain/core/tools')
         : await import('@langchain/core/tools');
+    const { CallbackManager } =
+      mode === 'cjs'
+        ? require('@langchain/core/callbacks/manager')
+        : await import('@langchain/core/callbacks/manager');
     const { BaseChatModel } =
       mode === 'cjs'
         ? require('@langchain/core/language_models/chat_models')
@@ -140,6 +144,12 @@ async function main() {
         { type: 'object' },
         { includeRaw: true }
       ),
+      callbackTool: new tools.DynamicTool({
+        name: 'loaded-tool',
+        description: 'Local tool loading scenario',
+        func: async value => value,
+      }),
+      CallbackManager,
       asTool: module.Runnable.prototype.asTool,
       assignFactory: module.RunnablePassthrough.assign,
     });
@@ -253,10 +263,27 @@ async function main() {
         assert.deepEqual((await adapter.structured.invoke('question')).parsed, {
           answer: 'test',
         });
+        assert.equal(
+          await adapter.callbackTool.invoke('tool-value'),
+          'tool-value'
+        );
         assert.equal(module.Runnable.prototype.asTool, adapter.asTool);
         assert.equal(module.RunnablePassthrough.assign, adapter.assignFactory);
       }
-      assert.equal(exporter.getFinishedSpans().length, 18);
+      const spans = exporter.getFinishedSpans();
+      assert.equal(spans.length, 20);
+      assert.equal(
+        spans.filter(
+          span => span.attributes['gen_ai.operation.name'] === 'invoke_workflow'
+        ).length,
+        18
+      );
+      assert.equal(
+        spans.filter(
+          span => span.attributes['gen_ai.operation.name'] === 'execute_tool'
+        ).length,
+        2
+      );
       const collected = await reader.collect();
       assert.deepEqual(collected.errors, []);
       const metric = collected.resourceMetrics.scopeMetrics.flatMap(
@@ -286,11 +313,43 @@ async function main() {
       }
     }
 
+    instrumentation.enable();
+    for (const { callbackTool, CallbackManager } of adapters) {
+      exporter.reset();
+      const callbacks = CallbackManager.configure();
+      const serialized = callbackTool.toJSON();
+      const older = await callbacks.handleToolStart(serialized, '', 'reused');
+      const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+      try {
+        assert.equal(
+          await callbackTool.invoke('child', {
+            callbacks: older.getChild().copy(),
+          }),
+          'child'
+        );
+        await older.handleToolEnd('older');
+        await newer.handleToolEnd('newer');
+        const spans = exporter.getFinishedSpans();
+        assert.equal(spans.length, 3);
+        assert.equal(
+          spans[0].parentSpanContext?.spanId,
+          spans[1].spanContext().spanId
+        );
+      } finally {
+        await older.handleToolEnd('cleanup');
+        await newer.handleToolEnd('cleanup');
+      }
+    }
+    instrumentation.disable();
+
     const instances = [instrumentation, second];
     const exporters = [exporter, secondExporter];
     const check = async owner => {
       for (const current of exporters) current.reset();
-      for (const { RunnableLambda, RunnableMap, RunnableSequence } of modules) {
+      for (const [
+        moduleIndex,
+        { RunnableLambda, RunnableMap, RunnableSequence },
+      ] of modules.entries()) {
         const sequence = RunnableSequence.from([
           RunnableLambda.from(value => value),
           RunnableLambda.from(value => value),
@@ -303,12 +362,20 @@ async function main() {
           }).invoke('input'),
           { value: 'input' }
         );
+        assert.equal(
+          await adapters[moduleIndex].callbackTool.invoke('input'),
+          'input'
+        );
       }
       for (const [index, current] of exporters.entries()) {
         const spans = current.getFinishedSpans();
-        assert.equal(spans.length, index === owner ? modules.length * 3 : 0);
+        assert.equal(spans.length, index === owner ? modules.length * 4 : 0);
         for (const span of spans) {
-          assert.equal('gen_ai.input.messages' in span.attributes, owner === 1);
+          const content =
+            span.attributes['gen_ai.operation.name'] === 'execute_tool'
+              ? 'gen_ai.tool.call.arguments'
+              : 'gen_ai.input.messages';
+          assert.equal(content in span.attributes, owner === 1);
         }
       }
     };
@@ -353,6 +420,74 @@ async function main() {
         );
         assert.equal(module.RunnableMap.prototype.invoke, originals[index].map);
       }
+    }
+
+    const warnings = [[], []];
+    const originalWarn = instances.map(instance => instance._diag.warn);
+    for (const [index, instance] of instances.entries()) {
+      instance.setConfig({ captureMessageContent: 'span_only' });
+      instance._diag.warn = message => warnings[index].push(message);
+    }
+    try {
+      const output = {};
+      output.circular = output;
+      for (const { callbackTool, CallbackManager } of adapters) {
+        instrumentation.enable();
+        second.enable();
+        callbackTool.func = async () => output;
+        const checkWarnings = (owner, message) => {
+          for (const [index, messages] of warnings.entries()) {
+            assert.deepEqual(messages, index === owner ? [message] : []);
+            messages.length = 0;
+          }
+        };
+        for (const owner of [1, 0]) {
+          if (owner === 0) second.disable();
+          assert.equal(await callbackTool.invoke('input'), output);
+          checkWarnings(
+            owner,
+            'LangChain: could not extract tool result telemetry'
+          );
+          const addHandler = CallbackManager.prototype.addHandler;
+          try {
+            CallbackManager.prototype.addHandler = function (handler, inherit) {
+              if (handler.name === 'opentelemetry_langchain_tools')
+                throw new Error('synthetic registration failure');
+              return addHandler.call(this, handler, inherit);
+            };
+            assert.equal(await callbackTool.invoke('input'), output);
+            checkWarnings(
+              owner,
+              'LangChain: could not register tool callbacks'
+            );
+          } finally {
+            CallbackManager.prototype.addHandler = addHandler;
+          }
+        }
+        second.enable();
+        let enter;
+        let finish;
+        const started = new Promise(resolve => {
+          enter = resolve;
+        });
+        const pending = new Promise(resolve => {
+          finish = resolve;
+        });
+        callbackTool.func = async () => {
+          enter();
+          return pending;
+        };
+        const result = callbackTool.invoke('input');
+        await started;
+        second.disable();
+        instrumentation.disable();
+        finish(output);
+        assert.equal(await result, output);
+        checkWarnings(1, 'LangChain: could not extract tool result telemetry');
+      }
+    } finally {
+      for (const [index, instance] of instances.entries())
+        instance._diag.warn = originalWarn[index];
     }
   } finally {
     instrumentation.disable();

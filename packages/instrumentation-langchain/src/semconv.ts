@@ -16,3 +16,6 @@ export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW = 'invoke_workflow';
 // Source: https://github.com/open-telemetry/semantic-conventions-genai/blob/e57c543b4889619eb2a05702471937db5119165d/docs/gen-ai/gen-ai-metrics.md#metric-gen_aiinvoke_workflowduration
 export const METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION =
   'gen_ai.invoke_workflow.duration';
+
+// Source: https://github.com/open-telemetry/semantic-conventions-genai/tree/4e8a2812139b2a999d959e3650e24dfc64e21943/model/gen-ai
+export const ATTR_GEN_AI_TOOL_CALL_ID = 'gen_ai.tool.call.id';

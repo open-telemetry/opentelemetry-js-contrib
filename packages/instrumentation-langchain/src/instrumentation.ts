@@ -13,7 +13,9 @@ import {
   type Context,
   type Histogram,
   type HrTime,
+  type MeterProvider,
   type Span,
+  type TracerProvider,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -22,6 +24,7 @@ import {
   isTracingSuppressed,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -38,10 +41,12 @@ import {
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type { CallbackManager } from '@langchain/core/callbacks/manager';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
+import { addToolCallbacks } from './tool-callbacks';
 import {
   isInternalWorkflow,
   isTrackingFactory,
@@ -117,6 +122,9 @@ function createTrackedModuleFile<T extends object>(
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _workflowDuration: Histogram | undefined;
+  declare private _toolTelemetry: TelemetryHandler | undefined;
+  declare private _toolTracerProvider: TracerProvider | undefined;
+  declare private _toolMeterProvider: MeterProvider | undefined;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -135,6 +143,30 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       ...config,
       captureMessageContent: this._captureMode(config.captureMessageContent),
     });
+    this._toolTelemetry = undefined;
+  }
+
+  override setTracerProvider(provider: TracerProvider) {
+    super.setTracerProvider(provider);
+    this._toolTracerProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  override setMeterProvider(provider: MeterProvider) {
+    super.setMeterProvider(provider);
+    this._toolMeterProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  private _getToolTelemetry(): TelemetryHandler {
+    return (this._toolTelemetry ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider: this._toolTracerProvider,
+      meterProvider: this._toolMeterProvider,
+      diag: this._diag,
+      contentCaptureMode: this.getConfig().captureMessageContent ?? 'none',
+    }));
   }
 
   override _updateMetricInstruments() {
@@ -249,6 +281,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             );
         }
       ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/callbacks/manager.${extension}`,
+        (module: { CallbackManager: typeof CallbackManager }) =>
+          this._patchToolCallbacks(module.CallbackManager),
+        (module: { CallbackManager: typeof CallbackManager }) => {
+          this._unpatchMethod(module.CallbackManager, '_configureSync');
+          this._unpatchMethod(
+            module.CallbackManager.prototype,
+            'handleToolStart'
+          );
+        }
+      ),
     ]);
     return [
       new InstrumentationNodeModuleDefinition(
@@ -299,6 +343,70 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         ])
       ),
     ];
+  }
+
+  private _patchToolCallbacks(manager: typeof CallbackManager) {
+    this._patchMethod(
+      manager,
+      '_configureSync',
+      (owners, restore) => original =>
+        function (
+          this: typeof CallbackManager,
+          ...args: Parameters<typeof original>
+        ) {
+          const owner = Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+          if (!owner) {
+            restore();
+            return original.apply(this, args);
+          }
+          const result = original.apply(this, args);
+          try {
+            // Undefined means no SDK callbacks were configured, not an opt-out.
+            // Keep tool callbacks active without enabling LangSmith tracing.
+            return result ?? new manager();
+          } catch {
+            owner._diag.warn('LangChain: could not register tool callbacks');
+            return result;
+          }
+        }
+    );
+    this._patchMethod(
+      manager.prototype,
+      'handleToolStart',
+      (owners, restore) => {
+        const currentOwner = () =>
+          Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+        return original =>
+          function (
+            this: CallbackManager,
+            ...args: Parameters<typeof original>
+          ) {
+            const owner = currentOwner();
+            if (!owner) {
+              restore();
+              return original.apply(this, args);
+            }
+            let invocation = this;
+            try {
+              // The SDK run manager retains this invocation's handler, even
+              // when the caller reuses its callback manager or run ID.
+              invocation = addToolCallbacks(
+                this.copy(),
+                manager,
+                () => currentOwner()?._getToolTelemetry(),
+                () => currentOwner()?._diag ?? diag
+              );
+            } catch {
+              owner._diag.warn('LangChain: could not register tool callbacks');
+            }
+            return original.apply(invocation, args);
+          };
+      }
+    );
   }
 
   private _trackRunnableFactories(module: typeof Runnables) {
@@ -432,7 +540,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unpatchMethod(module.RunnableSequence.prototype, 'batch');
   }
 
-  private _unpatchMethod(target: object, method: 'invoke' | 'batch') {
+  private _unpatchMethod(
+    target: object,
+    method: 'invoke' | 'batch' | '_configureSync' | 'handleToolStart'
+  ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
     const patch = patches.get(method);

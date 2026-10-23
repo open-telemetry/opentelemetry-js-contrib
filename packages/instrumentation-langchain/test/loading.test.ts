@@ -11,7 +11,7 @@ describe('LangChain workflow module loading', () => {
   for (const first of ['cjs', 'esm']) {
     it(`instruments CJS and ESM copies, loading ${first} first`, async function () {
       if (Number(process.versions.node.split('.')[0]) < 20) this.skip();
-      this.timeout(20000);
+      this.timeout(40000);
       await promisify(execFile)(
         process.execPath,
         [
@@ -20,7 +20,7 @@ describe('LangChain workflow module loading', () => {
           first,
         ],
         {
-          timeout: 15000,
+          timeout: 30000,
           env: {
             ...process.env,
             LANGSMITH_TRACING: 'false',

@@ -182,6 +182,14 @@ export abstract class BaseInvocation {
   }
 
   /**
+   * Return the invocation context for explicit callback-based parentage.
+   * This does not require a registered context manager or activate the context.
+   */
+  public getContext(): Context {
+    return this._context;
+  }
+
+  /**
    * Set a custom span attribute.
    *
    * Span attributes are per-invocation and may be high cardinality. They are NOT
@@ -259,6 +267,19 @@ export abstract class BaseInvocation {
    */
   public stop(endTime?: TimeInput): void {
     this._end(endTime);
+  }
+
+  /**
+   * Release an invocation whose completion can no longer be observed.
+   *
+   * Ends the span without recording results, errors, or duration metrics.
+   * This is telemetry cleanup, not cancellation of the underlying operation.
+   * Later completion callbacks are ignored.
+   */
+  public abandon(): void {
+    if (this._isEnded) return;
+    this._isEnded = true;
+    this._span.end();
   }
 
   /**

@@ -27,3 +27,5 @@
  * export * from './semconv';
  * ```
  */
+export { TelemetryHandler } from './handler';
+export type { ToolInvocation } from './invocations/tool';

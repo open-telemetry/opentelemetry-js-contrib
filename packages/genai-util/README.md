@@ -49,7 +49,35 @@ npm install --save @opentelemetry/genai-util
 
 ## Usage Examples
 
-These will be added soon.
+`TelemetryHandler` is exported for instrumentation integrations. Use its
+`startTool` factory to create a `ToolInvocation` rather than constructing one
+directly. The invocation type is also exported for type annotations.
+
+```typescript
+import { TelemetryHandler } from '@opentelemetry/genai-util';
+
+const handler = new TelemetryHandler({
+  instrumentationName: '@opentelemetry/instrumentation-example',
+  instrumentationVersion: '1.0.0',
+  contentCaptureMode: 'none',
+});
+const invocation = handler.startTool({ toolName: 'lookup' });
+try {
+  const result = invocation.withContext(() => lookup());
+  invocation.setResult(result);
+  invocation.stop();
+} catch (error) {
+  invocation.fail({ exception: error instanceof Error ? error : undefined });
+  throw error;
+}
+```
+
+Callback-based integrations can keep the invocation until the SDK reports
+success or failure. Pass its `getContext()` as a child's `parentContext` to
+preserve explicit callback parentage without requiring an active context manager.
+If completion can no longer be observed, `abandon()` ends
+the span without emitting results, errors, or duration metrics. It does not
+cancel the underlying operation, and later completion calls are ignored.
 
 ## Useful links
 
