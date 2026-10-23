@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import './load-instrumentation';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -20,6 +21,7 @@ import {
   MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
 } from '../src/semconv-obsolete';
 import { SpanKind } from '@opentelemetry/api';
+import { URLSearchParams } from 'url';
 
 describe('SNS - v3', () => {
   let sns: any;
@@ -90,6 +92,121 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
     });
   });
+
+  for (const command of ['publish', 'publishBatch'] as const) {
+    describe(`${command} propagation`, () => {
+      const topicName = 'batch-propagation-topic';
+      const topicArn = `arn:aws:sns:us-east-1:123456789012:${topicName}`;
+
+      afterEach(() => {
+        nock.cleanAll();
+        sns.destroy();
+      });
+
+      for (const attributeCount of [0, 1, 10]) {
+        it(`preserves ${attributeCount} attributes and propagates when there is room`, async () => {
+          sns = new SNSv3({
+            region: 'us-east-1',
+            credentials: {
+              accessKeyId: 'abcde',
+              secretAccessKey: 'abcde',
+            },
+          });
+          const attributes = Object.fromEntries(
+            Array.from({ length: attributeCount }, (_, i) => [
+              `custom${i}`,
+              { DataType: 'String', StringValue: `value${i}` },
+            ])
+          );
+          let sent = new URLSearchParams();
+          const scope = nock('https://sns.us-east-1.amazonaws.com/')
+            .post('/')
+            .reply(200, (_uri, body) => {
+              sent = new URLSearchParams(
+                typeof body === 'string'
+                  ? body
+                  : (body as Record<string, string>)
+              );
+              return command === 'publish'
+                ? fs.readFileSync(
+                    './test/mock-responses/sns-publish.xml',
+                    'utf8'
+                  )
+                : fs.readFileSync(
+                    './test/mock-responses/sns-publish-batch.xml',
+                    'utf8'
+                  );
+            });
+          const message = {
+            Message: 'first message',
+            ...(attributeCount ? { MessageAttributes: attributes } : {}),
+          };
+          if (command === 'publish') {
+            await sns.publish({ TopicArn: topicArn, ...message });
+          } else {
+            await sns.publishBatch({
+              TopicArn: topicArn,
+              PublishBatchRequestEntries: [
+                { Id: 'first', ...message },
+                { Id: 'second', Message: 'second message' },
+              ],
+            });
+          }
+          expect(scope.isDone()).toBe(true);
+          const spans = getTestSpans();
+          expect(spans.length).toBe(1);
+          const [span] = spans;
+          const { traceId, spanId } = span.spanContext();
+          const traceparent = `00-${traceId}-${spanId}-01`;
+          const prefixes =
+            command === 'publish'
+              ? ['']
+              : [
+                  'PublishBatchRequestEntries.member.1.',
+                  'PublishBatchRequestEntries.member.2.',
+                ];
+          for (const [entryIndex, prefix] of prefixes.entries()) {
+            const received: Record<
+              string,
+              { DataType: string | null; StringValue: string | null }
+            > = {};
+            for (let i = 1; ; i++) {
+              const key = `${prefix}MessageAttributes.entry.${i}`;
+              const name = sent.get(`${key}.Name`);
+              if (!name) break;
+              received[name] = {
+                DataType: sent.get(`${key}.Value.DataType`),
+                StringValue: sent.get(`${key}.Value.StringValue`),
+              };
+            }
+            const expected = entryIndex === 0 ? attributes : {};
+            expect(received).toEqual({
+              ...expected,
+              ...(entryIndex === 0 && attributeCount === 10
+                ? {}
+                : {
+                    traceparent: {
+                      DataType: 'String',
+                      StringValue: traceparent,
+                    },
+                  }),
+            });
+            expect(sent.get(`${prefix}Message`)).toBe(
+              entryIndex === 0 ? 'first message' : 'second message'
+            );
+          }
+          expect(span.kind).toBe(SpanKind.PRODUCER);
+          expect(span.name).toBe(`${topicName} send`);
+          expect(span.attributes[ATTR_RPC_METHOD]).toBe(
+            command === 'publish' ? 'Publish' : 'PublishBatch'
+          );
+          expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toBe('aws.sns');
+          expect(span.attributes[ATTR_MESSAGING_DESTINATION]).toBe(topicName);
+          expect(span.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
+        });
+      }
+    });
+  }
 
   describe('Create Topic', () => {
     beforeEach(() => {

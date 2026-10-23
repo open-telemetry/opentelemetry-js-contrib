@@ -1,0 +1,1 @@
+<PublishBatchResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/"><PublishBatchResult><Successful><member><Id>first</Id><MessageId>message-1</MessageId></member><member><Id>second</Id><MessageId>message-2</MessageId></member></Successful><Failed/></PublishBatchResult><ResponseMetadata><RequestId>request-1</RequestId></ResponseMetadata></PublishBatchResponse>
