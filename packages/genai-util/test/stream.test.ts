@@ -949,4 +949,98 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans[2].status.code, SpanStatusCode.UNSET);
     assert.strictEqual(spans[3].status.code, SpanStatusCode.ERROR);
   });
+
+  it('should wait for pending async onChunk hooks before finalizing on concurrent .next() calls', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+      contentCaptureMode: 'span_only',
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+
+    const events: string[] = [];
+    let accumulatedText = '';
+
+    const gen = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['Hello ', 'world']),
+      {
+        invocation,
+        onChunk: async chunk => {
+          events.push(`onChunk:start:${chunk}`);
+          await new Promise(resolve => setTimeout(resolve, 15));
+          accumulatedText += chunk;
+          invocation.setResponseModel('gpt-4o-2024-08-06');
+          events.push(`onChunk:end:${chunk}`);
+        },
+        onEnd: () => {
+          events.push('onEnd');
+          invocation.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+          invocation.addOutputMessages([
+            {
+              role: 'assistant',
+              parts: [{ type: 'text', content: accumulatedText }],
+              finish_reason: GEN_AI_FINISH_REASON_VALUE_STOP,
+            },
+          ]);
+        },
+      }
+    );
+
+    const results = await Promise.all([gen.next(), gen.next(), gen.next()]);
+    assert.deepStrictEqual(results, [
+      { done: false, value: 'Hello ' },
+      { done: false, value: 'world' },
+      { done: true, value: undefined },
+    ]);
+
+    assert.deepStrictEqual(events, [
+      'onChunk:start:Hello ',
+      'onChunk:end:Hello ',
+      'onChunk:start:world',
+      'onChunk:end:world',
+      'onEnd',
+    ]);
+    assert.strictEqual(invocation.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_OUTPUT_MESSAGES],
+      JSON.stringify([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Hello world' }],
+          finish_reason: GEN_AI_FINISH_REASON_VALUE_STOP,
+        },
+      ])
+    );
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const ttfcMetric = metrics.find(
+      m =>
+        m.descriptor.name === METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+    );
+    const tpocMetric = metrics.find(
+      m =>
+        m.descriptor.name ===
+        METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+    );
+    assert.ok(ttfcMetric);
+    assert.strictEqual(
+      (ttfcMetric.dataPoints[0].value as { count: number }).count,
+      1
+    );
+    assert.ok(tpocMetric);
+    assert.strictEqual(
+      (tpocMetric.dataPoints[0].value as { count: number }).count,
+      1
+    );
+  });
 });

@@ -47,6 +47,7 @@ export function wrapAsyncStream<
   invocation.setStreaming();
 
   let isFinalized = false;
+  let pendingChunks: Promise<void> = Promise.resolve();
 
   const processChunk = async (chunk: TChunk): Promise<void> => {
     if (options.onChunk) {
@@ -66,6 +67,7 @@ export function wrapAsyncStream<
    * recording) runs at most once.
    */
   const finalizeSuccess = async (): Promise<void> => {
+    await pendingChunks;
     if (isFinalized) {
       return;
     }
@@ -89,6 +91,7 @@ export function wrapAsyncStream<
    * are encountered.
    */
   const finalizeFailure = async (error: unknown): Promise<void> => {
+    await pendingChunks;
     if (isFinalized) {
       return;
     }
@@ -136,10 +139,14 @@ export function wrapAsyncStream<
         }
 
         const chunkTime = hrTime();
-        await processChunk(result.value);
-        // Record after processChunk so response.model set during chunk processing is included on metrics,
-        // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
-        invocation.recordStreamChunk(chunkTime);
+        const chunkTask = pendingChunks.then(async () => {
+          await processChunk(result.value);
+          // Record after processChunk so response.model set during chunk processing is included on metrics,
+          // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
+          invocation.recordStreamChunk(chunkTime);
+        });
+        pendingChunks = chunkTask;
+        await chunkTask;
         return result;
       } catch (error) {
         await finalizeFailure(error);
