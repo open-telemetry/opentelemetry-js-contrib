@@ -696,10 +696,21 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
   });
 
   it('should isolate errors thrown in onChunk, onEnd, and onError hooks without leaking spans', async () => {
+    const loggedErrors: string[] = [];
+    const customDiag = {
+      error: (msg: string) => {
+        loggedErrors.push(msg);
+      },
+      warn: () => {},
+      info: () => {},
+      debug: () => {},
+      verbose: () => {},
+    };
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
       instrumentationVersion: '1.2.3',
       tracerProvider: ctx.tracerProvider,
+      diag: customDiag,
     });
 
     // 1. Throwing onChunk and onEnd on a successful stream
@@ -746,6 +757,12 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
       (err: Error) => err.message === 'Original stream error'
     );
     assert.strictEqual(invocation2.isEnded(), true);
+    assert.deepStrictEqual(loggedErrors, [
+      'Error in GenAI stream onChunk hook',
+      'Error in GenAI stream onChunk hook',
+      'Error in GenAI stream onEnd hook',
+      'Error in GenAI stream onError hook',
+    ]);
 
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 2);
