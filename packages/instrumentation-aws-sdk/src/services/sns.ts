@@ -21,13 +21,29 @@ import {
 import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
-// Keep SMS destinations low-cardinality and exclude raw recipient data.
 const PHONE_NUMBER_DESTINATION = 'phone_number';
+const PHONE_NUMBER_VISIBLE_CHARACTERS = 3;
+const PHONE_NUMBER_MASK = '******';
+const MINIMUM_MASKED_PHONE_NUMBER_LENGTH = 10;
+
+function maskPhoneNumber(phoneNumber: unknown): string {
+  const normalizedPhoneNumber = String(phoneNumber);
+  if (normalizedPhoneNumber.length < MINIMUM_MASKED_PHONE_NUMBER_LENGTH) {
+    return PHONE_NUMBER_MASK;
+  }
+
+  return `${normalizedPhoneNumber.slice(
+    0,
+    PHONE_NUMBER_VISIBLE_CHARACTERS
+  )}${PHONE_NUMBER_MASK}${normalizedPhoneNumber.slice(
+    -PHONE_NUMBER_VISIBLE_CHARACTERS
+  )}`;
+}
 
 export class SnsServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     request: NormalizedRequest,
-    _config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig
   ): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
@@ -41,20 +57,18 @@ export class SnsServiceExtension implements ServiceExtension {
       spanAttributes[ATTR_MESSAGING_DESTINATION_KIND] =
         MESSAGING_DESTINATION_KIND_VALUE_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[ATTR_MESSAGING_DESTINATION] = this.extractDestinationName(
+      const destinationName = this.extractDestinationName(
         TopicArn,
         TargetArn,
-        PhoneNumber
+        PhoneNumber,
+        config.snsCaptureFullPhoneNumber === true
       );
+      spanAttributes[ATTR_MESSAGING_DESTINATION] = destinationName;
       spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
-        TopicArn ||
-        TargetArn ||
-        (PhoneNumber ? PHONE_NUMBER_DESTINATION : 'unknown');
+        TopicArn || TargetArn || destinationName;
 
       spanName = `${
-        PhoneNumber
-          ? PHONE_NUMBER_DESTINATION
-          : spanAttributes[ATTR_MESSAGING_DESTINATION]
+        PhoneNumber ? PHONE_NUMBER_DESTINATION : destinationName
       } send`;
     }
 
@@ -98,7 +112,8 @@ export class SnsServiceExtension implements ServiceExtension {
   extractDestinationName(
     topicArn: string,
     targetArn: string,
-    phoneNumber: string
+    phoneNumber: unknown,
+    captureFullPhoneNumber: boolean
   ): string {
     if (topicArn || targetArn) {
       const arn = topicArn ?? targetArn;
@@ -108,7 +123,10 @@ export class SnsServiceExtension implements ServiceExtension {
         return arn;
       }
     } else if (phoneNumber) {
-      return PHONE_NUMBER_DESTINATION;
+      const normalizedPhoneNumber = String(phoneNumber);
+      return captureFullPhoneNumber
+        ? normalizedPhoneNumber
+        : maskPhoneNumber(normalizedPhoneNumber);
     } else {
       return 'unknown';
     }

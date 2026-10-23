@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import { instrumentation } from './load-instrumentation';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -94,8 +95,8 @@ describe('SNS - v3', () => {
       );
     });
 
-    it('phone number is redacted and never recorded as a span attribute', async () => {
-      const PhoneNumber = '+15555550100';
+    it('masks the phone number in span attributes by default', async () => {
+      const PhoneNumber = '+61123456123';
       await sns.publish({
         Message: 'sns message',
         PhoneNumber,
@@ -107,24 +108,84 @@ describe('SNS - v3', () => {
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
 
-      // The raw phone number is PII and must never be written to any span
-      // attribute. Both the obsolete `messaging.destination` and the current
-      // `messaging.destination.name` must be the redacted placeholder, not the
-      // real number.
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
-        'phone_number'
+        '+61******123'
       );
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
-        'phone_number'
+        '+61******123'
       );
-
-      // Defensively assert the raw value does not appear in ANY attribute value.
       const leaks = Object.values(publishSpan.attributes).filter(
-        v => typeof v === 'string' && v.includes(PhoneNumber)
+        value => typeof value === 'string' && value.includes(PhoneNumber)
       );
       expect(leaks).toEqual([]);
-
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
+    });
+
+    it('does not expose short phone numbers', async () => {
+      const PhoneNumber = '123456789';
+      await sns.publish({
+        Message: 'sns message',
+        PhoneNumber,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'phone_number send'
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        '******'
+      );
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        '******'
+      );
+    });
+
+    it('preserves local number context when masking', async () => {
+      const PhoneNumber = '0401234567';
+      await sns.publish({
+        Message: 'sns message',
+        PhoneNumber,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'phone_number send'
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        '040******567'
+      );
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        '040******567'
+      );
+    });
+
+    it('captures the full phone number only when enabled', async () => {
+      const PhoneNumber = '+15555550100';
+      const previousConfig = instrumentation.getConfig();
+      instrumentation.setConfig({
+        ...previousConfig,
+        snsCaptureFullPhoneNumber: true,
+      });
+
+      try {
+        await sns.publish({
+          Message: 'sns message',
+          PhoneNumber,
+        });
+
+        const publishSpans = getTestSpans().filter(
+          (s: ReadableSpan) => s.name === 'phone_number send'
+        );
+        expect(publishSpans.length).toBe(1);
+        expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+          PhoneNumber
+        );
+        expect(
+          publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]
+        ).toBe(PhoneNumber);
+      } finally {
+        instrumentation.setConfig(previousConfig);
+      }
     });
   });
 
