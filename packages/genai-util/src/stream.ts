@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { diag } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 import { InferenceInvocation } from './invocations/inference';
 
@@ -54,7 +53,7 @@ export function wrapAsyncStream<
       try {
         await options.onChunk(chunk);
       } catch (err) {
-        diag.error('Error in GenAI stream onChunk hook', err);
+        invocation.getDiag().error('Error in GenAI stream onChunk hook', err);
       }
     }
   };
@@ -77,7 +76,7 @@ export function wrapAsyncStream<
         await options.onEnd();
       }
     } catch (err) {
-      diag.error('Error in GenAI stream onEnd hook', err);
+      invocation.getDiag().error('Error in GenAI stream onEnd hook', err);
     } finally {
       invocation.stop();
     }
@@ -101,7 +100,7 @@ export function wrapAsyncStream<
         await options.onError(error);
       }
     } catch (err) {
-      diag.error('Error in GenAI stream onError hook', err);
+      invocation.getDiag().error('Error in GenAI stream onError hook', err);
     } finally {
       invocation.fail({
         exception: error instanceof Error ? error : undefined,
