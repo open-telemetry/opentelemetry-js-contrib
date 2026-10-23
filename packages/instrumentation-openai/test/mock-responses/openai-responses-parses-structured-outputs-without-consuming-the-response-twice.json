@@ -1,0 +1,93 @@
+[
+  {
+    "scope": "https://api.openai.com:443",
+    "method": "POST",
+    "path": "/v1/responses",
+    "body": {
+      "model": "gpt-4o-mini",
+      "input": "Answer in up to 3 words: Which ocean contains Bouvet Island?",
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "ocean_response",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "ocean": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ocean"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "status": 200,
+    "response": {
+      "id": "resp_structured_output",
+      "object": "response",
+      "created_at": 1752220000,
+      "status": "completed",
+      "error": null,
+      "incomplete_details": null,
+      "model": "gpt-4o-mini-2024-07-18",
+      "output": [
+        {
+          "type": "message",
+          "id": "msg_structured_output",
+          "status": "completed",
+          "role": "assistant",
+          "content": [
+            {
+              "type": "output_text",
+              "text": "{\"ocean\":\"Atlantic Ocean\"}",
+              "annotations": []
+            }
+          ]
+        }
+      ],
+      "parallel_tool_calls": true,
+      "tool_choice": "auto",
+      "tools": [],
+      "text": {
+        "format": {
+          "type": "json_schema",
+          "name": "ocean_response",
+          "strict": true,
+          "schema": {
+            "type": "object",
+            "properties": {
+              "ocean": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "ocean"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "usage": {
+        "input_tokens": 22,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 7,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 29
+      }
+    },
+    "rawHeaders": {
+      "content-type": "application/json",
+      "x-request-id": "req_responses_structured_output"
+    },
+    "responseIsBinary": false
+  }
+]
