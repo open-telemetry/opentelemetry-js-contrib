@@ -12,7 +12,6 @@ import {
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
-  InstrumentationConfig,
   InstrumentationNodeModuleDefinition,
   isWrapped,
   safeExecuteInTheMiddle,
@@ -26,7 +25,7 @@ import {
   ATTR_SERVER_PORT,
   NETWORK_TRANSPORT_VALUE_TCP,
 } from '@opentelemetry/semantic-conventions';
-import { TLSAttributes } from './types';
+import { NetInstrumentationConfig, TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
 import { getNormalizedArgs, STABLE_IPC_TRANSPORT_VALUE } from './utils';
 /** @knipignore */
@@ -35,9 +34,17 @@ import { Socket } from 'net';
 import { TLSSocket } from 'tls';
 import type * as net from 'net';
 
-export class NetInstrumentation extends InstrumentationBase {
-  constructor(config: InstrumentationConfig = {}) {
-    super(PACKAGE_NAME, PACKAGE_VERSION, config);
+const DEFAULT_CONFIG: NetInstrumentationConfig = {
+  requireParentSpan: false,
+};
+
+export class NetInstrumentation extends InstrumentationBase<NetInstrumentationConfig> {
+  constructor(config: NetInstrumentationConfig = {}) {
+    super(PACKAGE_NAME, PACKAGE_VERSION, { ...DEFAULT_CONFIG, ...config });
+  }
+
+  override setConfig(config: NetInstrumentationConfig = {}) {
+    super.setConfig({ ...DEFAULT_CONFIG, ...config });
   }
 
   init(): InstrumentationNodeModuleDefinition[] {
@@ -69,6 +76,18 @@ export class NetInstrumentation extends InstrumentationBase {
     return (original: (...args: unknown[]) => void) => {
       const plugin = this;
       return function patchedConnect(this: Socket, ...args: unknown[]) {
+        // Checked once here rather than at each `startSpan` call site: every
+        // span this instrumentation creates (`connect`, `ipc.connect`,
+        // `tcp.connect` and `tls.connect`) originates from this function, and
+        // `tcp.connect` is parented to `tls.connect` on the TLS path, so a
+        // per-call-site check would still let the nested span through.
+        if (
+          plugin.getConfig().requireParentSpan &&
+          trace.getSpan(context.active()) === undefined
+        ) {
+          return original.apply(this, args);
+        }
+
         const options = getNormalizedArgs(args);
 
         const span =
