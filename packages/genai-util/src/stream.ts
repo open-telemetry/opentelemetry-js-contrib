@@ -111,7 +111,7 @@ export function wrapAsyncStream<
 
   const wrapIterator = (
     iterator: AsyncIterator<TChunk>
-  ): AsyncIterator<TChunk> => {
+  ): AsyncIterableIterator<TChunk> => {
     const originalNext = iterator.next.bind(iterator);
     const originalReturn =
       typeof iterator.return === 'function'
@@ -179,6 +179,10 @@ export function wrapAsyncStream<
         await finalizeFailure(error);
         throw error;
       },
+
+      [Symbol.asyncIterator]() {
+        return this;
+      },
     };
   };
 
@@ -219,7 +223,7 @@ export function wrapAsyncStream<
     configurable: true,
     enumerable: false,
     writable: true,
-    value(this: TStream): AsyncIterator<TChunk> {
+    value(this: TStream): AsyncIterableIterator<TChunk> {
       if (typeof originalAsyncIterator === 'function') {
         const iterator = originalAsyncIterator.call(this);
         if ((iterator as unknown) !== this) {
