@@ -20,6 +20,7 @@
   "packages/contrib-test-utils": "0.71.0",
   "packages/winston-transport": "0.35.0",
   "packages/instrumentation-amqplib": "0.71.0",
+  "packages/instrumentation-anthropic": "0.1.0",
   "packages/instrumentation-cucumber": "0.40.0",
   "packages/instrumentation-dataloader": "0.41.0",
   "packages/instrumentation-fs": "0.43.0",
