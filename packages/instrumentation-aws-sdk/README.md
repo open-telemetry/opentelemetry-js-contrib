@@ -52,6 +52,7 @@ aws-sdk instrumentation has few options available to choose from. You can set th
 | `exceptionHook`                           | `AwsSdkExceptionCustomAttributeFunction` | Hook for adding custom attributes when exception is received from aws.                                                                                                          |
 | `suppressInternalInstrumentation`         | `boolean`                                | Most aws operation use http requests under the hood. Set this to `true` to hide all underlying http spans.                                                                      |
 | `sqsExtractContextPropagationFromPayload` | `boolean`                                | Will parse and extract context propagation headers from SQS Payload, false by default. [When should it be used?](./doc/sns.md#integration-with-sqs)                             |
+| `snsCaptureFullPhoneNumber`               | `boolean`                                | SNS phone numbers are masked by default, preserving the first and last three characters. Set to `true` to record the full phone number. The full value is personal data.        |
 | `dynamoDBStatementSerializer`             | `AwsSdkDynamoDBStatementSerializer`      | AWS SDK instrumentation will serialize DynamoDB commands to the `db.statement` attribute using the specified function. Defaults to using a serializer that returns `undefined`. |
 
 ## Span Attributes

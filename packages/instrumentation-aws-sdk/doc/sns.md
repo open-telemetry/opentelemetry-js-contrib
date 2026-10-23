@@ -15,6 +15,12 @@ The following methods are automatically enhanced:
 
 There are many potential consumers: SQS, Lambda, HTTP/S, Email, SMS, mobile notifications. each one of them will received the propagated context in its own way.
 
+## Phone number destinations
+
+For SNS `Publish` requests with `PhoneNumber`, messaging destination attributes preserve the first and last three characters and replace the middle with `******`. Values shorter than ten characters are fully masked. The span name remains `phone_number send`.
+
+Set `snsCaptureFullPhoneNumber` to `true` to preserve the previous behavior and record the full phone number in the messaging destination attributes. The full value is personal data, so this option is disabled by default.
+
 ## Integration with SQS
 
 AWS provide two ways of integrating SNS and SQS, one sends the message "as is" and one being parsed, this is called raw message delivery.
@@ -25,4 +31,4 @@ If raw message delivery is turned off, you can solve it by enabling `sqsExtractC
 
 More details about raw message deliver can be found in [AWS docs](https://docs.aws.amazon.com/sns/latest/dg/sns-large-payload-raw-message-delivery.html)
 
->If you see partial / broken traces when integrating SNS with SQS this might be the reason
+> If you see partial / broken traces when integrating SNS with SQS this might be the reason
