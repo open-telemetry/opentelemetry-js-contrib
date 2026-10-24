@@ -4,6 +4,7 @@
  */
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
 import {
+  ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER,
   ATTR_AWS_SNS_TOPIC_ARN,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_SYSTEM,
@@ -60,12 +61,15 @@ export class SnsServiceExtension implements ServiceExtension {
       const destinationName = this.extractDestinationName(
         TopicArn,
         TargetArn,
-        PhoneNumber,
-        config.snsCaptureFullPhoneNumber === true
+        PhoneNumber
       );
       spanAttributes[ATTR_MESSAGING_DESTINATION] = destinationName;
       spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
         TopicArn || TargetArn || destinationName;
+      if (PhoneNumber && config.snsCaptureFullPhoneNumber === true) {
+        spanAttributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER] =
+          String(PhoneNumber);
+      }
 
       spanName = `${
         PhoneNumber ? PHONE_NUMBER_DESTINATION : destinationName
@@ -112,8 +116,7 @@ export class SnsServiceExtension implements ServiceExtension {
   extractDestinationName(
     topicArn: string,
     targetArn: string,
-    phoneNumber: unknown,
-    captureFullPhoneNumber: boolean
+    phoneNumber: unknown
   ): string {
     if (topicArn || targetArn) {
       const arn = topicArn ?? targetArn;
@@ -123,10 +126,7 @@ export class SnsServiceExtension implements ServiceExtension {
         return arn;
       }
     } else if (phoneNumber) {
-      const normalizedPhoneNumber = String(phoneNumber);
-      return captureFullPhoneNumber
-        ? normalizedPhoneNumber
-        : maskPhoneNumber(normalizedPhoneNumber);
+      return maskPhoneNumber(phoneNumber);
     } else {
       return 'unknown';
     }

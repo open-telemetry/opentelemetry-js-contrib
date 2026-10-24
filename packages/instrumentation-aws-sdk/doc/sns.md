@@ -19,7 +19,7 @@ There are many potential consumers: SQS, Lambda, HTTP/S, Email, SMS, mobile noti
 
 For SNS `Publish` requests with `PhoneNumber`, messaging destination attributes preserve the first and last three characters and replace the middle with `******`. Values shorter than ten characters are fully masked. The span name remains `phone_number send`.
 
-Set `snsCaptureFullPhoneNumber` to `true` to preserve the previous behavior and record the full phone number in the messaging destination attributes. The full value is personal data, so this option is disabled by default.
+Set `snsCaptureFullPhoneNumber` to `true` to record the full phone number in `aws.sns.destination.phone_number`. The messaging destination attributes remain masked. The full value is personal data, so this option is disabled by default.
 
 ## Integration with SQS
 
