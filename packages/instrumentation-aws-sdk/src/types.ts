@@ -76,6 +76,13 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
 
   /**
+   * SNS phone numbers are masked in messaging destination attributes. Set this
+   * to `true` to capture the full number in
+   * `aws.sns.destination.phone_number`. The full value is personal data.
+   */
+  snsCaptureFullPhoneNumber?: boolean;
+
+  /**
    * Most aws operation use http request under the hood.
    * if http instrumentation is enabled, each aws operation will also create
    * an http/s child describing the communication with amazon servers.
