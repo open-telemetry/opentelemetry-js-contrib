@@ -43,6 +43,12 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
 
+### CommonJS applications with ESM dependencies
+
+A CommonJS application may still need the ESM instrumentation hook if a dependency loads Express through ECMAScript Modules (ESM). In this situation, the CommonJS `require` hook may not patch Express, and HTTP server spans may be missing the `http.route` attribute.
+
+If route information is missing from your HTTP server spans, check how Express is loaded and try the ESM instrumentation hook as described in the [OpenTelemetry JavaScript ESM support guide](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md#instrumentation-hook-required-for-esm).
+
 ### Caveats
 
 Because of the way express works, it's hard to correctly compute the time taken by asynchronous middlewares and request handlers. For this reason, the time you'll see reported for asynchronous middlewares and request handlers still only represent the synchronous execution time, and **not** any asynchronous work.
