@@ -76,9 +76,9 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
   dynamoDBStatementSerializer?: AwsSdkDynamoDBStatementSerializer;
 
   /**
-   * SNS phone numbers are masked by default, preserving the first and last three
-   * characters. Set this to `true` to capture the full phone number in messaging
-   * destination attributes. The full value is personal data.
+   * SNS phone numbers are masked in messaging destination attributes. Set this
+   * to `true` to capture the full number in
+   * `aws.sns.destination.phone_number`. The full value is personal data.
    */
   snsCaptureFullPhoneNumber?: boolean;
 

@@ -11,10 +11,11 @@ import * as nock from 'nock';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER,
+  ATTR_AWS_SNS_TOPIC_ARN,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_SYSTEM,
   ATTR_RPC_METHOD,
-  ATTR_AWS_SNS_TOPIC_ARN,
 } from '../src/semconv';
 import {
   ATTR_MESSAGING_DESTINATION,
@@ -119,6 +120,9 @@ describe('SNS - v3', () => {
       );
       expect(leaks).toEqual([]);
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
+      expect(
+        publishSpan.attributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER]
+      ).toBeUndefined();
     });
 
     it('does not expose short phone numbers', async () => {
@@ -178,10 +182,13 @@ describe('SNS - v3', () => {
         );
         expect(publishSpans.length).toBe(1);
         expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
-          PhoneNumber
+          '+15******100'
         );
         expect(
           publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]
+        ).toBe('+15******100');
+        expect(
+          publishSpans[0].attributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER]
         ).toBe(PhoneNumber);
       } finally {
         instrumentation.setConfig(previousConfig);
