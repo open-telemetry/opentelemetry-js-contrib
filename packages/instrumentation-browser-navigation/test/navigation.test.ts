@@ -55,6 +55,19 @@ describe('Browser Navigation Instrumentation', () => {
     });
   });
 
+  describe('isEnabled', () => {
+    it('should follow enable() and disable()', () => {
+      instrumentation = new BrowserNavigationInstrumentation({
+        enabled: false,
+      });
+      assert.strictEqual(instrumentation.isEnabled(), false);
+      instrumentation.enable();
+      assert.strictEqual(instrumentation.isEnabled(), true);
+      instrumentation.disable();
+      assert.strictEqual(instrumentation.isEnabled(), false);
+    });
+  });
+
   describe('export navigation LogRecord', () => {
     it("should export LogRecord for browser.navigation when 'DOMContentLoaded' event is fired", done => {
       instrumentation = new BrowserNavigationInstrumentation({

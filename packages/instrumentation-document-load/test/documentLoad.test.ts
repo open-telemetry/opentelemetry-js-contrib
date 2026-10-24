@@ -258,6 +258,16 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
+  describe('isEnabled', () => {
+    it('should follow enable() and disable()', () => {
+      assert.strictEqual(plugin.isEnabled(), false);
+      plugin.enable();
+      assert.strictEqual(plugin.isEnabled(), true);
+      plugin.disable();
+      assert.strictEqual(plugin.isEnabled(), false);
+    });
+  });
+
   describe('when document readyState is complete', () => {
     let spyEntries: any;
     beforeEach(() => {

@@ -85,6 +85,19 @@ describe('ExceptionInstrumentation', () => {
     });
   });
 
+  describe('isEnabled', () => {
+    it('should follow enable() and disable()', () => {
+      const instrumentation = new ExceptionInstrumentation({
+        enabled: false,
+      });
+      assert.strictEqual(instrumentation.isEnabled(), false);
+      instrumentation.enable();
+      assert.strictEqual(instrumentation.isEnabled(), true);
+      instrumentation.disable();
+      assert.strictEqual(instrumentation.isEnabled(), false);
+    });
+  });
+
   describe('throwing an error', () => {
     let disableInstrumentations: () => void;
     beforeEach(() => {

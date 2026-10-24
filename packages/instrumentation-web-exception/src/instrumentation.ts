@@ -91,6 +91,7 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
       window.removeEventListener('error', this._onErrorHandler);
       window.removeEventListener('unhandledrejection', this._onErrorHandler);
     }
+    this._enabled = false;
   }
 
   override enable(): void {
@@ -99,5 +100,6 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
     }
     window.addEventListener('error', this._onErrorHandler);
     window.addEventListener('unhandledrejection', this._onErrorHandler);
+    this._enabled = true;
   }
 }
