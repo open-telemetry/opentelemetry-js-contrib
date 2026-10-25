@@ -175,7 +175,13 @@ export function wrapAsyncStream<
         if (originalThrow) {
           return advance(() => originalThrow(error));
         }
-        await finalizeFailure(error);
+        try {
+          if (originalReturn) {
+            await originalReturn();
+          }
+        } finally {
+          await finalizeFailure(error);
+        }
         throw error;
       },
 

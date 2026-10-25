@@ -1103,4 +1103,57 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.deepStrictEqual(seen, ['chunk-1', 'chunk-2', 'chunk-3']);
     assert.strictEqual(invocation.isEnded(), true);
   });
+
+  it('should call underlying return() cleanup when throw() is invoked on a wrapped stream without throw() (e.g. yield* over ReadableStream)', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'openai',
+      requestModel: 'gpt-4o',
+    });
+
+    let returnCalled = false;
+    const readableLikeStream: AsyncIterable<string> = {
+      [Symbol.asyncIterator]() {
+        return {
+          async next() {
+            return { done: false, value: 'chunk-1' };
+          },
+          async return() {
+            returnCalled = true;
+            return { done: true, value: undefined };
+          },
+        };
+      },
+    };
+
+    const wrapped = handler.wrapAsyncStream(readableLikeStream, {
+      invocation,
+    });
+
+    async function* delegatingGenerator() {
+      yield* wrapped;
+    }
+
+    const gen = delegatingGenerator();
+    assert.deepStrictEqual(await gen.next(), { done: false, value: 'chunk-1' });
+    await assert.rejects(
+      async () => {
+        await gen.throw(new Error('Consumer aborted yield*'));
+      },
+      (err: Error) => err.message === 'Consumer aborted yield*'
+    );
+
+    assert.strictEqual(returnCalled, true);
+    assert.strictEqual(invocation.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+  });
 });
