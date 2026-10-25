@@ -4,7 +4,13 @@
  */
 
 import { inherits } from 'util';
-import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
+import {
+  context,
+  trace,
+  isSpanContextValid,
+  Span,
+  SeverityNumber,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -15,7 +21,6 @@ import { BunyanInstrumentationConfig } from './types';
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { OpenTelemetryBunyanStream } from './OpenTelemetryBunyanStream';
 import type * as BunyanLogger from 'bunyan';
-import { SeverityNumber } from '@opentelemetry/api-logs';
 
 const DEFAULT_CONFIG: BunyanInstrumentationConfig = {
   disableLogSending: false,

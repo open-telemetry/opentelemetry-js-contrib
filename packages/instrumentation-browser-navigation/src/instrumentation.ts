@@ -4,7 +4,7 @@
  */
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import type { LogRecord } from '@opentelemetry/api-logs';
+import { type LogRecord } from '@opentelemetry/api';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';

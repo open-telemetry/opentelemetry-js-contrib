@@ -1,6 +1,24 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.70.0...contrib-test-utils-v0.71.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Bug Fixes
+
+* **contrib-test-utils:** order tied sortedSpans so each span follows its ancestors ([#3850](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3850)) ([f2051f6](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f2051f67fdd9baf10df34a89a89f4a3f7a684d36))
+
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/contrib-test-utils-v0.69.0...contrib-test-utils-v0.70.0) (2026-10-06)
 
 

@@ -179,7 +179,7 @@ const logger = winston.createLogger({
 For projects using custom Winston log levels, you can configure `severityMapping` on `WinstonInstrumentation`:
 
 ```js
-const { SeverityNumber } = require('@opentelemetry/api-logs');
+const { SeverityNumber } = require('@opentelemetry/api');
 const { WinstonInstrumentation } = require('@opentelemetry/instrumentation-winston');
 
 new WinstonInstrumentation({

@@ -30,7 +30,7 @@ npm install --save @opentelemetry/instrumentation-browser-navigation
 ## Usage
 
 ```ts
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 import { ConsoleLogRecordExporter, SimpleLogRecordProcessor, LoggerProvider } from '@opentelemetry/sdk-logs';
 import { BrowserNavigationInstrumentation } from '@opentelemetry/instrumentation-browser-navigation';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
