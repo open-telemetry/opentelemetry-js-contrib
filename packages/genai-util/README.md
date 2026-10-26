@@ -75,9 +75,6 @@ try {
 Callback-based integrations can keep the invocation until the SDK reports
 success or failure. Pass its `getContext()` as a child's `parentContext` to
 preserve explicit callback parentage without requiring an active context manager.
-If completion can no longer be observed, `abandon()` ends
-the span without emitting results, errors, or duration metrics. It does not
-cancel the underlying operation, and later completion calls are ignored.
 
 ## Useful links
 

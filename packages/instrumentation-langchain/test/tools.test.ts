@@ -701,90 +701,150 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(getTestSpans()[3].parentSpanContext, undefined);
   });
 
-  it('caps pending runs at 1000 and ignores late completion after an evicted ID is reused', async function () {
-    this.timeout(15000);
-    const warn = sinon.spy();
-    diag.setLogger(
-      { warn, error() {}, info() {}, debug() {}, verbose() {} },
-      DiagLogLevel.WARN
-    );
-    instrumentation.setConfig({ captureMessageContent: 'span_only' });
-    const releases: Array<() => void> = [];
-    const results: Array<Promise<string>> = [];
-    let entered: () => void;
-    const operation = new DynamicTool({
-      name: 'pending',
-      description: '',
-      func: input =>
-        new Promise<string>(resolve => {
-          releases.push(() => resolve(input));
-          entered();
-        }),
-    });
-    try {
-      for (let index = 0; index < 1003; index++) {
-        const started = new Promise<void>(resolve => {
-          entered = resolve;
-        });
-        results.push(
-          operation.invoke(`private-input-${index}`, {
-            runName: `pending-${index}`,
-            runId: `00000000-0000-4000-8000-${String(
-              index === 1002 ? 0 : index
-            ).padStart(12, '0')}`,
-          })
-        );
-        await started;
-        assert.equal(getTestSpans().length, Math.max(0, index + 1 - 1000));
-      }
-      assert.deepEqual(
-        getTestSpans().map(span => span.name),
-        [
-          'execute_tool pending-0',
-          'execute_tool pending-1',
-          'execute_tool pending-2',
-        ]
+  for (const capture of ['none', 'span_only'] as const) {
+    it(`keeps 1000 active runs and skips new telemetry until space opens (capture=${capture})`, async function () {
+      this.timeout(15000);
+      const warn = sinon.spy();
+      diag.setLogger(
+        { warn, error() {}, info() {}, debug() {}, verbose() {} },
+        DiagLogLevel.WARN
       );
-      for (const span of getTestSpans()) {
+      instrumentation.setConfig({ captureMessageContent: capture });
+      const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
+      const onEnd = sinon.spy();
+      const onError = sinon.spy();
+      const releases: Array<() => void> = [];
+      const results: Array<Promise<string>> = [];
+      const active = new Map<string, string | undefined>();
+      let entered: () => void;
+      const operation = new DynamicTool({
+        name: 'pending',
+        description: '',
+        func: input =>
+          new Promise<string>(resolve => {
+            active.set(input, trace.getSpanContext(context.active())?.spanId);
+            releases.push(() => resolve(input));
+            entered();
+          }),
+      });
+      try {
+        for (let index = 0; index < 1003; index++) {
+          const started = new Promise<void>(resolve => {
+            entered = resolve;
+          });
+          results.push(
+            operation.invoke(`private-input-${index}`, {
+              callbacks: [{ handleToolEnd: onEnd }],
+              runName: `pending-${index}`,
+              runId: `00000000-0000-4000-8000-${String(
+                index === 1002 ? 0 : index
+              ).padStart(12, '0')}`,
+            })
+          );
+          await started;
+          assert.equal(startTool.callCount, Math.min(index + 1, 1000));
+          assert.equal(getTestSpans().length, 0);
+        }
+        assert.ok(active.get('private-input-0'));
+        for (let index = 1000; index < 1003; index++) {
+          assert.equal(active.get(`private-input-${index}`), undefined);
+        }
+        assert.deepEqual(await points(), []);
+        assert.equal(warn.callCount, 3);
+        assert.ok(
+          warn.calledWith(
+            sinon.match.string,
+            'LangChain: pending tool limit reached, skipping new tool telemetry'
+          )
+        );
+        for (const release of releases.slice(1000)) release();
+        assert.deepEqual(await Promise.all(results.slice(1000)), [
+          'private-input-1000',
+          'private-input-1001',
+          'private-input-1002',
+        ]);
+        await awaitAllCallbacks();
+        assert.equal(onEnd.callCount, 3);
+        assert.equal(getTestSpans().length, 0);
+        assert.deepEqual(await points(), []);
+
+        const failure = new TypeError('private-failure');
+        const failing = new DynamicTool({
+          name: 'skipped-failure',
+          description: '',
+          func: async () => {
+            throw failure;
+          },
+        });
+        await assert.rejects(
+          failing.invoke('private-input', {
+            callbacks: [{ handleToolError: onError }],
+          }),
+          error => error === failure
+        );
+        await awaitAllCallbacks();
+        assert.equal(onError.callCount, 1);
+        assert.equal(onError.firstCall.args[0], failure);
+        assert.equal(startTool.callCount, 1000);
+        assert.equal(getTestSpans().length, 0);
+        assert.deepEqual(await points(), []);
+        assert.equal(warn.callCount, 4);
+        assert.equal(JSON.stringify(warn.args).includes('private-'), false);
+
+        releases[0]();
+        assert.equal(await results[0], 'private-input-0');
+        assert.equal(getTestSpans().length, 1);
+        const span = getTestSpans()[0];
+        assert.equal(span.name, 'execute_tool pending-0');
         assert.equal(span.status.code, SpanStatusCode.UNSET);
         assert.equal(span.attributes['error.type'], undefined);
-        assert.equal(span.attributes['gen_ai.tool.call.result'], undefined);
+        assert.equal(
+          span.attributes['gen_ai.tool.call.arguments'],
+          capture === 'none' ? undefined : '{"input":"private-input-0"}'
+        );
+        assert.equal(
+          span.attributes['gen_ai.tool.call.result'],
+          capture === 'none' ? undefined : '{"output":"private-input-0"}'
+        );
         assert.deepEqual(span.events, []);
+        assert.equal((await points())[0].value.count, 1);
+        assert.equal(
+          (await points())[0].value.sum,
+          hrTimeToSeconds(span.duration)
+        );
+
+        assert.equal(await echo().invoke('resumed'), 'resumed');
+        assert.equal(getTestSpans().length, 2);
+        assert.equal(startTool.callCount, 1001);
+        assert.equal(warn.callCount, 4);
+      } finally {
+        for (const release of releases) release();
+        await Promise.all(results);
       }
-      assert.deepEqual(await points(), []);
-      assert.equal(warn.callCount, 3);
-      assert.equal(JSON.stringify(warn.args).includes('private-input'), false);
-      for (const release of releases.slice(0, 3)) release();
-      assert.deepEqual(await Promise.all(results.slice(0, 3)), [
-        'private-input-0',
-        'private-input-1',
-        'private-input-2',
-      ]);
-      assert.equal(getTestSpans().length, 3);
-      assert.deepEqual(await points(), []);
-    } finally {
-      for (const release of releases) release();
-      await Promise.all(results);
-    }
-    assert.equal(getTestSpans().length, 1003);
-    const recorded = await points();
-    assert.equal(
-      recorded.reduce((count, point) => count + point.value.count, 0),
-      1000
-    );
-    assert.ok(
-      recorded.every(
-        point =>
-          !['pending-0', 'pending-1', 'pending-2'].includes(
-            String(point.attributes['gen_ai.tool.name'])
-          )
-      )
-    );
-    assert.equal(warn.callCount, 3);
-  });
+      assert.equal(getTestSpans().length, 1001);
+      const recorded = await points();
+      assert.equal(
+        recorded.reduce((count, point) => count + point.value.count, 0),
+        1001
+      );
+      assert.ok(
+        recorded.every(
+          point =>
+            ![
+              'pending-1000',
+              'pending-1001',
+              'pending-1002',
+              'skipped-failure',
+            ].includes(String(point.attributes['gen_ai.tool.name']))
+        )
+      );
+      await awaitAllCallbacks();
+      assert.equal(onEnd.callCount, 1003);
+    });
+  }
 
   for (const ending of ['end', 'error'] as const) {
-    it(`ignores late ${ending} callbacks after eviction with a reused callback manager and run ID`, async function () {
+    it(`ignores skipped ${ending} callbacks and resumes tracking after ${ending} with a reused run ID`, async function () {
       this.timeout(15000);
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
       const callbacks = CallbackManager.configure();
@@ -798,36 +858,58 @@ describe('LangChain donated tool callbacks', () => {
         return run;
       };
       try {
-        const evicted = await start('reused');
+        const tracked = [];
         for (let index = 0; index < 1000; index++) {
-          await start(`pending-${index}`);
+          tracked.push(await start(`pending-${index}`));
         }
-        const replacement = await start('reused');
-        assert.equal(getTestSpans().length, 2);
+        const skipped = await start('reused');
+        assert.equal(getTestSpans().length, 0);
         assert.deepEqual(await points(), []);
 
-        if (ending === 'end') await evicted.handleToolEnd('stale-result');
-        else await evicted.handleToolError(new TypeError('stale-error'));
-        assert.equal(getTestSpans().length, 2);
-        assert.deepEqual(await points(), []);
+        if (ending === 'end') await tracked[0].handleToolEnd('tracked-result');
+        else await tracked[0].handleToolError(new TypeError('tracked-error'));
+        assert.equal(getTestSpans().length, 1);
+        assert.equal(
+          getTestSpans()[0].status.code,
+          ending === 'end' ? SpanStatusCode.UNSET : SpanStatusCode.ERROR
+        );
+        assert.equal(
+          getTestSpans()[0].attributes['error.type'],
+          ending === 'end' ? undefined : 'TypeError'
+        );
+        assert.equal((await points())[0].value.count, 1);
+
+        const replacement = await start('reused');
+        if (ending === 'end') await skipped.handleToolEnd('stale-result');
+        else await skipped.handleToolError(new TypeError('stale-error'));
+        assert.equal(getTestSpans().length, 1);
+        assert.equal((await points())[0].value.count, 1);
 
         await replacement.handleToolEnd('current-result');
-        const span = getTestSpans()[2];
+        const span = getTestSpans()[1];
         assert.equal(span.status.code, SpanStatusCode.UNSET);
         assert.equal(span.attributes['error.type'], undefined);
         assert.equal(
           span.attributes['gen_ai.tool.call.result'],
           '{"output":"current-result"}'
         );
-        assert.equal((await points())[0].value.count, 1);
         await replacement.handleToolEnd('duplicate-result');
-        assert.equal(getTestSpans().length, 3);
-        assert.equal((await points())[0].value.count, 1);
+        assert.equal(getTestSpans().length, 2);
+        assert.equal(
+          (await points()).reduce(
+            (count, point) => count + point.value.count,
+            0
+          ),
+          2
+        );
       } finally {
         await Promise.all(pending.map(run => run.handleToolEnd('cleanup')));
       }
-      assert.equal(getTestSpans().length, 1002);
-      assert.equal((await points())[0].value.count, 1000);
+      assert.equal(getTestSpans().length, 1001);
+      assert.equal(
+        (await points()).reduce((count, point) => count + point.value.count, 0),
+        1001
+      );
     });
   }
 
@@ -988,7 +1070,7 @@ describe('LangChain donated tool callbacks', () => {
     });
   }
 
-  for (const state of ['completed', 'evicted'] as const) {
+  for (const state of ['completed', 'skipped'] as const) {
     it(`does not reparent a ${state} invocation's child to a reused run ID`, async function () {
       this.timeout(15000);
       const callbacks = CallbackManager.configure();
@@ -996,14 +1078,9 @@ describe('LangChain donated tool callbacks', () => {
       const serialized = echo().toJSON();
       const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
         [];
-      const older = await callbacks.handleToolStart(serialized, '', 'reused');
-      pending.push(older);
-      const childCallbacks = older.getChild();
       try {
-        if (state === 'completed') {
-          await older.handleToolEnd('older');
-        } else {
-          for (let index = 0; index < 999; index++) {
+        if (state === 'skipped') {
+          for (let index = 0; index < 1000; index++) {
             pending.push(
               await callbacks.handleToolStart(
                 serialized,
@@ -1013,10 +1090,18 @@ describe('LangChain donated tool callbacks', () => {
             );
           }
         }
+        const older = await callbacks.handleToolStart(serialized, '', 'reused');
+        pending.push(older);
+        const childCallbacks = older.getChild();
+        if (state === 'completed') {
+          await older.handleToolEnd('older');
+        } else {
+          // Leave room for both the replacement and the skipped run's child.
+          await pending[0].handleToolEnd('cleanup');
+          await pending[1].handleToolEnd('cleanup');
+        }
         const newer = await callbacks.handleToolStart(serialized, '', 'reused');
         pending.push(newer);
-        // Leave room for the child without evicting another pending run.
-        if (state === 'evicted') await pending[1].handleToolEnd('cleanup');
         const before = getTestSpans().length;
         const child = await childCallbacks.handleToolStart(
           serialized,

@@ -135,7 +135,7 @@ envelopes, retain their serialized structure. The object-shape check is applied 
 `toJSON`, so dates and other scalar or array serializations are wrapped too.
 Failed executions omit results.
 
-Each observed tool end/error callback records `gen_ai.execute_tool.duration`
+Each tracked tool end/error callback records `gen_ai.execute_tool.duration`
 in seconds, matching its span duration. Metric attributes contain the tool
 name, known type and error type, never arguments, results or conversation IDs.
 No tool events or provider inference metrics are added.
@@ -144,7 +144,7 @@ Tool span parentage follows the incoming OpenTelemetry context and inherited
 parent invocation identity, with parent-run-ID lookup as a fallback. An inert
 callback marker preserves that identity through `getChild()` and manager copies,
 so overlapping runs with the same ID keep their children attached to the correct
-span. Completed or evicted parent identities do not resolve to a replacement run
+span. Completed or skipped parent identities do not resolve to a replacement run
 with the same ID. Completion callbacks are not inherited. Existing callbacks and
 callback collections are preserved. Configuration changes and disablement do
 not abandon operations that already emitted a tool-start callback.
@@ -156,12 +156,14 @@ tool-start do not create spans, and completion requires a tool-end/error
 notification. It does not add a cancellation protocol or iterator observation
 to compensate for missing SDK notifications. Pending tool state is capped at
 1,000 runs across CJS/ESM copies and instrumentation instances. At capacity,
-starting another run releases the oldest entry and ends its span with a
-content-free warning. This is telemetry cleanup, not SDK cancellation or an
-observed completion, so it records no result, error or duration metric.
-Each invocation has its own callback token, so late callbacks for an evicted
-run are ignored even if its run ID or callback manager is reused. Long-running
-tools can lose completion telemetry if this limit is exceeded.
+new tool runs execute normally but do not start tool spans or record tool
+duration metrics, and a content-free warning is logged. Already tracked runs
+keep their spans and record their actual completion, including results or
+errors and duration metrics. Tracking resumes for new runs when an observed
+end/error callback frees a slot. Missing completion callbacks continue to occupy
+slots, so tracing new tool runs remains paused if all 1,000 slots stay occupied.
+Each invocation has its own callback token, so completion callbacks for skipped
+runs are ignored even if their run IDs or callback managers are reused.
 Runnable `.asTool()` adapters
 that emit only chain callbacks do not gain tool spans from this slice.
 

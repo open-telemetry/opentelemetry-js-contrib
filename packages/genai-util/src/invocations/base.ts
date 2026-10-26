@@ -270,19 +270,6 @@ export abstract class BaseInvocation {
   }
 
   /**
-   * Release an invocation whose completion can no longer be observed.
-   *
-   * Ends the span without recording results, errors, or duration metrics.
-   * This is telemetry cleanup, not cancellation of the underlying operation.
-   * Later completion callbacks are ignored.
-   */
-  public abandon(): void {
-    if (this._isEnded) return;
-    this._isEnded = true;
-    this._span.end();
-  }
-
-  /**
    * Complete the invocation with an error and end the underlying span.
    *
    * Ending an already ended invocation is a no-op. Failures while emitting the

@@ -53,20 +53,6 @@ function removeRun(token: symbol, run: ToolRun) {
   if (runTokens.get(run.runId) === token) runTokens.delete(run.runId);
 }
 
-function evictOldestRun() {
-  if (runs.size <= MAX_PENDING_TOOL_RUNS) return;
-  const oldest = runs.entries().next();
-  if (oldest.done) return;
-  const [token, run] = oldest.value;
-  removeRun(token, run);
-  run.diag.warn('LangChain: pending tool limit reached, releasing oldest run');
-  try {
-    run.invocation.abandon();
-  } catch {
-    run.diag.warn('LangChain: could not end evicted tool telemetry');
-  }
-}
-
 /** Register on an invocation's copied manager, not user collections. */
 export function addToolCallbacks(
   configured: CallbackManager,
@@ -180,6 +166,12 @@ function createToolCallbacks(
       try {
         const current = telemetry();
         if (!current) return;
+        if (runs.size >= MAX_PENDING_TOOL_RUNS) {
+          diag.warn(
+            'LangChain: pending tool limit reached, skipping new tool telemetry'
+          );
+          return;
+        }
         const serializedName = ownValue(serialized, 'name');
         const name =
           typeof serializedName === 'string'
@@ -223,7 +215,6 @@ function createToolCallbacks(
           callId: toolCallId,
         });
         runTokens.set(runId, token);
-        evictOldestRun();
       } catch {
         diag.warn('LangChain: could not start tool telemetry');
       }
