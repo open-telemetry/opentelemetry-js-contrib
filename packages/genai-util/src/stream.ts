@@ -175,6 +175,8 @@ export function wrapAsyncStream<
         if (originalThrow) {
           return advance(() => originalThrow(error));
         }
+        // Let any cleanup error from `originalReturn()` surface to the caller (matching
+        // `yield*` delegation) while telemetry records the original `error` in `finally`.
         try {
           if (originalReturn) {
             await originalReturn();
