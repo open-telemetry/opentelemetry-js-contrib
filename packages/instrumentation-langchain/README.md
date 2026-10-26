@@ -98,11 +98,14 @@ Tool execution uses the donated OpenInference package's callback-manager
 integration and tool start/end/error lifecycle. The callbacks delegate to
 `@opentelemetry/genai-util`'s `TelemetryHandler.startTool`, `setResult`, `stop`
 and `fail` APIs for spans, attributes, content capture and duration metrics.
-Only SDK value normalization, callback registration and parentage remain
-LangChain-specific. This adds `INTERNAL`
+Only SDK value normalization, callback registration, parentage and context
+propagation remain LangChain-specific. This adds `INTERNAL`
 `execute_tool {name}` spans for SDK tool callbacks, including `tool`,
-`DynamicTool` and `DynamicStructuredTool`. It does not wrap tool methods or
-replace their returned Promises or results.
+`DynamicTool` and `DynamicStructuredTool`. The concrete `_call` implementation,
+including custom tool subclasses, runs with the tool span active so spans created
+inside the tool nest beneath it across asynchronous work. The execution wrapper
+does not replace returned Promises or results; callbacks still own the span
+lifecycle.
 
 ```js
 const { tool } = require('@langchain/core/tools');

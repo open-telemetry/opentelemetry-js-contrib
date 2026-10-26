@@ -32,6 +32,8 @@ import { awaitAllCallbacks } from '@langchain/core/callbacks/promises';
 import {
   DynamicTool,
   DynamicStructuredTool,
+  StructuredTool,
+  Tool,
   tool,
 } from '@langchain/core/tools';
 import { ToolMessage } from '@langchain/core/messages';
@@ -412,6 +414,245 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(trace.getSpan(context.active()), undefined);
     parent.end();
   });
+
+  for (const kind of [
+    'tool',
+    'DynamicTool',
+    'DynamicStructuredTool',
+    'Tool subclass',
+    'StructuredTool subclass',
+  ]) {
+    for (const hasParent of [false, true]) {
+      it(`activates the tool context across async execution (${kind}, parent=${hasParent})`, async () => {
+        const tracer = trace.getTracer('tool-test');
+        const parent = hasParent ? tracer.startSpan('application') : undefined;
+        const caller = parent
+          ? trace.setSpan(context.active(), parent)
+          : context.active();
+        const func = async () => {
+          tracer.startSpan('before-await').end();
+          await new Promise<void>(resolve => setImmediate(resolve));
+          tracer.startSpan('after-await').end();
+          return 'result';
+        };
+        const schema = echo().schema.innerType().required();
+        class CustomTool extends Tool {
+          name = 'context';
+          description = '';
+          protected _call() {
+            return func();
+          }
+        }
+        class CustomStructuredTool extends StructuredTool<typeof schema> {
+          name = 'context';
+          description = '';
+          schema = schema;
+          protected _call() {
+            return func();
+          }
+        }
+        const fields = { name: 'context', description: '', func };
+        const operation: {
+          invoke(input: { input: string }): Promise<unknown>;
+        } =
+          kind === 'tool'
+            ? tool(func, fields)
+            : kind === 'DynamicTool'
+              ? new DynamicTool(fields)
+              : kind === 'DynamicStructuredTool'
+                ? new DynamicStructuredTool({ ...fields, schema })
+                : kind === 'Tool subclass'
+                  ? new CustomTool()
+                  : new CustomStructuredTool();
+        try {
+          await context.with(caller, async () => {
+            assert.equal(await operation.invoke({ input: 'hello' }), 'result');
+            assert.equal(context.active(), caller);
+          });
+          const spans = getTestSpans();
+          assert.equal(spans.length, 3);
+          const toolSpan = spans.find(
+            span => span.attributes['gen_ai.operation.name'] === 'execute_tool'
+          )!;
+          assert.equal(
+            toolSpan.parentSpanContext?.spanId,
+            parent?.spanContext().spanId
+          );
+          for (const name of ['before-await', 'after-await']) {
+            const child = spans.find(span => span.name === name)!;
+            assert.equal(
+              child.parentSpanContext?.spanId,
+              toolSpan.spanContext().spanId
+            );
+            assert.equal(
+              child.spanContext().traceId,
+              toolSpan.spanContext().traceId
+            );
+          }
+          assert.equal(trace.getSpan(context.active()), undefined);
+        } finally {
+          parent?.end();
+        }
+      });
+    }
+  }
+
+  it('isolates execution contexts for concurrent calls with a reused run ID', async () => {
+    const tracer = trace.getTracer('tool-test');
+    const callbacks = CallbackManager.configure();
+    const runId = '00000000-0000-4000-8000-000000000001';
+    let enter!: () => void;
+    const entered = new Promise<void>(resolve => {
+      enter = resolve;
+    });
+    const active = new Map<string, string | undefined>();
+    const operation = new DynamicTool({
+      name: 'concurrent',
+      description: '',
+      func: async input => {
+        active.set(input, trace.getSpanContext(context.active())?.spanId);
+        if (active.size === 2) enter();
+        await entered;
+        tracer.startSpan(input).end();
+        return input;
+      },
+    });
+    assert.deepEqual(
+      await Promise.all([
+        operation.invoke('first', { callbacks, runId }),
+        operation.invoke('second', { callbacks, runId }),
+      ]),
+      ['first', 'second']
+    );
+    const spans = getTestSpans();
+    assert.equal(spans.length, 4);
+    const tools = spans.filter(span => span.name === 'execute_tool concurrent');
+    assert.equal(tools.length, 2);
+    assert.notEqual(active.get('first'), active.get('second'));
+    for (const input of ['first', 'second']) {
+      const child = spans.find(span => span.name === input)!;
+      assert.equal(child.parentSpanContext?.spanId, active.get(input));
+      assert.ok(
+        tools.some(span => span.spanContext().spanId === active.get(input))
+      );
+    }
+    assert.equal(trace.getSpan(context.active()), undefined);
+  });
+
+  it('nests workflows and tools invoked without explicit callbacks inside a tool', async () => {
+    const workflow = RunnableSequence.from([
+      echo(),
+      RunnableLambda.from((value: string) => value),
+    ]);
+    const outer = new DynamicTool({
+      name: 'outer',
+      description: '',
+      func: async value => workflow.invoke(value),
+    });
+    assert.equal(await outer.invoke('hello'), 'hello');
+    const spans = getTestSpans();
+    assert.equal(spans.length, 3);
+    const outerSpan = spans.find(span => span.name === 'execute_tool outer')!;
+    const workflowSpan = spans.find(span => span.name === 'invoke_workflow')!;
+    const innerSpan = spans.find(span => span.name === 'execute_tool echo')!;
+    assert.equal(
+      workflowSpan.parentSpanContext?.spanId,
+      outerSpan.spanContext().spanId
+    );
+    assert.equal(
+      innerSpan.parentSpanContext?.spanId,
+      workflowSpan.spanContext().spanId
+    );
+  });
+
+  for (const asynchronous of [false, true]) {
+    it(`restores the caller context after tool failures (async=${asynchronous})`, async () => {
+      const tracer = trace.getTracer('tool-test');
+      const parent = tracer.startSpan('application');
+      const caller = trace.setSpan(context.active(), parent);
+      const failure = new Error('tool failure');
+      const operation = new DynamicTool({
+        name: 'failure',
+        description: '',
+        func: () => {
+          tracer.startSpan('child').end();
+          if (asynchronous) return Promise.reject(failure);
+          throw failure;
+        },
+      });
+      try {
+        await context.with(caller, async () => {
+          await assert.rejects(
+            operation.invoke('hello'),
+            error => error === failure
+          );
+          assert.equal(context.active(), caller);
+        });
+        const spans = getTestSpans();
+        assert.equal(spans.length, 2);
+        const toolSpan = spans.find(
+          span => span.name === 'execute_tool failure'
+        )!;
+        const child = spans.find(span => span.name === 'child')!;
+        assert.equal(
+          child.parentSpanContext?.spanId,
+          toolSpan.spanContext().spanId
+        );
+        assert.equal(toolSpan.status.code, SpanStatusCode.ERROR);
+        assert.equal(trace.getSpan(context.active()), undefined);
+      } finally {
+        parent.end();
+      }
+    });
+  }
+
+  it('preserves the execution Promise and restores the original method when disabled', async () => {
+    const original = DynamicTool.prototype._call;
+    const result = Promise.resolve('result');
+    const operation = new DynamicTool({
+      name: 'identity',
+      description: '',
+      func: () => result,
+    });
+    assert.equal(await operation.invoke('hello'), 'result');
+    assert.notEqual(DynamicTool.prototype._call, original);
+    const callbacks = CallbackManager.configure();
+    assert.ok(callbacks);
+    const run = await callbacks.handleToolStart(operation.toJSON(), 'hello');
+    try {
+      assert.equal(operation._call('hello', run), result);
+      assert.equal(trace.getSpan(context.active()), undefined);
+    } finally {
+      await run.handleToolEnd(await result);
+    }
+    instrumentation.disable();
+    assert.equal(DynamicTool.prototype._call, original);
+  });
+
+  for (const mode of ['disabled', 'suppressed']) {
+    it(`leaves the execution context unchanged while ${mode}`, async () => {
+      const caller =
+        mode === 'suppressed'
+          ? suppressTracing(context.active())
+          : context.active();
+      if (mode === 'disabled') instrumentation.disable();
+      const operation = new DynamicTool({
+        name: 'untraced',
+        description: '',
+        func: async () => {
+          assert.equal(context.active(), caller);
+          await new Promise<void>(resolve => setImmediate(resolve));
+          assert.equal(context.active(), caller);
+          return 'result';
+        },
+      });
+      assert.equal(
+        await context.with(caller, () => operation.invoke('hello')),
+        'result'
+      );
+      assert.equal(getTestSpans().length, 0);
+    });
+  }
 
   it('leaves the merged workflow span in place around tool execution', async () => {
     await RunnableSequence.from([

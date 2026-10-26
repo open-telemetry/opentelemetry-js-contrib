@@ -4,6 +4,10 @@
  */
 
 const assert = require('node:assert/strict');
+const { context, trace } = require('@opentelemetry/api');
+const {
+  AsyncLocalStorageContextManager,
+} = require('@opentelemetry/context-async-hooks');
 const {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -14,6 +18,8 @@ const { TestMetricReader } = require('@opentelemetry/contrib-test-utils');
 const { MeterProvider, DataPointType } = require('@opentelemetry/sdk-metrics');
 
 async function main() {
+  const contextManager = new AsyncLocalStorageContextManager().enable();
+  context.setGlobalContextManager(contextManager);
   const exporter = new InMemorySpanExporter();
   const provider = new TracerProvider({
     spanProcessors: [new SimpleSpanProcessor({ exporter })],
@@ -100,6 +106,7 @@ async function main() {
         };
       }
     }
+    const executionContexts = [];
     adapters.push({
       tool: module.RunnableLambda.from(value => value.input).asTool({
         name: 'tool-adapter',
@@ -147,8 +154,14 @@ async function main() {
       callbackTool: new tools.DynamicTool({
         name: 'loaded-tool',
         description: 'Local tool loading scenario',
-        func: async value => value,
+        func: async value => {
+          await Promise.resolve();
+          executionContexts.push(trace.getSpanContext(context.active()));
+          return value;
+        },
       }),
+      executionContexts,
+      originalToolCall: tools.DynamicTool.prototype._call,
       CallbackManager,
       asTool: module.Runnable.prototype.asTool,
       assignFactory: module.RunnablePassthrough.assign,
@@ -284,6 +297,17 @@ async function main() {
         ).length,
         2
       );
+      for (const adapter of adapters) {
+        const active = adapter.executionContexts.at(-1);
+        assert.ok(active);
+        assert.ok(
+          spans.some(
+            span =>
+              span.name === 'execute_tool loaded-tool' &&
+              span.spanContext().spanId === active.spanId
+          )
+        );
+      }
       const collected = await reader.collect();
       assert.deepEqual(collected.errors, []);
       const metric = collected.resourceMetrics.scopeMetrics.flatMap(
@@ -301,6 +325,10 @@ async function main() {
       exporter.reset();
       instrumentation.disable();
       for (const [index, module] of modules.entries()) {
+        assert.equal(
+          adapters[index].callbackTool._call,
+          adapters[index].originalToolCall
+        );
         assert.equal(
           module.RunnableSequence.prototype.invoke,
           originals[index].invoke
@@ -377,6 +405,23 @@ async function main() {
               : 'gen_ai.input.messages';
           assert.equal(content in span.attributes, owner === 1);
         }
+        if (index === owner) {
+          for (const adapter of adapters) {
+            const active = adapter.executionContexts.at(-1);
+            assert.ok(active);
+            assert.ok(
+              spans.some(
+                span =>
+                  span.name === 'execute_tool loaded-tool' &&
+                  span.spanContext().spanId === active.spanId
+              )
+            );
+          }
+        }
+      }
+      if (owner === undefined) {
+        for (const adapter of adapters)
+          assert.equal(adapter.executionContexts.at(-1), undefined);
       }
     };
     for (const firstDisabled of [0, 1]) {
@@ -495,6 +540,8 @@ async function main() {
     await provider.shutdown();
     await secondProvider.shutdown();
     await meterProvider.shutdown();
+    contextManager.disable();
+    context.disable();
   }
 }
 

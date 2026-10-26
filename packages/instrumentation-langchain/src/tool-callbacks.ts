@@ -4,8 +4,11 @@
  */
 
 import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
-import type { CallbackManager } from '@langchain/core/callbacks/manager';
-import { context, type DiagLogger } from '@opentelemetry/api';
+import type {
+  CallbackManager,
+  CallbackManagerForToolRun,
+} from '@langchain/core/callbacks/manager';
+import { context, type Context, type DiagLogger } from '@opentelemetry/api';
 import { isTracingSuppressed } from '@opentelemetry/core';
 import type {
   TelemetryHandler,
@@ -33,6 +36,17 @@ const runTokens = new Map<string, symbol>();
 const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
 const parentInvocations = new WeakMap<object, CallbackInvocation>();
+
+export function getToolContext(
+  manager: CallbackManagerForToolRun | undefined
+): Context | undefined {
+  for (const handler of manager?.handlers ?? []) {
+    const invocation = parentInvocations.get(handler);
+    if (invocation && invocation.runId === manager?.runId)
+      return runs.get(invocation.token)?.invocation.getContext();
+  }
+  return undefined;
+}
 
 function removeRun(token: symbol, run: ToolRun) {
   runs.delete(token);

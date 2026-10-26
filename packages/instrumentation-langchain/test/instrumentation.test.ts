@@ -81,12 +81,14 @@ describe('LangChainInstrumentation', () => {
       normalize('@langchain/core/dist/runnables/passthrough.cjs'),
       normalize('@langchain/core/dist/language_models/chat_models.cjs'),
       normalize('@langchain/core/dist/language_models/structured_output.cjs'),
+      normalize('@langchain/core/dist/tools/index.cjs'),
       normalize('@langchain/core/dist/callbacks/manager.cjs'),
       normalize('@langchain/core/dist/runnables/base.js'),
       normalize('@langchain/core/dist/runnables/history.js'),
       normalize('@langchain/core/dist/runnables/passthrough.js'),
       normalize('@langchain/core/dist/language_models/chat_models.js'),
       normalize('@langchain/core/dist/language_models/structured_output.js'),
+      normalize('@langchain/core/dist/tools/index.js'),
       normalize('@langchain/core/dist/callbacks/manager.js'),
     ]);
     const file = instance.definitions[0].files.find(file =>
