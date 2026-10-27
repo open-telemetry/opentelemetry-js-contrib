@@ -25,6 +25,10 @@ interface ToolRun {
   diag: DiagLogger;
 }
 
+/**
+ * Object identity distinguishes executions even when LangChain reuses a run ID.
+ * Inherited marker handlers share this object to find the parent's active context.
+ */
 interface CallbackInvocation {
   runId?: string;
   context?: Context;
@@ -48,7 +52,14 @@ export function getToolContext(
   return undefined;
 }
 
-/** Register on an invocation's copied manager, not user collections. */
+/**
+ * Registers one tool execution on a copied manager, leaving user callbacks intact.
+ *
+ * @param configured The SDK manager's invocation-local copy, modified in place.
+ * @param manager CallbackManager constructor from the same loaded SDK module copy.
+ * @param telemetry Resolves the enabled instrumentation's handler at tool start.
+ * @param getDiag Resolves the logger retained for the lifetime of the tool run.
+ */
 export function addToolCallbacks(
   configured: CallbackManager,
   manager: typeof CallbackManager,
@@ -95,8 +106,15 @@ function content(value: unknown, key: 'input' | 'output'): string | undefined {
 }
 
 /**
- * Migrate the donation's tool start/end/error and parent-run bookkeeping.
- * Other callback operation types remain owned by their existing instrumentation.
+ * Creates tool start/end/error callbacks with state scoped to one SDK execution.
+ * Late or repeated completions cannot finish another execution that reuses its ID.
+ *
+ * @param telemetry Resolves telemetry at tool start; undefined skips tracing.
+ * @param getDiag Resolves the logger captured at start and used through completion.
+ * @param invocation This execution's identity, shared with inherited marker
+ * handlers. Its context is set for a tracked run and cleared on completion.
+ * @param parentInvocation Parent identity inherited through getChild() or copy().
+ * It takes precedence over run-ID lookup when its run ID matches parentRunId.
  */
 function createToolCallbacks(
   telemetry: () => TelemetryHandler | undefined,
