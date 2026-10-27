@@ -264,6 +264,35 @@ describe('LangChain donated tool callbacks', () => {
     );
   });
 
+  it('prefers the start-time tool-call ID when the SDK supplies one', async () => {
+    const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
+    const output = new ToolMessage({
+      content: 'hello',
+      tool_call_id: 'message-call-1',
+    });
+    const operation = new DynamicTool({
+      name: 'call-id',
+      description: '',
+      func: async () => output,
+    });
+    assert.equal(
+      await operation.invoke({
+        type: 'tool_call',
+        id: 'start-call-1',
+        name: 'call-id',
+        args: { input: 'hello' },
+      }),
+      output
+    );
+    assert.equal(startTool.callCount, 1);
+    // Older SDK versions only expose the ID through the final ToolMessage.
+    const initialId = startTool.firstCall.args[0].toolCallId;
+    assert.equal(
+      getTestSpans()[0].attributes['gen_ai.tool.call.id'],
+      initialId || 'message-call-1'
+    );
+  });
+
   for (const { value, expected } of [
     { value: ['first', 'second'], expected: { output: ['first', 'second'] } },
     { value: 'text', expected: { output: 'text' } },

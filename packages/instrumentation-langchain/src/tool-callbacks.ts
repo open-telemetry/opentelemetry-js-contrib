@@ -21,7 +21,7 @@ import { ownValue } from './internal-workflows';
 interface ToolRun {
   runId: string;
   invocation: ToolInvocation;
-  callId: string | undefined;
+  hasToolCallId: boolean;
   diag: DiagLogger;
 }
 
@@ -144,7 +144,10 @@ function createToolCallbacks(
         }
         tool.fail({ errorType });
       } else {
-        if (!run.callId && ownValue(output, 'lc_direct_tool_output') === true) {
+        if (
+          !run.hasToolCallId &&
+          ownValue(output, 'lc_direct_tool_output') === true
+        ) {
           const callId = ownValue(output, 'tool_call_id');
           if (typeof callId === 'string' && callId)
             tool.setAttribute(ATTR_GEN_AI_TOOL_CALL_ID, callId);
@@ -226,7 +229,7 @@ function createToolCallbacks(
           runId,
           diag,
           invocation: tool,
-          callId: toolCallId,
+          hasToolCallId: Boolean(toolCallId),
         };
         runInvocations.set(runId, invocation);
         pendingRuns++;
