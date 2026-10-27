@@ -245,6 +245,25 @@ describe('LangChain donated tool callbacks', () => {
     );
   });
 
+  it('records a tool-call ID that is only available in the final ToolMessage', async () => {
+    const callbacks = new CallbackManager();
+    const run = await callbacks.handleToolStart(
+      echo().toJSON(),
+      'hello',
+      'tool-run'
+    );
+    await run.handleToolEnd(
+      new ToolMessage({
+        content: 'hello',
+        tool_call_id: 'late-call-1',
+      })
+    );
+    assert.equal(
+      getTestSpans()[0].attributes['gen_ai.tool.call.id'],
+      'late-call-1'
+    );
+  });
+
   for (const { value, expected } of [
     { value: ['first', 'second'], expected: { output: ['first', 'second'] } },
     { value: 'text', expected: { output: 'text' } },

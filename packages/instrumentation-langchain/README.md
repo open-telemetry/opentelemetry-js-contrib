@@ -296,8 +296,8 @@ package's `src/semconv.ts`. Stable `error.type` is imported from
 Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
 `gen_ai.tool.type`, `gen_ai.tool.call.id`, `gen_ai.tool.call.arguments`,
 `gen_ai.tool.call.result`, and `gen_ai.execute_tool.duration`. These are emitted
-by `@opentelemetry/genai-util`. Only the late ToolMessage call-ID mapping needs
-a local constant in `src/semconv.ts`.
+by `@opentelemetry/genai-util`. The late ToolMessage call-ID mapping also uses
+that package's shared `ATTR_GEN_AI_TOOL_CALL_ID` constant.
 
 ### Tool conformance
 

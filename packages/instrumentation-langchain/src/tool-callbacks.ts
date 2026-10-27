@@ -10,13 +10,13 @@ import type {
 } from '@langchain/core/callbacks/manager';
 import { context, type Context, type DiagLogger } from '@opentelemetry/api';
 import { isTracingSuppressed } from '@opentelemetry/core';
-import type {
-  TelemetryHandler,
-  ToolInvocation,
+import {
+  ATTR_GEN_AI_TOOL_CALL_ID,
+  type TelemetryHandler,
+  type ToolInvocation,
 } from '@opentelemetry/genai-util';
 import { isRecord } from './content';
 import { ownValue } from './internal-workflows';
-import { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
 
 interface ToolRun {
   runId: string;
