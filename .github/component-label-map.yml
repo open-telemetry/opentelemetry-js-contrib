@@ -322,6 +322,11 @@ pkg:sql-common:
   - changed-files:
       - any-glob-to-any-file:
           - packages/sql-common/**
+pkg:tanstack-ai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/tanstack-ai/**
+          - packages/contrib-test-utils/**
 pkg:winston-transport:
   - changed-files:
       - any-glob-to-any-file:
