@@ -379,6 +379,35 @@ describe('AwsEcsResourceDetector', () => {
         });
       });
 
+      describe('on Ec2 in GovCloud', () => {
+        describe('with AWS CloudWatch as log driver', () => {
+          generateLaunchTypeTests(
+            {
+              accountId: '111122223333',
+              region: 'us-gov-west-1',
+              clusterArn:
+                'arn:aws-us-gov:ecs:us-gov-west-1:111122223333:cluster/default',
+              containerArn:
+                'arn:aws-us-gov:ecs:us-gov-west-1:111122223333:container/0206b271-b33f-47ab-86c6-a0ba208a70a9',
+              launchType: 'ec2',
+              taskArn:
+                'arn:aws-us-gov:ecs:us-gov-west-1:111122223333:task/default/158d1c8083dd49d6b527399fd6414f5c',
+              taskFamily: 'curltest',
+              taskRevision: '26',
+              logGroupNames: ['/ecs/metadata'],
+              logGroupArns: [
+                'arn:aws-us-gov:logs:us-gov-west-1:111122223333:log-group:/ecs/metadata',
+              ],
+              logStreamNames: ['ecs/curl/8f03e41243824aea923aca126495f665'],
+              logStreamArns: [
+                'arn:aws-us-gov:logs:us-gov-west-1:111122223333:log-group:/ecs/metadata:log-stream:ecs/curl/8f03e41243824aea923aca126495f665',
+              ],
+            },
+            '-govcloud'
+          );
+        });
+      });
+
       describe('on Fargate', () => {
         describe('with AWS CloudWatch as log driver', () => {
           generateLaunchTypeTests({
