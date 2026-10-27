@@ -1,0 +1,48 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/chat/completions",
+        "status": 200,
+        "responseIsBinary": false,
+        "body": {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": "Answer in up to 3 words: Which ocean contains Bouvet Island?"
+                }
+            ]
+        },
+        "response": {
+            "id": "chatcmpl-nopromptdetails",
+            "object": "chat.completion",
+            "created": 1761436800,
+            "model": "gpt-4o-mini-2024-07-18",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {
+                        "role": "assistant",
+                        "content": "Atlantic Ocean.",
+                        "refusal": null,
+                        "annotations": []
+                    },
+                    "logprobs": null,
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": 22,
+                "completion_tokens": 3,
+                "total_tokens": 25
+            },
+            "service_tier": "default",
+            "system_fingerprint": null
+        },
+        "rawHeaders": {
+            "content-type": "application/json",
+            "openai-version": "2020-10-01"
+        }
+    }
+]

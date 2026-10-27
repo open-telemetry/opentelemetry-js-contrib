@@ -63,6 +63,7 @@ import {
   ATTR_GEN_AI_SYSTEM,
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_TOKEN_TYPE,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_INPUT_MESSAGES,
@@ -584,6 +585,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
           chunk.usage.completion_tokens
         );
+        setChatCachedTokensAttribute(span, chunk.usage);
         this._genaiClientTokenUsage.record(chunk.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
@@ -674,6 +676,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
           result.usage.completion_tokens
         );
+        setChatCachedTokensAttribute(span, result.usage);
       }
 
       // Capture choices as log events.
@@ -1182,6 +1185,18 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 }
+
+// `cached_tokens` is optional and can be null, so only a number is set.
+function setChatCachedTokensAttribute(
+  span: Span,
+  usage: NonNullable<ChatCompletion['usage']>
+) {
+  const cachedTokens = usage.prompt_tokens_details?.cached_tokens;
+  if (typeof cachedTokens === 'number') {
+    span.setAttribute(ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS, cachedTokens);
+  }
+}
+
 function isTextContent(
   value: ChatCompletionContentPart | ChatCompletionContentPartRefusal
 ): value is ChatCompletionContentPartText {

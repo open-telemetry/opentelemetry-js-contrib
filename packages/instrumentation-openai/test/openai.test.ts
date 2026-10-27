@@ -50,6 +50,7 @@ import {
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
   ATTR_GEN_AI_REQUEST_TOP_P,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
@@ -153,6 +154,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -300,6 +302,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -435,6 +438,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 6,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -601,6 +605,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 57,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 46,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -769,6 +774,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 125,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 26,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -918,6 +924,71 @@ describe('OpenAI', function () {
       });
     });
 
+    // The recordings for the cache tests below are hand-written: a cache hit
+    // needs a prompt of at least 1024 tokens sent twice, and some
+    // OpenAI-compatible servers omit `prompt_tokens_details` or send null.
+    it('records cached input tokens', async () => {
+      await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 1280,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 1152,
+      });
+
+      // Cache tokens are already counted in the input tokens, so the token
+      // usage metric still records only input and output.
+      await meterProvider.forceFlush();
+      const [resourceMetrics] = metricExporter.getMetrics();
+      const tokenUsage = resourceMetrics.scopeMetrics[0].metrics.filter(
+        m => m.descriptor.name === 'gen_ai.client.token.usage'
+      );
+      expect(
+        tokenUsage[0].dataPoints.map(
+          dp => dp.attributes[ATTR_GEN_AI_TOKEN_TYPE]
+        )
+      ).toEqual(
+        expect.arrayContaining([
+          GEN_AI_TOKEN_TYPE_VALUE_INPUT,
+          GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+        ])
+      );
+      expect(tokenUsage[0].dataPoints.length).toBe(2);
+    });
+
+    it('omits cached input tokens when usage has no prompt token details', async () => {
+      await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(22);
+      expect(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]
+      ).toBeUndefined();
+    });
+
+    it('omits cached input tokens when cached_tokens is null', async () => {
+      await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+      });
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(22);
+      expect(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]
+      ).toBeUndefined();
+    });
+
     it('handles connection errors without crashing', async () => {
       const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
         {
@@ -1037,6 +1108,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -1176,6 +1248,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 6,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -1348,6 +1421,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 57,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 46,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -1522,6 +1596,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 125,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 27,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -1880,6 +1955,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 0,
       });
 
       await meterProvider.forceFlush();
@@ -1982,6 +2058,79 @@ describe('OpenAI', function () {
         index: 0,
         message: {},
       });
+    });
+
+    // The recordings for the cache tests below are hand-written: a cache hit
+    // needs a prompt of at least 1024 tokens sent twice, and some
+    // OpenAI-compatible servers omit `prompt_tokens_details`.
+    it('records cached input tokens', async () => {
+      const stream = await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+        stream_options: {
+          include_usage: true,
+        },
+      });
+      let content = '';
+      for await (const part of stream) {
+        content += part.choices[0]?.delta.content || '';
+      }
+      expect(content).toEqual('Atlantic Ocean.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes).toMatchObject({
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 1280,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 1152,
+      });
+    });
+
+    it('omits cached input tokens when usage has no prompt token details', async () => {
+      const stream = await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+        stream_options: {
+          include_usage: true,
+        },
+      });
+      let content = '';
+      for await (const part of stream) {
+        content += part.choices[0]?.delta.content || '';
+      }
+      expect(content).toEqual('Atlantic Ocean.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(22);
+      expect(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]
+      ).toBeUndefined();
+    });
+
+    it('omits cached input tokens when cached_tokens is null', async () => {
+      const stream = await client.chat.completions.create({
+        model,
+        messages: [{ role: 'user', content: input }],
+        stream: true,
+        stream_options: {
+          include_usage: true,
+        },
+      });
+      let content = '';
+      for await (const part of stream) {
+        content += part.choices[0]?.delta.content || '';
+      }
+      expect(content).toEqual('Atlantic Ocean.');
+
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(22);
+      expect(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]
+      ).toBeUndefined();
     });
 
     it('records multiple choices', async () => {

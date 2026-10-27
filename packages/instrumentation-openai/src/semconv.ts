@@ -1037,6 +1037,18 @@ export const ATTR_GEN_AI_TOOL_NAME = 'gen_ai.tool.name' as const;
 export const ATTR_GEN_AI_TOOL_TYPE = 'gen_ai.tool.type' as const;
 
 /**
+ * The number of input tokens served from a provider-managed cache.
+ *
+ * @example 50
+ *
+ * @note The value **SHOULD** be included in `gen_ai.usage.input_tokens`.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.cache_read.input_tokens' as const;
+
+/**
  * Deprecated, use `gen_ai.usage.output_tokens` instead.
  *
  * @example 42
