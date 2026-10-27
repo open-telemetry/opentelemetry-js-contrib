@@ -843,6 +843,47 @@ describe('LangChain donated tool callbacks', () => {
     });
   }
 
+  it('counts overlapping runs separately and frees each pending slot only once', async function () {
+    this.timeout(15000);
+    const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
+    const callbacks = CallbackManager.configure();
+    assert.ok(callbacks);
+    const serialized = echo().toJSON();
+    const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
+      [];
+    const start = async () => {
+      const run = await callbacks.handleToolStart(serialized, '', 'reused');
+      pending.push(run);
+      return run;
+    };
+    try {
+      for (let index = 0; index < 1000; index++) await start();
+      const skipped = await start();
+      assert.equal(startTool.callCount, 1000);
+
+      await pending[0].handleToolEnd('first');
+      const replacement = await start();
+      assert.equal(startTool.callCount, 1001);
+
+      await pending[0].handleToolError(new Error('duplicate'));
+      await skipped.handleToolEnd('skipped');
+      await start();
+      assert.equal(startTool.callCount, 1001);
+      assert.equal(getTestSpans().length, 1);
+
+      await replacement.handleToolError(new TypeError('replacement-error'));
+      await start();
+      assert.equal(startTool.callCount, 1002);
+    } finally {
+      await Promise.all(pending.map(run => run.handleToolEnd('cleanup')));
+    }
+    assert.equal(getTestSpans().length, 1002);
+    assert.equal(
+      (await points()).reduce((count, point) => count + point.value.count, 0),
+      1002
+    );
+  });
+
   for (const ending of ['end', 'error'] as const) {
     it(`ignores skipped ${ending} callbacks and resumes tracking after ${ending} with a reused run ID`, async function () {
       this.timeout(15000);
@@ -1070,7 +1111,46 @@ describe('LangChain donated tool callbacks', () => {
     });
   }
 
-  for (const state of ['completed', 'skipped'] as const) {
+  it('retains the newest run-ID fallback until completion without inherited callbacks', async () => {
+    const callbacks = CallbackManager.configure();
+    assert.ok(callbacks);
+    const serialized = echo().toJSON();
+    const older = await callbacks.handleToolStart(serialized, '', 'reused');
+    const newer = await callbacks.handleToolStart(serialized, '', 'reused');
+    const childCallbacks = new CallbackManager('reused');
+    const pending = [older, newer];
+    try {
+      await older.handleToolEnd('older');
+      const child = await childCallbacks.handleToolStart(
+        serialized,
+        '',
+        'child'
+      );
+      pending.push(child);
+      await child.handleToolEnd('child');
+      await newer.handleToolEnd('newer');
+      const spans = getTestSpans();
+      assert.equal(spans.length, 3);
+      assert.equal(
+        spans[1].parentSpanContext?.spanId,
+        spans[2].spanContext().spanId
+      );
+
+      const independent = await childCallbacks.handleToolStart(
+        serialized,
+        '',
+        'independent'
+      );
+      pending.push(independent);
+      await independent.handleToolEnd('independent');
+      assert.equal(getTestSpans().length, 4);
+      assert.equal(getTestSpans()[3].parentSpanContext, undefined);
+    } finally {
+      await Promise.all(pending.map(run => run.handleToolEnd('cleanup')));
+    }
+  });
+
+  for (const state of ['completed', 'failed', 'skipped'] as const) {
     it(`does not reparent a ${state} invocation's child to a reused run ID`, async function () {
       this.timeout(15000);
       const callbacks = CallbackManager.configure();
@@ -1095,6 +1175,8 @@ describe('LangChain donated tool callbacks', () => {
         const childCallbacks = older.getChild();
         if (state === 'completed') {
           await older.handleToolEnd('older');
+        } else if (state === 'failed') {
+          await older.handleToolError(new Error('older-error'));
         } else {
           // Leave room for both the replacement and the skipped run's child.
           await pending[0].handleToolEnd('cleanup');
@@ -1120,7 +1202,7 @@ describe('LangChain donated tool callbacks', () => {
     });
   }
 
-  it('does not pass an in-flight parent token to a child started while disabled', async () => {
+  it('does not pass an in-flight parent invocation to a child started while disabled', async () => {
     const runId = '00000000-0000-4000-8000-000000000001';
     const outer = new DynamicTool({
       name: 'outer',

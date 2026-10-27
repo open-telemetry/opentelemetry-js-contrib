@@ -26,13 +26,13 @@ interface ToolRun {
 }
 
 interface CallbackInvocation {
-  token: symbol;
   runId?: string;
+  context?: Context;
 }
 
+let pendingRuns = 0;
 // Run IDs are a fallback when no parent invocation identity is inherited.
-const runs = new Map<symbol, ToolRun>();
-const runTokens = new Map<string, symbol>();
+const runInvocations = new Map<string, CallbackInvocation>();
 const MAX_PENDING_TOOL_RUNS = 1000;
 const handlers = new WeakSet<object>();
 const parentInvocations = new WeakMap<object, CallbackInvocation>();
@@ -43,14 +43,9 @@ export function getToolContext(
   for (const handler of manager?.handlers ?? []) {
     const invocation = parentInvocations.get(handler);
     if (invocation && invocation.runId === manager?.runId)
-      return runs.get(invocation.token)?.invocation.getContext();
+      return invocation.context;
   }
   return undefined;
-}
-
-function removeRun(token: symbol, run: ToolRun) {
-  runs.delete(token);
-  if (runTokens.get(run.runId) === token) runTokens.delete(run.runId);
 }
 
 /** Register on an invocation's copied manager, not user collections. */
@@ -65,7 +60,7 @@ export function addToolCallbacks(
     parentInvocation = parentInvocations.get(callback) ?? parentInvocation;
     if (handlers.has(callback)) configured.removeHandler(callback);
   }
-  const invocation: CallbackInvocation = { token: Symbol() };
+  const invocation: CallbackInvocation = {};
   const handler = manager.fromHandlers(
     createToolCallbacks(telemetry, getDiag, invocation, parentInvocation)
   ).handlers[0];
@@ -109,12 +104,16 @@ function createToolCallbacks(
   invocation: CallbackInvocation,
   parentInvocation: CallbackInvocation | undefined
 ): CallbackHandlerMethods {
-  const { token } = invocation;
+  let activeRun: ToolRun | undefined;
   const end = (output?: unknown, failure?: { error: unknown }) => {
-    const run = runs.get(token);
+    const run = activeRun;
     if (!run) return;
+    activeRun = undefined;
+    invocation.context = undefined;
+    pendingRuns--;
+    if (runInvocations.get(run.runId) === invocation)
+      runInvocations.delete(run.runId);
     const { diag, invocation: tool } = run;
-    removeRun(token, run);
     try {
       if (failure) {
         let errorType = '_OTHER';
@@ -166,7 +165,7 @@ function createToolCallbacks(
       try {
         const current = telemetry();
         if (!current) return;
-        if (runs.size >= MAX_PENDING_TOOL_RUNS) {
+        if (pendingRuns >= MAX_PENDING_TOOL_RUNS) {
           diag.warn(
             'LangChain: pending tool limit reached, skipping new tool telemetry'
           );
@@ -182,16 +181,12 @@ function createToolCallbacks(
         const conversation = ['session_id', 'thread_id', 'conversation_id']
           .map(key => ownValue(metadata, key))
           .find(value => typeof value === 'string' && value.length > 0);
-        const parentToken =
-          parentInvocation && parentInvocation.runId === parentRunId
-            ? parentInvocation.token
-            : parentRunId
-              ? runTokens.get(parentRunId)
-              : undefined;
         const parent =
-          (parentToken
-            ? runs.get(parentToken)?.invocation.getContext()
-            : undefined) ?? active;
+          parentInvocation && parentInvocation.runId === parentRunId
+            ? parentInvocation
+            : parentRunId
+              ? runInvocations.get(parentRunId)
+              : undefined;
         const tool = current.startTool({
           toolName: name,
           toolDescription:
@@ -206,15 +201,17 @@ function createToolCallbacks(
           toolArguments: current.shouldCaptureContent()
             ? content(input, 'input')
             : undefined,
-          parentContext: parent,
+          parentContext: parent?.context ?? active,
         });
-        runs.set(token, {
+        invocation.context = tool.getContext();
+        activeRun = {
           runId,
           diag,
           invocation: tool,
           callId: toolCallId,
-        });
-        runTokens.set(runId, token);
+        };
+        runInvocations.set(runId, invocation);
+        pendingRuns++;
       } catch {
         diag.warn('LangChain: could not start tool telemetry');
       }

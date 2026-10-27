@@ -148,6 +148,9 @@ span. Completed or skipped parent identities do not resolve to a replacement run
 with the same ID. Completion callbacks are not inherited. Existing callbacks and
 callback collections are preserved. Configuration changes and disablement do
 not abandon operations that already emitted a tool-start callback.
+Each run's telemetry state is local to its callbacks, with parent identities
+linked through a `WeakMap`. Shared bookkeeping is limited to run-ID lookups and
+the pending-run count.
 Tool diagnostics use the selected instrumentation instance's logger.
 In-flight tool operations keep that logger even if the instance is disabled.
 
@@ -162,8 +165,8 @@ keep their spans and record their actual completion, including results or
 errors and duration metrics. Tracking resumes for new runs when an observed
 end/error callback frees a slot. Missing completion callbacks continue to occupy
 slots, so tracing new tool runs remains paused if all 1,000 slots stay occupied.
-Each invocation has its own callback token, so completion callbacks for skipped
-runs are ignored even if their run IDs or callback managers are reused.
+Each invocation has its own callback-local state, so completion callbacks for
+skipped runs are ignored even if their run IDs or callback managers are reused.
 Runnable `.asTool()` adapters
 that emit only chain callbacks do not gain tool spans from this slice.
 
