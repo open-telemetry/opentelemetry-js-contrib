@@ -21,6 +21,7 @@
     "packages/host-metrics": {},
     "packages/id-generator-aws-xray": {},
     "packages/genai-util": {},
+    "packages/tanstack-ai": {},
     "packages/redis-common": {},
     "packages/sampler-aws-xray": {},
     "packages/sql-common": {},
