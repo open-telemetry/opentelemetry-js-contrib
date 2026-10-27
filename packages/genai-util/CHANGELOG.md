@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **genai-util:** export TelemetryHandler, invocation types, content-capture helpers, `getErrorType`, and GenAI semconv constants for instrumentation consumers ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.3.0...genai-util-v0.4.0) (2026-10-20)
 
 

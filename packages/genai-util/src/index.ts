@@ -27,6 +27,35 @@
  * export * from './semconv';
  * ```
  */
+
 export { TelemetryHandler } from './handler';
+export type { TelemetryHandlerOptions } from './handler';
+
+export type { InferenceInvocation } from './invocations/inference';
+export type { EmbeddingInvocation } from './invocations/embedding';
 export type { ToolInvocation } from './invocations/tool';
-export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
+
+export type {
+  ContentCaptureMode,
+  EmbeddingInvocationOptions,
+  GenAIInstrumentationConfig,
+  InferenceInvocationOptions,
+  InferenceRequestOptions,
+  InputMessages,
+  InvocationError,
+  OutputMessages,
+  TokenUsageDetails,
+  ToolInvocationOptions,
+} from './types';
+
+export {
+  ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  getContentCaptureMode,
+  parseContentCaptureMode,
+} from './environment-variables';
+
+export { getErrorType } from './utils';
+
+// `export *` covers ATTR_GEN_AI_TOOL_CALL_ID (used by instrumentation-langchain)
+// and the rest of the GenAI semconv surface.
+export * from './semconv';

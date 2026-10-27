@@ -47,30 +47,65 @@ npm install --save @opentelemetry/genai-util
 
 ---
 
+## Current public exports
+
+This package uses an incremental export policy. The current public surface includes:
+
+- `TelemetryHandler` / `TelemetryHandlerOptions`
+- Invocation result types: `InferenceInvocation`, `EmbeddingInvocation`, `ToolInvocation`
+- Content capture helpers: `ENV_GENAI_CAPTURE_MESSAGE_CONTENT`, `getContentCaptureMode`, `parseContentCaptureMode`
+- `getErrorType`
+- GenAI semantic convention constants from `semconv`
+
+Additional APIs (stream wrappers, agent/workflow/retrieval invocations) land as they stabilize. Instrumentations that need a still-private helper should export it from `src/index.ts` in the same PR that adopts it.
+
 ## Usage Examples
 
 `TelemetryHandler` is exported for instrumentation integrations. Use its
-`startTool` factory to create a `ToolInvocation` rather than constructing one
-directly. The invocation type is also exported for type annotations.
-`ATTR_GEN_AI_TOOL_CALL_ID` is also exported for integrations that need to set
-the tool-call ID after starting an invocation.
+factory methods (`startTool`, `startInference`, `startEmbedding`) rather than
+constructing invocation classes directly. Invocation types are exported for
+annotations. GenAI semconv constants (including `ATTR_GEN_AI_TOOL_CALL_ID`)
+are re-exported from `semconv`.
 
 ```typescript
-import { TelemetryHandler } from '@opentelemetry/genai-util';
+import {
+  TelemetryHandler,
+  GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  getErrorType,
+} from '@opentelemetry/genai-util';
 
 const handler = new TelemetryHandler({
   instrumentationName: '@opentelemetry/instrumentation-example',
   instrumentationVersion: '1.0.0',
   contentCaptureMode: 'none',
 });
-const invocation = handler.startTool({ toolName: 'lookup' });
+
+// Tool invocation
+const toolInvocation = handler.startTool({ toolName: 'lookup' });
 try {
-  const result = invocation.withContext(() => lookup());
-  invocation.setResult(result);
-  invocation.stop();
+  const result = toolInvocation.withContext(() => lookup());
+  toolInvocation.setResult(result);
+  toolInvocation.stop();
 } catch (error) {
-  invocation.fail({ exception: error instanceof Error ? error : undefined });
+  toolInvocation.fail({
+    exception: error instanceof Error ? error : undefined,
+  });
   throw error;
+}
+
+// Inference invocation
+const inference = handler.startInference({
+  providerName: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  requestModel: 'gpt-4o-mini',
+});
+try {
+  // ... call provider SDK ...
+  inference.stop();
+} catch (err) {
+  inference.fail({ errorType: getErrorType(err), exception: err as Error });
+  throw err;
 }
 ```
 
