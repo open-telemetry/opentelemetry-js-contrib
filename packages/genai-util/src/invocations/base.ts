@@ -412,7 +412,7 @@ export abstract class BaseInvocation {
    * event defined (embeddings, tool and agent operations) emit nothing.
    *
    * NOTE: Currently a no-op placeholder. Will be implemented with the OpenTelemetry Logs & Events API
-   * once `@opentelemetry/api-logs` and EventLogger reach stability in OpenTelemetry JavaScript.
+   * once `@opentelemetry/api` and EventLogger reach stability in OpenTelemetry JavaScript.
    */
   protected _emitContentEvent(_endTime?: HrTime): void {}
 

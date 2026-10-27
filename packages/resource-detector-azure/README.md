@@ -92,6 +92,8 @@ The AKS detector reads cluster metadata from the native `aks-cluster-metadata` C
 | cloud.provider     | The cloud service provider. In this context, it's always "azure".                                                                                                                                            |
 | cloud.resource_id  | The Azure Resource Manager URI uniquely identifying the AKS cluster. Value from `clusterResourceId` key in the `aks-cluster-metadata` ConfigMap.                                                             |
 | k8s.cluster.name   | The name of the AKS cluster, extracted from the ARM resource ID.                                                                                                                                             |
+| k8s.pod.name       | The pod name, read from `K8S_POD_NAME` when supplied through the Kubernetes Downward API. |
+| k8s.pod.uid        | The pod UID, read from `K8S_POD_UID` when supplied through the Kubernetes Downward API. |
 
 #### Usage
 
@@ -127,6 +129,34 @@ Note that the `aks-cluster-metadata` ConfigMap lives in the `kube-public` namesp
 resolves `configMapKeyRef` and ConfigMap volumes within the pod's own namespace. To consume it from
 another namespace, copy the ConfigMap into that namespace, or have tooling such as an init
 container read it and write the value to one of the supported locations above.
+
+To also populate pod identity, add these environment variables to your application container
+alongside either cluster metadata configuration above:
+
+```yaml
+env:
+  - name: K8S_POD_NAME
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+  - name: K8S_POD_UID
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.uid
+```
+
+The detector maps `K8S_POD_NAME` to `k8s.pod.name` and `K8S_POD_UID` to
+`k8s.pod.uid`. Each attribute is optional and is omitted if its environment variable
+is missing or empty. Pod identity is only populated when AKS cluster metadata is detected;
+the pod environment variables alone do not identify AKS. The detector does not infer pod
+identity from the hostname.
+
+The pod UID identifies the pod, not an individual service instance within it. It remains the
+same across container restarts within that pod and changes when the pod is replaced.
+The detector does not set or overwrite `service.instance.id`, since multiple containers or
+worker processes can run instances of the same service in one pod. Configure that attribute
+separately through your SDK resource, `OTEL_RESOURCE_ATTRIBUTES` with `envDetector`, or a
+dedicated service instance ID detector.
 
 ```typescript
 import { detectResources } from '@opentelemetry/resources';
