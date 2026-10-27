@@ -29,6 +29,7 @@ import {
   ROOT_CONTEXT,
   Attributes,
   Link,
+  LoggerProvider,
 } from '@opentelemetry/api';
 import {
   AWSXRayPropagator,
@@ -38,7 +39,6 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
-import { LoggerProvider } from '@opentelemetry/api-logs';
 import {
   ATTR_AWS_SQS_QUEUE_URL,
   ATTR_CLOUD_ACCOUNT_ID,
@@ -742,7 +742,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let currentProvider: any = loggerProvider;
 
-    // A LoggerProvider obtained via @opentelemetry/api-logs is a delegating
+    // A LoggerProvider obtained via the logs API is a delegating
     // proxy (ProxyLoggerProvider), like ProxyTracerProvider, so unwrap it to
     // reach the SDK provider that actually has forceFlush. The logs proxy
     // exposes the delegate as _getDelegate(); fall back to getDelegate() for

@@ -16,6 +16,7 @@ import {
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
 import {
+  logs,
   ProxyTracerProvider,
   TracerProvider as ApiTracerProvider,
 } from '@opentelemetry/api';
@@ -30,7 +31,6 @@ import {
   LoggerProvider,
   SimpleLogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
-import { logs } from '@opentelemetry/api-logs';
 
 const traceMemoryExporter = new InMemorySpanExporter();
 const metricMemoryExporter = new InMemoryMetricExporter(
