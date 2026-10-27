@@ -27,7 +27,10 @@ import {
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { CallbackManager } from '@langchain/core/callbacks/manager';
+import {
+  CallbackManager,
+  CallbackManagerForChainRun,
+} from '@langchain/core/callbacks/manager';
 import { awaitAllCallbacks } from '@langchain/core/callbacks/promises';
 import {
   DynamicTool,
@@ -344,47 +347,120 @@ describe('LangChain donated tool callbacks', () => {
     );
   });
 
-  for (const mode of ['none', 'array', 'manager', 'local-manager'] as const) {
-    it(`preserves user callbacks and registers once (${mode})`, async () => {
-      const start = sinon.spy();
-      const end = sinon.spy();
-      const methods = { handleToolStart: start, handleToolEnd: end };
-      const array = [methods];
-      const manager = CallbackManager.fromHandlers(methods);
-      const callbacks =
-        mode === 'none' ? undefined : mode === 'array' ? array : manager;
-      const handlers = manager.handlers.slice();
-      const operation = echo();
-      if (mode === 'local-manager') operation.callbacks = manager;
-      instrumentation.disable();
-      for (let index = 0; index < 2; index++) {
-        await operation.invoke('hello', { callbacks });
-      }
-      await awaitAllCallbacks();
-      const startCount = start.callCount;
-      const endCount = end.callCount;
-      start.resetHistory();
-      end.resetHistory();
-      instrumentation.enable();
-      for (let index = 0; index < 2; index++) {
-        await operation.invoke('hello', { callbacks });
-      }
-      await awaitAllCallbacks();
-      assert.equal(getTestSpans().length, 2);
-      assert.deepEqual(array, [methods]);
-      assert.deepEqual(manager.handlers, handlers);
-      assert.equal(start.callCount, startCount);
-      assert.equal(end.callCount, endCount);
+  it('keeps callback-free non-tool invocations on the SDK fast path', async () => {
+    const start = sinon.spy(CallbackManager.prototype, 'handleChainStart');
+    const end = sinon.spy(CallbackManagerForChainRun.prototype, 'handleChainEnd');
+    const step = RunnableLambda.from((value: string) => value);
+    const workflow = RunnableSequence.from([step, step]);
+    assert.equal(await step.invoke('step'), 'step');
+    assert.equal(await workflow.invoke('workflow'), 'workflow');
+    assert.deepEqual(await workflow.batch(['first', 'second']), [
+      'first',
+      'second',
+    ]);
+    assert.equal(CallbackManager.configure(), undefined);
+    assert.equal(start.callCount, 0);
+    assert.equal(end.callCount, 0);
+  });
+
+  it('preserves explicitly configured non-tool callbacks', async () => {
+    const start = sinon.spy();
+    const end = sinon.spy();
+    const methods = { handleChainStart: start, handleChainEnd: end };
+    const callbacks = [methods];
+    const step = RunnableLambda.from((value: string) => value);
+    assert.equal(await step.invoke('hello', { callbacks }), 'hello');
+    await awaitAllCallbacks();
+    assert.equal(start.callCount, 1);
+    assert.equal(end.callCount, 1);
+    assert.deepEqual(callbacks, [methods]);
+  });
+
+  it('does not leak tool callback configuration to callback-free runnables', async () => {
+    const start = sinon.spy(CallbackManager.prototype, 'handleChainStart');
+    const step = RunnableLambda.from((value: string) => value);
+    const options = {
+      callbacks: undefined,
+      runName: 'tool-only',
+      tags: ['tool-tag'],
+      metadata: { session_id: 'session' },
+    };
+    const operation = new DynamicTool({
+      name: 'tool-only',
+      description: '',
+      func: async value => step.invoke(value),
     });
+    assert.equal(await operation.call('hello', options), 'hello');
+    assert.equal(await step.invoke('after-tool', options), 'after-tool');
+    assert.equal(options.callbacks, undefined);
+    assert.equal(CallbackManager.configure(), undefined);
+    assert.equal(start.callCount, 0);
+    const spans = getTestSpans();
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].name, 'execute_tool tool-only');
+    assert.equal(spans[0].attributes['gen_ai.conversation.id'], 'session');
+  });
+
+  for (const method of ['invoke', 'call'] as const) {
+    for (const mode of ['none', 'array', 'manager', 'local-manager'] as const) {
+      it(`preserves user callbacks and registers once (${method}, ${mode})`, async () => {
+        const start = sinon.spy();
+        const end = sinon.spy();
+        const methods = { handleToolStart: start, handleToolEnd: end };
+        const array = [methods];
+        const manager = CallbackManager.fromHandlers(methods);
+        const callbacks =
+          mode === 'none' ? undefined : mode === 'array' ? array : manager;
+        const handlers = manager.handlers.slice();
+        const operation = echo();
+        if (mode === 'local-manager') operation.callbacks = manager;
+        // call() still accepts legacy callback arrays and managers at runtime.
+        const invoke = () =>
+          method === 'invoke'
+            ? operation.invoke('hello', { callbacks })
+            : Reflect.apply(operation.call, operation, ['hello', callbacks]);
+        instrumentation.disable();
+        for (let index = 0; index < 2; index++) await invoke();
+        await awaitAllCallbacks();
+        const startCount = start.callCount;
+        const endCount = end.callCount;
+        start.resetHistory();
+        end.resetHistory();
+        instrumentation.enable();
+        for (let index = 0; index < 2; index++) await invoke();
+        await awaitAllCallbacks();
+        assert.equal(getTestSpans().length, 2);
+        assert.deepEqual(array, [methods]);
+        assert.deepEqual(manager.handlers, handlers);
+        assert.equal(start.callCount, startCount);
+        assert.equal(end.callCount, endCount);
+      });
+    }
   }
 
+  it('preserves explicit tool callbacks while tracing is suppressed', async () => {
+    const start = sinon.spy();
+    const end = sinon.spy();
+    const callbacks = [{ handleToolStart: start, handleToolEnd: end }];
+    assert.equal(
+      await context.with(suppressTracing(context.active()), () =>
+        echo().invoke('hello', { callbacks })
+      ),
+      'hello'
+    );
+    await awaitAllCallbacks();
+    assert.equal(start.callCount, 1);
+    assert.equal(end.callCount, 1);
+    assert.equal(getTestSpans().length, 0);
+  });
+
   it('does not duplicate handlers inherited from an already configured manager', async () => {
-    const callbacks = CallbackManager.configure();
+    const callbacks = CallbackManager.configure([]);
     assert.ok(callbacks);
     const before = callbacks.handlers.slice();
     const operation = echo();
     operation.callbacks = callbacks;
-    await operation.invoke('hello', { callbacks });
+    assert.equal(await operation.invoke('hello', { callbacks }), 'hello');
     assert.equal(getTestSpans().length, 1);
     assert.deepEqual(callbacks.handlers, before);
   });
@@ -499,7 +575,7 @@ describe('LangChain donated tool callbacks', () => {
 
   it('isolates execution contexts for concurrent calls with a reused run ID', async () => {
     const tracer = trace.getTracer('tool-test');
-    const callbacks = CallbackManager.configure();
+    const callbacks = CallbackManager.configure([]);
     const runId = '00000000-0000-4000-8000-000000000001';
     let enter!: () => void;
     const entered = new Promise<void>(resolve => {
@@ -616,7 +692,7 @@ describe('LangChain donated tool callbacks', () => {
     });
     assert.equal(await operation.invoke('hello'), 'result');
     assert.notEqual(DynamicTool.prototype._call, original);
-    const callbacks = CallbackManager.configure();
+    const callbacks = CallbackManager.configure([]);
     assert.ok(callbacks);
     const run = await callbacks.handleToolStart(operation.toJSON(), 'hello');
     try {
@@ -671,6 +747,7 @@ describe('LangChain donated tool callbacks', () => {
 
   it('does not emit native or instrumented tool telemetry while disabled or suppressed', async () => {
     const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
+    const start = sinon.spy(CallbackManager.prototype, 'handleToolStart');
     instrumentation.disable();
     await echo().invoke('hello');
     instrumentation.enable();
@@ -680,6 +757,7 @@ describe('LangChain donated tool callbacks', () => {
     assert.equal(getTestSpans().length, 0);
     assert.deepEqual(await points(), []);
     assert.equal(startTool.callCount, 0);
+    assert.equal(start.callCount, 0);
   });
 
   it('removes completed run state and supports repeated enable/disable', async () => {
@@ -846,7 +924,7 @@ describe('LangChain donated tool callbacks', () => {
   it('counts overlapping runs separately and frees each pending slot only once', async function () {
     this.timeout(15000);
     const startTool = sinon.spy(TelemetryHandler.prototype, 'startTool');
-    const callbacks = CallbackManager.configure();
+    const callbacks = CallbackManager.configure([]);
     assert.ok(callbacks);
     const serialized = echo().toJSON();
     const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
@@ -888,7 +966,7 @@ describe('LangChain donated tool callbacks', () => {
     it(`ignores skipped ${ending} callbacks and resumes tracking after ${ending} with a reused run ID`, async function () {
       this.timeout(15000);
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       assert.ok(callbacks);
       const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =
         [];
@@ -957,7 +1035,7 @@ describe('LangChain donated tool callbacks', () => {
   for (const first of ['older', 'newer'] as const) {
     it(`keeps overlapping runs with the same ID independent when the ${first} run finishes first`, async () => {
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       assert.ok(callbacks);
       const serialized = echo().toJSON();
       const older = await callbacks.handleToolStart(
@@ -1041,7 +1119,7 @@ describe('LangChain donated tool callbacks', () => {
 
   for (const mode of ['direct', 'copied', 'configured', 'invoke'] as const) {
     it(`parents the older run's child to its own invocation when run IDs overlap (${mode})`, async () => {
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       assert.ok(callbacks);
       const serialized = echo().toJSON();
       const older = await callbacks.handleToolStart(serialized, '', 'reused');
@@ -1084,7 +1162,7 @@ describe('LangChain donated tool callbacks', () => {
 
   for (const first of ['older', 'newer'] as const) {
     it(`keeps the surviving parent's invocation when the ${first} same-ID run completes`, async () => {
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       assert.ok(callbacks);
       const serialized = echo().toJSON();
       const older = await callbacks.handleToolStart(serialized, '', 'reused');
@@ -1112,7 +1190,7 @@ describe('LangChain donated tool callbacks', () => {
   }
 
   it('retains the newest run-ID fallback until completion without inherited callbacks', async () => {
-    const callbacks = CallbackManager.configure();
+    const callbacks = CallbackManager.configure([]);
     assert.ok(callbacks);
     const serialized = echo().toJSON();
     const older = await callbacks.handleToolStart(serialized, '', 'reused');
@@ -1153,7 +1231,7 @@ describe('LangChain donated tool callbacks', () => {
   for (const state of ['completed', 'failed', 'skipped'] as const) {
     it(`does not reparent a ${state} invocation's child to a reused run ID`, async function () {
       this.timeout(15000);
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       assert.ok(callbacks);
       const serialized = echo().toJSON();
       const pending: Awaited<ReturnType<CallbackManager['handleToolStart']>>[] =

@@ -318,13 +318,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         `${MODULE_NAME}/dist/callbacks/manager.${extension}`,
         (module: { CallbackManager: typeof CallbackManager }) =>
           this._patchToolCallbacks(module.CallbackManager),
-        (module: { CallbackManager: typeof CallbackManager }) => {
-          this._unpatchMethod(module.CallbackManager, '_configureSync');
+        (module: { CallbackManager: typeof CallbackManager }) =>
           this._unpatchMethod(
             module.CallbackManager.prototype,
             'handleToolStart'
-          );
-        }
+          )
       ),
     ]);
     return [
@@ -393,6 +391,22 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           } catch {
             owner?._diag.warn('LangChain: could not patch tool execution');
           }
+          try {
+            if (owner && !isTracingSuppressed(context.active())) {
+              const config = args[1];
+              // Match the SDK's config/callback overload without modifying it.
+              if (
+                !config ||
+                (!Array.isArray(config) &&
+                  !('name' in config) &&
+                  config.callbacks === undefined)
+              ) {
+                args[1] = { ...config, callbacks: [] };
+              }
+            }
+          } catch {
+            owner?._diag.warn('LangChain: could not configure tool callbacks');
+          }
           return original.apply(this, args);
         }
     );
@@ -444,32 +458,6 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _patchToolCallbacks(manager: typeof CallbackManager) {
-    this._patchMethod(
-      manager,
-      '_configureSync',
-      (owners, restore) => original =>
-        function (
-          this: typeof CallbackManager,
-          ...args: Parameters<typeof original>
-        ) {
-          const owner = Array.from(owners)
-            .reverse()
-            .find(instance => instance.isEnabled());
-          if (!owner) {
-            restore();
-            return original.apply(this, args);
-          }
-          const result = original.apply(this, args);
-          try {
-            // Undefined means no SDK callbacks were configured, not an opt-out.
-            // Keep tool callbacks active without enabling LangSmith tracing.
-            return result ?? new manager();
-          } catch {
-            owner._diag.warn('LangChain: could not register tool callbacks');
-            return result;
-          }
-        }
-    );
     this._patchMethod(
       manager.prototype,
       'handleToolStart',
@@ -640,13 +628,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _unpatchMethod(
     target: object,
-    method:
-      | 'invoke'
-      | 'batch'
-      | 'call'
-      | '_call'
-      | '_configureSync'
-      | 'handleToolStart'
+    method: 'invoke' | 'batch' | 'call' | '_call' | 'handleToolStart'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;

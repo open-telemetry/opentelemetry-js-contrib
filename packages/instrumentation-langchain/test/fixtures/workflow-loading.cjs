@@ -344,7 +344,7 @@ async function main() {
     instrumentation.enable();
     for (const { callbackTool, CallbackManager } of adapters) {
       exporter.reset();
-      const callbacks = CallbackManager.configure();
+      const callbacks = CallbackManager.configure([]);
       const serialized = callbackTool.toJSON();
       const older = await callbacks.handleToolStart(serialized, '', 'reused');
       const newer = await callbacks.handleToolStart(serialized, '', 'reused');
@@ -378,6 +378,8 @@ async function main() {
         moduleIndex,
         { RunnableLambda, RunnableMap, RunnableSequence },
       ] of modules.entries()) {
+        const { CallbackManager } = adapters[moduleIndex];
+        assert.equal(CallbackManager.configure(), undefined);
         const sequence = RunnableSequence.from([
           RunnableLambda.from(value => value),
           RunnableLambda.from(value => value),
@@ -394,6 +396,7 @@ async function main() {
           await adapters[moduleIndex].callbackTool.invoke('input'),
           'input'
         );
+        assert.equal(CallbackManager.configure(), undefined);
       }
       for (const [index, current] of exporters.entries()) {
         const spans = current.getFinishedSpans();

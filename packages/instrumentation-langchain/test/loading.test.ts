@@ -25,7 +25,8 @@ describe('LangChain workflow module loading', () => {
             ...process.env,
             LANGSMITH_TRACING: 'false',
             LANGCHAIN_TRACING_V2: 'false',
-            LANGCHAIN_TRACING: 'false',
+            LANGCHAIN_TRACING: undefined,
+            LANGCHAIN_VERBOSE: 'false',
           },
         }
       );

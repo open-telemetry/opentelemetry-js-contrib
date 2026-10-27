@@ -936,53 +936,57 @@ describe('LangChain non-streaming workflows', () => {
     expect(spans[1].status.code).toBe(SpanStatusCode.UNSET);
   });
 
-  for (const kind of ['sequence', 'map']) {
-    it(`preserves nested ${kind} workflow boundaries`, async () => {
-      const tracer = trace.getTracer('test');
-      const leaf = RunnableLambda.from((value: string) => {
-        tracer.startSpan('application-leaf').end();
-        return value.toUpperCase();
-      }).withConfig({ runName: 'standalone-lambda' });
-      const inner: Runnable<string, unknown> = (
-        kind === 'sequence'
-          ? RunnableSequence.from([
-              RunnableLambda.from((value: string) => value),
-              leaf,
-            ])
-          : RunnableMap.from<string, { answer: string }>({ answer: leaf })
-      ).withConfig({ runName: 'inner' });
-      const outer = RunnableSequence.from<string, unknown>([
-        RunnableLambda.from((value: string) => value),
-        inner,
-      ]).withConfig({ runName: 'outer' });
-      const parent = tracer.startSpan('request');
-      expect(
-        await context.with(trace.setSpan(context.active(), parent), () =>
-          outer.invoke('test')
-        )
-      ).toEqual(kind === 'sequence' ? 'TEST' : { answer: 'TEST' });
-      parent.end();
-      const spans = getTestSpans();
-      expect(spans.map(span => span.name).sort()).toEqual([
-        'application-leaf',
-        'invoke_workflow inner',
-        'invoke_workflow outer',
-        'request',
-      ]);
-      const outerSpan = spans.find(s => s.name === 'invoke_workflow outer')!;
-      const innerSpan = spans.find(s => s.name === 'invoke_workflow inner')!;
-      expect(outerSpan.parentSpanContext?.spanId).toBe(
-        parent.spanContext().spanId
-      );
-      expect(innerSpan.parentSpanContext?.spanId).toBe(
-        outerSpan.spanContext().spanId
-      );
-      expect(
-        spans.find(s => s.name === 'application-leaf')!.parentSpanContext
-          ?.spanId
-      ).toBe(innerSpan.spanContext().spanId);
-      expect(trace.getSpan(context.active())).toBeUndefined();
-    });
+  for (const withCallbacks of [false, true]) {
+    for (const kind of ['sequence', 'map']) {
+      it(`preserves nested ${kind} workflow boundaries (callbacks=${withCallbacks})`, async () => {
+        const tracer = trace.getTracer('test');
+        const leaf = RunnableLambda.from((value: string) => {
+          tracer.startSpan('application-leaf').end();
+          return value.toUpperCase();
+        }).withConfig({ runName: 'standalone-lambda' });
+        const inner: Runnable<string, unknown> = (
+          kind === 'sequence'
+            ? RunnableSequence.from([
+                RunnableLambda.from((value: string) => value),
+                leaf,
+              ])
+            : RunnableMap.from<string, { answer: string }>({ answer: leaf })
+        ).withConfig({ runName: 'inner' });
+        const outer = RunnableSequence.from<string, unknown>([
+          RunnableLambda.from((value: string) => value),
+          inner,
+        ]).withConfig({ runName: 'outer' });
+        const parent = tracer.startSpan('request');
+        expect(
+          await context.with(trace.setSpan(context.active(), parent), () =>
+            outer.invoke('test', withCallbacks ? { callbacks: [] } : undefined)
+          )
+        ).toEqual(kind === 'sequence' ? 'TEST' : { answer: 'TEST' });
+        parent.end();
+        const spans = getTestSpans();
+        const innerName = withCallbacks ? 'inner' : 'outer';
+        expect(spans.map(span => span.name).sort()).toEqual([
+          'application-leaf',
+          `invoke_workflow ${innerName}`,
+          'invoke_workflow outer',
+          'request',
+        ]);
+        const outerSpan = spans.find(
+          span => span.parentSpanContext?.spanId === parent.spanContext().spanId
+        )!;
+        const innerSpan = spans.find(
+          span =>
+            span.parentSpanContext?.spanId === outerSpan.spanContext().spanId
+        )!;
+        expect(outerSpan.name).toBe('invoke_workflow outer');
+        expect(innerSpan.name).toBe(`invoke_workflow ${innerName}`);
+        expect(
+          spans.find(span => span.name === 'application-leaf')!.parentSpanContext
+            ?.spanId
+        ).toBe(innerSpan.spanContext().spanId);
+        expect(trace.getSpan(context.active())).toBeUndefined();
+      });
+    }
   }
 
   it('excludes internal graph adapters without executing failed calls twice', () => {

@@ -81,6 +81,11 @@ explicit `name`. Only non-blank strings are used. The instrumentation does not
 call `getName()`. If neither name is available, the span name is `invoke_workflow`
 and `gen_ai.workflow.name` is omitted. Otherwise, the span name is
 `invoke_workflow {name}` and `gen_ai.workflow.name` contains that same name.
+When no native callback manager exists, LangChain can propagate a parent's
+`runName` to nested workflows, overriding their own names or `withConfig` defaults.
+Their spans may therefore share a name, but remain distinct spans with the same
+parent-child relationships. This instrumentation preserves that SDK behavior
+rather than creating callback managers to change name propagation.
 `gen_ai.conversation.id` uses the first non-empty string from
 `configurable.thread_id`, `configurable.session_id`,
 `configurable.conversation_id`, `metadata.session_id`, `metadata.thread_id`,
@@ -139,6 +144,9 @@ Each tracked tool end/error callback records `gen_ai.execute_tool.duration`
 in seconds, matching its span duration. Metric attributes contain the tool
 name, known type and error type, never arguments, results or conversation IDs.
 No tool events or provider inference metrics are added.
+
+Callback managers are ensured only for tool calls. Non-tool runnables keep the
+SDK's no-callback path when no callbacks or tracing are configured.
 
 Tool span parentage follows the incoming OpenTelemetry context and inherited
 parent invocation identity, with parent-run-ID lookup as a fallback. An inert

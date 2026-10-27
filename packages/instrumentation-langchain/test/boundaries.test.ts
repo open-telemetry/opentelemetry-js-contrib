@@ -180,9 +180,7 @@ describe('LangChain application workflow boundaries', () => {
         assert.deepEqual(await tool.invoke({ input: 'hello' }), {
           input: 'hello',
         });
-        await expectWorkflows([
-          named ? 'invoke_workflow application-child' : 'invoke_workflow',
-        ]);
+        await expectWorkflows(['invoke_workflow direct-tool']);
       });
     }
   }
@@ -231,9 +229,7 @@ describe('LangChain application workflow boundaries', () => {
           configurable: { sessionId: 'session' },
         });
         assert.ok(output);
-        await expectWorkflows([
-          named ? 'invoke_workflow application-child' : 'invoke_workflow',
-        ]);
+        await expectWorkflows(['invoke_workflow RunnableWithMessageHistory']);
       });
     }
   }
@@ -259,7 +255,7 @@ describe('LangChain application workflow boundaries', () => {
     );
     assert.equal(output.content, 'answer');
     await expectWorkflows([
-      'invoke_workflow application-inner',
+      'invoke_workflow application-outer',
       'invoke_workflow application-outer',
     ]);
     const spans = getTestSpans();
@@ -324,7 +320,7 @@ describe('LangChain application workflow boundaries', () => {
       tool.invoke({ input: 'input' }),
       error => error === failure
     );
-    await expectWorkflows(['invoke_workflow']);
+    await expectWorkflows(['invoke_workflow adapter']);
     assert.equal(getTestSpans()[0].attributes['error.type'], 'TypeError');
     assert.equal(getTestSpans()[0].status.message, undefined);
   });
@@ -348,9 +344,7 @@ describe('LangChain application workflow boundaries', () => {
       assert.deepEqual(await tool.invoke({ input: 'hello' }), {
         input: 'hello',
       });
-      await expectWorkflows([
-        named ? 'invoke_workflow application-inner' : 'invoke_workflow',
-      ]);
+      await expectWorkflows(['invoke_workflow adapter-name']);
     });
   }
 
@@ -363,7 +357,7 @@ describe('LangChain application workflow boundaries', () => {
     assert.deepEqual(await tool.invoke({ input: 'hello' }), {
       answer: 'hello',
     });
-    await expectWorkflows(['invoke_workflow application-map']);
+    await expectWorkflows(['invoke_workflow map-adapter']);
   });
 
   it('preserves application workflows called by a tool and ordinary concurrent workflows', async () => {
@@ -430,7 +424,7 @@ describe('LangChain application workflow boundaries', () => {
     });
     await expectWorkflows([
       'invoke_workflow outer',
-      'invoke_workflow assigned-child',
+      'invoke_workflow outer',
     ]);
     const spans = getTestSpans();
     assert.equal(
@@ -495,7 +489,11 @@ describe('LangChain application workflow boundaries', () => {
             .withStructuredOutput({ type: 'object' })
             .invoke('question');
       assert.ok(output);
-      await expectWorkflows(['invoke_workflow application-model-workflow']);
+      await expectWorkflows([
+        includeRaw
+          ? 'invoke_workflow StructuredOutputRunnable'
+          : 'invoke_workflow StructuredOutput',
+      ]);
     });
   }
 
@@ -592,7 +590,7 @@ describe('LangChain application workflow boundaries', () => {
         });
         assert.equal(result.messages.at(-1)?.content, 'answer');
         await expectWorkflows(
-          applicationWorkflow ? ['invoke_workflow application-model'] : []
+          applicationWorkflow ? ['invoke_workflow model_request'] : []
         );
       });
     }
@@ -658,7 +656,7 @@ describe('LangChain application workflow boundaries', () => {
     await assign.invoke({ input: 'enabled' });
     await structured.invoke('question');
     await expectWorkflows([
-      'invoke_workflow tool-child',
+      'invoke_workflow adapter',
       'invoke_workflow assign-child',
     ]);
   });
