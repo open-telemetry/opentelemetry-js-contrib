@@ -146,6 +146,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -179,6 +180,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -193,6 +195,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -222,6 +225,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -287,6 +291,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY]: 0.0,
@@ -326,6 +331,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -340,6 +346,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -369,6 +376,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -428,6 +436,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -461,6 +470,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -475,6 +485,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -504,6 +515,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -594,6 +606,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -627,6 +640,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -641,6 +655,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -670,6 +685,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -762,6 +778,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -795,6 +812,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -809,6 +827,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -838,6 +857,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -944,6 +964,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'localhost',
         [ATTR_SERVER_PORT]: 9999,
         [ATTR_ERROR_TYPE]: 'APIConnectionError',
@@ -976,6 +997,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_SERVER_ADDRESS]: 'localhost',
@@ -1030,6 +1052,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1063,6 +1086,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -1077,6 +1101,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -1106,6 +1131,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -1169,6 +1195,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -1202,6 +1229,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -1216,6 +1244,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -1245,6 +1274,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -1341,6 +1371,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -1374,6 +1405,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -1388,6 +1420,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -1417,6 +1450,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -1515,6 +1549,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1548,6 +1583,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -1562,6 +1598,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -1591,6 +1628,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -1715,6 +1753,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1750,6 +1789,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -1873,6 +1913,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1906,6 +1947,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -1920,6 +1962,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
               [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
@@ -1949,6 +1992,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2014,6 +2058,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -2049,6 +2094,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2159,6 +2205,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -2194,6 +2241,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2292,6 +2340,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -2327,6 +2376,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2436,6 +2486,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -2471,6 +2522,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2536,6 +2588,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -2571,6 +2624,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2639,6 +2693,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -2674,6 +2729,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2743,6 +2799,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -2778,6 +2835,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -2894,6 +2952,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -2929,6 +2988,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -3033,6 +3093,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -3068,6 +3129,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -3182,6 +3244,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
         [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'text-embedding-3-small',
@@ -3213,6 +3276,7 @@ describe('OpenAI', function () {
             }),
             attributes: {
               [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
               [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
               [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
@@ -3242,6 +3306,7 @@ describe('OpenAI', function () {
           }),
           attributes: {
             [ATTR_GEN_AI_SYSTEM]: 'openai',
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
             [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
             [ATTR_GEN_AI_RESPONSE_MODEL]: 'text-embedding-3-small',

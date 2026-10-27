@@ -65,6 +65,7 @@
     "openai": "^6.2.0"
   },
   "dependencies": {
+    "@opentelemetry/genai-util": "^0.4.0",
     "@opentelemetry/instrumentation": "^0.300.0",
     "@opentelemetry/semantic-conventions": "^1.36.0"
   },

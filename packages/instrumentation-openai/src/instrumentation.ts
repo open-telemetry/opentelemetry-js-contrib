@@ -22,12 +22,12 @@ import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+import { getErrorType } from '@opentelemetry/genai-util';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
   ChatCompletionContentPart,
   ChatCompletionContentPartRefusal,
-  ChatCompletionContentPartText,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionChunk,
@@ -84,7 +84,12 @@ import {
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { getEnvBool, getAttrsFromBaseURL } from './utils';
+import {
+  getEnvBool,
+  getAttrsFromBaseURL,
+  getProviderNameFromBaseURL,
+  setUsageDetailAttributes,
+} from './utils';
 import {
   ConvertResponseInputsToInputMessagesUseCase,
   ConvertResponseOutputsToOutputMessagesUseCase,
@@ -305,10 +310,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     baseURL: string | undefined
   ) {
     // Attributes common to span, metrics, log events.
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
     const commonAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+      // Keep deprecated gen_ai.system for chat completions backward compatibility.
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -359,7 +367,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           const body: GenAISystemMessageEventBody = {};
           if (config.captureMessageContent) {
             if (Array.isArray(msg.content)) {
-              body.content = msg.content.map(p => p.text).join('');
+              body.content = formatChatMessageContent(msg.content);
             } else {
               body.content = msg.content;
             }
@@ -380,10 +388,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           const body: GenAIUserMessageEventBody = {};
           if (config.captureMessageContent) {
             if (Array.isArray(msg.content)) {
-              body.content = msg.content
-                .filter(isTextContent)
-                .map(p => p.text)
-                .join('');
+              body.content = formatChatMessageContent(msg.content);
             } else {
               body.content = msg.content;
             }
@@ -405,10 +410,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           if (config.captureMessageContent) {
             if (msg.content) {
               if (Array.isArray(msg.content)) {
-                body.content = msg.content
-                  .filter(isTextContent)
-                  .map(p => p.text)
-                  .join('');
+                body.content = formatChatMessageContent(msg.content);
               } else {
                 body.content = msg.content;
               }
@@ -584,6 +586,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
           chunk.usage.completion_tokens
         );
+        setUsageDetailAttributes(span, chunk.usage);
         this._genaiClientTokenUsage.record(chunk.usage.prompt_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
@@ -674,6 +677,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
           result.usage.completion_tokens
         );
+        setUsageDetailAttributes(span, result.usage);
       }
 
       // Capture choices as log events.
@@ -755,11 +759,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     return (err: Error) => {
       this._diag.debug('OpenAI APIPromise rejection: %O', err);
 
-      // https://github.com/openai/openai-node/blob/master/src/error.ts
-      // The most reliable low cardinality string for errors seems to be
-      // the class name. See also:
+      // Prefer shared GenAI error classification (code → name → constructor).
       // https://platform.openai.com/docs/guides/error-codes
-      const errorType = err?.constructor?.name;
+      const errorType = getErrorType(err);
 
       this._genaiClientOperationDuration.record(
         (performance.now() - startNow) / 1000,
@@ -831,10 +833,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     baseURL: string | undefined
   ) {
     // Attributes common to span, metrics, log events.
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
     const commonAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+      // Keep deprecated gen_ai.system for embeddings backward compatibility.
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
     };
     Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
@@ -977,11 +982,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     baseURL: string | undefined
   ) {
     // Common attributes for the span, metrics, and log events.
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
     const commonAttrs: Attributes = Object.assign(
       {
         [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
         [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
       },
       getAttrsFromBaseURL(baseURL, this._diag)
     );
@@ -1018,7 +1024,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       severityNumber: SeverityNumber.INFO,
       eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
       attributes: {
-        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
         [ATTR_GEN_AI_INPUT_MESSAGES]: inputs as AnyValue,
       },
     });
@@ -1069,7 +1075,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               severityNumber: SeverityNumber.INFO,
               eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
               attributes: {
-                [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+                [ATTR_GEN_AI_PROVIDER_NAME]:
+                  commonAttrs[ATTR_GEN_AI_PROVIDER_NAME],
                 [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
               },
             });
@@ -1081,6 +1088,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
               [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: usage?.input_tokens,
               [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage?.output_tokens,
             });
+            setUsageDetailAttributes(span, usage);
             if (usage?.input_tokens) {
               this._genaiClientTokenUsage.record(usage?.input_tokens, {
                 ...commonAttrs,
@@ -1133,6 +1141,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       if (usage) {
         span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, usage.input_tokens);
         span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, usage.output_tokens);
+        setUsageDetailAttributes(span, usage);
         this._genaiClientTokenUsage.record(usage.input_tokens, {
           ...commonAttrs,
           [ATTR_GEN_AI_RESPONSE_MODEL]: model,
@@ -1161,7 +1170,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         severityNumber: SeverityNumber.INFO,
         eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
         attributes: {
-          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_PROVIDER_NAME]: commonAttrs[ATTR_GEN_AI_PROVIDER_NAME],
           [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputs as AnyValue,
         },
       });
@@ -1182,10 +1191,35 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 }
-function isTextContent(
-  value: ChatCompletionContentPart | ChatCompletionContentPartRefusal
-): value is ChatCompletionContentPartText {
-  return value.type === 'text';
+/**
+ * Serialize chat message content parts for opt-in content capture.
+ * Includes text and image URLs (donated OpenInference multimodal coverage),
+ * while omitting binary / unsupported parts.
+ */
+function formatChatMessageContent(
+  parts: ReadonlyArray<
+    ChatCompletionContentPart | ChatCompletionContentPartRefusal
+  >
+): string {
+  return parts
+    .map(part => {
+      if (part.type === 'text') {
+        return part.text;
+      }
+      if (part.type === 'image_url') {
+        const imageUrl = part.image_url;
+        if (typeof imageUrl === 'string') {
+          return imageUrl;
+        }
+        return imageUrl?.url ?? '';
+      }
+      if (part.type === 'refusal') {
+        return part.refusal;
+      }
+      return '';
+    })
+    .filter(part => part.length > 0)
+    .join('\n');
 }
 
 function isStreamPromise<

@@ -38,6 +38,10 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 This package implements Semantic Convention [Version 1.36.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/README.md) for Chat Completions, and Semantic Convention [Version 1.38.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.38.0/docs/README.md) for Responses API.
 
+Shared GenAI helpers come from [`@opentelemetry/genai-util`](https://www.npmjs.com/package/@opentelemetry/genai-util). Spans set `gen_ai.provider.name` from the client `baseURL` when the host maps to a known GenAI provider (for example Azure OpenAI); otherwise the value defaults to `openai`.
+
+Message content capture remains **opt-in** (`captureMessageContent: true` or `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true`) to avoid exporting prompts or completions by default.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>

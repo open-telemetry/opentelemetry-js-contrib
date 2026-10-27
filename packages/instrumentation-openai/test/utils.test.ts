@@ -4,7 +4,19 @@
  */
 
 import { expect } from 'expect';
-import { getEnvBool, getAttrsFromBaseURL } from '../src/utils';
+import {
+  ATTR_GEN_AI_PROVIDER_NAME,
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI,
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+} from '@opentelemetry/genai-util';
+import {
+  getEnvBool,
+  getAttrsFromBaseURL,
+  getProviderNameFromBaseURL,
+  setUsageDetailAttributes,
+} from '../src/utils';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -88,6 +100,111 @@ describe('utils', function () {
       expect(attrs).toBeUndefined();
       expect(debugMsgs.length).toBe(1);
       expect(debugMsgs[0]).toContain('could not determine server');
+    });
+  });
+
+  describe('getProviderNameFromBaseURL', function () {
+    it('defaults to openai when baseURL is missing', () => {
+      expect(getProviderNameFromBaseURL(undefined)).toBe(
+        GEN_AI_PROVIDER_NAME_VALUE_OPENAI
+      );
+    });
+
+    it('detects OpenAI host', () => {
+      expect(getProviderNameFromBaseURL('https://api.openai.com/v1')).toBe(
+        GEN_AI_PROVIDER_NAME_VALUE_OPENAI
+      );
+    });
+
+    it('detects Azure OpenAI host', () => {
+      expect(
+        getProviderNameFromBaseURL(
+          'https://my-resource.openai.azure.com/openai/deployments/gpt'
+        )
+      ).toBe(GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI);
+    });
+
+    it('defaults to openai for unrecognized hosts', () => {
+      expect(getProviderNameFromBaseURL('https://llm.example.com/v1')).toBe(
+        GEN_AI_PROVIDER_NAME_VALUE_OPENAI
+      );
+    });
+  });
+
+  describe('setUsageDetailAttributes', function () {
+    it('sets cache and reasoning attributes from chat completions usage', () => {
+      const attrs: Record<string, unknown> = {};
+      const span = {
+        setAttribute(key: string, value: unknown) {
+          attrs[key] = value;
+        },
+      } as any;
+
+      setUsageDetailAttributes(span, {
+        prompt_tokens: 100,
+        completion_tokens: 20,
+        prompt_tokens_details: { cached_tokens: 40 },
+        completion_tokens_details: { reasoning_tokens: 8 },
+      });
+
+      expect(attrs).toEqual({
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 40,
+        [ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS]: 8,
+      });
+    });
+
+    it('omits zero-valued usage details', () => {
+      const attrs: Record<string, unknown> = {};
+      const span = {
+        setAttribute(key: string, value: unknown) {
+          attrs[key] = value;
+        },
+      } as any;
+
+      setUsageDetailAttributes(span, {
+        prompt_tokens: 5,
+        completion_tokens: 1,
+        prompt_tokens_details: { cached_tokens: 0 },
+        completion_tokens_details: { reasoning_tokens: 0 },
+      });
+      expect(attrs).toEqual({});
+      expect(ATTR_GEN_AI_PROVIDER_NAME).toBe('gen_ai.provider.name');
+    });
+
+    it('sets cache and reasoning attributes from responses usage', () => {
+      const attrs: Record<string, unknown> = {};
+      const span = {
+        setAttribute(key: string, value: unknown) {
+          attrs[key] = value;
+        },
+      } as any;
+
+      setUsageDetailAttributes(span, {
+        input_tokens: 50,
+        output_tokens: 12,
+        input_tokens_details: { cached_tokens: 10 },
+        output_tokens_details: { reasoning_tokens: 3 },
+      });
+
+      expect(attrs).toEqual({
+        [ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS]: 10,
+        [ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS]: 3,
+      });
+    });
+
+    it('ignores missing usage details', () => {
+      const attrs: Record<string, unknown> = {};
+      const span = {
+        setAttribute(key: string, value: unknown) {
+          attrs[key] = value;
+        },
+      } as any;
+
+      setUsageDetailAttributes(span, {
+        prompt_tokens: 5,
+        completion_tokens: 1,
+      });
+      expect(attrs).toEqual({});
     });
   });
 });

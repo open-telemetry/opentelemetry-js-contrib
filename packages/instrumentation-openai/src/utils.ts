@@ -3,7 +3,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { diag } from '@opentelemetry/api';
-import type { Attributes, DiagLogger } from '@opentelemetry/api';
+import type { Attributes, DiagLogger, Span } from '@opentelemetry/api';
+import {
+  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+  GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
+  GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
+  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE,
+  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI,
+  GEN_AI_PROVIDER_NAME_VALUE_COHERE,
+  GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK,
+  GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
+  GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
+  GEN_AI_PROVIDER_NAME_VALUE_GROQ,
+  GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI,
+  GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI,
+  GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY,
+  GEN_AI_PROVIDER_NAME_VALUE_X_AI,
+} from '@opentelemetry/genai-util';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -58,6 +76,60 @@ const SERVER_PORT_FROM_URL_PROTOCOL: PortFromProtocol = {
 };
 
 /**
+ * Hostname suffix → GenAI provider name mappings derived from the donated
+ * OpenInference instrumentation, remapped to official GenAI provider enums.
+ *
+ * Hosts without a GenAI enum equivalent (for example Fireworks or Together)
+ * are intentionally omitted rather than inventing non-standard provider names.
+ */
+const HOST_SUFFIX_TO_PROVIDER: ReadonlyArray<readonly [string, string]> = [
+  ['openai.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI],
+  ['services.ai.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE],
+  ['cognitiveservices.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI],
+  ['api.openai.com', GEN_AI_PROVIDER_NAME_VALUE_OPENAI],
+  ['api.anthropic.com', GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC],
+  ['api.cohere.com', GEN_AI_PROVIDER_NAME_VALUE_COHERE],
+  ['api.cohere.ai', GEN_AI_PROVIDER_NAME_VALUE_COHERE],
+  ['api.mistral.ai', GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI],
+  ['generativelanguage.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI],
+  ['aiplatform.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI],
+  ['amazonaws.com', GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK],
+  ['api.x.ai', GEN_AI_PROVIDER_NAME_VALUE_X_AI],
+  ['api.deepseek.com', GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK],
+  ['api.groq.com', GEN_AI_PROVIDER_NAME_VALUE_GROQ],
+  ['api.moonshot.cn', GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI],
+  ['api.perplexity.ai', GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY],
+];
+
+/**
+ * Resolve `gen_ai.provider.name` from an OpenAI-compatible client base URL.
+ * Defaults to `openai` when the host is unrecognized or missing.
+ */
+export function getProviderNameFromBaseURL(
+  baseURL: string | undefined,
+  diag_: DiagLogger = diag
+): string {
+  if (!baseURL) {
+    return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
+  }
+
+  let hostname: string;
+  try {
+    hostname = new URL(baseURL).hostname.toLowerCase();
+  } catch (ex) {
+    diag_.debug(`could not determine gen_ai.provider.name from baseURL: ${ex}`);
+    return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
+  }
+
+  for (const [suffix, provider] of HOST_SUFFIX_TO_PROVIDER) {
+    if (hostname === suffix || hostname.endsWith(`.${suffix}`)) {
+      return provider;
+    }
+  }
+  return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
+}
+
+/**
  * Return span/metric attributes from the given OpenAI client baseURL.
  */
 export function getAttrsFromBaseURL(
@@ -87,4 +159,66 @@ export function getAttrsFromBaseURL(
       ? Number(u.port)
       : SERVER_PORT_FROM_URL_PROTOCOL[u.protocol],
   };
+}
+
+/**
+ * Chat Completions and legacy Completions usage shapes.
+ */
+export type ChatCompletionsUsageLike = {
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  prompt_tokens_details?: {
+    cached_tokens?: number | null;
+    audio_tokens?: number | null;
+  } | null;
+  completion_tokens_details?: {
+    reasoning_tokens?: number | null;
+    audio_tokens?: number | null;
+  } | null;
+};
+
+/**
+ * Responses API usage shape.
+ */
+export type ResponsesUsageLike = {
+  input_tokens?: number;
+  output_tokens?: number;
+  input_tokens_details?: {
+    cached_tokens?: number | null;
+  } | null;
+  output_tokens_details?: {
+    reasoning_tokens?: number | null;
+  } | null;
+};
+
+/**
+ * Set GenAI usage detail attributes (cache read / reasoning) when present.
+ * Ported from donated OpenInference coverage, remapped to GenAI semconv names
+ * shared via `@opentelemetry/genai-util`.
+ */
+export function setUsageDetailAttributes(
+  span: Span,
+  usage: ChatCompletionsUsageLike | ResponsesUsageLike | null | undefined
+): void {
+  if (!usage) {
+    return;
+  }
+
+  const cacheRead =
+    'prompt_tokens_details' in usage
+      ? usage.prompt_tokens_details?.cached_tokens
+      : usage.input_tokens_details?.cached_tokens;
+  // OpenAI commonly returns `0` for unused detail fields; omit zeros to avoid
+  // noisy attributes on every span.
+  if (typeof cacheRead === 'number' && cacheRead > 0) {
+    span.setAttribute(ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS, cacheRead);
+  }
+
+  const reasoning =
+    'completion_tokens_details' in usage
+      ? usage.completion_tokens_details?.reasoning_tokens
+      : usage.output_tokens_details?.reasoning_tokens;
+  if (typeof reasoning === 'number' && reasoning > 0) {
+    span.setAttribute(ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS, reasoning);
+  }
 }
