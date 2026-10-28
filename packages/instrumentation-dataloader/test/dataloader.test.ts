@@ -15,7 +15,7 @@ import {
   TestCollector,
 } from '@opentelemetry/contrib-test-utils';
 
-import { DataloaderInstrumentation } from '../src/index';
+import { DataloaderInstrumentation } from '../src';
 const instrumentation = new DataloaderInstrumentation();
 
 // For testing that double shimming/wrapping does not occur
@@ -26,7 +26,6 @@ import * as assert from 'assert';
 import * as Dataloader from 'dataloader';
 import * as crypto from 'crypto';
 import * as semver from 'semver';
-import * as path from 'path';
 
 function getMd5HashFromIdx(idx: number) {
   return crypto.createHash('md5').update(String(idx)).digest('hex');
@@ -637,7 +636,13 @@ describe('DataloaderInstrumentation', () => {
   });
 
   describe('synchronous error handling', () => {
-    it('correctly catches synchronous exceptions in batch function', async () => {
+    it('correctly catches synchronous exceptions in batch function', async function () {
+      const dataloaderPkg = require('dataloader/package.json');
+      if (semver.lt(dataloaderPkg.version, '2.2.0')) {
+        // DataLoader < 2.2.0 does not catch sync throws in batchLoadFn (fixed in graphql/dataloader#318)
+        this.skip();
+      }
+
       const failingDataloader = new Dataloader(keys => {
         throw new Error('Sync batch error');
       });
@@ -646,6 +651,7 @@ describe('DataloaderInstrumentation', () => {
         await failingDataloader.load('test');
         assert.fail('.load should throw');
       } catch (e: any) {
+        assert.ok(e instanceof TypeError);
         assert.ok(e.message.includes('Sync batch error'));
       }
 
@@ -744,15 +750,8 @@ describe('DataloaderInstrumentation', () => {
 
 describe('ESM usage', () => {
   it('should work with ESM default import', async function () {
-    if (semver.gte(process.version, '20.6.0')) {
-      // --experimental-loader hook is not supported on Node.js >= 20.6.0
-      this.skip();
-    }
-    const fixtureDir = __dirname.endsWith('build/test')
-      ? path.resolve(__dirname, '../../test')
-      : __dirname;
     await runTestFixture({
-      cwd: fixtureDir,
+      cwd: __dirname,
       argv: ['fixtures/use-dataloader-default-import.mjs'],
       env: {
         NODE_OPTIONS:
