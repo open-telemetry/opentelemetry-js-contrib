@@ -2,7 +2,7 @@
     {
         "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
         "method": "POST",
-        "path": "/model/amazon.titan-embed-text-v2:0/invoke",
+        "path": "/model/amazon.titan-embed-text-v2%3A0/invoke",
         "body": {
             "inputText": "hello world",
             "dimensions": 1024,
