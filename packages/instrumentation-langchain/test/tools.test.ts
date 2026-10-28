@@ -397,7 +397,10 @@ describe('LangChain donated tool callbacks', () => {
 
   it('keeps callback-free non-tool invocations on the SDK fast path', async () => {
     const start = sinon.spy(CallbackManager.prototype, 'handleChainStart');
-    const end = sinon.spy(CallbackManagerForChainRun.prototype, 'handleChainEnd');
+    const end = sinon.spy(
+      CallbackManagerForChainRun.prototype,
+      'handleChainEnd'
+    );
     const step = RunnableLambda.from((value: string) => value);
     const workflow = RunnableSequence.from([step, step]);
     assert.equal(await step.invoke('step'), 'step');
@@ -731,7 +734,7 @@ describe('LangChain donated tool callbacks', () => {
   }
 
   it('preserves the execution Promise and restores the original method when disabled', async () => {
-    const original = DynamicTool.prototype._call;
+    const original = sinon.spy(DynamicTool.prototype, '_call');
     const result = Promise.resolve('result');
     const operation = new DynamicTool({
       name: 'identity',
@@ -744,7 +747,10 @@ describe('LangChain donated tool callbacks', () => {
     assert.ok(callbacks);
     const run = await callbacks.handleToolStart(operation.toJSON(), 'hello');
     try {
-      assert.equal(operation._call('hello', run), result);
+      const execution = operation._call('hello', run);
+      assert.equal(original.callCount, 2);
+      assert.equal(execution, original.lastCall.returnValue);
+      assert.equal(await execution, 'result');
       assert.equal(trace.getSpan(context.active()), undefined);
     } finally {
       await run.handleToolEnd(await result);

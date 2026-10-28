@@ -981,8 +981,8 @@ describe('LangChain non-streaming workflows', () => {
         expect(outerSpan.name).toBe('invoke_workflow outer');
         expect(innerSpan.name).toBe(`invoke_workflow ${innerName}`);
         expect(
-          spans.find(span => span.name === 'application-leaf')!.parentSpanContext
-            ?.spanId
+          spans.find(span => span.name === 'application-leaf')!
+            .parentSpanContext?.spanId
         ).toBe(innerSpan.spanContext().spanId);
         expect(trace.getSpan(context.active())).toBeUndefined();
       });

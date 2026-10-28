@@ -422,10 +422,7 @@ describe('LangChain application workflow boundaries', () => {
       input: 'hello',
       added: { input: 'hello' },
     });
-    await expectWorkflows([
-      'invoke_workflow outer',
-      'invoke_workflow outer',
-    ]);
+    await expectWorkflows(['invoke_workflow outer', 'invoke_workflow outer']);
     const spans = getTestSpans();
     assert.equal(
       spans[0].parentSpanContext?.spanId,
