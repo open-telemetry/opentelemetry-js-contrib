@@ -268,6 +268,58 @@ describe('utils.ts', () => {
         'host_name:1234/database_name'
       );
     });
+
+    it('creation of pool name based on connection string', () => {
+      const dummyPool = {
+        connectionString:
+          'postgresql://user:password@db.example.com:6543/database_name?sslmode=require',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/database_name'
+      );
+    });
+
+    it('connection string takes precedence over pool config', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://user@db.example.com:6543/from_url',
+        host: 'host_name',
+        port: 1234,
+        database: 'database_name',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/from_url'
+      );
+    });
+
+    it('falls back to pool config for parts missing from the connection string', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://user@db.example.com/from_url',
+        port: 1234,
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:1234/from_url'
+      );
+    });
+
+    it('ignores an unparsable connection string', () => {
+      const dummyPool = {
+        connectionString: 'not a url',
+        host: 'host_name',
+        port: 1234,
+        database: 'database_name',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'host_name:1234/database_name'
+      );
+    });
   });
 
   describe('.parseAndMaskConnectionString()', () => {

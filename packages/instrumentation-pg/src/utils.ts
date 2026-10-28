@@ -340,10 +340,22 @@ export function patchCallback(
 }
 
 export function getPoolName(pool: PgPoolOptionsParams): string {
+  // `pg` gives the connection string precedence over the individual fields,
+  // so a pool configured only with `connectionString` must be named from it.
+  let url: URL | undefined;
+  try {
+    url = pool?.connectionString ? new URL(pool.connectionString) : undefined;
+  } catch (e) {
+    url = undefined;
+  }
+  const host = url?.hostname || pool?.host;
+  const port = url?.port || pool?.port;
+  const database = url?.pathname.slice(1) || pool?.database;
+
   let poolName = '';
-  poolName += (pool?.host ? `${pool.host}` : 'unknown_host') + ':';
-  poolName += (pool?.port ? `${pool.port}` : 'unknown_port') + '/';
-  poolName += pool?.database ? `${pool.database}` : 'unknown_database';
+  poolName += (host ? `${host}` : 'unknown_host') + ':';
+  poolName += (port ? `${port}` : 'unknown_port') + '/';
+  poolName += database ? `${database}` : 'unknown_database';
 
   return poolName.trim();
 }
