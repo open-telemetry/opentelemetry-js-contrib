@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
-import './load-instrumentation';
+import { instrumentation } from './load-instrumentation';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -21,7 +21,6 @@ import {
   MESSAGING_DESTINATION_KIND_VALUE_TOPIC,
 } from '../src/semconv-obsolete';
 import { SpanKind } from '@opentelemetry/api';
-import { URLSearchParams } from 'url';
 
 describe('SNS - v3', () => {
   let sns: any;
@@ -105,6 +104,15 @@ describe('SNS - v3', () => {
 
       for (const attributeCount of [0, 1, 10]) {
         it(`preserves ${attributeCount} attributes and propagates when there is room`, async () => {
+          let transformedInput: Record<string, any> = {};
+          instrumentation.disable();
+          instrumentation.setConfig({
+            preRequestHook: (_span, requestInfo) => {
+              transformedInput = requestInfo.request.commandInput;
+            },
+          });
+          instrumentation.enable();
+
           sns = new SNSv3({
             region: 'us-east-1',
             credentials: {
@@ -118,25 +126,17 @@ describe('SNS - v3', () => {
               { DataType: 'String', StringValue: `value${i}` },
             ])
           );
-          let sent = new URLSearchParams();
           const scope = nock('https://sns.us-east-1.amazonaws.com/')
             .post('/')
-            .reply(200, (_uri, body) => {
-              sent = new URLSearchParams(
-                typeof body === 'string'
-                  ? body
-                  : (body as Record<string, string>)
-              );
-              return command === 'publish'
-                ? fs.readFileSync(
-                    './test/mock-responses/sns-publish.xml',
-                    'utf8'
-                  )
-                : fs.readFileSync(
-                    './test/mock-responses/sns-publish-batch.xml',
-                    'utf8'
-                  );
-            });
+            .reply(
+              200,
+              fs.readFileSync(
+                command === 'publish'
+                  ? './test/mock-responses/sns-publish.xml'
+                  : './test/mock-responses/sns-publish-batch.xml',
+                'utf8'
+              )
+            );
           const message = {
             Message: 'first message',
             ...(attributeCount ? { MessageAttributes: attributes } : {}),
@@ -158,42 +158,42 @@ describe('SNS - v3', () => {
           const [span] = spans;
           const { traceId, spanId } = span.spanContext();
           const traceparent = `00-${traceId}-${spanId}-01`;
-          const prefixes =
-            command === 'publish'
-              ? ['']
-              : [
-                  'PublishBatchRequestEntries.member.1.',
-                  'PublishBatchRequestEntries.member.2.',
-                ];
-          for (const [entryIndex, prefix] of prefixes.entries()) {
-            const received: Record<
-              string,
-              { DataType: string | null; StringValue: string | null }
-            > = {};
-            for (let i = 1; ; i++) {
-              const key = `${prefix}MessageAttributes.entry.${i}`;
-              const name = sent.get(`${key}.Name`);
-              if (!name) break;
-              received[name] = {
-                DataType: sent.get(`${key}.Value.DataType`),
-                StringValue: sent.get(`${key}.Value.StringValue`),
-              };
-            }
-            const expected = entryIndex === 0 ? attributes : {};
-            expect(received).toEqual({
-              ...expected,
-              ...(entryIndex === 0 && attributeCount === 10
-                ? {}
-                : {
+          const propagatedContext =
+            attributeCount === 10
+              ? {}
+              : {
+                  traceparent: {
+                    DataType: 'String',
+                    StringValue: traceparent,
+                  },
+                };
+          if (command === 'publish') {
+            expect(transformedInput).toEqual({
+              TopicArn: topicArn,
+              ...message,
+              MessageAttributes: { ...attributes, ...propagatedContext },
+            });
+          } else {
+            expect(transformedInput).toEqual({
+              TopicArn: topicArn,
+              PublishBatchRequestEntries: [
+                {
+                  Id: 'first',
+                  ...message,
+                  MessageAttributes: { ...attributes, ...propagatedContext },
+                },
+                {
+                  Id: 'second',
+                  Message: 'second message',
+                  MessageAttributes: {
                     traceparent: {
                       DataType: 'String',
                       StringValue: traceparent,
                     },
-                  }),
+                  },
+                },
+              ],
             });
-            expect(sent.get(`${prefix}Message`)).toBe(
-              entryIndex === 0 ? 'first message' : 'second message'
-            );
           }
           expect(span.kind).toBe(SpanKind.PRODUCER);
           expect(span.name).toBe(`${topicName} send`);
