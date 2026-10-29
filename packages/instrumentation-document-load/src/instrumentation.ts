@@ -108,7 +108,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
             addSpanNetworkEvents(
               fetchSpan,
               entries,
-              this.getConfig().ignoreNetworkEvents
+              this.getConfig().ignoreNetworkEvents,
+              // Navigation startTime is always 0, so the default keeps zero timings that precede fetchStart.
+              // This also drops legitimate zeros (https://github.com/open-telemetry/opentelemetry-js/pull/5332); add a config option if users need them.
+              true
             );
             this._addCustomAttributesOnSpan(
               fetchSpan,
