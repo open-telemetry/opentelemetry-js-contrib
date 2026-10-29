@@ -5,7 +5,68 @@
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @martinkuba @wolfgangcodes @pkanal
 
+> **Deprecated:** This instrumentation has moved to [`@opentelemetry/browser-instrumentation/experimental/errors`](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#errors). Use `ErrorsInstrumentation` from that package for new applications and follow the [migration steps](#migration) below for existing applications.
+
 This module provides automatic instrumentation for capturing unhandled exceptions and promise rejections in web applications.
+
+## Migration
+
+Replace the package dependency:
+
+```bash
+npm uninstall @opentelemetry/instrumentation-web-exception
+npm install --save @opentelemetry/browser-instrumentation
+```
+
+Change the import and class name from `ExceptionInstrumentation` to `ErrorsInstrumentation`. If you import the config type, rename `GlobalErrorsInstrumentationConfig` to `ErrorsInstrumentationConfig`, imported from the same replacement export. The `enabled` and `applyCustomAttributes` options are unchanged. The callback still accepts `Error | string` and returns attributes to add to the exception log record.
+
+Before:
+
+```typescript
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
+
+registerInstrumentations({
+  instrumentations: [
+    new ExceptionInstrumentation({
+      enabled: true,
+      applyCustomAttributes: (error) => ({
+        'app.error.severity':
+          error instanceof Error && error.name === 'ValidationError'
+            ? 'warning'
+            : 'error',
+      }),
+    }),
+  ],
+});
+```
+
+After:
+
+```typescript
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import { ErrorsInstrumentation } from '@opentelemetry/browser-instrumentation/experimental/errors';
+
+registerInstrumentations({
+  instrumentations: [
+    new ErrorsInstrumentation({
+      enabled: true,
+      applyCustomAttributes: (error) => ({
+        'app.error.severity':
+          error instanceof Error && error.name === 'ValidationError'
+            ? 'warning'
+            : 'error',
+      }),
+    }),
+  ],
+});
+```
+
+The instrumentation scope name changes from `@opentelemetry/instrumentation-web-exception` to `@opentelemetry/browser-instrumentation/errors`. Update queries, dashboards and filters that select logs by instrumentation scope name.
+
+Keep your OpenTelemetry Logs SDK setup and logger provider. The replacement still emits `exception` log records for uncaught errors and unhandled promise rejections. Register only the replacement errors instrumentation to avoid capturing the same error twice.
+
+The replacement is an ES module and uses an experimental export. Use a module resolver that supports package exports, such as TypeScript's `bundler` or `nodenext` resolution, and check the [errors documentation](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#errors) for current configuration. The broader browser [migration guide is tracked here](https://github.com/open-telemetry/opentelemetry-browser/issues/468).
 
 ## Installation
 
