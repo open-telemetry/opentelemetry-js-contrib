@@ -59,6 +59,10 @@ This package uses an incremental export policy. The current public surface inclu
 
 Additional APIs (stream wrappers, agent/workflow/retrieval invocations) land as they stabilize. Instrumentations that need a still-private helper should export it from `src/index.ts` in the same PR that adopts it.
 
+### Release-order note
+
+Published npm `@opentelemetry/genai-util@0.4.0` still ships an empty entry (pre–export-expansion). Workspace / `main` Unreleased builds export the symbols listed above. Consumers that depend on `^0.4.0` (including `@opentelemetry/instrumentation-openai`) resolve correctly inside this monorepo via the workspace link, but **out-of-tree installs need a release that includes these exports** (release-please will typically bump beyond `0.4.0`). Release `genai-util` with the expanded surface **before or together with** any instrumentation that imports those symbols from npm.
+
 ## Usage Examples
 
 `TelemetryHandler` is exported for instrumentation integrations. Use its

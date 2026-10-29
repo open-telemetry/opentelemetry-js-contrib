@@ -26,8 +26,6 @@ import { getErrorType } from '@opentelemetry/genai-util';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
-  ChatCompletionContentPart,
-  ChatCompletionContentPartRefusal,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionChunk,
@@ -85,6 +83,7 @@ import {
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import {
+  formatChatMessageContent,
   getEnvBool,
   getAttrsFromBaseURL,
   getProviderNameFromBaseURL,
@@ -1191,37 +1190,6 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     span.end();
   }
 }
-/**
- * Serialize chat message content parts for opt-in content capture.
- * Includes text and image URLs (donated OpenInference multimodal coverage),
- * while omitting binary / unsupported parts.
- */
-function formatChatMessageContent(
-  parts: ReadonlyArray<
-    ChatCompletionContentPart | ChatCompletionContentPartRefusal
-  >
-): string {
-  return parts
-    .map(part => {
-      if (part.type === 'text') {
-        return part.text;
-      }
-      if (part.type === 'image_url') {
-        const imageUrl = part.image_url;
-        if (typeof imageUrl === 'string') {
-          return imageUrl;
-        }
-        return imageUrl?.url ?? '';
-      }
-      if (part.type === 'refusal') {
-        return part.refusal;
-      }
-      return '';
-    })
-    .filter(part => part.length > 0)
-    .join('\n');
-}
-
 function isStreamPromise<
   Params extends { stream?: boolean | null } | undefined,
   Chunk,

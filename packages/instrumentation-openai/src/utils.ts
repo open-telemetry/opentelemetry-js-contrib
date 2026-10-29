@@ -81,6 +81,9 @@ const SERVER_PORT_FROM_URL_PROTOCOL: PortFromProtocol = {
  *
  * Hosts without a GenAI enum equivalent (for example Fireworks or Together)
  * are intentionally omitted rather than inventing non-standard provider names.
+ *
+ * AWS Bedrock is handled separately via {@link isAwsBedrockHostname} so that
+ * unrelated `*.amazonaws.com` hosts are not mis-attributed.
  */
 const HOST_SUFFIX_TO_PROVIDER: ReadonlyArray<readonly [string, string]> = [
   ['openai.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI],
@@ -93,7 +96,6 @@ const HOST_SUFFIX_TO_PROVIDER: ReadonlyArray<readonly [string, string]> = [
   ['api.mistral.ai', GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI],
   ['generativelanguage.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI],
   ['aiplatform.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI],
-  ['amazonaws.com', GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK],
   ['api.x.ai', GEN_AI_PROVIDER_NAME_VALUE_X_AI],
   ['api.deepseek.com', GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK],
   ['api.groq.com', GEN_AI_PROVIDER_NAME_VALUE_GROQ],
@@ -101,9 +103,21 @@ const HOST_SUFFIX_TO_PROVIDER: ReadonlyArray<readonly [string, string]> = [
   ['api.perplexity.ai', GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY],
 ];
 
+function isAwsBedrockHostname(hostname: string): boolean {
+  // Require both amazonaws.com and a bedrock marker to avoid attributing
+  // S3/other AWS endpoints as Bedrock when an OpenAI-compatible baseURL is set.
+  return (
+    (hostname === 'amazonaws.com' || hostname.endsWith('.amazonaws.com')) &&
+    hostname.includes('bedrock')
+  );
+}
+
 /**
  * Resolve `gen_ai.provider.name` from an OpenAI-compatible client base URL.
- * Defaults to `openai` when the host is unrecognized or missing.
+ *
+ * Defaults to `openai` when the host is unrecognized, missing, or malformed.
+ * That default matches the OpenAI SDK surface (OpenAI-compatible protocol) and
+ * is not a claim that an unknown custom proxy is operated by OpenAI.
  */
 export function getProviderNameFromBaseURL(
   baseURL: string | undefined,
@@ -119,6 +133,10 @@ export function getProviderNameFromBaseURL(
   } catch (ex) {
     diag_.debug(`could not determine gen_ai.provider.name from baseURL: ${ex}`);
     return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
+  }
+
+  if (isAwsBedrockHostname(hostname)) {
+    return GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK;
   }
 
   for (const [suffix, provider] of HOST_SUFFIX_TO_PROVIDER) {
@@ -191,10 +209,17 @@ export type ResponsesUsageLike = {
   } | null;
 };
 
+function isPositiveFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
 /**
  * Set GenAI usage detail attributes (cache read / reasoning) when present.
  * Ported from donated OpenInference coverage, remapped to GenAI semconv names
  * shared via `@opentelemetry/genai-util`.
+ *
+ * Only positive finite numbers are recorded. Zero, negative, NaN, and
+ * non-numeric values are omitted.
  */
 export function setUsageDetailAttributes(
   span: Span,
@@ -208,9 +233,7 @@ export function setUsageDetailAttributes(
     'prompt_tokens_details' in usage
       ? usage.prompt_tokens_details?.cached_tokens
       : usage.input_tokens_details?.cached_tokens;
-  // OpenAI commonly returns `0` for unused detail fields; omit zeros to avoid
-  // noisy attributes on every span.
-  if (typeof cacheRead === 'number' && cacheRead > 0) {
+  if (isPositiveFiniteNumber(cacheRead)) {
     span.setAttribute(ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS, cacheRead);
   }
 
@@ -218,7 +241,57 @@ export function setUsageDetailAttributes(
     'completion_tokens_details' in usage
       ? usage.completion_tokens_details?.reasoning_tokens
       : usage.output_tokens_details?.reasoning_tokens;
-  if (typeof reasoning === 'number' && reasoning > 0) {
+  if (isPositiveFiniteNumber(reasoning)) {
     span.setAttribute(ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS, reasoning);
   }
+}
+
+/**
+ * Placeholder used instead of raw image URLs / data URIs during opt-in content
+ * capture. Avoids exporting signed URLs, query tokens, or base64 payloads into
+ * telemetry backends.
+ */
+export const IMAGE_CONTENT_PLACEHOLDER = '[image]' as const;
+
+type ChatContentPartLike = {
+  type?: string;
+  text?: string;
+  refusal?: string;
+  image_url?: string | { url?: unknown } | null;
+};
+
+/**
+ * Serialize chat message content parts for opt-in content capture.
+ *
+ * - Text / refusal parts are included as-is when present.
+ * - Image parts are recorded only as {@link IMAGE_CONTENT_PLACEHOLDER}; raw
+ *   `http(s)` URLs, signed URLs, and `data:` URIs are never exported.
+ * - Malformed / unknown parts are skipped.
+ */
+export function formatChatMessageContent(
+  parts: ReadonlyArray<ChatContentPartLike> | null | undefined
+): string {
+  if (!Array.isArray(parts)) {
+    return '';
+  }
+
+  return parts
+    .map(part => {
+      if (part == null || typeof part !== 'object') {
+        return '';
+      }
+      if (part.type === 'text' && typeof part.text === 'string') {
+        return part.text;
+      }
+      if (part.type === 'refusal' && typeof part.refusal === 'string') {
+        return part.refusal;
+      }
+      if (part.type === 'image_url') {
+        // Intentionally do not read image_url.url / string payloads.
+        return IMAGE_CONTENT_PLACEHOLDER;
+      }
+      return '';
+    })
+    .filter(part => part.length > 0)
+    .join('\n');
 }

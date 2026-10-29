@@ -5,10 +5,11 @@
 
 ### Features
 
-* **instrumentation-openai:** adopt `@opentelemetry/genai-util` for shared error classification and GenAI constants ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** adopt `@opentelemetry/genai-util` (`^0.4.0`) for shared error classification and GenAI constants ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+  * Depends on workspace / post-`0.4.0` expanded `genai-util` exports; release `genai-util` first or in the same release train.
 * **instrumentation-openai:** detect `gen_ai.provider.name` from OpenAI-compatible base URLs (including Azure) ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
 * **instrumentation-openai:** record `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.reasoning.output_tokens` when the API returns usage details ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
-* **instrumentation-openai:** include image URLs in opt-in chat message content capture ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** under opt-in content capture, record image parts as a `[image]` placeholder (never raw/signed/`data:` URLs) ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
 
 ## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.21.0...instrumentation-openai-v0.22.0) (2026-10-20)
 
