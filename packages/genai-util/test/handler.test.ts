@@ -20,6 +20,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import {
   ATTR_GEN_AI_TOKEN_MODALITY,
+  ATTR_GEN_AI_REQUEST_STREAM,
   GEN_AI_SCHEMA_URL,
   GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
   GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
@@ -575,5 +576,35 @@ describe('TelemetryHandler', () => {
     } finally {
       context.disable();
     }
+  });
+
+  it('should delegate wrapAsyncStream to the wrapAsyncStream function', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+    const invocation = handler.startInference({ providerName: 'openai' });
+
+    async function* gen() {
+      yield 'chunk1';
+      yield 'chunk2';
+    }
+
+    const wrapped = handler.wrapAsyncStream(gen(), { invocation });
+    const chunks: string[] = [];
+    for await (const c of wrapped) {
+      chunks.push(c);
+    }
+
+    assert.deepStrictEqual(chunks, ['chunk1', 'chunk2']);
+
+    // The wrapper owns the tail of the invocation: draining the stream stops it,
+    // so the span is ended and exported without the caller calling stop().
+    assert.strictEqual(invocation.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
   });
 });
