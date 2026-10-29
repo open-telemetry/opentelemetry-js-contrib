@@ -61,5 +61,6 @@ export enum MongodbCommandType {
   FIND_AND_MODIFY = 'findAndModify',
   IS_MASTER = 'isMaster',
   COUNT = 'count',
+  AGGREGATE = 'aggregate',
   UNKNOWN = 'unknown',
 }
