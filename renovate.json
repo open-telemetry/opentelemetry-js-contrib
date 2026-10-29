@@ -4,7 +4,7 @@
     {
       "groupName": "all patch versions",
       "groupSlug": "all-patch",
-      "matchUpdateTypes": ["patch"],
+      "matchUpdateTypes": ["patch", "digest"],
       "schedule": ["before 3am on Monday"],
       "matchPackageNames": ["!prettier"]
     },
@@ -14,8 +14,9 @@
       "dependencyDashboardApproval": true
     },
     {
+      "groupName": "minor infra",
       "matchUpdateTypes": ["minor"],
-      "matchCategories": ["!js"],
+      "matchCategories": ["ci", "docker"],
       "schedule": ["before 3am on Monday"]
     },
     {
