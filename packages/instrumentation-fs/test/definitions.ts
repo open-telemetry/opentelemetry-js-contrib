@@ -5,6 +5,7 @@
 
 import { FMember, FPMember } from '../src/types';
 import * as fs from 'fs';
+import * as path from 'path';
 
 export type FsFunction = FMember;
 export type Opts = {
@@ -71,11 +72,16 @@ const tests: TestCase[] = [
     { resultAsError: true },
     [{ name: 'fs %NAME' }],
   ],
-  ['realpath', ['/./'], { result: '/' }, [{ name: 'fs %NAME' }]],
+  [
+    'realpath',
+    ['/./'],
+    { result: path.resolve('/./') },
+    [{ name: 'fs %NAME' }],
+  ],
   [
     'realpath.native',
     ['/./'],
-    { result: '/', hasPromiseVersion: false },
+    { result: path.resolve('/./'), hasPromiseVersion: false },
     [{ name: 'fs %NAME' }],
   ],
 ];
