@@ -251,6 +251,67 @@ describe('SocketIoInstrumentation', () => {
       });
     });
 
+    it('addListener is instrumented', done => {
+      const config: SocketIoInstrumentationConfig = {
+        // only for v2: v2 emits connection events which later versions do not
+        emitIgnoreEventList: ['connection'],
+      };
+      instrumentation.setConfig(config);
+      createServer((sio, port) => {
+        const client = io(`http://localhost:${port}`);
+        client.on('test', () => client.emit('test_reply'));
+        sio.on('connection', (socket: Socket) => {
+          socket.emit('test');
+          socket.addListener('test_reply', () => {
+            client.close();
+            sio.close();
+            //trace is created after the listener method is completed
+            setTimeout(() => {
+              expectSpan(
+                'receive /',
+                span => {
+                  try {
+                    expect(span.kind).toEqual(SpanKind.CONSUMER);
+                    expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toEqual(
+                      'socket.io'
+                    );
+                    done();
+                  } catch (e) {
+                    done(e);
+                  }
+                },
+                3
+              );
+            });
+          });
+        });
+      });
+    });
+
+    it('removeListener removes a listener registered with on', done => {
+      const config: SocketIoInstrumentationConfig = {
+        // only for v2: v2 emits connection events which later versions do not
+        emitIgnoreEventList: ['connection'],
+      };
+      instrumentation.setConfig(config);
+      createServer((sio, port) => {
+        const client = io(`http://localhost:${port}`);
+        sio.on('connection', (socket: Socket) => {
+          const listener = () => {};
+          socket.on('test_reply', listener);
+          socket.removeListener('test_reply', listener);
+          client.close();
+          sio.close();
+          try {
+            expect(socket.listenerCount('test_reply')).toEqual(0);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
     it('onIgnoreEventList events are ignored', done => {
       const config: SocketIoInstrumentationConfig = {
         onIgnoreEventList: ['test_reply'],
