@@ -16,6 +16,7 @@
  * keeping existing recordings, set NOCK_BACK_MODE to 'record'.
  */
 
+import * as assert from 'assert';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { meterProvider, metricExporter } from './load-instrumentation';
 
@@ -658,7 +659,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -717,7 +718,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -770,7 +771,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -820,7 +821,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -870,7 +871,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -917,7 +918,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
