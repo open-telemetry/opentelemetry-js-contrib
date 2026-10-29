@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.32.0...resource-detector-azure-v0.33.0) (2026-10-29)
+
+
+### Features
+
+* **resource-detector-azure:** detect AKS pod identity ([#3860](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3860)) ([d49c2fd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d49c2fd5ac5a0758f9b1569e3f2ba7e8232ee912))
+
 ## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.31.0...resource-detector-azure-v0.32.0) (2026-10-20)
 
 

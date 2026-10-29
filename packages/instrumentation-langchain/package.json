@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-langchain",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "private": true,
   "description": "OpenTelemetry instrumentation for the `langchain` LangChain.js library",
   "main": "./dist/index.cjs",
@@ -73,7 +73,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",
-    "@opentelemetry/genai-util": "^0.4.0",
+    "@opentelemetry/genai-util": "^0.5.0",
     "@opentelemetry/instrumentation": "^0.300.0",
     "@opentelemetry/semantic-conventions": "^1.37.0"
   },

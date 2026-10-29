@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.4.0...genai-util-v0.5.0) (2026-10-29)
+
+
+### Features
+
+* **instrumentation-langchain:** migrate donated tool execution ([#3821](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3821)) ([d50fe94](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d50fe94e39a1ab16e8a0e2a2f95344c4488e814a))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.3.0...genai-util-v0.4.0) (2026-10-20)
 
 
