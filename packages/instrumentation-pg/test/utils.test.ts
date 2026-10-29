@@ -268,6 +268,17 @@ describe('utils.ts', () => {
         'host_name:1234/database_name'
       );
     });
+
+    it('creation of pool name based on connectionString', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://user:pass@db.example.com:6543/users_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/users_db'
+      );
+    });
   });
 
   describe('.parseAndMaskConnectionString()', () => {
