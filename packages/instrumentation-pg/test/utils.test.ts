@@ -279,6 +279,58 @@ describe('utils.ts', () => {
         'db.example.com:6543/users_db'
       );
     });
+
+    it('falls back to discrete fields when connectionString is malformed', () => {
+      const dummyPool = {
+        connectionString: 'invalid-url',
+        host: 'backup_host',
+        port: 5432,
+        database: 'backup_db',
+      } as unknown as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'backup_host:5432/backup_db'
+      );
+    });
+
+    it('prefers connectionString over conflicting discrete fields', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543/users_db',
+        host: 'other_host',
+        port: 9999,
+        database: 'other_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/users_db'
+      );
+    });
+
+    it('falls back to discrete port when connectionString omits port', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com/users_db',
+        port: 5432,
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:5432/users_db'
+      );
+    });
+
+    it('falls back to discrete database when connectionString omits database', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543',
+        database: 'users_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/users_db'
+      );
+    });
   });
 
   describe('.parseAndMaskConnectionString()', () => {

@@ -95,7 +95,7 @@ const CONFIG = {
 function createNamedPool(name: string, max?: number) {
   const connectionString = `postgresql://${encodeURIComponent(
     CONFIG.user
-  )}:${encodeURIComponent(CONFIG.password)}@${CONFIG.host}:${CONFIG.port}/${encodeURIComponent(
+  )}:${encodeURIComponent(CONFIG.password)}@${name}:${CONFIG.port}/${encodeURIComponent(
     CONFIG.database
   )}`;
   return new pgPool({
