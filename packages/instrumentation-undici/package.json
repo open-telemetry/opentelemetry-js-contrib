@@ -57,7 +57,7 @@
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/sdk-metrics": "^3.0.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
-    "undici": "6.28.1"
+    "undici": "6.29.1"
   },
   "peerDependencies": {
     "@opentelemetry/api": "^1.7.0"
