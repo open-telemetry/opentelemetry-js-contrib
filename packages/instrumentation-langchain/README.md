@@ -4,7 +4,8 @@
 [![Apache License][license-image]][license-image]
 
 This module provides automatic instrumentation for composed workflows and tool execution in
-[`@langchain/core`](https://www.npmjs.com/package/@langchain/core).
+[`@langchain/core`](https://www.npmjs.com/package/@langchain/core), and application-defined
+workflows in [`@langchain/langgraph`](https://www.npmjs.com/package/@langchain/langgraph).
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,6 +18,8 @@ npm install --save @opentelemetry/instrumentation-langchain
 ## Supported Versions
 
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions `>=1.0.0 <2`
+- [`@langchain/langgraph`](https://www.npmjs.com/package/@langchain/langgraph) versions `>=1.0.0 <2`,
+  with a Core version satisfying the graph SDK's peer dependencies.
 
 ## Usage
 
@@ -66,9 +69,9 @@ Batch output is normalized one result at a time, in result order: generated
 strings are assistant messages, while explicit SDK roles and nested message
 histories retain their roles. Input string-message shorthand remains user content.
 
-This layer does **not** instrument workflow `stream` or `transform`, agents,
-LangGraph operations or retrieval. Internal graph adapter sequences are excluded.
-Streaming methods retain their original behavior without workflow stream telemetry.
+The sequence/map layer does **not** instrument `stream` or `transform`, agents
+or retrieval. Internal graph adapter sequences are excluded.
+Sequence/map streaming retains its original behavior without workflow stream telemetry.
 Provider inference remains the responsibility of provider-specific instrumentation.
 Workflows emit spans and the `gen_ai.invoke_workflow.duration` histogram in
 seconds, not `gen_ai.client.*` metrics or content events. Each completed
@@ -177,6 +180,66 @@ Each invocation has its own callback-local state, so completion callbacks for
 skipped runs are ignored even if their run IDs or callback managers are reused.
 Runnable `.asTool()` adapters
 that emit only chain callbacks do not gain tool spans from this slice.
+
+### LangGraph workflows
+
+Application-defined compiled graphs create `INTERNAL` `invoke_workflow` spans
+for SDK chain start/end/error callbacks. This migrates the graph run lifecycle
+observed by the donated
+[LangChain tracer](https://github.com/open-telemetry/donation-openinference/blob/6cdd644d79fccf50aedcb614187f924ddfcafb7b/js/packages/openinference-instrumentation-langchain/src/tracer.ts),
+without tracing every internal chain as a workflow.
+
+```js
+const { Annotation, StateGraph, START, END } = require('@langchain/langgraph');
+
+const State = Annotation.Root({ messages: Annotation() });
+const graph = new StateGraph(State)
+  .addNode('step', state => state)
+  .addEdge(START, 'step')
+  .addEdge('step', END)
+  .compile({ name: 'support' });
+
+await graph.invoke({ messages: [['user', 'hello']] });
+```
+
+`invoke`, per-input `batch`, and consumed `stream`/`streamEvents` operations use
+the same callback-owned lifecycle. Public stream entry points register callbacks
+on invocation-local manager copies; returned Promises and stream objects are
+not replaced or consumed by the instrumentation. Event streaming does not create
+a second span when the SDK delegates to `stream`.
+Implicit node configuration is read through the SDK's `getConfig`, so nested
+calls retain inherited callbacks. If callback/run-name configuration cannot be
+inspected without invoking accessors, that entry point is left unchanged and a
+diagnostic is emitted.
+
+Only application graph boundaries are reported, including nested subgraphs.
+Internal node/writer sequences and graphs created by `createAgent` or
+`createReactAgent` are not reported as workflows. Their actual agent operations
+remain outside this migration. Factory tracking identifies these objects rather
+than guessing from names.
+
+Names come from the invocation's `runName`, configured defaults, or the graph's
+explicit compile-time name. Without an application name, the span is
+`invoke_workflow` and the workflow-name attribute is omitted. The existing
+workflow duration histogram and error handling are reused; graph runs do not
+add inference metrics, usage aggregation, or another telemetry framework.
+
+With content capture enabled, the final SDK callback inputs and outputs are
+normalized by the existing message adapter. Message state is supported, but
+arbitrary graph state, checkpoint metadata and configuration are not serialized
+into invented attributes. Conversation IDs use the SDK callback metadata.
+Content remains disabled by default.
+
+Inherited callback markers preserve graph parentage without relying on unique
+run IDs. Context-only hooks around graph node execution and internal sequences
+keep nested tools and application spans under the graph across asynchronous
+work. Existing user callbacks are preserved, and in-flight runs retain their
+original telemetry configuration.
+
+Completion follows SDK notifications, as in the donation. A stream that is
+abandoned or terminated without an end/error callback does not gain a synthetic
+completion. No iterator observer, cancellation cascade, checkpoint/resume
+telemetry, or native Web Stream reader/pipe interception is added.
 
 ## Configuration Options
 
@@ -299,9 +362,9 @@ Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
 by `@opentelemetry/genai-util`. The late ToolMessage call-ID mapping also uses
 that package's shared `ATTR_GEN_AI_TOOL_CALL_ID` constant.
 
-### Tool conformance
+### Tool and graph conformance
 
-The tool scenarios use the upstream
+The tool and graph scenarios use the upstream
 [semantic-conventions-conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance/tree/main/tools/gen-ai/runner),
 not a package-specific validation framework. Install that runner and its
 pinned Weaver executable, build this package, then run:
@@ -311,13 +374,17 @@ npm run test:conformance --workspace @opentelemetry/instrumentation-langchain
 ```
 
 The scenario registry is pinned in `test/conformance/conformance.yaml`.
-The scenarios execute real offline tools and export spans and metrics through
+The scenarios execute real offline tools and graphs and export spans and metrics through
 OTLP/gRPC to Weaver. They cover capture disabled, capture enabled and execution
-failure, and results whose JSON serialization is not an object. Reports are
+failure, graph streaming, and tool results whose JSON serialization is not an object. Reports are
 written under the package's ignored `coverage` directory.
 Tool spans and metrics include the shared handler's schema URL, so no missing
-schema-URL exception is needed. No provider requests or Docker containers are
-needed.
+schema-URL exception is needed for tools. Graph scenarios reuse the existing
+workflow tracer/meter, which lack a schema URL. Each graph scenario declares
+that specific expected violation under the
+[migration tracking issue](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668);
+upstream policies and tool expectations are unchanged.
+No provider requests or Docker containers are needed.
 
 ## Useful links
 
