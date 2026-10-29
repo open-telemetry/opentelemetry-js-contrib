@@ -52,11 +52,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
 import { addToolCallbacks, getToolContext } from './tool-callbacks';
-import {
-  addGraphCallbacks,
-  getGraphContext,
-  hasPendingGraphInvocation,
-} from './graph-callbacks';
+import { addGraphCallbacks, getGraphContext } from './graph-callbacks';
 import {
   isInternalWorkflow,
   isTrackingFactory,
@@ -441,7 +437,6 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             (module: typeof PregelModule) => this._patchGraphs(module),
             (module: typeof PregelModule) => {
               this._unpatchMethod(module.Pregel.prototype, 'stream');
-              this._unpatchMethod(module.Pregel.prototype, 'streamEvents');
             },
             (module: typeof PregelModule) => {
               if (!isTrackingFactory(module.Pregel.prototype.withConfig))
@@ -523,133 +518,124 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _patchGraphs(module: typeof PregelModule) {
-    for (const method of ['stream', 'streamEvents'] as const) {
-      this._patchMethod(
-        module.Pregel.prototype,
-        method,
-        (owners, restore) => original =>
-          new Proxy(original, {
-            apply(
-              target,
-              receiver: Runnables.Runnable,
-              args: [unknown, Runnables.RunnableConfig?]
-            ) {
-              const owner = Array.from(owners)
-                .reverse()
-                .find(instance => instance.isEnabled());
-              if (!owner) restore();
-              const active = context.active();
-              if (
-                !owner ||
-                isTracingSuppressed(active) ||
-                isInternalWorkflow(receiver)
-              )
-                return Reflect.apply(target, receiver, args);
-              const manager = owner._callbackManager;
-              if (!manager) {
-                owner._diag.warn(
-                  'LangChain: graph callback manager is unavailable'
-                );
-                return Reflect.apply(target, receiver, args);
-              }
-              let state: WorkflowState | undefined;
-              try {
-                const defaults = ownValue(receiver, 'config');
-                const inherited = owner._getGraphConfig?.();
-                const configValue = (key: string): unknown => {
-                  for (const config of [args[1], defaults, inherited]) {
-                    const descriptor = isRecord(config)
-                      ? Object.getOwnPropertyDescriptor(config, key)
-                      : undefined;
-                    if (descriptor && !('value' in descriptor))
-                      throw new TypeError(
-                        'Accessor-backed graph callback configuration'
-                      );
-                    if (descriptor?.value !== undefined)
-                      return descriptor.value;
-                  }
-                  return undefined;
-                };
-                const callbacks = configValue('callbacks');
-                // streamEvents delegates to stream before the same run starts.
-                if (!hasPendingGraphInvocation(callbacks, receiver)) {
-                  function isManager(value: unknown): value is CallbackManager {
-                    return (
-                      isRecord(value) &&
-                      typeof value.copy === 'function' &&
-                      Array.isArray(value.handlers)
-                    );
-                  }
-                  if (
-                    callbacks !== undefined &&
-                    !Array.isArray(callbacks) &&
-                    !isManager(callbacks)
-                  )
-                    throw new TypeError(
-                      'Unsupported graph callback configuration'
-                    );
-                  const runName = configValue('runName');
-                  const configured = manager._configureSync(callbacks ?? []);
-                  if (configured) {
-                    const graphCallbacks = addGraphCallbacks(
-                      configured,
-                      manager,
-                      receiver,
-                      (_input, metadata, parent) => {
-                        if (
-                          !owner.isEnabled() ||
-                          isTracingSuppressed(context.active())
-                        )
-                          return undefined;
-                        try {
-                          state = owner._startWorkflow(
-                            receiver,
-                            undefined,
-                            { runName, metadata },
-                            false,
-                            parent ?? active
-                          );
-                          return state.context;
-                        } catch {
-                          owner._diag.warn(
-                            'LangChain: could not start graph telemetry'
-                          );
-                          return undefined;
-                        }
-                      },
-                      (input, output, failure) => {
-                        if (!state) return;
-                        try {
-                          if (state.capture) {
-                            const content = messages(input, owner._diag);
-                            if (content !== undefined)
-                              state.span.setAttribute(
-                                ATTR_GEN_AI_INPUT_MESSAGES,
-                                content
-                              );
-                          }
-                        } catch {
-                          owner._diag.warn(
-                            'LangChain: could not extract graph input telemetry'
-                          );
-                        } finally {
-                          owner._end(state, output, failure);
-                        }
-                      }
-                    );
-                    args[1] = { ...args[1], callbacks: graphCallbacks };
-                  }
-                }
-              } catch {
-                owner._diag.warn(
-                  'LangChain: could not register graph callbacks'
-                );
-              }
+    // streamEvents merges configured callbacks before delegating to stream.
+    // Register only after that merge, without adding managers to handler arrays.
+    this._patchMethod(
+      module.Pregel.prototype,
+      'stream',
+      (owners, restore) => original =>
+        new Proxy(original, {
+          apply(
+            target,
+            receiver: Runnables.Runnable,
+            args: [unknown, Runnables.RunnableConfig?]
+          ) {
+            const owner = Array.from(owners)
+              .reverse()
+              .find(instance => instance.isEnabled());
+            if (!owner) restore();
+            const active = context.active();
+            if (
+              !owner ||
+              isTracingSuppressed(active) ||
+              isInternalWorkflow(receiver)
+            )
               return Reflect.apply(target, receiver, args);
-            },
-          })
-      );
-    }
+            const manager = owner._callbackManager;
+            if (!manager) {
+              owner._diag.warn(
+                'LangChain: graph callback manager is unavailable'
+              );
+              return Reflect.apply(target, receiver, args);
+            }
+            let state: WorkflowState | undefined;
+            try {
+              const defaults = ownValue(receiver, 'config');
+              const inherited = owner._getGraphConfig?.();
+              const configValue = (key: string): unknown => {
+                for (const config of [args[1], defaults, inherited]) {
+                  const descriptor = isRecord(config)
+                    ? Object.getOwnPropertyDescriptor(config, key)
+                    : undefined;
+                  if (descriptor && !('value' in descriptor))
+                    throw new TypeError(
+                      'Accessor-backed graph callback configuration'
+                    );
+                  if (descriptor?.value !== undefined) return descriptor.value;
+                }
+                return undefined;
+              };
+              const callbacks = configValue('callbacks');
+              function isManager(value: unknown): value is CallbackManager {
+                return (
+                  isRecord(value) &&
+                  typeof value.copy === 'function' &&
+                  Array.isArray(value.handlers)
+                );
+              }
+              if (
+                callbacks !== undefined &&
+                !Array.isArray(callbacks) &&
+                !isManager(callbacks)
+              )
+                throw new TypeError('Unsupported graph callback configuration');
+              const runName = configValue('runName');
+              const configured = manager._configureSync(callbacks ?? []);
+              if (configured) {
+                const graphCallbacks = addGraphCallbacks(
+                  configured,
+                  manager,
+                  (_input, metadata, parent) => {
+                    if (
+                      !owner.isEnabled() ||
+                      isTracingSuppressed(context.active())
+                    )
+                      return undefined;
+                    try {
+                      state = owner._startWorkflow(
+                        receiver,
+                        undefined,
+                        { runName, metadata },
+                        false,
+                        trace.getSpan(active) ? active : (parent ?? active)
+                      );
+                      return state.context;
+                    } catch {
+                      owner._diag.warn(
+                        'LangChain: could not start graph telemetry'
+                      );
+                      return undefined;
+                    }
+                  },
+                  (input, output, failure) => {
+                    if (!state) return;
+                    try {
+                      if (state.capture) {
+                        const content = messages(input, owner._diag);
+                        if (content !== undefined)
+                          state.span.setAttribute(
+                            ATTR_GEN_AI_INPUT_MESSAGES,
+                            content
+                          );
+                      }
+                    } catch {
+                      owner._diag.warn(
+                        'LangChain: could not extract graph input telemetry'
+                      );
+                    } finally {
+                      owner._end(state, output, failure);
+                    }
+                  }
+                );
+                args[1] = { ...args[1], callbacks: graphCallbacks };
+              }
+            } catch {
+              owner._diag.warn('LangChain: could not register graph callbacks');
+            }
+            return Reflect.apply(target, receiver, args);
+          },
+        })
+    );
   }
 
   private _patchToolCalls(tool: typeof StructuredTool) {
@@ -908,14 +894,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _unpatchMethod(
     target: object,
-    method:
-      | 'invoke'
-      | 'batch'
-      | 'call'
-      | '_call'
-      | 'handleToolStart'
-      | 'stream'
-      | 'streamEvents'
+    method: 'invoke' | 'batch' | 'call' | '_call' | 'handleToolStart' | 'stream'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;

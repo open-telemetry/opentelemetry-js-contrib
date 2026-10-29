@@ -19,6 +19,7 @@ import {
   TestMetricReader,
 } from '@opentelemetry/contrib-test-utils';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
+import { TracerProvider } from '@opentelemetry/sdk-trace';
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
 import { AIMessage, HumanMessage } from '@langchain/core/messages';
 import { CallbackManager } from '@langchain/core/callbacks/manager';
@@ -66,6 +67,7 @@ describe('LangChain donated graph callbacks', () => {
   afterEach(async () => {
     instrumentation.disable();
     sinon.restore();
+    instrumentation.setTracerProvider(trace.getTracerProvider());
     instrumentation.setMeterProvider(metrics.getMeterProvider());
     await meter.shutdown();
   });
@@ -226,6 +228,78 @@ describe('LangChain donated graph callbacks', () => {
     );
   });
 
+  for (const boundary of [
+    'sequence',
+    'sequence with callbacks',
+    'tool',
+    'application',
+  ] as const) {
+    it(`keeps the active ${boundary} as a nested graph's immediate parent`, async () => {
+      const child = graph('child');
+      const sequence = RunnableSequence.from([
+        RunnableLambda.from((state: typeof State.State, config) =>
+          child.invoke(
+            state,
+            boundary === 'sequence with callbacks' ? config : undefined
+          )
+        ),
+        RunnableLambda.from((state: typeof State.State) => state),
+      ]).withConfig({ runName: 'middle' });
+      const tool = new DynamicTool({
+        name: 'middle',
+        description: 'Offline graph tool',
+        func: async () => {
+          await child.invoke(input());
+          return 'done';
+        },
+      });
+      const parent = new StateGraph(State)
+        .addNode('step', async state => {
+          await Promise.resolve();
+          if (boundary === 'tool') {
+            await tool.invoke('hello');
+            return state;
+          }
+          if (boundary === 'application') {
+            return trace
+              .getTracer('graph-test')
+              .startActiveSpan('application', async span => {
+                try {
+                  return await child.invoke(state);
+                } finally {
+                  span.end();
+                }
+              });
+          }
+          return sequence.invoke(state);
+        })
+        .addEdge(START, 'step')
+        .addEdge('step', END)
+        .compile({ name: 'parent' });
+      await parent.invoke(input());
+      const spans = getTestSpans();
+      assert.equal(spans.length, 3);
+      const parentSpan = spans.find(
+        span => span.name === 'invoke_workflow parent'
+      );
+      const childSpan = spans.find(
+        span => span.name === 'invoke_workflow child'
+      );
+      const middleSpan = spans.find(
+        span => span !== parentSpan && span !== childSpan
+      );
+      assert.ok(parentSpan && childSpan && middleSpan);
+      assert.equal(
+        middleSpan.parentSpanContext?.spanId,
+        parentSpan.spanContext().spanId
+      );
+      assert.equal(
+        childSpan.parentSpanContext?.spanId,
+        middleSpan.spanContext().spanId
+      );
+    });
+  }
+
   for (const method of ['invoke', 'stream'] as const) {
     it(`records callback failures and preserves the SDK error for ${method}`, async () => {
       const failure = new TypeError('private graph failure');
@@ -304,6 +378,94 @@ describe('LangChain donated graph callbacks', () => {
     assert.equal(getTestSpans().length, 1);
     assert.equal(getTestSpans()[0].name, 'invoke_workflow test_graph');
   });
+
+  for (const version of ['v1', 'v2'] as const) {
+    for (const shape of ['array', 'manager'] as const) {
+      for (const fails of [false, true]) {
+        it(`preserves configured ${shape} callbacks and completes every span for streamEvents ${version} (fails=${fails})`, async () => {
+          const events: string[] = [];
+          const callbacks = CallbackManager.fromHandlers({
+            handleChainStart(
+              _chain,
+              _input,
+              _id,
+              _parent,
+              _tags,
+              _metadata,
+              _type,
+              name
+            ) {
+              events.push(`start:${name}`);
+            },
+            handleChainEnd() {
+              events.push('end');
+            },
+            handleChainError() {
+              events.push('error');
+            },
+          });
+          const handlers = [...callbacks.handlers];
+          const inheritableHandlers = [...callbacks.inheritableHandlers];
+          const failure = new TypeError('synthetic graph failure');
+          const operation = new StateGraph(State)
+            .addNode('step', state => {
+              if (fails) throw failure;
+              return state;
+            })
+            .addEdge(START, 'step')
+            .addEdge('step', END)
+            .compile({ name: 'configured' })
+            .withConfig({
+              callbacks: shape === 'array' ? callbacks.handlers : callbacks,
+            });
+          const onStart = sinon.spy();
+          const onEnd = sinon.spy();
+          const provider = new TracerProvider({
+            spanProcessors: [
+              {
+                onStart,
+                onEnd,
+                forceFlush: async () => {},
+                shutdown: async () => {},
+              },
+            ],
+          });
+          instrumentation.setTracerProvider(provider);
+          const consume = async () => {
+            for await (const event of operation.streamEvents(input(), {
+              version,
+            })) {
+              assert.ok(event);
+            }
+          };
+          const run = async () => {
+            if (fails)
+              await assert.rejects(consume, error => error === failure);
+            else await consume();
+          };
+          try {
+            instrumentation.disable();
+            await run();
+            const baseline = [...events];
+            events.length = 0;
+            instrumentation.enable();
+            await run();
+            assert.deepEqual(events, baseline);
+            assert.deepEqual(callbacks.handlers, handlers);
+            assert.deepEqual(
+              callbacks.inheritableHandlers,
+              inheritableHandlers
+            );
+            assert.equal(onStart.callCount, 1);
+            assert.equal(onEnd.callCount, 1);
+            assert.equal(onStart.firstCall.args[0], onEnd.firstCall.args[0]);
+          } finally {
+            await provider.shutdown();
+          }
+        });
+      }
+    }
+  }
 
   it('preserves the stream Promise and the SDK stream object', async () => {
     instrumentation.disable();

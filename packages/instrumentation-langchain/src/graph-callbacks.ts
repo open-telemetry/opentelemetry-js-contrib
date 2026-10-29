@@ -11,30 +11,10 @@ import { ownValue } from './internal-workflows';
 import { getToolContext } from './tool-callbacks';
 
 interface GraphInvocation {
-  graph: object;
-  started: boolean;
   context?: Context;
 }
 
 const graphInvocations = new WeakMap<object, GraphInvocation>();
-
-export function hasPendingGraphInvocation(
-  callbacks: unknown,
-  graph: object
-): boolean {
-  const handlers = Array.isArray(callbacks)
-    ? callbacks
-    : ownValue(callbacks, 'handlers');
-  return (
-    Array.isArray(handlers) &&
-    handlers.some(handler => {
-      const invocation = isRecord(handler)
-        ? graphInvocations.get(handler)
-        : undefined;
-      return invocation?.graph === graph && !invocation.started;
-    })
-  );
-}
 
 export function getGraphContext(callbacks: unknown): Context | undefined {
   const handlers = Array.isArray(callbacks)
@@ -55,7 +35,6 @@ export function getGraphContext(callbacks: unknown): Context | undefined {
 export function addGraphCallbacks(
   configured: CallbackManager,
   manager: typeof CallbackManager,
-  graph: object,
   start: (
     input: unknown,
     metadata: Record<string, unknown> | undefined,
@@ -64,7 +43,7 @@ export function addGraphCallbacks(
   end: (input: unknown, output: unknown, failure?: { error: unknown }) => void
 ): CallbackManager {
   const parent = getGraphContext(configured);
-  const invocation: GraphInvocation = { graph, started: false };
+  const invocation: GraphInvocation = {};
   let input: unknown;
   let ended = false;
   const finish = (
@@ -88,7 +67,6 @@ export function addGraphCallbacks(
       _tags,
       metadata
     ) {
-      invocation.started = true;
       input = inputs;
       const toolParent = parentRunId
         ? getToolContext({ runId: parentRunId, handlers: configured.handlers })

@@ -203,10 +203,11 @@ await graph.invoke({ messages: [['user', 'hello']] });
 ```
 
 `invoke`, per-input `batch`, and consumed `stream`/`streamEvents` operations use
-the same callback-owned lifecycle. Public stream entry points register callbacks
-on invocation-local manager copies; returned Promises and stream objects are
-not replaced or consumed by the instrumentation. Event streaming does not create
-a second span when the SDK delegates to `stream`.
+the same callback-owned lifecycle. The `stream` entry point registers callbacks
+on invocation-local manager copies. Returned Promises and stream objects are
+not replaced or consumed by the instrumentation. Event streaming is observed
+when the SDK delegates to `stream`, after it has combined configured callbacks.
+This preserves user callback notifications without creating a second span.
 Implicit node configuration is read through the SDK's `getConfig`, so nested
 calls retain inherited callbacks. If callback/run-name configuration cannot be
 inspected without invoking accessors, that entry point is left unchanged and a
@@ -230,8 +231,10 @@ arbitrary graph state, checkpoint metadata and configuration are not serialized
 into invented attributes. Conversation IDs use the SDK callback metadata.
 Content remains disabled by default.
 
-Inherited callback markers preserve graph parentage without relying on unique
-run IDs. Context-only hooks around graph node execution and internal sequences
+Graph invocations preserve the active workflow, tool, or application span as
+their immediate parent. When no active span is available, inherited callback
+markers preserve graph/tool parentage without relying on unique run IDs.
+Context-only hooks around graph node execution and internal sequences
 keep nested tools and application spans under the graph across asynchronous
 work. Existing user callbacks are preserved, and in-flight runs retain their
 original telemetry configuration.
