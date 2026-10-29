@@ -24,12 +24,18 @@ const InstrumentationMap = {
 
 // Config types inferred automatically from the first argument of the constructor
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
+/**
+ * @deprecated See https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#readme
+ */
 export type InstrumentationConfigMap = {
   [Name in keyof typeof InstrumentationMap]?: ConfigArg<
     (typeof InstrumentationMap)[Name]
   >;
 };
 
+/**
+ * @deprecated See https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#readme
+ */
 export function getWebAutoInstrumentations(
   inputConfigs: InstrumentationConfigMap = {}
 ): Instrumentation[] {
