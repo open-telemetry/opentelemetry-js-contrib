@@ -234,6 +234,7 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
       openCallback: (err: any, connection: Connection) => void
     ) => Connection
   ) {
+    const self = this;
     return function patchedConnect(
       this: unknown,
       url: string | Options.Connect,
@@ -246,8 +247,15 @@ export class AmqplibInstrumentation extends InstrumentationBase<AmqplibInstrumen
         socketOptions,
         function (this: unknown, err, conn: InstrumentationConnection) {
           if (err == null) {
-            const urlAttributes = getConnectionAttributesFromUrl(url);
-            const serverAttributes = getConnectionAttributesFromServer(conn);
+            const { captureClusterName, captureVhostName } = self.getConfig();
+            const urlAttributes = getConnectionAttributesFromUrl(
+              url,
+              !!captureVhostName
+            );
+            const serverAttributes = getConnectionAttributesFromServer(
+              conn,
+              !!captureClusterName
+            );
             conn[CONNECTION_ATTRIBUTES] = {
               ...urlAttributes,
               ...serverAttributes,
