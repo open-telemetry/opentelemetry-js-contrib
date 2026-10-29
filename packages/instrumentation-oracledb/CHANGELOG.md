@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.50.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.49.0...instrumentation-oracledb-v0.50.0) (2026-10-29)
+
+
+### Features
+
+* **instrumentation-oracledb:** add support for oracledb v26 ([#3856](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3856)) ([531e742](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/531e74213a3978fe6c950bddd47195a9559def00))
+
 ## [0.49.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-oracledb-v0.48.0...instrumentation-oracledb-v0.49.0) (2026-10-20)
 
 

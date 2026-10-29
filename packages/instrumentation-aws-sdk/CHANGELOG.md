@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.79.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.79.0...instrumentation-aws-sdk-v0.79.1) (2026-10-29)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-sdk:** omit empty propagation attributes ([#3710](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3710)) ([5f038c5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5f038c56c32b0503008349e5e940ebfa0ec739bb))
+
 ## [0.79.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-sdk-v0.78.0...instrumentation-aws-sdk-v0.79.0) (2026-10-20)
 
 
