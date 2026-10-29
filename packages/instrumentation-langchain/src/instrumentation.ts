@@ -13,7 +13,9 @@ import {
   type Context,
   type Histogram,
   type HrTime,
+  type MeterProvider,
   type Span,
+  type TracerProvider,
 } from '@opentelemetry/api';
 import {
   hrTime,
@@ -22,6 +24,7 @@ import {
   isTracingSuppressed,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -38,10 +41,16 @@ import {
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import type {
+  CallbackManager,
+  CallbackManagerForToolRun,
+} from '@langchain/core/callbacks/manager';
+import type { StructuredTool } from '@langchain/core/tools';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
+import { addToolCallbacks, getToolContext } from './tool-callbacks';
 import {
   isInternalWorkflow,
   isTrackingFactory,
@@ -63,6 +72,18 @@ interface WorkflowPatch {
 }
 
 const workflowPatches = new WeakMap<object, Map<PropertyKey, WorkflowPatch>>();
+
+interface ToolExecutor {
+  _call(
+    input: unknown,
+    runManager?: CallbackManagerForToolRun,
+    config?: Runnables.RunnableConfig
+  ): unknown;
+}
+
+function isToolExecutor(target: object): target is ToolExecutor {
+  return '_call' in target && typeof target._call === 'function';
+}
 
 interface WorkflowState {
   span: Span;
@@ -117,6 +138,10 @@ function createTrackedModuleFile<T extends object>(
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _workflowDuration: Histogram | undefined;
+  declare private _toolTelemetry: TelemetryHandler | undefined;
+  declare private _toolTracerProvider: TracerProvider | undefined;
+  declare private _toolMeterProvider: MeterProvider | undefined;
+  declare private _toolExecutors: Set<WeakRef<ToolExecutor>> | undefined;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -135,6 +160,39 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       ...config,
       captureMessageContent: this._captureMode(config.captureMessageContent),
     });
+    this._toolTelemetry = undefined;
+  }
+
+  override setTracerProvider(provider: TracerProvider) {
+    super.setTracerProvider(provider);
+    this._toolTracerProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  override setMeterProvider(provider: MeterProvider) {
+    super.setMeterProvider(provider);
+    this._toolMeterProvider = provider;
+    this._toolTelemetry = undefined;
+  }
+
+  override disable() {
+    super.disable();
+    for (const reference of this._toolExecutors ?? []) {
+      const target = reference.deref();
+      if (target) this._unpatchMethod(target, '_call');
+    }
+    this._toolExecutors?.clear();
+  }
+
+  private _getToolTelemetry(): TelemetryHandler {
+    return (this._toolTelemetry ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider: this._toolTracerProvider,
+      meterProvider: this._toolMeterProvider,
+      diag: this._diag,
+      contentCaptureMode: this.getConfig().captureMessageContent ?? 'none',
+    }));
   }
 
   override _updateMetricInstruments() {
@@ -249,6 +307,23 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             );
         }
       ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/tools/index.${extension}`,
+        (module: { StructuredTool: typeof StructuredTool }) =>
+          this._patchToolCalls(module.StructuredTool),
+        (module: { StructuredTool: typeof StructuredTool }) =>
+          this._unpatchMethod(module.StructuredTool.prototype, 'call')
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/callbacks/manager.${extension}`,
+        (module: { CallbackManager: typeof CallbackManager }) =>
+          this._patchToolCallbacks(module.CallbackManager),
+        (module: { CallbackManager: typeof CallbackManager }) =>
+          this._unpatchMethod(
+            module.CallbackManager.prototype,
+            'handleToolStart'
+          )
+      ),
     ]);
     return [
       new InstrumentationNodeModuleDefinition(
@@ -299,6 +374,125 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         ])
       ),
     ];
+  }
+
+  private _patchToolCalls(tool: typeof StructuredTool) {
+    this._patchMethod(
+      tool.prototype,
+      'call',
+      (owners, restore) => original =>
+        function (this: StructuredTool, ...args: Parameters<typeof original>) {
+          const owner = Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+          if (!owner) restore();
+          try {
+            owner?._patchToolExecution(this);
+          } catch {
+            owner?._diag.warn('LangChain: could not patch tool execution');
+          }
+          try {
+            if (owner && !isTracingSuppressed(context.active())) {
+              const config = args[1];
+              // Match the SDK's config/callback overload without modifying it.
+              if (
+                !config ||
+                (!Array.isArray(config) &&
+                  !('name' in config) &&
+                  config.callbacks === undefined)
+              ) {
+                args[1] = { ...config, callbacks: [] };
+              }
+            }
+          } catch {
+            owner?._diag.warn('LangChain: could not configure tool callbacks');
+          }
+          return original.apply(this, args);
+        }
+    );
+  }
+
+  private _patchToolExecution(target: object) {
+    // _call is implemented by concrete subclasses, including user-defined tools.
+    while (!Object.prototype.hasOwnProperty.call(target, '_call')) {
+      const prototype: object | null = Object.getPrototypeOf(target);
+      if (!prototype) {
+        this._diag.warn('LangChain: could not find tool execution method');
+        return;
+      }
+      target = prototype;
+    }
+    if (!isToolExecutor(target)) {
+      this._diag.warn('LangChain: tool execution method is not callable');
+      return;
+    }
+    if (workflowPatches.get(target)?.get('_call')?.owners.has(this)) return;
+    this._patchMethod(
+      target,
+      '_call',
+      (owners, restore) => original =>
+        function (this: ToolExecutor, ...args: Parameters<typeof original>) {
+          const owner = Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+          if (!owner) restore();
+          let toolContext: Context | undefined;
+          try {
+            if (owner && !isTracingSuppressed(context.active()))
+              toolContext = getToolContext(args[1]);
+          } catch {
+            owner?._diag.warn(
+              'LangChain: could not read tool execution context'
+            );
+          }
+          return toolContext
+            ? context.with(toolContext, original, this, ...args)
+            : original.apply(this, args);
+        }
+    );
+    const targets = (this._toolExecutors ??= new Set());
+    for (const reference of targets) {
+      if (!reference.deref()) targets.delete(reference);
+    }
+    targets.add(new WeakRef(target));
+  }
+
+  private _patchToolCallbacks(manager: typeof CallbackManager) {
+    this._patchMethod(
+      manager.prototype,
+      'handleToolStart',
+      (owners, restore) => {
+        const currentOwner = () =>
+          Array.from(owners)
+            .reverse()
+            .find(instance => instance.isEnabled());
+        return original =>
+          function (
+            this: CallbackManager,
+            ...args: Parameters<typeof original>
+          ) {
+            const owner = currentOwner();
+            if (!owner) {
+              restore();
+              return original.apply(this, args);
+            }
+            let invocation = this;
+            try {
+              // The SDK run manager retains this invocation's handler, even
+              // when the caller reuses its callback manager or run ID.
+              invocation = addToolCallbacks(
+                this.copy(),
+                manager,
+                () => currentOwner()?._getToolTelemetry(),
+                () => currentOwner()?._diag ?? diag
+              );
+            } catch {
+              owner._diag.warn('LangChain: could not register tool callbacks');
+            }
+            return original.apply(invocation, args);
+          };
+      }
+    );
   }
 
   private _trackRunnableFactories(module: typeof Runnables) {
@@ -432,7 +626,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._unpatchMethod(module.RunnableSequence.prototype, 'batch');
   }
 
-  private _unpatchMethod(target: object, method: 'invoke' | 'batch') {
+  private _unpatchMethod(
+    target: object,
+    method: 'invoke' | 'batch' | 'call' | '_call' | 'handleToolStart'
+  ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
     const patch = patches.get(method);
