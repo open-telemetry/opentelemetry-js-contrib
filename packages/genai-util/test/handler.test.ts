@@ -505,10 +505,13 @@ describe('TelemetryHandler', () => {
     });
     tool.stop();
 
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3);
+    const workflow = handler.startWorkflow({ workflowName: 'support' });
+    workflow.stop();
 
-    const [infSpan, embSpan, toolSpan] = spans;
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 4);
+
+    const [infSpan, embSpan, toolSpan, workflowSpan] = spans;
     assert.strictEqual(infSpan.name, 'chat gpt-4o');
     assert.strictEqual(infSpan.kind, SpanKind.CLIENT);
 
@@ -517,6 +520,9 @@ describe('TelemetryHandler', () => {
 
     assert.strictEqual(toolSpan.name, 'execute_tool calculator');
     assert.strictEqual(toolSpan.kind, SpanKind.INTERNAL);
+
+    assert.strictEqual(workflowSpan.name, 'invoke_workflow support');
+    assert.strictEqual(workflowSpan.kind, SpanKind.INTERNAL);
   });
 
   it('should nest invocations started inside another invocation context', () => {

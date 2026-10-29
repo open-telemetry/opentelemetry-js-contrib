@@ -14,9 +14,9 @@
  * 3. Remove the temporary "packages/genai-util" entry override from the root `knip.jsonc` file.
  *
  * Invocations are created through the {@link TelemetryHandler} factory methods
- * (`startInference`, `startEmbedding`, `startTool`), so export the invocation classes with
- * `export type` when consumers need to name the returned type: that keeps the type usable
- * in annotations without exposing a constructor that would bypass the handler.
+ * (`startInference`, `startEmbedding`, `startTool`, `startWorkflow`), so export
+ * invocation classes with `export type` when consumers need to name the returned
+ * type: that keeps it usable without exposing a constructor that bypasses the handler.
  *
  * @example
  * ```typescript
@@ -29,4 +29,6 @@
  */
 export { TelemetryHandler } from './handler';
 export type { ToolInvocation } from './invocations/tool';
+export type { WorkflowInvocation } from './invocations/workflow';
+export type { WorkflowInvocationOptions } from './types';
 export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';

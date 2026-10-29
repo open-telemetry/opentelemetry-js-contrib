@@ -43,6 +43,7 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
   - `gen_ai.client.operation.time_per_output_chunk` (in seconds)
   - `gen_ai.execute_tool.duration` (in seconds)
+  - `gen_ai.invoke_workflow.duration` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
 
 ---
@@ -77,6 +78,57 @@ try {
 Callback-based integrations can keep the invocation until the SDK reports
 success or failure. Pass its `getContext()` as a child's `parentContext` to
 preserve explicit callback parentage without requiring an active context manager.
+
+### Workflow invocations
+
+Use `TelemetryHandler.startWorkflow` for an in-process GenAI workflow. The
+`WorkflowInvocation` and `WorkflowInvocationOptions` types are exported;
+the invocation constructor is not.
+
+```typescript
+const workflow = handler.startWorkflow({
+  workflowName: 'support',
+  conversationId: 'conversation-1',
+});
+try {
+  await workflow.withContext(() => runWorkflow());
+  workflow.stop();
+} catch (error) {
+  workflow.fail({ exception: error instanceof Error ? error : undefined });
+  throw error;
+}
+```
+
+This creates an `INTERNAL` `invoke_workflow support` span and records
+`gen_ai.invoke_workflow.duration` in seconds with the same duration as the span.
+Use an application-defined, low-cardinality name, not a class name or run ID.
+Names are trimmed; when absent or blank, the span name is `invoke_workflow`
+and the workflow-name attribute is omitted from spans and metrics.
+Conversation IDs are recorded only on spans. Default metric dimensions are
+the workflow name when available and `error.type` on failure; no inference
+or token-usage metrics are emitted.
+
+With `contentCaptureMode: 'span_only'`, pass normalized messages through
+`inputMessages`, `setInputMessages`, and `setOutputMessages`. They use the same
+role/part models and binary serialization as inference invocations. Message
+setters replace the previous SDK snapshot rather than append messages. Supply
+the final inputs and outputs reported by the SDK when its run ends; the utility
+serializes them once at completion, including any outputs the SDK reports on
+failure. Passing `undefined` clears an earlier snapshot. With capture disabled,
+these message APIs do not retain or serialize content. Serialization failures omit the affected
+attribute and produce a content-free diagnostic. Custom span and metric
+attributes remain caller-controlled and must not be used to bypass privacy
+controls or add high-cardinality metric dimensions.
+
+The caller owns SDK-specific state normalization, callback registration,
+suppression checks, and completion. Use SDK-provided run data rather than
+reconstructing workflow output by consuming its stream. This utility does not
+patch SDKs, consume streams, synthesize graph-state attributes, or implement
+cancellation. `withContext` activates the workflow while application code runs;
+`getContext()` also supports explicit callback parentage. Repeated `stop()` or
+`fail()` calls do not emit another span or duration. Failures record an error
+type and ERROR status, without copying exception messages, stacks, or events.
+Supply `statusDescription` only when it is known to be content-free.
 
 ## Useful links
 

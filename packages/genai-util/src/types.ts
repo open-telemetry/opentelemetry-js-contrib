@@ -500,6 +500,18 @@ export interface ToolInvocationOptions extends CommonInvocationOptions {
 }
 
 /**
+ * Options for starting an in-process GenAI workflow invocation.
+ */
+export interface WorkflowInvocationOptions extends CommonInvocationOptions {
+  /** Application-defined, low-cardinality workflow name, when available. */
+  workflowName?: string;
+  /** Conversation / session / thread ID, when provided by the application or SDK. */
+  conversationId?: string;
+  /** Normalized input messages, captured only in `span_only` mode. */
+  inputMessages?: InputMessages;
+}
+
+/**
  * Base configuration interface for GenAI instrumentations.
  */
 export interface GenAIInstrumentationConfig {

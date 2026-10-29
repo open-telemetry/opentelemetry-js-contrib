@@ -15,6 +15,7 @@ import {
   createCacheReadInputTokenUsageCounter,
   createCacheWriteInputTokenUsageCounter,
   createDurationHistogram,
+  createInvokeWorkflowDurationHistogram,
   createInputTokenOperationHistogram,
   createInputTokenUsageCounter,
   createOutputTokenOperationHistogram,
@@ -31,6 +32,7 @@ import {
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+  METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
 } from '../src/semconv';
 
 class TestMetricReader extends MetricReader {
@@ -65,6 +67,24 @@ describe('GenAI Metrics Helpers', () => {
     const durationHistogram = createDurationHistogram(meter);
 
     assert.ok(durationHistogram);
+  });
+
+  it('should create workflow duration with workflow-specific buckets', async () => {
+    const meter = meterProvider.getMeter('test-meter');
+    createInvokeWorkflowDurationHistogram(meter).record(2.5);
+    const metrics = await collectMetrics();
+    const metric = metrics.get(METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION);
+    assert.ok(metric?.dataPointType === DataPointType.HISTOGRAM);
+    assert.strictEqual(metric.descriptor.unit, 's');
+    assert.strictEqual(
+      metric.descriptor.description,
+      'Records duration of GenAI workflow.'
+    );
+    assert.strictEqual(metric.dataPoints[0].value.sum, 2.5);
+    assert.deepStrictEqual(
+      metric.dataPoints[0].value.buckets.boundaries,
+      [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200]
+    );
   });
 
   it('should create token operation histograms', async () => {

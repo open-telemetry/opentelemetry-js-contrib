@@ -14,6 +14,7 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
+  METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
@@ -250,6 +251,23 @@ export function createExecuteToolDurationHistogram(meter: Meter): Histogram {
     unit: 's',
     advice: {
       explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
+    },
+  });
+}
+
+/**
+ * Create standard `gen_ai.invoke_workflow.duration` histogram.
+ *
+ * @experimental
+ */
+export function createInvokeWorkflowDurationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION, {
+    description: 'Records duration of GenAI workflow.',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: [
+        1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200,
+      ],
     },
   });
 }

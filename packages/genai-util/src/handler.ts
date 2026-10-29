@@ -24,11 +24,13 @@ import {
 import { EmbeddingInvocation } from './invocations/embedding';
 import { InferenceInvocation } from './invocations/inference';
 import { ToolInvocation } from './invocations/tool';
+import { WorkflowInvocation } from './invocations/workflow';
 import {
   createCacheReadInputTokenUsageCounter,
   createCacheWriteInputTokenUsageCounter,
   createDurationHistogram,
   createExecuteToolDurationHistogram,
+  createInvokeWorkflowDurationHistogram,
   createInputTokenOperationHistogram,
   createInputTokenUsageCounter,
   createOutputTokenOperationHistogram,
@@ -54,6 +56,7 @@ import type {
   TokenModality,
   TokenUsageDetails,
   ToolInvocationOptions,
+  WorkflowInvocationOptions,
 } from './types';
 import { inferMissingModalityCounts } from './utils';
 
@@ -116,6 +119,7 @@ export class TelemetryHandler {
   private readonly _timeToFirstChunkHistogram: Histogram;
   private readonly _timePerOutputChunkHistogram: Histogram;
   private readonly _executeToolDurationHistogram: Histogram;
+  private readonly _invokeWorkflowDurationHistogram: Histogram;
 
   constructor(options: TelemetryHandlerOptions) {
     const { instrumentationName, instrumentationVersion } = options;
@@ -170,6 +174,8 @@ export class TelemetryHandler {
     this._executeToolDurationHistogram = createExecuteToolDurationHistogram(
       this._meter
     );
+    this._invokeWorkflowDurationHistogram =
+      createInvokeWorkflowDurationHistogram(this._meter);
   }
 
   /**
@@ -236,6 +242,14 @@ export class TelemetryHandler {
    */
   public startTool(options: ToolInvocationOptions): ToolInvocation {
     return new ToolInvocation(this, options);
+  }
+
+  /**
+   * Start an in-process workflow invocation.
+   * Complete it with `stop()` or `fail()` when the SDK reports completion.
+   */
+  public startWorkflow(options: WorkflowInvocationOptions): WorkflowInvocation {
+    return new WorkflowInvocation(this, options);
   }
 
   /**
@@ -404,6 +418,22 @@ export class TelemetryHandler {
     context?: Context
   ): void {
     this._executeToolDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record end-to-end workflow duration in seconds.
+   * Pass the invocation context so exemplars reference the workflow span.
+   */
+  public recordInvokeWorkflowDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._invokeWorkflowDurationHistogram.record(
       durationSeconds,
       attributes,
       context
