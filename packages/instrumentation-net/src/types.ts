@@ -3,6 +3,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { InstrumentationConfig } from '@opentelemetry/instrumentation';
+
+export interface NetInstrumentationConfig extends InstrumentationConfig {
+  /**
+   * Require a parent span in order to create net spans, default when unset is
+   * `false`.
+   *
+   * Connections opened outside of a request - a database driver's background
+   * heartbeat, for example - would otherwise each produce a standalone
+   * single-span trace.
+   */
+  requireParentSpan?: boolean;
+}
+
 /* The following attributes are not official, see open-telemetry/opentelemetry-specification#1652 */
 export enum TLSAttributes {
   PROTOCOL = 'tls.protocol',

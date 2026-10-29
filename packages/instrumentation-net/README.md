@@ -29,12 +29,22 @@ const { NetInstrumentation } = require('@opentelemetry/instrumentation-net');
 
 const sdk = new NodeSDK({
   instrumentations: [
-    new NetInstrumentation(),
+    new NetInstrumentation({
+      // see below for available configuration
+    }),
   ],
 });
 sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
+
+### Net Instrumentation Options
+
+You can set the following:
+
+| Options | Type | Description |
+| ------- | ---- | ----------- |
+| `requireParentSpan` | `boolean` | Require parent to create net span, default when unset is `false`. Connections opened outside of a request - a database driver's background heartbeat, for example - otherwise each become a standalone single-span trace. |
 
 ## Semantic Conventions
 
