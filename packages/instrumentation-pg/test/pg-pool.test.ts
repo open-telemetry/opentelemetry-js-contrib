@@ -93,17 +93,14 @@ const CONFIG = {
 };
 
 function createNamedPool(name: string, max?: number) {
-  const connectionString = `postgresql://${encodeURIComponent(
-    CONFIG.user
-  )}:${encodeURIComponent(CONFIG.password)}@${CONFIG.host}:${CONFIG.port}/${encodeURIComponent(
-    CONFIG.database
-  )}`;
-  return new pgPool({
+  const poolInstance = new pgPool({
     ...CONFIG,
-    connectionString,
     host: name,
     ...(max === undefined ? {} : { max }),
   });
+  // Delete inherited connectionString so getPoolName derives the name from discrete options.
+  delete (poolInstance.options as { connectionString?: string }).connectionString;
+  return poolInstance;
 }
 
 function getTestPoolName(pool: pgPool<pg.Client>) {

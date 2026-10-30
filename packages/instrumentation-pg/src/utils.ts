@@ -340,12 +340,20 @@ export function patchCallback(
 }
 
 export function getPoolName(pool: PgPoolOptionsParams): string {
-  let poolName = '';
-  poolName += (pool?.host ? `${pool.host}` : 'unknown_host') + ':';
-  poolName += (pool?.port ? `${pool.port}` : 'unknown_port') + '/';
-  poolName += pool?.database ? `${pool.database}` : 'unknown_database';
+  let url: URL | undefined;
+  try {
+    url = pool?.connectionString ? new URL(pool.connectionString) : undefined;
+  } catch (e) {
+    url = undefined;
+  }
 
-  return poolName.trim();
+  const host = url?.hostname || pool?.host || 'unknown_host';
+  const port =
+    url?.port || (pool?.port ? `${pool.port}` : undefined) || 'unknown_port';
+  const database =
+    url?.pathname?.slice(1) || pool?.database || 'unknown_database';
+
+  return `${host}:${port}/${database}`.trim();
 }
 
 export interface poolConnectionsCounter {
