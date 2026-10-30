@@ -28,5 +28,29 @@
  * ```
  */
 export { TelemetryHandler } from './handler';
+export type { TelemetryHandlerOptions } from './handler';
+export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';
-export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
+export type { EmbeddingInvocation } from './invocations/embedding';
+export * from './semconv';
+export type {
+  ChatMessage,
+  ContentCaptureMode,
+  FinishReason,
+  InferenceInvocationOptions,
+  InferenceRequestOptions,
+  InputMessages,
+  InvocationError,
+  MessagePart,
+  OutputMessage,
+  OutputMessages,
+  Role,
+  SystemInstructionPart,
+  SystemInstructions,
+  TextPart,
+  TokenUsageDetails,
+  ToolCallRequestPart,
+  ToolCallResponsePart,
+  ToolInvocationOptions,
+  ToolType,
+} from './types';
