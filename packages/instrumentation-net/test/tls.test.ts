@@ -15,6 +15,13 @@ import * as tls from 'tls';
 import { NetInstrumentation } from '../src';
 import { SocketEvent } from '../src/internal-types';
 import {
+  ATTR_TLS_CIPHER,
+  ATTR_TLS_ESTABLISHED,
+  ATTR_TLS_NEXT_PROTOCOL,
+  ATTR_TLS_PROTOCOL_NAME,
+  ATTR_TLS_PROTOCOL_VERSION,
+} from '../src/semconv';
+import {
   assertTLSSpan,
   HOST,
   TLS_SERVER_CERT,
@@ -58,6 +65,7 @@ describe('NetInstrumentation', () => {
       key: TLS_SERVER_KEY,
       // Make sure tests run on nodejs v8 and v10 the same as on v12+
       maxVersion: 'TLSv1.2',
+      ALPNProtocols: ['http/1.1'],
     });
     tlsServer.listen(PORT, done);
   });
@@ -106,6 +114,84 @@ describe('NetInstrumentation', () => {
       });
     });
 
+    it('should record the negotiated ALPN protocol', done => {
+      tlsSocket = tls.connect(
+        PORT,
+        HOST,
+        {
+          ca: [TLS_SERVER_CERT],
+          ALPNProtocols: ['http/1.1'],
+          checkServerIdentity: () => {
+            return undefined;
+          },
+        },
+        () => {
+          assertTLSSpan(getTLSSpans(), tlsSocket, {
+            [ATTR_TLS_NEXT_PROTOCOL]: 'http/1.1',
+          });
+          done();
+        }
+      );
+    });
+
+    it('should set tls.established even if the certificate is not authorized', done => {
+      tlsSocket = tls.connect(
+        PORT,
+        HOST,
+        {
+          ca: [],
+          rejectUnauthorized: false,
+          checkServerIdentity: () => {
+            return undefined;
+          },
+        },
+        () => {
+          assert.strictEqual(tlsSocket.authorized, false);
+          assertTLSSpan(getTLSSpans(), tlsSocket);
+          done();
+        }
+      );
+    });
+
+    it('should record TLS 1.3 connections', done => {
+      const tls13Server = tls.createServer({
+        cert: TLS_SERVER_CERT,
+        key: TLS_SERVER_KEY,
+        minVersion: 'TLSv1.3',
+      });
+      tls13Server.listen(0, () => {
+        const { port } = tls13Server.address() as { port: number };
+        tlsSocket = tls.connect(
+          port,
+          HOST,
+          {
+            ca: [TLS_SERVER_CERT],
+            checkServerIdentity: () => {
+              return undefined;
+            },
+          },
+          () => {
+            const { tlsSpan } = getTLSSpans();
+            assert.strictEqual(tlsSpan.attributes[ATTR_TLS_ESTABLISHED], true);
+            assert.strictEqual(
+              tlsSpan.attributes[ATTR_TLS_PROTOCOL_NAME],
+              'tls'
+            );
+            assert.strictEqual(
+              tlsSpan.attributes[ATTR_TLS_PROTOCOL_VERSION],
+              '1.3'
+            );
+            assert.match(
+              String(tlsSpan.attributes[ATTR_TLS_CIPHER]),
+              /^TLS_AES_|^TLS_CHACHA20_/
+            );
+            tls13Server.close(() => done());
+            tlsSocket.destroy();
+          }
+        );
+      });
+    });
+
     it('should produce an error span when certificate is not trusted', done => {
       tlsSocket = tls.connect(
         PORT,
@@ -125,6 +211,9 @@ describe('NetInstrumentation', () => {
         const { tlsSpan } = getTLSSpans();
         assert.strictEqual(tlsSpan.status.message, error.message);
         assert.strictEqual(tlsSpan.status.code, SpanStatusCode.ERROR);
+        assert.deepStrictEqual(tlsSpan.attributes, {
+          [ATTR_TLS_ESTABLISHED]: false,
+        });
         done();
       });
     });
