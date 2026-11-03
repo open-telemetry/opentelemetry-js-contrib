@@ -99,7 +99,8 @@ function createNamedPool(name: string, max?: number) {
     ...(max === undefined ? {} : { max }),
   });
   // Delete inherited connectionString so getPoolName derives the name from discrete options.
-  delete (poolInstance.options as { connectionString?: string }).connectionString;
+  delete (poolInstance.options as { connectionString?: string })
+    .connectionString;
   return poolInstance;
 }
 
