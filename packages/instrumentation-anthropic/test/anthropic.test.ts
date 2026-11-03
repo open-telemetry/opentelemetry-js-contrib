@@ -683,13 +683,39 @@ describe('Anthropic instrumentation', function () {
         const stream = mockClient.messages.stream(requestBody);
         // The body ends before `message_stop`, so the iterator completes
         // normally but the helper cannot produce a final message.
-        await expect(stream.finalMessage()).rejects.toThrow();
+        await expect(stream.finalMessage()).rejects.toThrow(
+          Anthropic.AnthropicError
+        );
       }
     );
 
     const spans = getTestSpans();
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).toBe('AnthropicError');
+  });
+
+  it('observes a streaming promise once when it is awaited repeatedly', async () => {
+    await withCassette('anthropic-messages-create-streaming.json', async () => {
+      const pending = mockClient.messages.create({
+        ...requestBody,
+        stream: true,
+      });
+      const stream = await pending;
+      const iterator = stream['iterator'];
+      // `parse()` is memoized, so this resolves to the same stream, which
+      // must not be wrapped again.
+      expect(await pending).toBe(stream);
+      expect(stream['iterator']).toBe(iterator);
+
+      for await (const event of stream) {
+        void event;
+      }
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
   });
 
   it('records HTTP errors from messages.stream', async () => {

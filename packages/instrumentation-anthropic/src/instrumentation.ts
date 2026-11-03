@@ -368,6 +368,10 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...args: any[]
       ) {
+        // The SDK emits `abort` instead of `error` when the caller cancels.
+        // That is recorded as an error with `error.type` `APIUserAbortError`,
+        // consistent with an aborted raw stream, since the call did not
+        // produce a response.
         if (event === 'error' || event === 'abort') {
           failure = args[0];
           failed = true;
@@ -378,12 +382,14 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
             instrumentation._endSpanWithError(state, failure);
           } else if (messageStream.receivedMessages.length === 0) {
             // The stream ended before `message_stop`, so the helper cannot
-            // produce a final message and `finalMessage()` will reject.
+            // produce a final message and `finalMessage()` will reject with
+            // an `AnthropicError`.
             instrumentation._endSpanWithError(
               state,
               new Error(
                 'stream ended without producing a Message with role=assistant'
-              )
+              ),
+              'AnthropicError'
             );
           } else {
             instrumentation._endSpan(state);
@@ -427,8 +433,14 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
 
     this._wrap(apiPromise, 'parse', originalParse => {
       return () => {
-        parsed = true;
         const parsePromise = originalParse.call(apiPromise);
+        // `parse()` is memoized and runs again for every `then`, `await` and
+        // `withResponse()`; observing it more than once would wrap the same
+        // stream again.
+        if (parsed) {
+          return parsePromise;
+        }
+        parsed = true;
         parsePromise.then(value => {
           if (isAnthropicStream(value)) {
             // The span now belongs to the stream's lifetime.
@@ -584,11 +596,25 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     state.span.end();
   }
 
-  private _endSpanWithError(state: SpanState, error: unknown): void {
+  private _endSpanWithError(
+    state: SpanState,
+    error: unknown,
+    errorType?: string
+  ): void {
     if (state.ended) return;
-    const err = error instanceof Error ? error : new Error(String(error));
-    state.span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    state.span.setAttribute('error.type', err.constructor.name);
+    // The SDK's error classes (`RateLimitError`, `APIConnectionError`, ...)
+    // are the most reliable low-cardinality identifier, as in the OpenAI
+    // instrumentation. A thrown non-`Error` has no such name, so it falls back
+    // to `_OTHER` per semantic conventions rather than a misleading `Error`.
+    const isError = error instanceof Error;
+    state.span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: isError ? error.message : String(error),
+    });
+    state.span.setAttribute(
+      'error.type',
+      errorType ?? (isError ? error.constructor.name : '_OTHER')
+    );
     this._endSpan(state);
   }
 }
