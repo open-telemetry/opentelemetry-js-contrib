@@ -18,6 +18,12 @@ interaction spans, arbitrary `eventNames`, or their async context propagation.
 See the [browser migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md#user-interactions)
 before migrating.
 
+The instrumentation scope name changes from
+`@opentelemetry/instrumentation-user-interaction` to
+`@opentelemetry/browser-instrumentation/user-action`, so queries and dashboards
+that filter on the scope name need updating. The config type changes from
+`UserInteractionInstrumentationConfig` to `UserActionInstrumentationConfig`.
+
 ## Installation
 
 ```bash
