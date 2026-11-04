@@ -14,7 +14,9 @@ import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
-process.env.LANGCHAIN_TRACING = 'false';
+process.env.LANGCHAIN_VERBOSE = 'false';
+// Legacy LANGCHAIN_TRACING treats any nonempty string as enabled.
+delete process.env.LANGCHAIN_TRACING;
 
 export const instrumentation = new LangChainInstrumentation();
 registerInstrumentations({ instrumentations: [instrumentation] });

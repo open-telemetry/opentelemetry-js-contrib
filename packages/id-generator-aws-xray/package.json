@@ -1,30 +1,50 @@
 {
   "name": "@opentelemetry/id-generator-aws-xray",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "AWS X-Ray ID generator for OpenTelemetry",
-  "main": "build/src/index.js",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
   "publishConfig": {
     "access": "public"
   },
-  "module": "build/esm/index.js",
-  "browser": {
-    "./src/platform/index.ts": "./src/platform/browser/index.ts",
-    "./build/esm/platform/index.js": "./build/esm/platform/browser/index.js",
-    "./build/src/platform/index.js": "./build/src/platform/browser/index.js"
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
+    }
   },
-  "types": "build/src/index.d.ts",
+  "imports": {
+    "#platform": {
+      "otel": {
+        "node": "./src/platform/node/index.ts",
+        "default": "./src/platform/browser/index.ts"
+      },
+      "node": {
+        "require": "./dist/platform/node/index.cjs",
+        "default": "./dist/platform/node/index.mjs"
+      },
+      "require": "./dist/platform/browser/index.cjs",
+      "default": "./dist/platform/browser/index.mjs"
+    }
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
     "directory": "packages/id-generator-aws-xray"
   },
   "scripts": {
-    "clean": "tsc --build --clean tsconfig.json tsconfig.esm.json",
-    "compile": "tsc --build tsconfig.json tsconfig.esm.json",
+    "clean": "rimraf dist build",
+    "compile": "tsdown",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/id-generator-aws-xray",
-    "test": "nyc mocha test/**/*.test.ts",
+    "test": "nyc mocha 'test/**/*.test.ts' --exclude 'test/browser/**/*.test.ts'",
     "test:browser": "nyc karma start --single-run",
-    "watch": "tsc --build --watch tsconfig.json tsconfig.esm.json",
+    "watch": "tsdown --watch --no-clean",
     "prepublishOnly": "npm run compile"
   },
   "keywords": [
@@ -38,24 +58,21 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "engines": {
-    "node": "^18.19.0 || >=20.6.0"
+    "node": ">=22.15.0"
   },
   "files": [
-    "build/esm/**/*.js",
-    "build/esm/**/*.js.map",
-    "build/esm/**/*.d.ts",
-    "build/src/**/*.js",
-    "build/src/**/*.js.map",
-    "build/src/**/*.d.ts"
+    "README.md",
+    "LICENSE",
+    "dist"
   ],
   "peerDependencies": {
     "@opentelemetry/api": "^1.0.0"
   },
   "devDependencies": {
-    "@opentelemetry/api": "^1.0.0"
+    "@opentelemetry/api": "^1.10.0"
   },
   "dependencies": {
-    "@opentelemetry/sdk-trace": "^2.9.0"
+    "@opentelemetry/sdk-trace": "^3.0.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/id-generator-aws-xray#readme"
 }

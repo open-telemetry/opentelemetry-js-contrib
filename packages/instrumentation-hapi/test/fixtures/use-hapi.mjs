@@ -9,7 +9,7 @@
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { HapiInstrumentation } from '../../build/src/index.js';
+import { HapiInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-hapi',

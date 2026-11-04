@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.3.0...genai-util-v0.4.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.3.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.2.0...genai-util-v0.3.0) (2026-10-15)
+
+
+### Features
+
+* **genai-util:** add support for core invocations ([#3762](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3762)) ([fe18c40](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/fe18c40b42aaed5707acaa2eb4af75a3e5d2a4bb))
+
 ## [0.2.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.1.0...genai-util-v0.2.0) (2026-10-06)
 
 

@@ -6,14 +6,14 @@
 /**
  * This script can be used with `mocha --require ...` to support skipping
  * tests if the current version of Node.js is too old or too new.  For example,
- * say a package's unit tests cannot run with Node.js 14, but the CI unit tests
+ * say a package's unit tests cannot run with Node.js 22, but the CI unit tests
  * run all package tests with that version.
  *
  * 1. Change this in "package.json":
  *      "test": "nyc mocha ...",
  *    to one of these:
- *      "test": "SKIP_TEST_IF_NODE_OLDER_THAN=18 nyc mocha --require '../../scripts/skip-test-if.js' ...",
- *      "test": "SKIP_TEST_IF_NODE_NEWER_THAN=22 nyc mocha --require '../../scripts/skip-test-if.js' ...",
+ *      "test": "SKIP_TEST_IF_NODE_OLDER_THAN=22 nyc mocha --require '../../scripts/skip-test-if.js' ...",
+ *      "test": "SKIP_TEST_IF_NODE_NEWER_THAN=24 nyc mocha --require '../../scripts/skip-test-if.js' ...",
  *    where `SKIP_TEST_IF_NODE_{OLDER|NEWER}_THAN` indicates a Node.js *major*
  *    version number.
  *

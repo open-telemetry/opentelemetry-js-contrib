@@ -1,0 +1,71 @@
+{
+  "name": "@opentelemetry/instrumentation-anthropic",
+  "version": "0.1.0",
+  "description": "OpenTelemetry instrumentation for the `@anthropic-ai/sdk` Anthropic client library",
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      },
+      "default": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      }
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/open-telemetry/opentelemetry-js-contrib.git",
+    "directory": "packages/instrumentation-anthropic"
+  },
+  "scripts": {
+    "clean": "rimraf dist build",
+    "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/instrumentation-anthropic",
+    "compile": "tsdown",
+    "lint:readme": "node ../../scripts/lint-readme.js",
+    "prepublishOnly": "npm run compile",
+    "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
+    "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test-all-versions": "tav",
+    "version:update": "node ../../scripts/version-update.js",
+    "watch": "tsdown --watch --no-clean"
+  },
+  "keywords": [
+    "anthropic",
+    "claude",
+    "instrumentation",
+    "opentelemetry",
+    "llm",
+    "genai"
+  ],
+  "author": "OpenTelemetry Authors",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "files": [
+    "README.md",
+    "LICENSE",
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "@opentelemetry/api": "^1.10.0"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@opentelemetry/api": "^1.10.0",
+    "@opentelemetry/contrib-test-utils": "^0.71.0",
+    "@opentelemetry/sdk-trace": "^3.0.0"
+  },
+  "dependencies": {
+    "@opentelemetry/core": "^3.0.0",
+    "@opentelemetry/instrumentation": "^0.300.0"
+  },
+  "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-anthropic#readme"
+}

@@ -146,23 +146,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     diagnosticChannel: string,
     onMessage: (message: any, name: string | symbol) => void
   ) {
-    // `diagnostics_channel` had a ref counting bug until v18.19.0.
-    // https://github.com/nodejs/node/pull/47520
-    const [major, minor] = process.version
-      .replace('v', '')
-      .split('.')
-      .map(n => Number(n));
-    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
-
-    let unsubscribe: () => void;
-    if (useNewSubscribe) {
-      diagch.subscribe?.(diagnosticChannel, onMessage);
-      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
-    } else {
-      const channel = diagch.channel(diagnosticChannel);
-      channel.subscribe(onMessage);
-      unsubscribe = () => channel.unsubscribe(onMessage);
-    }
+    diagch.subscribe(diagnosticChannel, onMessage);
+    const unsubscribe = () => diagch.unsubscribe(diagnosticChannel, onMessage);
 
     this._channelSubs.push({
       name: diagnosticChannel,

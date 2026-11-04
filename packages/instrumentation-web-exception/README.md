@@ -78,7 +78,7 @@ npm install --save @opentelemetry/instrumentation-web-exception
 
 ```typescript
 import { LoggerProvider, SimpleLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 

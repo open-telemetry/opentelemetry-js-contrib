@@ -3,14 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Logger, SeverityNumber, logs } from '@opentelemetry/api-logs';
+import { Logger, SeverityNumber, logs } from '@opentelemetry/api';
+import type { TransportStreamOptions } from 'winston-transport';
 import TransportStream = require('winston-transport');
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { emitLogRecord } from './utils';
 
 export interface OpenTelemetryTransportV3Options
-  extends TransportStream.TransportStreamOptions {
+  extends TransportStreamOptions {
   /**
    * Custom mapping of winston log level names to OpenTelemetry SeverityNumber.
    */
@@ -21,7 +22,11 @@ export interface OpenTelemetryTransportV3Options
   logSeverity?: SeverityNumber;
 }
 
-export class OpenTelemetryTransportV3 extends TransportStream {
+// tsdown turns `import X = require()` into `import * as X` in the .d.ts, which ESM and
+// esModuleInterop consumers cannot extend; `typeof import()` survives as written.
+const TransportStreamBase: typeof import('winston-transport') = TransportStream;
+
+export class OpenTelemetryTransportV3 extends TransportStreamBase {
   private _logger: Logger;
   private _severityMapping?: Record<string, SeverityNumber>;
   private _logSeverity?: SeverityNumber;
