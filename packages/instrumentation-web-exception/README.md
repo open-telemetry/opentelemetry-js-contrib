@@ -23,50 +23,24 @@ Change the import and class name from `ExceptionInstrumentation` to `ErrorsInstr
 Before:
 
 ```typescript
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
 
-registerInstrumentations({
-  instrumentations: [
-    new ExceptionInstrumentation({
-      enabled: true,
-      applyCustomAttributes: (error) => ({
-        'app.error.severity':
-          error instanceof Error && error.name === 'ValidationError'
-            ? 'warning'
-            : 'error',
-      }),
-    }),
-  ],
-});
+new ExceptionInstrumentation({ applyCustomAttributes });
 ```
 
 After:
 
 ```typescript
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { ErrorsInstrumentation } from '@opentelemetry/browser-instrumentation/experimental/errors';
 
-registerInstrumentations({
-  instrumentations: [
-    new ErrorsInstrumentation({
-      enabled: true,
-      applyCustomAttributes: (error) => ({
-        'app.error.severity':
-          error instanceof Error && error.name === 'ValidationError'
-            ? 'warning'
-            : 'error',
-      }),
-    }),
-  ],
-});
+new ErrorsInstrumentation({ applyCustomAttributes });
 ```
 
 The instrumentation scope name changes from `@opentelemetry/instrumentation-web-exception` to `@opentelemetry/browser-instrumentation/errors`. Update queries, dashboards and filters that select logs by instrumentation scope name.
 
 Keep your OpenTelemetry Logs SDK setup and logger provider. The replacement still emits `exception` log records for uncaught errors and unhandled promise rejections. Register only the replacement errors instrumentation to avoid capturing the same error twice.
 
-The replacement is an ES module and uses an experimental export. Use a module resolver that supports package exports, such as TypeScript's `bundler` or `nodenext` resolution, and check the [errors documentation](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#errors) for current configuration. The broader browser [migration guide is tracked here](https://github.com/open-telemetry/opentelemetry-browser/issues/468).
+See the browser [migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md#navigation-and-exceptions) for more detail.
 
 ## Installation
 
