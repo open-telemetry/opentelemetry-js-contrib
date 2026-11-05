@@ -172,7 +172,10 @@ function createWrapCreateHandler(
           [AttributeNames.CALLBACK]: callbackName,
         };
         attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
-        attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
+        const rawUrl = req.originalUrl || req.url;
+        if (rawUrl) {
+          attributes[ATTR_URL_FULL] = rawUrl.split('?')[0];
+        }
         const span = tracer.startSpan(spanName, { attributes });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 

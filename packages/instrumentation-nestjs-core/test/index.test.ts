@@ -100,6 +100,43 @@ describe('nestjs-core', () => {
     ]);
   });
 
+  it('should strip query parameters from url.full to prevent leaking unredacted query parameters', async () => {
+    const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/users';
+    const url = '/users';
+    const instance = 'UsersController';
+    const callback = 'getUsers';
+
+    assert.strictEqual(
+      await request('/users?sig=secret123&token=abc'),
+      'Hello, world!\n'
+    );
+
+    assertSpans(memoryExporter.getFinishedSpans(), [
+      {
+        type: 'app_creation',
+        service: 'test',
+        name: 'Create Nest App',
+        module: 'AppModule',
+      },
+      {
+        type: 'handler',
+        service: 'test',
+        name: callback,
+        callback,
+        parentSpanName: `${instance}.${callback}`,
+      },
+      {
+        type: 'request_context',
+        service: 'test',
+        name: `${instance}.${callback}`,
+        method: 'GET',
+        url,
+        path,
+        callback,
+      },
+    ]);
+  });
+
   it('should not overwrite metadata set on the request handler', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/metadata';
     const url = '/metadata';
