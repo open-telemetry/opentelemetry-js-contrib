@@ -48,7 +48,7 @@
   "packages/instrumentation-ioredis": "0.73.0",
   "packages/instrumentation-knex": "0.69.0",
   "packages/instrumentation-koa": "0.73.0",
-  "packages/instrumentation-langchain": "0.15.0",
+  "packages/instrumentation-langchain": "0.16.0",
   "packages/instrumentation-memcached": "0.68.0",
   "packages/instrumentation-mongodb": "0.78.0",
   "packages/instrumentation-mysql": "0.71.0",
