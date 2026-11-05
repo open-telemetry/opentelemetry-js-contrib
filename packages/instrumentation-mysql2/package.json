@@ -69,7 +69,7 @@
     "mysql2": "3.22.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/semantic-conventions": "^1.33.0",
     "@opentelemetry/sql-common": "^0.43.0"
   },

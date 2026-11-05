@@ -58,10 +58,10 @@
   "dependencies": {
     "@opentelemetry/context-async-hooks": "^3.0.0",
     "@opentelemetry/core": "^3.0.0",
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/resources": "^3.0.0",
     "@opentelemetry/sdk-metrics": "^3.0.0",
-    "@opentelemetry/sdk-node": "^0.300.0",
+    "@opentelemetry/sdk-node": "^0.301.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
     "@opentelemetry/semantic-conventions": "^1.37.0"
   }

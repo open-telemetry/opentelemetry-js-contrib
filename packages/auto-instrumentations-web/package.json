@@ -49,11 +49,11 @@
     "@opentelemetry/api": "^1.10.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/instrumentation-document-load": "^0.69.0",
-    "@opentelemetry/instrumentation-fetch": "^0.300.0",
+    "@opentelemetry/instrumentation-fetch": "^0.301.0",
     "@opentelemetry/instrumentation-user-interaction": "^0.68.0",
-    "@opentelemetry/instrumentation-xml-http-request": "^0.300.0"
+    "@opentelemetry/instrumentation-xml-http-request": "^0.301.0"
   },
   "files": [
     "README.md",
