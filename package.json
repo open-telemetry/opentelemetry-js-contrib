@@ -70,7 +70,7 @@
     "eslint-plugin-n": "17.21.3",
     "eslint-plugin-yet-another-license-header": "0.2.0",
     "expect": "29.7.0",
-    "glob": "13.0.6",
+    "glob": "14.0.2",
     "globals": "^17.0.0",
     "karma": "6.4.4",
     "karma-chrome-launcher": "3.2.0",
