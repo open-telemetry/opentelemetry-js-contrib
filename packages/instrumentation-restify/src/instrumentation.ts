@@ -190,8 +190,18 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
           );
         }
 
+        // restify may trigger span end both via `next()` and via the
+        // handler's return value/promise, so end the span at most once
+        let ended = false;
+        const endOnce = () => {
+          if (!ended) {
+            ended = true;
+            span.end();
+          }
+        };
+
         const patchedNext = (err?: any) => {
-          span.end();
+          endOnce();
           next(err);
         };
         patchedNext.ifError = (next as any).ifError;
@@ -199,12 +209,14 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
         const wrapPromise = (promise: Promise<unknown>) => {
           return promise
             .then(value => {
-              span.end();
+              endOnce();
               return value;
             })
             .catch(err => {
-              span.recordException(err);
-              span.end();
+              if (!ended) {
+                span.recordException(err);
+              }
+              endOnce();
               throw err;
             });
         };
@@ -221,11 +233,13 @@ export class RestifyInstrumentation extends InstrumentationBase<RestifyInstrumen
               if (isPromise(result)) {
                 return wrapPromise(result);
               }
-              span.end();
+              endOnce();
               return result;
             } catch (err: any) {
-              span.recordException(err);
-              span.end();
+              if (!ended) {
+                span.recordException(err);
+              }
+              endOnce();
               throw err;
             }
           },
