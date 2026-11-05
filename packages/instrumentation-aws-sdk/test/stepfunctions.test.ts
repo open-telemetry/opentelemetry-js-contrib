@@ -54,10 +54,6 @@ describe('SFN', () => {
 
       const stateMachineAttributeSpan = getStateMachineAttributeSpans[0];
       expect(
-        ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN in
-          stateMachineAttributeSpan.attributes
-      );
-      expect(
         stateMachineAttributeSpan.attributes[
           ATTR_AWS_STEP_FUNCTIONS_STATE_MACHINE_ARN
         ]
@@ -89,9 +85,6 @@ describe('SFN', () => {
       expect(getActivityAttributeSpans.length).toBe(1);
 
       const activityAttributeSpan = getActivityAttributeSpans[0];
-      expect(
-        ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN in activityAttributeSpan.attributes
-      );
       expect(
         activityAttributeSpan.attributes[ATTR_AWS_STEP_FUNCTIONS_ACTIVITY_ARN]
       ).toBe(activityArn);
