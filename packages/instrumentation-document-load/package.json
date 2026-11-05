@@ -70,9 +70,9 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/semantic-conventions": "^1.23.0",
-    "@opentelemetry/web-common": "^0.300.0"
+    "@opentelemetry/web-common": "^0.301.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-document-load#readme"
 }

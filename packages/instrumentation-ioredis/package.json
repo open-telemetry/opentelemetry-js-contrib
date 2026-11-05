@@ -72,7 +72,7 @@
     "ioredis": "5.8.2"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/redis-common": "^0.39.0",
     "@opentelemetry/semantic-conventions": "^1.33.0"
   },

@@ -52,7 +52,7 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/contrib-test-utils": "^0.71.0",
-    "@opentelemetry/sdk-node": "^0.300.0"
+    "@opentelemetry/sdk-node": "^0.301.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",
