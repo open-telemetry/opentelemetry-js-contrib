@@ -26,9 +26,13 @@ import {
   ATTR_SERVER_PORT,
   NETWORK_TRANSPORT_VALUE_TCP,
 } from '@opentelemetry/semantic-conventions';
-import { TLSAttributes } from './types';
 import { NormalizedOptions, SocketEvent } from './internal-types';
-import { getNormalizedArgs, STABLE_IPC_TRANSPORT_VALUE } from './utils';
+import { ATTR_TLS_ESTABLISHED } from './semconv';
+import {
+  getNormalizedArgs,
+  getTLSAttributes,
+  STABLE_IPC_TRANSPORT_VALUE,
+} from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { Socket } from 'net';
@@ -120,29 +124,12 @@ export class NetInstrumentation extends InstrumentationBase {
     );
 
     const otelTlsSpanListener = () => {
-      const peerCertificate = socket.getPeerCertificate(true);
-      const cipher = socket.getCipher();
-      const protocol = socket.getProtocol();
-      const attributes = {
-        [TLSAttributes.PROTOCOL]: String(protocol),
-        [TLSAttributes.AUTHORIZED]: String(socket.authorized),
-        [TLSAttributes.CIPHER_NAME]: cipher.name,
-        [TLSAttributes.CIPHER_VERSION]: cipher.version,
-        [TLSAttributes.CERTIFICATE_FINGERPRINT]: peerCertificate.fingerprint,
-        [TLSAttributes.CERTIFICATE_SERIAL_NUMBER]: peerCertificate.serialNumber,
-        [TLSAttributes.CERTIFICATE_VALID_FROM]: peerCertificate.valid_from,
-        [TLSAttributes.CERTIFICATE_VALID_TO]: peerCertificate.valid_to,
-        [TLSAttributes.ALPN_PROTOCOL]: '',
-      };
-      if (socket.alpnProtocol) {
-        attributes[TLSAttributes.ALPN_PROTOCOL] = socket.alpnProtocol;
-      }
-
-      tlsSpan.setAttributes(attributes);
+      tlsSpan.setAttributes(getTLSAttributes(socket));
       tlsSpan.end();
     };
 
     const otelTlsErrorListener = (e: Error) => {
+      tlsSpan.setAttribute(ATTR_TLS_ESTABLISHED, false);
       tlsSpan.setStatus({
         code: SpanStatusCode.ERROR,
         message: e.message,
