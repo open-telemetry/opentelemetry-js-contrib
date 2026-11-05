@@ -14,6 +14,7 @@
   "packages/host-metrics": "0.40.0",
   "packages/id-generator-aws-xray": "3.0.0",
   "packages/genai-util": "0.4.0",
+  "packages/tanstack-ai": "0.1.0",
   "packages/redis-common": "0.39.0",
   "packages/sampler-aws-xray": "0.4.0",
   "packages/sql-common": "0.43.0",
