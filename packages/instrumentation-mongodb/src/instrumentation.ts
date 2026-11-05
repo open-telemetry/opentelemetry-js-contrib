@@ -868,9 +868,15 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       commandObj = command;
     }
 
+    const collection = this._extractCollectionName(
+      ns?.collection,
+      command,
+      operation
+    );
+
     return this._getSpanAttributes(
-      ns.db,
-      ns.collection,
+      ns?.db,
+      collection,
       host,
       port,
       commandObj,
@@ -910,18 +916,40 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     // collection or index, like so: [database-name].[collection-or-index-name].
     // It could be a string or an instance of MongoDBNamespace, as such we
     // always coerce to a string to extract db and collection.
-    const [dbName, dbCollection] = ns.toString().split('.');
+    const [dbName, rawCollection] = ns.toString().split('.');
+    const collection = this._extractCollectionName(
+      rawCollection,
+      command,
+      operation
+    );
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command?.query ?? command?.q ?? command;
 
     return this._getSpanAttributes(
       dbName,
-      dbCollection,
+      collection,
       host,
       port,
       commandObj,
       operation
     );
+  }
+
+  private _extractCollectionName(
+    rawCollection: string | undefined,
+    command?: any,
+    operation?: string
+  ): string | undefined {
+    if (rawCollection && rawCollection !== '$cmd') {
+      return rawCollection;
+    }
+    if (operation && typeof command?.[operation] === 'string') {
+      return command[operation];
+    }
+    if (typeof command?.collection === 'string') {
+      return command.collection;
+    }
+    return undefined;
   }
 
   private _getSpanAttributes(
@@ -937,7 +965,9 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MONGODB;
     attributes[ATTR_DB_NAMESPACE] = dbName;
     attributes[ATTR_DB_OPERATION_NAME] = operation;
-    attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
+    if (dbCollection) {
+      attributes[ATTR_DB_COLLECTION_NAME] = dbCollection;
+    }
 
     if (host && port) {
       attributes[ATTR_SERVER_ADDRESS] = host;
