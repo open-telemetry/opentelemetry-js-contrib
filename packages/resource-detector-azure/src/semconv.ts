@@ -10,6 +10,16 @@
  */
 
 /**
+ * The cloud account ID the resource is assigned to.
+ *
+ * @example 111111111111
+ * @example opentelemetry
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_CLOUD_ACCOUNT_ID = 'cloud.account.id' as const;
+
+/**
  * The cloud platform in use.
  *
  * @note The prefix of the service **SHOULD** match the one specified in `cloud.provider`.
