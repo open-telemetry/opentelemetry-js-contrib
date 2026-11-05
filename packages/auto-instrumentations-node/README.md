@@ -159,6 +159,7 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 - [@opentelemetry/instrumentation-bunyan](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-bunyan)
 - [@opentelemetry/instrumentation-cassandra-driver](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cassandra-driver)
 - [@opentelemetry/instrumentation-connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-connect)
+- [@opentelemetry/instrumentation-console](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-console) (default disabled)
 - [@opentelemetry/instrumentation-cucumber](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cucumber)
 - [@opentelemetry/instrumentation-dataloader](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dataloader)
 - [@opentelemetry/instrumentation-dns](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-dns)

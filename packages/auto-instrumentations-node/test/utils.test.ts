@@ -19,6 +19,7 @@ describe('utils', () => {
       ).filter(depName => {
         return (
           depName.startsWith('@opentelemetry/instrumentation-') &&
+          depName !== '@opentelemetry/instrumentation-console' &&
           depName !== '@opentelemetry/instrumentation-fs' &&
           depName !== '@opentelemetry/instrumentation-host-metrics'
         );
@@ -94,6 +95,33 @@ describe('utils', () => {
       } finally {
         delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
       }
+    });
+
+    it('should allow enabling console instrumentation via OTEL_NODE_ENABLED_INSTRUMENTATIONS environment variable', () => {
+      process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS = 'console';
+      try {
+        const instrumentations = getNodeAutoInstrumentations();
+
+        assert.deepStrictEqual(
+          new Set(instrumentations.map(i => i.instrumentationName)),
+          new Set(['@opentelemetry/instrumentation-console'])
+        );
+      } finally {
+        delete process.env.OTEL_NODE_ENABLED_INSTRUMENTATIONS;
+      }
+    });
+
+    it('should allow enabling console instrumentation via user config', () => {
+      const instrumentations = getNodeAutoInstrumentations({
+        '@opentelemetry/instrumentation-console': {
+          enabled: true,
+        },
+      });
+      const instrumentation = instrumentations.find(
+        instr =>
+          instr.instrumentationName === '@opentelemetry/instrumentation-console'
+      );
+      assert.notStrictEqual(instrumentation, undefined);
     });
 
     it('should include all instrumentations except those disabled via OTEL_NODE_DISABLED_INSTRUMENTATIONS environment variable', () => {
