@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import { instrumentation } from './load-instrumentation';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -10,9 +11,11 @@ import * as nock from 'nock';
 import { expect } from 'expect';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
+  ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER,
+  ATTR_AWS_SNS_TOPIC_ARN,
+  ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_SYSTEM,
   ATTR_RPC_METHOD,
-  ATTR_AWS_SNS_TOPIC_ARN,
 } from '../src/semconv';
 import {
   ATTR_MESSAGING_DESTINATION,
@@ -63,7 +66,7 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
         topicV3Name
       );
-      expect(publishSpan.attributes['messaging.destination.name']).toBe(
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
         topicV3ARN
       );
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicV3ARN);
@@ -72,8 +75,29 @@ describe('SNS - v3', () => {
       expect(publishSpan.kind).toBe(SpanKind.PRODUCER);
     });
 
-    it('phone number', async () => {
-      const PhoneNumber = 'my phone number';
+    it('keeps target arn behavior unchanged', async () => {
+      const targetArn =
+        'arn:aws:sns:us-east-1:000000000:endpoint/GCM/app/device';
+
+      await sns.publish({
+        Message: 'sns message',
+        TargetArn: targetArn,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'endpoint/GCM/app/device send'
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        'endpoint/GCM/app/device'
+      );
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        targetArn
+      );
+    });
+
+    it('masks the phone number in span attributes by default', async () => {
+      const PhoneNumber = '+61123456123';
       await sns.publish({
         Message: 'sns message',
         PhoneNumber,
@@ -84,10 +108,91 @@ describe('SNS - v3', () => {
       );
       expect(publishSpans.length).toBe(1);
       const publishSpan = publishSpans[0];
+
       expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION]).toBe(
-        PhoneNumber
+        '+61******123'
       );
+      expect(publishSpan.attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        '+61******123'
+      );
+      const leaks = Object.values(publishSpan.attributes).filter(
+        value => typeof value === 'string' && value.includes(PhoneNumber)
+      );
+      expect(leaks).toEqual([]);
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
+      expect(
+        publishSpan.attributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER]
+      ).toBeUndefined();
+    });
+
+    it('does not expose short phone numbers', async () => {
+      const PhoneNumber = '123456789';
+      await sns.publish({
+        Message: 'sns message',
+        PhoneNumber,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'phone_number send'
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        '******'
+      );
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        '******'
+      );
+    });
+
+    it('preserves local number context when masking', async () => {
+      const PhoneNumber = '0401234567';
+      await sns.publish({
+        Message: 'sns message',
+        PhoneNumber,
+      });
+
+      const publishSpans = getTestSpans().filter(
+        (s: ReadableSpan) => s.name === 'phone_number send'
+      );
+      expect(publishSpans.length).toBe(1);
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+        '040******567'
+      );
+      expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]).toBe(
+        '040******567'
+      );
+    });
+
+    it('captures the full phone number only when enabled', async () => {
+      const PhoneNumber = '+15555550100';
+      const previousConfig = instrumentation.getConfig();
+      instrumentation.setConfig({
+        ...previousConfig,
+        snsCaptureFullPhoneNumber: true,
+      });
+
+      try {
+        await sns.publish({
+          Message: 'sns message',
+          PhoneNumber,
+        });
+
+        const publishSpans = getTestSpans().filter(
+          (s: ReadableSpan) => s.name === 'phone_number send'
+        );
+        expect(publishSpans.length).toBe(1);
+        expect(publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION]).toBe(
+          '+15******100'
+        );
+        expect(
+          publishSpans[0].attributes[ATTR_MESSAGING_DESTINATION_NAME]
+        ).toBe('+15******100');
+        expect(
+          publishSpans[0].attributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER]
+        ).toBe(PhoneNumber);
+      } finally {
+        instrumentation.setConfig(previousConfig);
+      }
     });
   });
 
