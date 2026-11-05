@@ -12,7 +12,7 @@ name: opentelemetry-js-contrib-test-services
 
 services:
   cassandra:
-    image: cassandra:3
+    image: cassandra:3.11.19
     environment:
       MAX_HEAP_SIZE: "1G"
       HEAP_NEWSIZE: 400m
@@ -30,7 +30,7 @@ services:
     - 11211:11211
 
   mongodb:
-    image: mongo:7
+    image: mongo:7.0.39
     ports:
       - "27017:27017"
     healthcheck:
@@ -56,7 +56,7 @@ services:
       retries: 30
 
   mysql:
-    image: mysql:5.7
+    image: mysql:5.7.44
     # No ARM64 image layer. See https://stackoverflow.com/a/65592942
     platform: linux/x86_64
     environment:
@@ -73,7 +73,7 @@ services:
       retries: 30
 
   oracledb:
-    image: gvenzl/oracle-free:slim
+    image: gvenzl/oracle-free:23.26.2-slim
     environment:
       APP_USER: "otel"
       APP_USER_PASSWORD: "secret"
@@ -88,7 +88,7 @@ services:
 
   postgres:
     # https://github.com/docker-library/docs/blob/master/postgres/README.md#how-to-extend-this-image
-    image: postgres:16-alpine
+    image: postgres:16.14-alpine
     ports:
       - "54320:5432"
     environment:
@@ -103,7 +103,7 @@ services:
       retries: 30
 
   rabbitmq:
-    image: rabbitmq:3
+    image: rabbitmq:3.13.7
     environment:
       RABBITMQ_DEFAULT_USER: "username"
       RABBITMQ_DEFAULT_PASS: "password"
@@ -111,7 +111,7 @@ services:
       - "22221:5672"
 
   redis:
-    image: redis:7
+    image: redis:7.4.10
     ports:
       - "6379:6379"
     healthcheck:
