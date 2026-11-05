@@ -11,6 +11,92 @@ env:
   LANGCHAIN_TRACING: 'false'
 
 scenarios:
+  graph_content_disabled:
+    run: node graph.cjs
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL; tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: test_graph
+            gen_ai.input.messages: {present: false}
+            gen_ai.output.messages: {present: false}
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_workflow.duration]
+    events: []
+
+  graph_content_enabled:
+    run: node graph.cjs
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL; tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: test_graph
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"graph result"}]}]'
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_workflow.duration]
+    events: []
+
+  graph_stream:
+    run: node graph.cjs stream
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL; tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: test_graph
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"graph result"}]}]'
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_workflow.duration]
+    events: []
+
+  graph_error:
+    run: node graph.cjs error
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL; tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.workflow.name: test_graph
+            gen_ai.output.messages: {present: false}
+            error.type: TypeError
+    metrics: [gen_ai.invoke_workflow.duration]
+    events: []
+
   tool_content_disabled:
     run: node tool.cjs
     env:

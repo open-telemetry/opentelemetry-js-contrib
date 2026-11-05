@@ -42,6 +42,12 @@ export function markWorkflow(value: unknown): void {
   if (isRecord(runnable)) internalWorkflows.add(runnable);
 }
 
+export function markAgentGraph(value: unknown): void {
+  markWorkflow(value);
+  // Newer createAgent returns ReactAgent, with a public SDK graph getter.
+  if (isRecord(value)) markWorkflow(value.graph);
+}
+
 export function markAgentPrompt(value: unknown): void {
   if (isRecord(value)) agentPrompts.add(value);
 }
