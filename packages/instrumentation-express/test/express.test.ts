@@ -629,6 +629,39 @@ describe('ExpressInstrumentation', function () {
         }
       );
     });
+    it('should mark the patched layer handle as wrapped by this package', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let layerHandle: any;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.get('/marked', (req, res) => {
+          const stack = (req.app._router || req.app.router).stack as any[];
+          layerHandle = stack.find(
+            layer => layer.name === 'jsonParser'
+          )?.handle;
+          res.status(200).end('ok');
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/marked`);
+          rootSpan.end();
+
+          const kWrappedBy = Symbol.for(
+            'opentelemetry.instrumentation.wrapped-by'
+          );
+          assert.strictEqual(
+            layerHandle?.[kWrappedBy],
+            '@opentelemetry/instrumentation-express'
+          );
+        }
+      );
+    });
     it('should end spans when the client aborts the request', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let requestReceived: () => void;
