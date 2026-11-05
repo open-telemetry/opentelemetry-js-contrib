@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.4.0...genai-util-v0.5.0) (2026-11-05)
+
+
+### Features
+
+* **genai-util:** add async stream telemetry wrapper ([#3831](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3831)) ([b6d9900](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/b6d9900ce36a226ff0c14d774294b147fe5ca00d))
+* **instrumentation-langchain:** migrate donated tool execution ([#3821](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3821)) ([d50fe94](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d50fe94e39a1ab16e8a0e2a2f95344c4488e814a))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.3.0...genai-util-v0.4.0) (2026-10-20)
 
 
