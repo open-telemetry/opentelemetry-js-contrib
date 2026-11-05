@@ -57,6 +57,8 @@ function defaultShouldPreventSpanCreation() {
  * This class represents a UserInteraction plugin for auto instrumentation.
  * If zone.js is available then it patches the zone otherwise it patches
  * addEventListener of HTMLElement
+ * @deprecated Use `UserActionInstrumentation` from
+ * `@opentelemetry/browser-instrumentation/experimental/user-action` instead.
  */
 export class UserInteractionInstrumentation extends InstrumentationBase<UserInteractionInstrumentationConfig> {
   readonly version = PACKAGE_VERSION;
@@ -83,6 +85,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
 
   constructor(config: UserInteractionInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+    this._diag.warn(
+      'UserInteractionInstrumentation is deprecated. Use UserActionInstrumentation from @opentelemetry/browser-instrumentation/experimental/user-action instead.'
+    );
     this._eventNames = new Set(config?.eventNames ?? DEFAULT_EVENT_NAMES);
     this._shouldPreventSpanCreation =
       typeof config?.shouldPreventSpanCreation === 'function'
