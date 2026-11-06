@@ -4,11 +4,13 @@
  */
 
 import * as assert from 'assert';
+import * as v8 from 'node:v8';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { RuntimeNodeInstrumentation } from '../src/index';
 import { TestMetricReader } from './testMetricsReader';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
+  METRIC_V8JS_MEMORY_HEAP_MAX,
   METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
@@ -141,4 +143,50 @@ describe('v8js.memory.heap.*', function () {
       });
     }
   }
+});
+
+describe(`${METRIC_V8JS_MEMORY_HEAP_MAX}`, function () {
+  let metricReader: TestMetricReader;
+  let meterProvider: MeterProvider;
+
+  beforeEach(() => {
+    metricReader = new TestMetricReader();
+    meterProvider = new MeterProvider({
+      readers: [metricReader],
+    });
+  });
+
+  it('should write a single heap_size_limit data point without attributes', async function () {
+    // arrange
+    const instrumentation = new RuntimeNodeInstrumentation({
+      monitoringPrecision: MEASUREMENT_INTERVAL,
+      captureUncaughtException: false,
+    });
+    instrumentation.setMeterProvider(meterProvider);
+
+    // act
+    await new Promise(resolve => setTimeout(resolve, MEASUREMENT_INTERVAL * 5));
+    const { resourceMetrics, errors } = await metricReader.collect();
+
+    // assert
+    assert.deepEqual(
+      errors,
+      [],
+      'expected no errors from the callback during collection'
+    );
+    const metric = resourceMetrics.scopeMetrics[0].metrics.find(
+      x => x.descriptor.name === METRIC_V8JS_MEMORY_HEAP_MAX
+    );
+    assert.notEqual(
+      metric,
+      undefined,
+      `${METRIC_V8JS_MEMORY_HEAP_MAX} not found`
+    );
+    assert.strictEqual(metric!.dataPointType, DataPointType.SUM);
+    assert.strictEqual(metric!.descriptor.unit, 'By');
+    assert.strictEqual(metric!.dataPoints.length, 1);
+    const [dataPoint] = metric!.dataPoints;
+    assert.deepStrictEqual(dataPoint.attributes, {});
+    assert.strictEqual(dataPoint.value, v8.getHeapStatistics().heap_size_limit);
+  });
 });
