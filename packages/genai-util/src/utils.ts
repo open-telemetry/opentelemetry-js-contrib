@@ -327,7 +327,10 @@ export function getRequestOptionsAttributes(
     attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] =
       requestOptions.presencePenalty;
   }
-  if (requestOptions.choiceCount !== undefined) {
+  if (
+    requestOptions.choiceCount !== undefined &&
+    requestOptions.choiceCount > 1
+  ) {
     attrs[ATTR_GEN_AI_REQUEST_CHOICE_COUNT] = requestOptions.choiceCount;
   }
   if (requestOptions.seed !== undefined) {

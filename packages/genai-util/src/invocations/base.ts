@@ -10,6 +10,7 @@ import {
   type AttributeValue,
   type Attributes,
   type Context,
+  type DiagLogger,
   type HrTime,
   type Span,
   type SpanKind,
@@ -187,6 +188,13 @@ export abstract class BaseInvocation {
    */
   public getContext(): Context {
     return this._context;
+  }
+
+  /**
+   * Return the diagnostic logger configured on this invocation's handler.
+   */
+  public getDiag(): DiagLogger {
+    return this._handler.getDiag();
   }
 
   /**

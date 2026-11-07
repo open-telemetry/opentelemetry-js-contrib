@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-console-v0.6.0...instrumentation-console-v0.7.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
 ## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-console-v0.5.0...instrumentation-console-v0.6.0) (2026-10-20)
 
 

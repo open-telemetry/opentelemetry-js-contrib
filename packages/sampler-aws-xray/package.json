@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/sampler-aws-xray",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "OpenTelemetry Remote Sampler for AWS X-Ray",
   "keywords": [
     "aws",
@@ -54,7 +54,7 @@
     "watch": "tsdown --watch --no-clean"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.1.0"
+    "@opentelemetry/api": "^1.10.0"
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",

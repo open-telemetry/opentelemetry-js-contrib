@@ -31,7 +31,7 @@ npm install --save @opentelemetry/genai-util
   - `RetrievalInvocation`: RAG vector database lookups and document retrieval (`retrieval`).
   - `FetchResponseInvocation`: Asynchronous response polling and retrieval (`fetch_response`).
 - **Streaming Telemetry & TTFT (`wrapAsyncStream`)**:
-  - Transparently proxies SDK stream objects via ES6 Proxy.
+  - Wraps SDK stream objects in-place via `[Symbol.asyncIterator]`, preserving stream identity and `instanceof`.
   - Implements the `AsyncIterable` protocol for clean `for await (const chunk of stream)` consumption.
   - Records **Time To First Chunk (TTFT)** (`gen_ai.client.operation.time_to_first_chunk`), sets `gen_ai.response.time_to_first_chunk`, and sets `gen_ai.request.stream = true` on the first chunk.
   - Supports per-chunk callbacks (`onChunk`), completion hooks (`onEnd`), error handling (`onError`), and early iterator break (`return()`).
