@@ -3,34 +3,58 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as opentelemetry from '@opentelemetry/sdk-node';
-import { diag, DiagConsoleLogger } from '@opentelemetry/api';
+import { diag, DiagLogger } from '@opentelemetry/api';
 import { getStringFromEnv, diagLogLevelFromString } from '@opentelemetry/core';
 import {
   getNodeAutoInstrumentations,
   getResourceDetectorsFromEnv,
 } from './utils';
 
+// `DiagConsoleLogger` routes by severity, which puts everything below `warn` on
+// stdout. This entry point is loaded into an application that did not ask for
+// it — often by an injector, before the application's first line — and that
+// application's stdout may well be a pipeline stage, a structured log stream or
+// a protocol channel. Diagnostics about the SDK are not its output, so they all
+// go to stderr. Telemetry that the user explicitly routed to stdout, such as
+// `OTEL_TRACES_EXPORTER=console`, is unaffected.
+const diagStderrLogger: DiagLogger = {
+  error: (...args) => console.error(...args),
+  warn: (...args) => console.error(...args),
+  info: (...args) => console.error(...args),
+  debug: (...args) => console.error(...args),
+  verbose: (...args) => console.error(...args),
+};
+
 const logLevel = getStringFromEnv('OTEL_LOG_LEVEL');
-if (logLevel != null) {
-  diag.setLogger(new DiagConsoleLogger(), {
-    logLevel: diagLogLevelFromString(logLevel),
-  });
+const diagLogLevel = logLevel != null ? diagLogLevelFromString(logLevel) : null;
+if (diagLogLevel != null) {
+  diag.setLogger(diagStderrLogger, { logLevel: diagLogLevel });
 }
 
 const instrumentations = getNodeAutoInstrumentations();
 const resourceDetectors = getResourceDetectorsFromEnv();
 
-// `NodeSDK` registers its own `DiagConsoleLogger` based on `OTEL_LOG_LEVEL`
-// internally, so disable the logger set up above to avoid the "Current
-// logger will be overwritten" warning being logged on every start.
-if (logLevel != null) {
-  diag.disable();
+// `NodeSDK`'s constructor unconditionally registers a `DiagConsoleLogger` of
+// its own whenever `OTEL_LOG_LEVEL` is set, which would both log the "Current
+// logger will be overwritten" warning on every start and put the SDK's
+// diagnostics back on stdout. Hide the variable from it for the duration of
+// the constructor, which is synchronous, and restore it immediately after.
+const logLevelFromEnv = process.env.OTEL_LOG_LEVEL;
+if (logLevelFromEnv !== undefined) {
+  delete process.env.OTEL_LOG_LEVEL;
 }
 
-const sdk = new opentelemetry.NodeSDK({
-  instrumentations,
-  resourceDetectors,
-});
+let sdk: opentelemetry.NodeSDK;
+try {
+  sdk = new opentelemetry.NodeSDK({
+    instrumentations,
+    resourceDetectors,
+  });
+} finally {
+  if (logLevelFromEnv !== undefined) {
+    process.env.OTEL_LOG_LEVEL = logLevelFromEnv;
+  }
+}
 
 try {
   sdk.start();

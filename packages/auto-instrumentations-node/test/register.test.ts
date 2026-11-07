@@ -67,15 +67,17 @@ describe('Register', function () {
       `child.signalCode (${child.signalCode})`
     );
 
+    // Diagnostics belong on stderr; stdout is the application's own stream.
     assert.ok(
-      stdout.includes(
+      stderr.includes(
         'OpenTelemetry automatic instrumentation started successfully'
-      )
+      ),
+      `Process output was missing message indicating successful start, got stderr:\n${stderr}`
     );
 
     assert.ok(
-      stdout.includes('OpenTelemetry SDK terminated'),
-      `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
+      stderr.includes('OpenTelemetry SDK terminated'),
+      `Process output was missing message indicating successful shutdown, got stderr:\n${stderr}`
     );
 
     // Check a span has been generated for the GET request done in app.js
@@ -95,11 +97,11 @@ describe('Register', function () {
     const { child } = runPromise;
     await waitForString(child.stdout!, 'Finished request');
     child.kill('SIGTERM');
-    const { stdout } = await runPromise;
+    const { stdout, stderr } = await runPromise;
 
     assert.ok(
-      stdout.includes('OpenTelemetry SDK terminated'),
-      `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
+      stderr.includes('OpenTelemetry SDK terminated'),
+      `Process output was missing message indicating successful shutdown, got stderr:\n${stderr}`
     );
 
     // Check a span has been generated for the GET request done in app.js
