@@ -51,7 +51,33 @@ async function shutdown(): Promise<void> {
   }
 }
 
-// Gracefully shutdown SDK if a SIGTERM is received
-process.on('SIGTERM', shutdown);
+// Listeners already registered when this entry point is loaded cannot be the
+// application's own choice about its lifecycle: this module runs under
+// `--require`, before the application's first line. They belong to other
+// preloaded tooling — coverage harnesses and process wrappers typically install
+// one — which is why the decision below counts listeners relative to this
+// baseline rather than against zero.
+const sigtermListenersBeforeRegister = process.listenerCount('SIGTERM');
+
+// Gracefully shutdown SDK if a SIGTERM is received.
+//
+// Registering any SIGTERM listener replaces Node.js's default behaviour of
+// terminating on the signal, so this handler has to restore it: it is
+// registered with `once` (removing itself before it runs) and re-raises the
+// signal once the shutdown has settled, unless the application has registered a
+// listener of its own in the meantime. An application that handles SIGTERM
+// keeps control of its lifecycle and receives the signal exactly once; an
+// application that does not — the common case — still terminates, with the exit
+// status a signal death produces, rather than running until its orchestrator's
+// grace period expires.
+process.once('SIGTERM', () => {
+  void shutdown().then(() => {
+    // This handler has already removed itself, so anything above the baseline
+    // was added by the application.
+    if (process.listenerCount('SIGTERM') <= sigtermListenersBeforeRegister) {
+      process.kill(process.pid, 'SIGTERM');
+    }
+  });
+});
 // Gracefully shutdown SDK if Node.js is exiting normally
 process.once('beforeExit', shutdown);
