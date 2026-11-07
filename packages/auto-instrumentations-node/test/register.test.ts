@@ -3,10 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { execFile, PromiseWithChild } from 'child_process';
+import { ChildProcess, execFile, PromiseWithChild, spawn } from 'child_process';
 import * as assert from 'assert';
 import { promisify } from 'util';
 import { Readable } from 'stream';
+import * as path from 'path';
 
 const execFilePromise = promisify(execFile);
 
@@ -66,15 +67,17 @@ describe('Register', function () {
       `child.signalCode (${child.signalCode})`
     );
 
+    // Diagnostics belong on stderr; stdout is the application's own stream.
     assert.ok(
-      stdout.includes(
+      stderr.includes(
         'OpenTelemetry automatic instrumentation started successfully'
-      )
+      ),
+      `Process output was missing message indicating successful start, got stderr:\n${stderr}`
     );
 
     assert.ok(
-      stdout.includes('OpenTelemetry SDK terminated'),
-      `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
+      stderr.includes('OpenTelemetry SDK terminated'),
+      `Process output was missing message indicating successful shutdown, got stderr:\n${stderr}`
     );
 
     // Check a span has been generated for the GET request done in app.js
@@ -94,14 +97,147 @@ describe('Register', function () {
     const { child } = runPromise;
     await waitForString(child.stdout!, 'Finished request');
     child.kill('SIGTERM');
-    const { stdout } = await runPromise;
+    const { stdout, stderr } = await runPromise;
 
     assert.ok(
-      stdout.includes('OpenTelemetry SDK terminated'),
-      `Process output was missing message indicating successful shutdown, got stdout:\n${stdout}`
+      stderr.includes('OpenTelemetry SDK terminated'),
+      `Process output was missing message indicating successful shutdown, got stderr:\n${stderr}`
     );
 
     // Check a span has been generated for the GET request done in app.js
     assert.ok(stdout.includes("name: 'GET'"), 'console span output in stdout');
+  });
+});
+
+const REGISTER_PATH = path.join(__dirname, '..', 'dist', 'register.cjs');
+
+/**
+ * Environment for the injection-contract tests: no exporter writes to a stream of
+ * its own, so anything appearing on stdout or stderr is a diagnostic rather than
+ * telemetry the user asked for.
+ */
+function contractEnv(extra: Record<string, string> = {}): NodeJS.ProcessEnv {
+  return Object.assign(
+    {},
+    process.env,
+    {
+      OTEL_TRACES_EXPORTER: 'none',
+      OTEL_METRICS_EXPORTER: 'none',
+      OTEL_LOGS_EXPORTER: 'none',
+      OTEL_NODE_RESOURCE_DETECTORS: 'none',
+      FORCE_COLOR: '0',
+    },
+    extra
+  );
+}
+
+function spawnWithRegister(
+  app: string,
+  opts: { env?: NodeJS.ProcessEnv; preload?: string[] } = {}
+): ChildProcess {
+  const preload = (opts.preload ?? []).flatMap(p => ['--require', p]);
+  return spawn(
+    process.execPath,
+    [...preload, '--require', REGISTER_PATH, app],
+    { cwd: __dirname, env: opts.env ?? contractEnv() }
+  );
+}
+
+function exitsWithin(child: ChildProcess, ms: number): Promise<boolean> {
+  return new Promise(resolve => {
+    const timer = setTimeout(() => resolve(false), ms);
+    child.once('exit', () => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
+}
+
+function collect(
+  child: ChildProcess
+): Promise<{ stdout: string; stderr: string }> {
+  return new Promise(resolve => {
+    let stdout = '';
+    let stderr = '';
+    child.stdout!.on('data', d => (stdout += d));
+    child.stderr!.on('data', d => (stderr += d));
+    child.once('close', () => resolve({ stdout, stderr }));
+  });
+}
+
+/**
+ * Requirements an injectable distribution has to satisfy to be safely activated by
+ * an injector (the OpenTelemetry Injector, the Operator, or the System Packages),
+ * which activates this hook in EVERY Node.js process on a host — including
+ * applications whose owners never opted in.
+ *
+ * Each of these started as the reproduction of a gap. The assertion messages
+ * describe the mechanism behind the failure they guard against, and what it
+ * costs when this hook is activated for a whole host rather than one process.
+ */
+describe('Register: injection contract', function () {
+  this.timeout(20000);
+
+  it('does not prevent an app without a SIGTERM handler from terminating', async () => {
+    const child = spawnWithRegister('./test-app/app-no-sigterm-handler.js');
+    try {
+      await waitForString(child.stdout!, 'listening');
+      child.kill('SIGTERM');
+      const exited = await exitsWithin(child, 5000);
+      assert.ok(
+        exited,
+        'The process was still running 5s after SIGTERM. register adds ' +
+          'process.on("SIGTERM", shutdown), which replaces Node\'s default ' +
+          'terminate-on-SIGTERM behaviour and never exits or re-raises, so an ' +
+          'application that installs no SIGTERM handler of its own never stops. ' +
+          'Under an orchestrator it runs until the grace period expires and is ' +
+          'SIGKILLed. See #3808.'
+      );
+    } finally {
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGKILL');
+      }
+    }
+  });
+
+  it('does not prevent the application from starting when an instrumentation fails to load', async () => {
+    const child = spawnWithRegister('./test-app/app-hello.js', {
+      preload: [path.join(__dirname, 'test-app', 'throwing-module.js')],
+    });
+    const { stdout } = await collect(child);
+
+    assert.strictEqual(
+      stdout.trim(),
+      'APP_RAN',
+      'The application never reached its first line. register does not guard ' +
+        'its own imports, so a failure inside any one instrumentation module ' +
+        'escapes the --require phase and aborts the host process. Under an ' +
+        'injector that means a single unloadable module takes down every ' +
+        'Node.js application on the machine, instead of leaving them ' +
+        'uninstrumented.'
+    );
+    assert.strictEqual(child.exitCode, 0, `child.exitCode (${child.exitCode})`);
+  });
+
+  ['info', 'debug'].forEach(level => {
+    it(`writes no diagnostics to stdout at OTEL_LOG_LEVEL=${level}`, async () => {
+      const child = spawnWithRegister('./test-app/app-hello.js', {
+        env: contractEnv({ OTEL_LOG_LEVEL: level }),
+      });
+      const { stdout } = await collect(child);
+
+      const extra = stdout
+        .split('\n')
+        .filter(line => line.trim() !== '' && line.trim() !== 'APP_RAN');
+
+      assert.deepStrictEqual(
+        extra,
+        [],
+        `register wrote ${extra.length} line(s) to stdout. The host ` +
+          "application's stdout is its own — it may be a pipeline stage, a " +
+          'structured log stream or a protocol channel — so diagnostics belong ' +
+          `on stderr. First line was: ${JSON.stringify(extra[0] ?? '')}`
+      );
+    });
   });
 });
