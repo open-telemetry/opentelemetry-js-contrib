@@ -40,6 +40,22 @@ import { VERSION } from 'openai/version';
 import * as path from 'node:path';
 
 import {
+  ATTR_GEN_AI_REQUEST_STREAM,
+  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
+  ATTR_GEN_AI_TOKEN_MODALITY,
+  GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
+  GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
+  METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+} from '@opentelemetry/genai-util';
+import {
   ATTR_EVENT_NAME,
   ATTR_GEN_AI_SYSTEM,
   ATTR_GEN_AI_OPERATION_NAME,
@@ -49,6 +65,7 @@ import {
   ATTR_GEN_AI_PROVIDER_NAME,
   ATTR_GEN_AI_REQUEST_MAX_TOKENS,
   ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
+  ATTR_GEN_AI_REQUEST_SEED,
   ATTR_GEN_AI_REQUEST_TOP_P,
   ATTR_GEN_AI_USAGE_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
@@ -60,13 +77,11 @@ import {
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
-  ATTR_GEN_AI_TOKEN_TYPE,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
-  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
 } from '../src/semconv';
+
 
 // Remove any data from recorded responses that could have sensitive data
 // and that we don't need for testing.
@@ -80,6 +95,173 @@ const sanitizeRecordings = (scopes: Definition[]) => {
   }
   return scopes;
 };
+
+function metricByName(scopeMetrics: { metrics: any[] }, name: string): any {
+  const m = scopeMetrics.metrics.find(
+    (x: { descriptor: { name: string } }) => x.descriptor.name === name
+  );
+  expect(m).toBeDefined();
+  return m;
+}
+
+/** Match an object while allowing extra keys (e.g. exemplars, OTel SDK histogram fields). */
+function extendObjectContaining<T extends Record<string, unknown>>(partial: T) {
+  const { attributes, ...rest } = partial;
+  const out: Record<string, unknown> = { ...rest };
+  if (attributes !== undefined && typeof attributes === 'object' && attributes !== null) {
+    out.attributes = expect.objectContaining(
+      attributes as Record<string, unknown>
+    );
+  }
+  return expect.objectContaining(out);
+}
+
+/** Inference/chat: operation token histograms + usage counters (genai-util). */
+function expectInferenceTokenMetrics(
+  scopeMetrics: { metrics: any[] },
+  opts: {
+    inputSum: number;
+    outputSum: number;
+    baseAttrs: Record<string, unknown>;
+    /** When usage is unknown, token usage counters use modality `unknown` (e.g. failed requests with no usage). */
+    usageTokenModality?: 'text' | 'unknown';
+  }
+) {
+  const textMod = { [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_TEXT };
+  const unknownMod = {
+    [ATTR_GEN_AI_TOKEN_MODALITY]: GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
+  };
+  const usageMod =
+    opts.usageTokenModality === 'text'
+      ? textMod
+      : opts.usageTokenModality === 'unknown' ||
+          (opts.inputSum === 0 && opts.outputSum === 0)
+        ? unknownMod
+        : textMod;
+  const base = opts.baseAttrs;
+
+  const inOp = metricByName(scopeMetrics, METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS);
+  expect(inOp.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
+    type: 'HISTOGRAM',
+    description: 'Number of input tokens used per inference operation',
+    unit: '{token}',
+  });
+  expect(inOp.dataPoints.length).toBe(1);
+  expect(inOp.dataPoints[0]).toEqual(
+    extendObjectContaining({
+      value: expect.objectContaining({ sum: opts.inputSum }),
+      attributes: base,
+    })
+  );
+
+  const outOp = metricByName(scopeMetrics, METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS);
+  expect(outOp.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
+    type: 'HISTOGRAM',
+    description: 'Number of output tokens used per inference operation',
+    unit: '{token}',
+  });
+  expect(outOp.dataPoints.length).toBe(1);
+  expect(outOp.dataPoints[0]).toEqual(
+    extendObjectContaining({
+      value: expect.objectContaining({ sum: opts.outputSum }),
+      attributes: base,
+    })
+  );
+
+  const inUse = metricByName(scopeMetrics, METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS);
+  expect(inUse.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
+    type: 'COUNTER',
+    unit: '{token}',
+  });
+  expect(inUse.dataPoints).toEqual([
+    extendObjectContaining({
+      value: opts.inputSum,
+      attributes: { ...base, ...usageMod },
+    }),
+  ]);
+
+  const outUse = metricByName(scopeMetrics, METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS);
+  expect(outUse.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
+    type: 'COUNTER',
+    unit: '{token}',
+  });
+  expect(outUse.dataPoints).toEqual([
+    extendObjectContaining({
+      value: opts.outputSum,
+      attributes: { ...base, ...usageMod },
+    }),
+  ]);
+
+  for (const name of [
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_WRITE_INPUT_TOKENS,
+    METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+  ] as const) {
+    const mm = metricByName(scopeMetrics, name);
+    expect(mm.dataPoints).toEqual([
+      extendObjectContaining({
+        value: 0,
+        attributes: { ...base, ...unknownMod },
+      }),
+    ]);
+  }
+}
+
+function metricAttributesCoverExpected(
+  actual: Record<string, unknown>,
+  expected: Record<string, unknown>
+): boolean {
+  for (const key of Object.keys(expected)) {
+    if (actual[key] !== expected[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Streaming inference: time-to-first-chunk and time-per-output-chunk (genai-util / wrapAsyncStream). */
+function expectStreamingChunkTimingMetrics(
+  scopeMetrics: { metrics: any[] },
+  baseAttrs: Record<string, unknown>
+) {
+  const ttf = metricByName(
+    scopeMetrics,
+    METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+  );
+  expect(ttf.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+    type: 'HISTOGRAM',
+    unit: 's',
+  });
+  const ttfDp = ttf.dataPoints.find((dp: { attributes: Record<string, unknown> }) =>
+    metricAttributesCoverExpected(dp.attributes, baseAttrs)
+  );
+  expect(ttfDp).toBeDefined();
+  expect((ttfDp!.value as { sum: number; count: number }).sum).toBeGreaterThan(0);
+  expect((ttfDp!.value as { count: number }).count).toBeGreaterThanOrEqual(1);
+
+  const tpoc = metricByName(
+    scopeMetrics,
+    METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+  );
+  expect(tpoc.descriptor).toMatchObject({
+    name: METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
+    type: 'HISTOGRAM',
+    unit: 's',
+  });
+  const tpocDps = tpoc.dataPoints.filter(
+    (dp: { attributes: Record<string, unknown> }) =>
+      metricAttributesCoverExpected(dp.attributes, baseAttrs)
+  );
+  expect(tpocDps.length).toBeGreaterThanOrEqual(1);
+  for (const dp of tpocDps) {
+    expect((dp.value as { sum: number }).sum).toBeGreaterThanOrEqual(0);
+  }
+}
 
 describe('OpenAI', function () {
   this.timeout(10000); // Increase timeout for LLM tests
@@ -146,6 +328,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -159,50 +342,20 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -211,7 +364,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -221,6 +374,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -287,6 +441,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY]: 0.0,
@@ -295,6 +450,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 1.0,
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1.0,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['foo'],
+        [ATTR_GEN_AI_REQUEST_SEED]: 100,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
@@ -306,50 +462,20 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -358,7 +484,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -368,6 +494,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -428,6 +555,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -441,50 +569,20 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 6,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 6,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -493,7 +591,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -503,6 +601,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -594,6 +693,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -607,50 +707,20 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 57,
+        outputSum: 46,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 57,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 46,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -659,7 +729,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -669,6 +739,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -762,6 +833,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -775,50 +847,20 @@ describe('OpenAI', function () {
       const [resourceMetrics1] = metricExporter.getMetrics();
       expect(resourceMetrics1.scopeMetrics.length).toBe(1);
       const scopeMetrics1 = resourceMetrics1.scopeMetrics[0];
-      const tokenUsage1 = scopeMetrics1.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics1, {
+        inputSum: 125,
+        outputSum: 26,
+        baseAttrs: {
 
-      expect(tokenUsage1.length).toBe(1);
-      expect(tokenUsage1[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage1[0].dataPoints.length).toBe(2);
-      expect(tokenUsage1[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 125,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 26,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration1 = scopeMetrics1.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -827,7 +869,7 @@ describe('OpenAI', function () {
       expect(operationDuration1[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration1[0].dataPoints.length).toBe(1);
@@ -837,6 +879,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -944,8 +987,10 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'localhost',
         [ATTR_SERVER_PORT]: 9999,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['error'],
         [ATTR_ERROR_TYPE]: 'APIConnectionError',
       });
 
@@ -953,10 +998,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-      expect(tokenUsage).toHaveLength(0);
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_SERVER_ADDRESS]: 'localhost',
+          [ATTR_SERVER_PORT]: 9999,
+        },
+        usageTokenModality: 'unknown',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -965,7 +1019,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -975,6 +1029,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1030,6 +1085,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1037,56 +1093,28 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"South Atlantic Ocean."}],"finish_reason":"stop"}]',
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 4,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 4,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1095,7 +1123,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -1105,6 +1133,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1169,6 +1198,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
@@ -1176,56 +1206,28 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 6,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"South Atlantic Ocean."}],"finish_reason":"stop"},{"role":"assistant","parts":[{"type":"text","content":"Southern Ocean"}],"finish_reason":"stop"}]',
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 6,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 6,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1234,7 +1236,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -1244,6 +1246,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1296,6 +1299,7 @@ describe('OpenAI', function () {
       });
     });
 
+    // Chat completions with content capture — tool_calls span assertions (serialized messages)
     it('records tool calls', async () => {
       const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
         {
@@ -1335,12 +1339,35 @@ describe('OpenAI', function () {
       const toolCalls = chatCompletion.choices[0].message.tool_calls!;
       expect(toolCalls.length).toBe(2);
 
+      const inputMessagesJson = '[{"role":"system","parts":[{"type":"text","content":"You are a helpful assistant providing weather updates."}]},{"role":"user","parts":[{"type":"text","content":"What is the weather in New York City and London?"}]}]';
+      const outputMessagesJson = JSON.stringify([
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool_call',
+              id: toolCalls[0].id,
+              name: 'get_weather',
+              arguments: '{"location": "New York City"}',
+            },
+            {
+              type: 'tool_call',
+              id: toolCalls[1].id,
+              name: 'get_weather',
+              arguments: '{"location": "London"}',
+            },
+          ],
+          finish_reason: 'tool_calls',
+        },
+      ]);
+
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
       expect(spans[0].attributes).toEqual({
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
@@ -1348,56 +1375,28 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 57,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 46,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputMessagesJson,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputMessagesJson,
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 57,
+        outputSum: 46,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 57,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 46,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1406,7 +1405,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -1416,6 +1415,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1509,12 +1509,85 @@ describe('OpenAI', function () {
         'The weather is currently 25 degrees and sunny in New York City, while in London, it is 15 degrees and raining.'
       );
 
+      const inputMessagesJson1 = JSON.stringify([
+        {
+          role: 'system',
+          parts: [
+            {
+              type: 'text',
+              content:
+                'You are a helpful assistant providing weather updates.',
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              content: 'What is the weather in New York City and London?',
+            },
+          ],
+        },
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool_call',
+              id: toolCalls[0].id,
+              name: 'get_weather',
+              arguments: '{"location": "New York City"}',
+            },
+            {
+              type: 'tool_call',
+              id: toolCalls[1].id,
+              name: 'get_weather',
+              arguments: '{"location": "London"}',
+            },
+          ],
+        },
+        {
+          role: 'tool',
+          parts: [
+            {
+              type: 'tool_call_response',
+              id: toolCalls[0].id,
+              response: '25 degrees and sunny',
+            },
+          ],
+        },
+        {
+          role: 'tool',
+          parts: [
+            {
+              type: 'tool_call_response',
+              id: toolCalls[1].id,
+              response: '15 degrees and raining',
+            },
+          ],
+        },
+      ]);
+      const outputMessagesJson1 = JSON.stringify([
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'text',
+              content:
+                'The weather is currently 25 degrees and sunny in New York City, while in London, it is 15 degrees and raining.',
+            },
+          ],
+          finish_reason: 'stop',
+        },
+      ]);
+
       const spans1 = getTestSpans();
       expect(spans1.length).toBe(1);
       expect(spans1[0].attributes).toEqual({
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1522,56 +1595,28 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 125,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 27,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputMessagesJson1,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputMessagesJson1,
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics1] = metricExporter.getMetrics();
       expect(resourceMetrics1.scopeMetrics.length).toBe(1);
       const scopeMetrics1 = resourceMetrics1.scopeMetrics[0];
-      const tokenUsage1 = scopeMetrics1.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics1, {
+        inputSum: 125,
+        outputSum: 27,
+        baseAttrs: {
 
-      expect(tokenUsage1.length).toBe(1);
-      expect(tokenUsage1[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+              [ATTR_GEN_AI_SYSTEM]: 'openai',
+              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+      },
       });
-      expect(tokenUsage1[0].dataPoints.length).toBe(2);
-      expect(tokenUsage1[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 125,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 27,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration1 = scopeMetrics1.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1580,7 +1625,7 @@ describe('OpenAI', function () {
       expect(operationDuration1[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration1[0].dataPoints.length).toBe(1);
@@ -1590,6 +1635,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1715,22 +1761,33 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(0);
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1739,7 +1796,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -1749,6 +1806,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -1761,6 +1819,16 @@ describe('OpenAI', function () {
       expect(
         (operationDuration[0].dataPoints[0].value as any).sum
       ).toBeGreaterThan(0);
+
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
 
       const spanCtx = spans[0].spanContext();
 
@@ -1873,6 +1941,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
@@ -1880,56 +1949,37 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 4,
+        baseAttrs: {
+
+              [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
               [ATTR_GEN_AI_SYSTEM]: 'openai',
               [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
               [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
               [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
               [ATTR_SERVER_ADDRESS]: 'api.openai.com',
               [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 4,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'output',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
+      },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -1938,7 +1988,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -1948,6 +1998,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2014,22 +2065,42 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2038,7 +2109,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2048,6 +2119,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2159,22 +2231,43 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        usageTokenModality: 'unknown',
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2183,7 +2276,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2193,6 +2286,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2292,22 +2386,42 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics1] = metricExporter.getMetrics();
       expect(resourceMetrics1.scopeMetrics.length).toBe(1);
       const scopeMetrics1 = resourceMetrics1.scopeMetrics[0];
-      const tokenUsage1 = scopeMetrics1.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage1.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics1, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
+      expectInferenceTokenMetrics(scopeMetrics1, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration1 = scopeMetrics1.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2316,7 +2430,7 @@ describe('OpenAI', function () {
       expect(operationDuration1[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration1[0].dataPoints.length).toBe(1);
@@ -2326,6 +2440,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2436,22 +2551,43 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2460,7 +2596,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2470,6 +2606,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2536,22 +2673,43 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2560,7 +2718,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2570,6 +2728,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2607,6 +2766,7 @@ describe('OpenAI', function () {
     });
   });
 
+  // Streaming chat completions with content capture — tool_calls (streaming)
   describe('streaming chat completions with content capture', function () {
     this.beforeEach(() => {
       contentCaptureInstrumentation.enable();
@@ -2639,22 +2799,35 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"Atlantic Ocean."}],"finish_reason":"stop"}]',
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(0);
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2663,7 +2836,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2673,6 +2846,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2685,6 +2859,16 @@ describe('OpenAI', function () {
       expect(
         (operationDuration[0].dataPoints[0].value as any).sum
       ).toBeGreaterThan(0);
+
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
 
       const spanCtx = spans[0].spanContext();
 
@@ -2743,22 +2927,45 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop', 'stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"Southern Ocean."}],"finish_reason":"stop"},{"role":"assistant","parts":[{"type":"text","content":"Atlantic Ocean."}],"finish_reason":"stop"}]',
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2767,7 +2974,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2777,6 +2984,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -2888,28 +3096,73 @@ describe('OpenAI', function () {
       }
       expect(toolCalls.length).toBe(2);
 
+      const inputMessagesJson = '[{"role":"system","parts":[{"type":"text","content":"You are a helpful assistant providing weather updates."}]},{"role":"user","parts":[{"type":"text","content":"What is the weather in New York City and London?"}]}]';
+      const outputMessagesJson = JSON.stringify([
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool_call',
+              id: toolCalls[0].id,
+              name: 'get_weather',
+              arguments: '{"location": "New York City"}',
+            },
+            {
+              type: 'tool_call',
+              id: toolCalls[1].id,
+              name: 'get_weather',
+              arguments: '{"location": "London"}',
+            },
+          ],
+          finish_reason: 'tool_calls',
+        },
+      ]);
+
       const spans = getTestSpans();
       expect(spans.length).toBe(1);
       expect(spans[0].attributes).toEqual({
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['tool_calls'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputMessagesJson,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputMessagesJson,
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        usageTokenModality: 'unknown',
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -2918,7 +3171,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -2928,6 +3181,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -3027,28 +3281,122 @@ describe('OpenAI', function () {
         'The weather is currently 25 degrees and sunny in New York City, while in London, it is 15 degrees and raining.'
       );
 
+      const inputMessagesJson1 = JSON.stringify([
+        {
+          role: 'system',
+          parts: [
+            {
+              type: 'text',
+              content:
+                'You are a helpful assistant providing weather updates.',
+            },
+          ],
+        },
+        {
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              content: 'What is the weather in New York City and London?',
+            },
+          ],
+        },
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'tool_call',
+              id: toolCalls[0].id,
+              name: 'get_weather',
+              arguments: '{"location": "New York City"}',
+            },
+            {
+              type: 'tool_call',
+              id: toolCalls[1].id,
+              name: 'get_weather',
+              arguments: '{"location": "London"}',
+            },
+          ],
+        },
+        {
+          role: 'tool',
+          parts: [
+            {
+              type: 'tool_call_response',
+              id: toolCalls[0].id,
+              response: '25 degrees and sunny',
+            },
+          ],
+        },
+        {
+          role: 'tool',
+          parts: [
+            {
+              type: 'tool_call_response',
+              id: toolCalls[1].id,
+              response: '15 degrees and raining',
+            },
+          ],
+        },
+      ]);
+      const outputMessagesJson1 = JSON.stringify([
+        {
+          role: 'assistant',
+          parts: [
+            {
+              type: 'text',
+              content:
+                'The weather is currently 25 degrees and sunny in New York City, while in London, it is 15 degrees and raining.',
+            },
+          ],
+          finish_reason: 'stop',
+        },
+      ]);
+
       const spans1 = getTestSpans();
       expect(spans1.length).toBe(1);
       expect(spans1[0].attributes).toEqual({
         [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
         [ATTR_GEN_AI_RESPONSE_ID]: expect.stringMatching(/^chatcmpl-/),
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputMessagesJson1,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputMessagesJson1,
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics1] = metricExporter.getMetrics();
       expect(resourceMetrics1.scopeMetrics.length).toBe(1);
       const scopeMetrics1 = resourceMetrics1.scopeMetrics[0];
-      const tokenUsage1 = scopeMetrics1.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage1.length).toBe(0);
+      expectStreamingChunkTimingMetrics(scopeMetrics1, {
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+        [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+      });
+      expectInferenceTokenMetrics(scopeMetrics1, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
+          [ATTR_GEN_AI_SYSTEM]: 'openai',
+          [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+        },
+      });
 
       const operationDuration1 = scopeMetrics1.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3057,7 +3405,7 @@ describe('OpenAI', function () {
       expect(operationDuration1[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration1[0].dataPoints.length).toBe(1);
@@ -3067,6 +3415,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
             [ATTR_GEN_AI_REQUEST_MODEL]: model,
@@ -3182,6 +3531,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
         [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
         [ATTR_GEN_AI_SYSTEM]: 'openai',
+        [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
         [ATTR_SERVER_ADDRESS]: 'api.openai.com',
         [ATTR_SERVER_PORT]: 443,
         [ATTR_GEN_AI_RESPONSE_MODEL]: 'text-embedding-3-small',
@@ -3193,36 +3543,6 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
-      });
-      expect(tokenUsage[0].dataPoints.length).toBe(1);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 8,
-            }),
-            attributes: {
-              [ATTR_GEN_AI_SYSTEM]: 'openai',
-              [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
-              [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
-              [ATTR_GEN_AI_TOKEN_TYPE]: 'input',
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'text-embedding-3-small',
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3231,7 +3551,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -3241,6 +3561,7 @@ describe('OpenAI', function () {
             sum: expect.any(Number),
           }),
           attributes: {
+            [ATTR_GEN_AI_PROVIDER_NAME]: 'openai',
             [ATTR_GEN_AI_SYSTEM]: 'openai',
             [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
             [ATTR_GEN_AI_REQUEST_MODEL]: 'text-embedding-3-small',
@@ -3291,50 +3612,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3343,7 +3633,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -3433,50 +3723,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3485,7 +3744,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -3621,50 +3880,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3673,7 +3901,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -3793,50 +4021,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -3845,7 +4042,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -3950,50 +4147,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4002,7 +4168,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -4113,50 +4279,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4165,7 +4300,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -4284,50 +4419,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: computerModel,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'computer-use-preview-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: computerModel,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'computer-use-preview-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: computerModel,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'computer-use-preview-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4336,7 +4440,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -4445,50 +4549,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4497,7 +4570,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -4609,50 +4682,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4661,7 +4703,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -4826,50 +4868,19 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 291,
+        outputSum: 23,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 291,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 23,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4.1-2025-04-14',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -4878,7 +4889,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -5210,6 +5221,7 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
         [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
         [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['error'],
         [ATTR_ERROR_TYPE]: 'APIConnectionError',
       });
 
@@ -5217,10 +5229,18 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-      expect(tokenUsage).toHaveLength(0);
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 0,
+        outputSum: 0,
+        baseAttrs: {
+          [ATTR_SERVER_ADDRESS]: 'localhost',
+          [ATTR_SERVER_PORT]: 9999,
+          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        },
+        usageTokenModality: 'unknown',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -5229,7 +5249,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -5427,56 +5447,27 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"Atlantic Ocean."}],"finish_reason":"stop"}]',
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -5485,7 +5476,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -5581,56 +5572,36 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
+
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -5639,7 +5610,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -5718,27 +5689,18 @@ describe('OpenAI', function () {
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({ sum: 22 }),
-            attributes: expect.objectContaining({
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            }),
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({ sum: 4 }),
-            attributes: expect.objectContaining({
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            }),
-          }),
-        ])
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 4,
+        baseAttrs: {
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        },
+      });
     });
 
     it('does not misbehave with double iteration', async () => {
@@ -5774,17 +5736,35 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 4,
+        baseAttrs: {
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        },
+      });
 
-      expect(tokenUsage.length).toBe(1);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -5793,10 +5773,9 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
       expect(operationDuration[0].dataPoints).toEqual([
         expect.objectContaining({
           value: expect.objectContaining({
@@ -5883,56 +5862,38 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 3,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"Atlantic Ocean."}],"finish_reason":"stop"}]',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 3,
+        baseAttrs: {
 
-      expect(tokenUsage.length).toBe(1);
-      expect(tokenUsage[0].descriptor).toMatchObject({
-        name: 'gen_ai.client.token.usage',
-        type: 'HISTOGRAM',
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
+              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+              [ATTR_SERVER_PORT]: 443,
+              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+              [ATTR_GEN_AI_REQUEST_MODEL]: model,
+              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      },
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
-      expect(tokenUsage[0].dataPoints).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 22,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-            },
-          }),
-          expect.objectContaining({
-            value: expect.objectContaining({
-              sum: 3,
-            }),
-            attributes: {
-              [ATTR_SERVER_ADDRESS]: 'api.openai.com',
-              [ATTR_SERVER_PORT]: 443,
-              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-              [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-              [ATTR_GEN_AI_REQUEST_MODEL]: model,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
-              [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-            },
-          }),
-        ])
-      );
+
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -5941,7 +5902,7 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
       expect(operationDuration[0].dataPoints.length).toBe(1);
@@ -6037,17 +5998,37 @@ describe('OpenAI', function () {
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
         [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 4,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['stop'],
+        [ATTR_GEN_AI_INPUT_MESSAGES]: `[{"role":"user","parts":[{"type":"text","content":"${input}"}]}]`,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: '[{"role":"assistant","parts":[{"type":"text","content":"South Atlantic Ocean."}],"finish_reason":"stop"}]',
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+        [ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK]: expect.any(Number),
       });
 
       await meterProvider.forceFlush();
       const [resourceMetrics] = metricExporter.getMetrics();
       expect(resourceMetrics.scopeMetrics.length).toBe(1);
       const scopeMetrics = resourceMetrics.scopeMetrics[0];
-      const tokenUsage = scopeMetrics.metrics.filter(
-        m => m.descriptor.name === 'gen_ai.client.token.usage'
-      );
+      expectInferenceTokenMetrics(scopeMetrics, {
+        inputSum: 22,
+        outputSum: 4,
+        baseAttrs: {
+          [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+          [ATTR_SERVER_PORT]: 443,
+          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+          [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+          [ATTR_GEN_AI_REQUEST_MODEL]: model,
+          [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+        },
+      });
 
-      expect(tokenUsage.length).toBe(1);
+      expectStreamingChunkTimingMetrics(scopeMetrics, {
+        [ATTR_SERVER_ADDRESS]: 'api.openai.com',
+        [ATTR_SERVER_PORT]: 443,
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+        [ATTR_GEN_AI_REQUEST_MODEL]: model,
+        [ATTR_GEN_AI_RESPONSE_MODEL]: 'gpt-4o-mini-2024-07-18',
+      });
 
       const operationDuration = scopeMetrics.metrics.filter(
         m => m.descriptor.name === 'gen_ai.client.operation.duration'
@@ -6056,10 +6037,9 @@ describe('OpenAI', function () {
       expect(operationDuration[0].descriptor).toMatchObject({
         name: 'gen_ai.client.operation.duration',
         type: 'HISTOGRAM',
-        description: 'GenAI operation duration',
+        description: 'Duration of GenAI client operation',
         unit: 's',
       });
-      expect(tokenUsage[0].dataPoints.length).toBe(2);
       expect(operationDuration[0].dataPoints).toEqual([
         expect.objectContaining({
           value: expect.objectContaining({

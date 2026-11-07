@@ -26,8 +26,7 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..'
 );
-// genai-util exports nothing yet (incremental export policy), so its empty entry is expected.
-const SKIP_PACKAGES = ['@opentelemetry/genai-util'];
+const SKIP_PACKAGES = [];
 // Exempt from the empty-module check: these entries register at load and export nothing.
 const SIDE_EFFECT_ENTRIES = {
   '@opentelemetry/auto-instrumentations-node': ['./register'],

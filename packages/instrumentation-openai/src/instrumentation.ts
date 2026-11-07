@@ -3,41 +3,45 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// avoids a dependency on @opentelemetry/core for hrTime utilities
-import { performance } from 'perf_hooks';
-
 import {
   context,
+  metrics,
   SeverityNumber,
-  SpanKind,
-  SpanStatusCode,
   trace,
   type AnyValue,
   type Attributes,
   type Context,
-  type Histogram,
-  type Span,
+  type MeterProvider,
+  type TracerProvider,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
 } from '@opentelemetry/instrumentation';
+import {
+  ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  TelemetryHandler,
+  getContentCaptureMode,
+  getErrorType,
+  type ContentCaptureMode,
+  type EmbeddingInvocation,
+  type FinishReason,
+  type GenAIInstrumentationConfig,
+  type InferenceInvocation,
+  type InferenceInvocationOptions,
+  type InputMessages as GenaiInputMessages,
+  type MessagePart,
+  type OutputMessages,
+} from '@opentelemetry/genai-util';
 import type {
   ChatCompletion,
   ChatCompletionMessageToolCall,
-  ChatCompletionContentPart,
-  ChatCompletionContentPartRefusal,
-  ChatCompletionContentPartText,
   ChatCompletionCreateParams,
   ChatCompletionMessageParam,
   ChatCompletionChunk,
   Completions as ChatCompletions,
 } from 'openai/resources/chat/completions';
-import type {
-  CreateEmbeddingResponse,
-  Embeddings,
-  EmbeddingCreateParams,
-} from 'openai/resources/embeddings';
+import type { Embeddings, EmbeddingCreateParams } from 'openai/resources/embeddings';
 import type {
   Responses,
   Response,
@@ -57,26 +61,16 @@ import {
   ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
   ATTR_GEN_AI_REQUEST_TEMPERATURE,
   ATTR_GEN_AI_REQUEST_TOP_P,
-  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
-  ATTR_GEN_AI_RESPONSE_ID,
-  ATTR_GEN_AI_RESPONSE_MODEL,
   ATTR_GEN_AI_SYSTEM,
   ATTR_GEN_AI_PROVIDER_NAME,
-  ATTR_GEN_AI_TOKEN_TYPE,
-  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
-  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   EVENT_GEN_AI_CHOICE,
   EVENT_GEN_AI_SYSTEM_MESSAGE,
   EVENT_GEN_AI_USER_MESSAGE,
   EVENT_GEN_AI_ASSISTANT_MESSAGE,
   EVENT_GEN_AI_TOOL_MESSAGE,
-  GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-  GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
@@ -84,7 +78,17 @@ import {
 } from './semconv';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { getEnvBool, getAttrsFromBaseURL } from './utils';
+import {
+  chatCompletionParamsToInferenceRequestOptions,
+  formatChatMessageContent,
+  getAttrsFromBaseURL,
+  getEnvBool,
+  getProviderNameFromBaseURL,
+  getServerFromBaseURL,
+  responseCreateParamsToInferenceRequestOptions,
+  tokenUsageDetailsFromChatCompletionUsage,
+  tokenUsageDetailsFromResponsesUsage,
+} from './utils';
 import {
   ConvertResponseInputsToInputMessagesUseCase,
   ConvertResponseOutputsToOutputMessagesUseCase,
@@ -99,33 +103,91 @@ import type {
   GenAIAssistantMessageEventBody,
   GenAIToolMessageEventBody,
   GenAIToolCall,
-  InputMessages,
 } from './internal-types';
 
 export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumentationConfig> {
-  private _genaiClientOperationDuration!: Histogram;
-  private _genaiClientTokenUsage!: Histogram;
+  private _telemetryHandler: TelemetryHandler | undefined;
+  private _explicitTracerProvider: TracerProvider | undefined;
+  private _explicitMeterProvider: MeterProvider | undefined;
 
   constructor(config: OpenAIInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
 
-    // Possible environment variable overrides for config.
+    // Boolean env (true/false) is handled in `_getEffectiveContentCaptureMode`
+    // so it maps to `span_only` / `none` like the previous instrumentation.
     const cfg = this.getConfig();
-    const envCC = getEnvBool(
-      'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT',
-      this._diag
-    );
-    if (envCC !== undefined) {
-      cfg.captureMessageContent = envCC;
+    const envCC = getEnvBool(ENV_GENAI_CAPTURE_MESSAGE_CONTENT, this._diag);
+    if (envCC === true) {
+      cfg.captureMessageContent = 'span_only';
+    } else if (envCC === false) {
+      cfg.captureMessageContent = 'none';
     }
   }
 
   // Override InstrumentationAbtract.setConfig so we can normalize config.
   override setConfig(config: OpenAIInstrumentationConfig = {}) {
-    const { captureMessageContent, ...validConfig } = config;
-    (validConfig as OpenAIInstrumentationConfig).captureMessageContent =
-      !!captureMessageContent;
+    const { captureMessageContent, ...rest } = config;
+    const validConfig: OpenAIInstrumentationConfig = { ...rest };
+    if (captureMessageContent !== undefined) {
+      validConfig.captureMessageContent =
+        typeof captureMessageContent === 'boolean'
+          ? captureMessageContent
+            ? 'span_only'
+            : 'none'
+          : captureMessageContent;
+    }
+    this._telemetryHandler = undefined;
     super.setConfig(validConfig);
+  }
+
+  override setTracerProvider(tracerProvider: TracerProvider): void {
+    super.setTracerProvider(tracerProvider);
+    this._explicitTracerProvider = tracerProvider;
+    this._telemetryHandler = undefined;
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider): void {
+    super.setMeterProvider(meterProvider);
+    this._explicitMeterProvider = meterProvider;
+    this._telemetryHandler = undefined;
+  }
+
+  /**
+   * Effective content capture mode: boolean env from this package first, then
+   * genai-util env + normalized config.
+   */
+  private _getEffectiveContentCaptureMode(): ContentCaptureMode {
+    const envBool = getEnvBool(ENV_GENAI_CAPTURE_MESSAGE_CONTENT, this._diag);
+    if (envBool === true) {
+      return 'span_only';
+    }
+    if (envBool === false) {
+      return 'none';
+    }
+    const cfg = this.getConfig().captureMessageContent;
+    const normalized: ContentCaptureMode | undefined =
+      typeof cfg === 'boolean' ? (cfg ? 'span_only' : 'none') : cfg;
+    return getContentCaptureMode(normalized);
+  }
+
+  private _genAiConfigForTelemetryHandler(): GenAIInstrumentationConfig {
+    return { captureMessageContent: this._getEffectiveContentCaptureMode() };
+  }
+
+  private _shouldCaptureMessageContent(): boolean {
+    return this._getEffectiveContentCaptureMode() !== 'none';
+  }
+
+  private _getTelemetryHandler(): TelemetryHandler {
+    return (this._telemetryHandler ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider:
+        this._explicitTracerProvider ?? trace.getTracerProvider(),
+      meterProvider: this._explicitMeterProvider ?? metrics.getMeterProvider(),
+      diag: this._diag,
+      config: this._genAiConfigForTelemetryHandler(),
+    }));
   }
 
   protected init() {
@@ -173,41 +235,13 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     ];
   }
 
-  // This is a 'protected' method on class `InstrumentationAbstract`.
-  override _updateMetricInstruments() {
-    this._genaiClientOperationDuration = this.meter.createHistogram(
-      METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-      {
-        description: 'GenAI operation duration',
-        unit: 's',
-        advice: {
-          explicitBucketBoundaries: [
-            0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24,
-            20.48, 40.96, 81.92,
-          ],
-        },
-      }
-    );
-    this._genaiClientTokenUsage = this.meter.createHistogram(
-      METRIC_GEN_AI_CLIENT_TOKEN_USAGE,
-      {
-        description: 'Measures number of input and output tokens used',
-        unit: '{token}',
-        advice: {
-          explicitBucketBoundaries: [
-            1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144, 1048576,
-            4194304, 16777216, 67108864,
-          ],
-        },
-      }
-    );
-  }
+  // Metrics are created by TelemetryHandler (gen_ai-util).
+  override _updateMetricInstruments(): void {}
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _getPatchedChatCompletionsCreate(): any {
     const self = this;
     return (original: ChatCompletions['create']) => {
-      // https://platform.openai.com/docs/api-reference/chat/create
       return function patchedCreate(
         this: ChatCompletions,
         ...args: Parameters<ChatCompletions['create']>
@@ -219,147 +253,337 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         self._diag.debug('OpenAI.Chat.Completions.create args: %O', args);
         const params = args[0];
         const config = self.getConfig();
-        const startNow = performance.now();
+        const captureContent = self._shouldCaptureMessageContent();
+        const baseURL = this?._client?.baseURL;
 
-        let startInfo: ReturnType<
-          OpenAIInstrumentation['_startChatCompletionsSpan']
-        >;
+        let invocation: InferenceInvocation;
         try {
-          startInfo = self._startChatCompletionsSpan(
+          invocation = self._startChatCompletionInvocation(
             params,
             config,
-            this?._client?.baseURL
+            baseURL
           );
         } catch (err) {
-          self._diag.error('unexpected error starting span:', err);
+          self._diag.error('unexpected error starting invocation:', err);
           return original.apply(this, args);
         }
-        const { span, ctx, commonAttrs } = startInfo;
 
+        const ctx = invocation.getContext();
         const apiPromise = context.with(ctx, () => original.apply(this, args));
 
-        // Streaming.
         if (isStreamPromise(params, apiPromise)) {
-          // When streaming, `apiPromise` resolves to `Stream`,
-          // an async iterable (i.e. has a `Symbol.asyncIterator` method). We
-          // want to wrap that iteration to gather telemetry. Instead of wrapping
-          // `Symbol.asyncIterator`, which would be nice, we wrap the `iterator`
-          // method because it is used internally by `Stream#tee()`.
+          type StreamAccum = {
+            id?: string;
+            model?: string;
+            finishReasons: string[];
+            choices: Array<{
+              content?: string;
+              toolCalls?: ChatCompletionMessageToolCall[];
+            }>;
+          };
+          const acc: StreamAccum = { finishReasons: [], choices: [] };
+
           apiPromise
             .then(stream => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              self._wrap(stream as any, 'iterator', origIterator => {
-                return () => {
-                  return self._onChatCompletionsStreamIterator(
-                    origIterator(),
-                    span,
-                    startNow,
-                    config,
-                    commonAttrs,
-                    ctx
+              self._getTelemetryHandler().wrapAsyncStream(
+                stream as Stream<ChatCompletionChunk>,
+                {
+                invocation,
+                onChunk: (chunk: ChatCompletionChunk) => {
+                  self._diag.debug(
+                    'OpenAI.Chat.Completions.create stream chunk: %O',
+                    chunk
                   );
-                };
+                  const idx = chunk.choices?.[0]?.index ?? 0;
+                  if (!acc.choices[idx]) {
+                    acc.choices[idx] = {};
+                  }
+                  const choiceAcc = acc.choices[idx]!;
+                  if (captureContent) {
+                    const contentPart = chunk.choices?.[0]?.delta?.content;
+                    if (contentPart) {
+                      choiceAcc.content = (choiceAcc.content ?? '') + contentPart;
+                    }
+                  }
+                  const toolCallPart = chunk.choices?.[0]?.delta?.tool_calls?.[0];
+                  if (toolCallPart) {
+                    if (!choiceAcc.toolCalls) {
+                      choiceAcc.toolCalls = [];
+                    }
+                    const toolCalls = choiceAcc.toolCalls;
+                    if (toolCallPart.id) {
+                      if (toolCallPart.type === 'function') {
+                        const repr: ChatCompletionMessageToolCall = {
+                          id: toolCallPart.id,
+                          type: 'function',
+                          function: {
+                            name: toolCallPart.function?.name ?? '',
+                            arguments: toolCallPart.function?.arguments ?? '',
+                          },
+                        };
+                        toolCalls.push(repr);
+                      }
+                    } else if (toolCalls.length > 0) {
+                      const lastPart = toolCalls[toolCalls.length - 1];
+                      if (
+                        lastPart.type === 'function' &&
+                        lastPart.function !== undefined
+                      ) {
+                        lastPart.function.arguments +=
+                          toolCallPart.function?.arguments ?? '';
+                      }
+                    }
+                  }
+                  if (!acc.id && chunk.id) {
+                    acc.id = chunk.id;
+                    invocation.setResponseId(chunk.id);
+                  }
+                  if (!acc.model && chunk.model) {
+                    acc.model = chunk.model;
+                    invocation.setResponseModel(chunk.model);
+                  }
+                  const fr = chunk.choices?.[0]?.finish_reason;
+                  if (fr) {
+                    acc.finishReasons[idx] = fr;
+                  }
+                  if (chunk.usage) {
+                    const usageDetails =
+                      tokenUsageDetailsFromChatCompletionUsage(chunk.usage);
+                    if (usageDetails) {
+                      invocation.setUsage(usageDetails);
+                    }
+                  }
+                },
+                onEnd: async () => {
+                  const reasons = acc.finishReasons.filter(
+                    r => r !== undefined
+                  );
+                  if (reasons.length > 0) {
+                    invocation.setFinishReasons(reasons as FinishReason[]);
+                  }
+                  const outputs = self._chatStreamAccumToOutputMessages(
+                    acc,
+                    captureContent
+                  );
+                  if (outputs.length > 0) {
+                    invocation.addOutputMessages(outputs);
+                  }
+                  self._emitChatCompletionChoiceLogs(ctx, captureContent, acc);
+                },
               });
               return stream;
             })
-            .catch(
-              self._createAPIPromiseRejectionHandler(
-                startNow,
-                span,
-                commonAttrs
-              )
-            );
-          // We have to return the original `APIPromise` instance, because it is
-          // a customized subclass of `Promise`.
+            .catch((err: Error) => {
+              invocation.fail({
+                exception: err,
+                errorType: getErrorType(err),
+                statusDescription: err.message,
+              });
+            });
           return apiPromise;
         }
 
-        // Non-streaming.
         apiPromise
           .then(result => {
-            self._onChatCompletionsCreateResult(
-              span,
-              startNow,
-              commonAttrs,
-              result as ChatCompletion,
-              config,
-              ctx
-            );
+            try {
+              self._finalizeChatCompletionSync(
+                invocation,
+                result as ChatCompletion,
+                captureContent,
+                ctx
+              );
+              invocation.stop();
+            } catch (err) {
+              self._diag.error(
+                'unexpected error getting telemetry from chat result:',
+                err
+              );
+              invocation.stop();
+            }
           })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
-          );
+          .catch((err: Error) => {
+            invocation.fail({
+              exception: err,
+              errorType: getErrorType(err),
+              statusDescription: err.message,
+            });
+          });
 
         return apiPromise;
       };
     };
   }
 
-  /**
-   * Start a span for this chat-completion API call. This also emits log events
-   * as appropriate for the request params.
-   */
-  private _startChatCompletionsSpan(
+  private _chatCompletionParamsToInputMessages(
+    params: ChatCompletionCreateParams,
+    capture: boolean
+  ): GenaiInputMessages {
+    return params.messages.map((msg: ChatCompletionMessageParam) => {
+      const parts: MessagePart[] = [];
+      switch (msg.role) {
+        case 'system':
+        case 'user': {
+          if (Array.isArray(msg.content)) {
+            for (const p of msg.content as ReadonlyArray<{
+              type?: string;
+              text?: string;
+            }>) {
+              if (p.type === 'text' && typeof p.text === 'string') {
+                parts.push({
+                  type: 'text',
+                  content: capture ? p.text : '',
+                });
+              } else if (p.type === 'refusal' && 'refusal' in p) {
+                const refusal = (p as { refusal?: string }).refusal;
+                if (typeof refusal === 'string') {
+                  parts.push({ type: 'text', content: capture ? refusal : '' });
+                }
+              } else if (p.type === 'image_url') {
+                parts.push({
+                  type: 'text',
+                  content: '[image]',
+                });
+              }
+            }
+          } else if (typeof msg.content === 'string') {
+            parts.push({
+              type: 'text',
+              content: capture ? msg.content : '',
+            });
+          }
+          return { role: msg.role, parts };
+        }
+        case 'assistant': {
+          if (msg.content) {
+            if (Array.isArray(msg.content)) {
+              const text = formatChatMessageContent(
+                msg.content as Parameters<typeof formatChatMessageContent>[0]
+              );
+              if (text.length > 0) {
+                parts.push({ type: 'text', content: capture ? text : '' });
+              }
+            } else {
+              parts.push({
+                type: 'text',
+                content: capture ? String(msg.content) : '',
+              });
+            }
+          }
+          if (msg.tool_calls) {
+            for (const tc of msg.tool_calls) {
+              if (tc.type === 'function') {
+                parts.push({
+                  type: 'tool_call',
+                  id: tc.id,
+                  name: tc.function.name,
+                  arguments: capture ? tc.function.arguments : undefined,
+                });
+              }
+            }
+          }
+          return { role: 'assistant', parts };
+        }
+        case 'tool': {
+          let text = '';
+          if (capture) {
+            if (Array.isArray(msg.content)) {
+              text = msg.content.map(p => p.text).join('');
+            } else if (typeof msg.content === 'string') {
+              text = msg.content;
+            }
+          }
+          parts.push({
+            type: 'tool_call_response',
+            id: msg.tool_call_id,
+            response: text,
+          });
+          return { role: 'tool', parts };
+        }
+        default:
+          this._diag.debug(
+            `unknown message role mapping for genai input: ${(msg as { role?: string }).role}`
+          );
+          return { role: 'user', parts };
+      }
+    });
+  }
+
+  private _startChatCompletionInvocation(
     params: ChatCompletionCreateParams,
     config: OpenAIInstrumentationConfig,
     baseURL: string | undefined
-  ) {
-    // Attributes common to span, metrics, log events.
-    const commonAttrs: Attributes = {
+  ): InferenceInvocation {
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
+    const { serverAddress, serverPort } = getServerFromBaseURL(
+      baseURL,
+      this._diag
+    );
+    const metricAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
     };
-    Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
+    Object.assign(metricAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
-    // Span attributes.
-    const attrs: Attributes = {
-      ...commonAttrs,
+    const extraAttrs: Attributes = {
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     if (params.frequency_penalty != null) {
-      attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] = params.frequency_penalty;
+      extraAttrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] =
+        params.frequency_penalty;
     }
     if (typeof params.max_completion_tokens === 'number') {
-      attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_completion_tokens;
+      extraAttrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] =
+        params.max_completion_tokens;
     } else if (typeof params.max_tokens === 'number') {
-      // `max_tokens` is deprecated in favour of `max_completion_tokens`.
-      attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_tokens;
+      extraAttrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = params.max_tokens;
     }
     if (typeof params.presence_penalty === 'number') {
-      attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] = params.presence_penalty;
+      extraAttrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] =
+        params.presence_penalty;
     }
     if (params.stop != null) {
-      if (Array.isArray(params.stop)) {
-        attrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = params.stop;
-      } else {
-        attrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = [params.stop];
-      }
+      extraAttrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = Array.isArray(
+        params.stop
+      )
+        ? params.stop
+        : [params.stop];
     }
     if (params.temperature != null) {
-      attrs[ATTR_GEN_AI_REQUEST_TEMPERATURE] = params.temperature;
+      extraAttrs[ATTR_GEN_AI_REQUEST_TEMPERATURE] = params.temperature;
     }
     if (params.top_p != null) {
-      attrs[ATTR_GEN_AI_REQUEST_TOP_P] = params.top_p;
+      extraAttrs[ATTR_GEN_AI_REQUEST_TOP_P] = params.top_p;
     }
 
-    const span: Span = this.tracer.startSpan(
-      `${attrs[ATTR_GEN_AI_OPERATION_NAME]} ${attrs[ATTR_GEN_AI_REQUEST_MODEL]}`,
-      {
-        kind: SpanKind.CLIENT,
-        attributes: attrs,
-      }
-    );
-    const ctx: Context = trace.setSpan(context.active(), span);
+    const invocationOpts: InferenceInvocationOptions = {
+      providerName,
+      operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+      requestModel: params.model,
+      requestOptions: chatCompletionParamsToInferenceRequestOptions(params),
+      inputMessages: this._chatCompletionParamsToInputMessages(
+        params,
+        this._shouldCaptureMessageContent()
+      ),
+      serverAddress,
+      serverPort,
+      metricAttributes: metricAttrs,
+      attributes: extraAttrs,
+    };
 
-    // Capture prompts as log events.
+    const invocation = this._getTelemetryHandler().startInference(invocationOpts);
+    const ctx = invocation.getContext();
+
     const timestamp = Date.now();
+    const captureContent = this._shouldCaptureMessageContent();
     params.messages.forEach((msg: ChatCompletionMessageParam) => {
       switch (msg.role) {
         case 'system': {
           const body: GenAISystemMessageEventBody = {};
-          if (config.captureMessageContent) {
+          if (captureContent) {
             if (Array.isArray(msg.content)) {
-              body.content = msg.content.map(p => p.text).join('');
+              body.content = formatChatMessageContent(msg.content);
             } else {
               body.content = msg.content;
             }
@@ -378,12 +602,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
         case 'user': {
           const body: GenAIUserMessageEventBody = {};
-          if (config.captureMessageContent) {
+          if (captureContent) {
             if (Array.isArray(msg.content)) {
-              body.content = msg.content
-                .filter(isTextContent)
-                .map(p => p.text)
-                .join('');
+              body.content = formatChatMessageContent(msg.content);
             } else {
               body.content = msg.content;
             }
@@ -402,23 +623,14 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
         case 'assistant': {
           const body: GenAIAssistantMessageEventBody = {};
-          if (config.captureMessageContent) {
+          if (captureContent) {
             if (msg.content) {
               if (Array.isArray(msg.content)) {
-                body.content = msg.content
-                  .filter(isTextContent)
-                  .map(p => p.text)
-                  .join('');
+                body.content = formatChatMessageContent(msg.content);
               } else {
                 body.content = msg.content;
               }
             }
-            // As of openai@5.12.1, type ChatCompletionMessageToolCall can
-            // have type="custom" which has no `function` property. As well,
-            // GenAI semconv has since changed how it captures tool calls.
-            // For now we just cope: we could capture
-            // `ChatCompletionMessageCustomToolCall.Custom` properties, but we
-            // don't for now.
             body.tool_calls = msg.tool_calls?.map(tc => {
               const repr: GenAIToolCall = {
                 id: tc.id,
@@ -460,7 +672,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           const body: GenAIToolMessageEventBody = {
             id: msg.tool_call_id,
           };
-          if (config.captureMessageContent) {
+          if (captureContent) {
             if (Array.isArray(msg.content)) {
               body.content = msg.content.map(p => p.text).join('');
             } else {
@@ -486,137 +698,79 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       }
     });
 
-    return { span, ctx, commonAttrs };
+    return invocation;
   }
 
-  /**
-   * This wraps an instance of a `openai/streaming.Stream.iterator()`, an
-   * async iterator. It should yield the chunks unchanged, and gather telemetry
-   * data from those chunks, then end the span.
-   */
-  private async *_onChatCompletionsStreamIterator(
-    iterator: AsyncIterator<ChatCompletionChunk>,
-    span: Span,
-    startNow: number,
-    config: OpenAIInstrumentationConfig,
-    commonAttrs: Attributes,
-    ctx: Context
-  ) {
-    const iterable = { [Symbol.asyncIterator]: () => iterator };
-    let id: string | undefined;
-    let model: string | undefined;
-    const finishReasons: string[] = [];
-    const choices = [];
-    for await (const chunk of iterable) {
-      yield chunk;
-
-      // Gather telemetry from this chunk.
-      this._diag.debug(
-        'OpenAI.Chat.Completions.create stream chunk: %O',
-        chunk
-      );
-      const idx = chunk.choices?.[0]?.index ?? 0;
-      if (!choices[idx]) {
-        choices[idx] = {} as {
-          content: string;
-          toolCalls: ChatCompletionMessageToolCall[];
-        };
+  private _chatStreamAccumToOutputMessages(
+    acc: {
+      finishReasons: string[];
+      choices: Array<{
+        content?: string;
+        toolCalls?: ChatCompletionMessageToolCall[];
+      }>;
+    },
+    captureContent: boolean
+  ): OutputMessages {
+    const out: OutputMessages = [];
+    for (const [idx, choice] of acc.choices.entries()) {
+      if (!choice) {
+        continue;
       }
-      if (config.captureMessageContent) {
-        const contentPart = chunk.choices?.[0]?.delta?.content;
-        if (contentPart) {
-          if (!choices[idx].content) {
-            choices[idx].content = '';
-          }
-          choices[idx].content += contentPart;
-        }
+      const parts: MessagePart[] = [];
+      if (
+        captureContent &&
+        choice.content &&
+        choice.content.length > 0
+      ) {
+        parts.push({ type: 'text', content: choice.content });
       }
-      // Assume delta.tool_calls, if exists, is an array of length 1.
-      const toolCallPart = chunk.choices?.[0]?.delta?.tool_calls?.[0];
-      if (toolCallPart) {
-        if (!choices[idx].toolCalls) {
-          choices[idx].toolCalls = [];
-        }
-        const toolCalls: GenAIToolCall[] = choices[idx].toolCalls;
-        if (toolCallPart.id) {
-          // First chunk in a tool call.
-          const repr: GenAIToolCall = {
-            id: toolCallPart.id,
-            type: toolCallPart.type,
-          };
-          if (toolCallPart.type === 'function') {
-            repr.function = {
-              name: toolCallPart.function?.name,
-              arguments: toolCallPart.function?.arguments ?? '',
-            };
-          }
-          toolCalls.push(repr);
-        } else if (toolCalls.length > 0) {
-          // A tool call chunk with more of the `function.arguments`.
-          const lastPart = toolCalls[toolCalls.length - 1];
-          if (lastPart.function !== undefined) {
-            lastPart.function.arguments +=
-              toolCallPart.function?.arguments ?? '';
+      if (choice.toolCalls) {
+        for (const tc of choice.toolCalls) {
+          if (tc.type === 'function') {
+            parts.push({
+              type: 'tool_call',
+              id: tc.id,
+              name: tc.function.name,
+              arguments: captureContent ? tc.function.arguments : undefined,
+            });
           }
         }
       }
-      if (!id && chunk.id) {
-        id = chunk.id;
-        span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
-      }
-      if (!model && chunk.model) {
-        model = chunk.model;
-        span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
-      }
-      if (!finishReasons[idx]) {
-        const finishReason = chunk.choices?.[0]?.finish_reason;
-        if (finishReason) {
-          finishReasons[idx] = finishReason;
-        }
-      }
-      if (chunk.usage) {
-        // A final usage chunk if `stream_options.include_usage: true`.
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-          chunk.usage.prompt_tokens
-        );
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-          chunk.usage.completion_tokens
-        );
-        this._genaiClientTokenUsage.record(chunk.usage.prompt_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-        });
-        this._genaiClientTokenUsage.record(chunk.usage.completion_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-        });
-      }
+      out.push({
+        role: 'assistant',
+        parts,
+        finish_reason: acc.finishReasons[idx],
+      });
     }
-    span.setAttribute(
-      ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
-      finishReasons.filter(f => f !== undefined)
-    );
+    return out;
+  }
 
-    // Capture choices as log events.
-    for (const [idx, choice] of choices.entries()) {
+  private _emitChatCompletionChoiceLogs(
+    ctx: Context,
+    captureContent: boolean,
+    acc: {
+      finishReasons: string[];
+      choices: Array<{
+        content?: string;
+        toolCalls?: ChatCompletionMessageToolCall[];
+      }>;
+    }
+  ): void {
+    for (const [idx, choice] of acc.choices.entries()) {
       if (!choice) {
         continue;
       }
       const message: Partial<GenAIMessage> = {};
       if (
-        config.captureMessageContent &&
+        captureContent &&
         choice.content &&
         choice.content.length > 0
       ) {
         message.content = choice.content;
       }
       if (choice.toolCalls && choice.toolCalls.length > 0) {
-        message.tool_calls = choice.toolCalls;
-        if (!config.captureMessageContent) {
+        message.tool_calls = choice.toolCalls as unknown as GenAIToolCall[];
+        if (!captureContent) {
           message.tool_calls.forEach(tc => {
             delete tc.function?.arguments;
           });
@@ -631,159 +785,112 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
         },
         body: {
-          finish_reason: finishReasons[idx],
+          finish_reason: acc.finishReasons[idx],
           index: idx,
           message,
         } as GenAIChoiceEventBody,
       });
     }
-
-    this._genaiClientOperationDuration.record(
-      (performance.now() - startNow) / 1000,
-      {
-        ...commonAttrs,
-        [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-      }
-    );
-
-    span.end();
   }
 
-  private _onChatCompletionsCreateResult(
-    span: Span,
-    startNow: number,
-    commonAttrs: Attributes,
+  private _finalizeChatCompletionSync(
+    invocation: InferenceInvocation,
     result: ChatCompletion,
-    config: OpenAIInstrumentationConfig,
+    captureContent: boolean,
     ctx: Context
-  ) {
+  ): void {
     this._diag.debug('OpenAI.Chat.Completions.create result: %O', result);
-    try {
-      span.setAttribute(
-        ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
-        result.choices.map(c => c.finish_reason)
-      );
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, result.id);
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, result.model);
-      if (result.usage) {
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-          result.usage.prompt_tokens
-        );
-        span.setAttribute(
-          ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-          result.usage.completion_tokens
-        );
+    invocation.setFinishReasons(
+      result.choices.map(c => c.finish_reason as FinishReason)
+    );
+    invocation.setResponseId(result.id);
+    invocation.setResponseModel(result.model);
+    if (result.usage) {
+      const usage = tokenUsageDetailsFromChatCompletionUsage(result.usage);
+      if (usage) {
+        invocation.setUsage(usage);
       }
+    }
 
-      // Capture choices as log events.
-      result.choices.forEach(choice => {
-        const message: Partial<GenAIMessage> = {};
-        if (config.captureMessageContent) {
-          // TODO: telemetry diff with streaming case: content=null, no 'role: assistant', 'tool calls (enableCaptureContent=true)' test case
-          if (choice.message.content) {
-            message.content = choice.message.content;
-          }
-          if (choice.message.tool_calls) {
-            message.tool_calls = choice.message.tool_calls;
-          }
-        } else {
-          if (choice.message.tool_calls) {
-            message.tool_calls = choice.message.tool_calls.map(tc => {
-              const repr: GenAIToolCall = {
-                id: tc.id,
-                type: tc.type,
-              };
-              if (tc.type === 'function') {
-                repr.function = { name: tc.function.name };
-              }
-              return repr;
+    const outputs: OutputMessages = result.choices.map(choice => {
+      const parts: MessagePart[] = [];
+      if (choice.message.content) {
+        const c = choice.message.content;
+        const text =
+          typeof c === 'string'
+            ? c
+            : formatChatMessageContent(
+                c as Parameters<typeof formatChatMessageContent>[0]
+              );
+        if (captureContent && text.length > 0) {
+          parts.push({
+            type: 'text',
+            content: text,
+          });
+        }
+      }
+      if (choice.message.tool_calls) {
+        for (const tc of choice.message.tool_calls) {
+          if (tc.type === 'function') {
+            parts.push({
+              type: 'tool_call',
+              id: tc.id,
+              name: tc.function.name,
+              arguments: captureContent ? tc.function.arguments : undefined,
             });
           }
         }
-        this.logger.emit({
-          timestamp: Date.now(),
-          context: ctx,
-          severityNumber: SeverityNumber.INFO,
-          attributes: {
-            [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
-            [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-          },
-          body: {
-            finish_reason: choice.finish_reason,
-            index: choice.index,
-            message,
-          } as GenAIChoiceEventBody,
-        });
-      });
+      }
+      return {
+        role: 'assistant',
+        parts,
+        finish_reason: choice.finish_reason,
+      };
+    });
+    invocation.addOutputMessages(outputs);
 
-      this._genaiClientOperationDuration.record(
-        (performance.now() - startNow) / 1000,
-        {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
+    result.choices.forEach(choice => {
+      const message: Partial<GenAIMessage> = {};
+      if (captureContent) {
+        if (choice.message.content) {
+          message.content = choice.message.content;
         }
-      );
-
-      if (result.usage) {
-        this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-        });
-
-        this._genaiClientTokenUsage.record(result.usage.completion_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
+        if (choice.message.tool_calls) {
+          message.tool_calls = choice.message.tool_calls;
+        }
+      } else if (choice.message.tool_calls) {
+        message.tool_calls = choice.message.tool_calls.map(tc => {
+          const repr: GenAIToolCall = {
+            id: tc.id,
+            type: tc.type,
+          };
+          if (tc.type === 'function') {
+            repr.function = { name: tc.function.name };
+          }
+          return repr;
         });
       }
-    } catch (err) {
-      this._diag.error(
-        'unexpected error getting telemetry from chat result:',
-        err
-      );
-    }
-    span.end();
-  }
-
-  private _createAPIPromiseRejectionHandler(
-    startNow: number,
-    span: Span,
-    commonAttrs: Attributes
-  ) {
-    return (err: Error) => {
-      this._diag.debug('OpenAI APIPromise rejection: %O', err);
-
-      // https://github.com/openai/openai-node/blob/master/src/error.ts
-      // The most reliable low cardinality string for errors seems to be
-      // the class name. See also:
-      // https://platform.openai.com/docs/guides/error-codes
-      const errorType = err?.constructor?.name;
-
-      this._genaiClientOperationDuration.record(
-        (performance.now() - startNow) / 1000,
-        {
-          ...commonAttrs,
-          'error.type': errorType,
-        }
-      );
-
-      span.setStatus({
-        code: SpanStatusCode.ERROR,
-        message: err.message,
+      this.logger.emit({
+        timestamp: Date.now(),
+        context: ctx,
+        severityNumber: SeverityNumber.INFO,
+        attributes: {
+          [ATTR_EVENT_NAME]: EVENT_GEN_AI_CHOICE,
+          [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+        },
+        body: {
+          finish_reason: choice.finish_reason,
+          index: choice.index,
+          message,
+        } as GenAIChoiceEventBody,
       });
-
-      span.setAttribute('error.type', errorType);
-      span.end();
-    };
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _getPatchedEmbeddingsCreate(): any {
     const self = this;
     return (original: Embeddings['create']) => {
-      // https://platform.openai.com/docs/api-reference/embeddings/create
       return function patchedCreate(
         this: Embeddings,
         ...args: Parameters<Embeddings['create']>
@@ -794,111 +901,86 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
         self._diag.debug('OpenAI.Chat.Embeddings.create args: %O', args);
         const params = args[0];
-        const startNow = performance.now();
+        const baseURL = this?._client?.baseURL;
 
-        let startInfo: ReturnType<
-          OpenAIInstrumentation['_startEmbeddingsSpan']
-        >;
+        let invocation: EmbeddingInvocation;
         try {
-          startInfo = self._startEmbeddingsSpan(params, this?._client?.baseURL);
+          invocation = self._startEmbeddingInvocation(params, baseURL);
         } catch (err) {
-          self._diag.error('unexpected error starting span:', err);
+          self._diag.error('unexpected error starting embedding invocation:', err);
           return original.apply(this, args);
         }
-        const { span, ctx, commonAttrs } = startInfo;
-
+        const ctx = invocation.getContext();
         const apiPromise = context.with(ctx, () => original.apply(this, args));
 
         apiPromise
           .then(result => {
-            self._onEmbeddingsCreateResult(span, startNow, commonAttrs, result);
+            self._diag.debug('OpenAI.Embeddings.create result: %O', result);
+            try {
+              invocation.setResponseModel(result.model);
+              invocation.setUsage(result.usage.prompt_tokens);
+              invocation.stop();
+            } catch (err) {
+              self._diag.error(
+                'unexpected error getting telemetry from embeddings result:',
+                err
+              );
+              invocation.stop();
+            }
           })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
-          );
+          .catch((err: Error) => {
+            invocation.fail({
+              exception: err,
+              errorType: getErrorType(err),
+              statusDescription: err.message,
+            });
+          });
 
         return apiPromise;
       };
     };
   }
 
-  /**
-   * Start a span for this chat-completion API call. This also emits log events
-   * as appropriate for the request params.
-   */
-  private _startEmbeddingsSpan(
+  private _startEmbeddingInvocation(
     params: EmbeddingCreateParams,
     baseURL: string | undefined
-  ) {
-    // Attributes common to span, metrics, log events.
-    const commonAttrs: Attributes = {
+  ): EmbeddingInvocation {
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
+    const { serverAddress, serverPort } = getServerFromBaseURL(
+      baseURL,
+      this._diag
+    );
+    const metricAttrs: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
       [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
       [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+      [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
     };
-    Object.assign(commonAttrs, getAttrsFromBaseURL(baseURL, this._diag));
+    Object.assign(metricAttrs, getAttrsFromBaseURL(baseURL, this._diag));
 
-    // Span attributes.
     const attrs: Attributes = {
-      ...commonAttrs,
+      [ATTR_GEN_AI_SYSTEM]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
     };
     if (params.encoding_format != null) {
       attrs[ATTR_GEN_AI_REQUEST_ENCODING_FORMATS] = [params.encoding_format];
     }
 
-    const span = this.tracer.startSpan(
-      `${attrs[ATTR_GEN_AI_OPERATION_NAME]} ${attrs[ATTR_GEN_AI_REQUEST_MODEL]}`,
-      {
-        kind: SpanKind.CLIENT,
-        attributes: attrs,
-      }
-    );
-    const ctx = trace.setSpan(context.active(), span);
-
-    return { span, ctx, commonAttrs };
-  }
-
-  private _onEmbeddingsCreateResult(
-    span: Span,
-    startNow: number,
-    commonAttrs: Attributes,
-    result: CreateEmbeddingResponse
-  ) {
-    this._diag.debug('OpenAI.Embeddings.create result: %O', result);
-    try {
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, result.model);
-
-      this._genaiClientOperationDuration.record(
-        (performance.now() - startNow) / 1000,
-        {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-        }
-      );
-
-      span.setAttribute(
-        ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-        result.usage.prompt_tokens
-      );
-      this._genaiClientTokenUsage.record(result.usage.prompt_tokens, {
-        ...commonAttrs,
-        [ATTR_GEN_AI_RESPONSE_MODEL]: result.model,
-        [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-      });
-    } catch (err) {
-      this._diag.error(
-        'unexpected error getting telemetry from embeddings result:',
-        err
-      );
-    }
-    span.end();
+    return this._getTelemetryHandler().startEmbedding({
+      providerName,
+      requestModel: params.model,
+      encodingFormats:
+        params.encoding_format != null ? [params.encoding_format] : undefined,
+      serverAddress,
+      serverPort,
+      metricAttributes: metricAttrs,
+      attributes: attrs,
+    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private _getPatchedResponsesCreate(): any {
     const self = this;
     return (original: Responses['create']) => {
-      // https://platform.openai.com/docs/api-reference/responses/create
       return function patchedCreate(
         this: Responses,
         ...args: Parameters<Responses['create']>
@@ -909,109 +991,224 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
         self._diag.debug('OpenAI.Responses.create args: %O', args);
         const params = args[0];
-        const config = self.getConfig();
-        const startNow = performance.now();
+        const captureContent = self._shouldCaptureMessageContent();
+        const baseURL = this?._client?.baseURL;
 
-        let startInfo: ReturnType<OpenAIInstrumentation['_startResponsesSpan']>;
+        let invocation: InferenceInvocation;
         try {
-          startInfo = self._startResponsesSpan(
+          invocation = self._startResponsesInvocation(
             params,
-            config,
-            this?._client?.baseURL
+            captureContent,
+            baseURL
           );
         } catch (err) {
-          self._diag.error('unexpected error starting span:', err);
+          self._diag.error('unexpected error starting responses invocation:', err);
           return original.apply(this, args);
         }
-        const { span, ctx, commonAttrs } = startInfo;
-
+        const ctx = invocation.getContext();
         const apiPromise = context.with(ctx, () => original.apply(this, args));
 
-        // Streaming.
         if (isStreamPromise(params, apiPromise)) {
-          return apiPromise.then(stream => {
-            self._wrap(
-              stream as Stream<ResponseStreamEvent>,
-              Symbol.asyncIterator,
-              origIterator => {
-                return () => {
-                  return self._onResponsesStreamIterator(
-                    origIterator.call(stream),
-                    span,
-                    startNow,
-                    config,
-                    commonAttrs,
-                    ctx
-                  );
-                };
-              }
-            );
-            return stream;
-          });
+          const converter = new ConvertResponseOutputsToOutputMessagesUseCase(
+            captureContent
+          );
+          const streamOutputs: OutputMessages = [];
+
+          apiPromise
+            .then(stream => {
+              self._getTelemetryHandler().wrapAsyncStream(
+                stream as Stream<ResponseStreamEvent>,
+                {
+                  invocation,
+                  onChunk: (event: ResponseStreamEvent) => {
+                    self._diag.debug(
+                      'OpenAI.Responses.create stream event: %O',
+                      event
+                    );
+                    try {
+                      switch (event.type) {
+                        case 'response.created': {
+                          const response = event.response;
+                          invocation.setResponseId(response.id);
+                          invocation.setResponseModel(response.model);
+                          if (response.conversation?.id) {
+                            invocation.setAttribute(
+                              ATTR_GEN_AI_CONVERSATION_ID,
+                              response.conversation.id
+                            );
+                          }
+                          break;
+                        }
+                        case 'response.output_item.done': {
+                          const output = converter.convert([event.item]);
+                          streamOutputs.push(...output);
+                          if (output[0]?.finish_reason) {
+                            invocation.setFinishReasons([
+                              output[0].finish_reason as FinishReason,
+                            ]);
+                          }
+                          self.logger.emit({
+                            timestamp: Date.now(),
+                            context: ctx,
+                            severityNumber: SeverityNumber.INFO,
+                            eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+                            attributes: {
+                              [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+                              [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
+                            },
+                          });
+                          break;
+                        }
+                        case 'response.completed': {
+                          const usage = event.response.usage;
+                          const details =
+                            tokenUsageDetailsFromResponsesUsage(usage);
+                          if (details) {
+                            invocation.setUsage(details);
+                          }
+                          break;
+                        }
+                      }
+                    } catch (e) {
+                      self._diag.error(
+                        'Error processing response stream event telemetry',
+                        e
+                      );
+                    }
+                  },
+                  onEnd: async () => {
+                    if (streamOutputs.length > 0) {
+                      invocation.addOutputMessages(streamOutputs);
+                    }
+                  },
+                }
+              );
+              return stream;
+            })
+            .catch((err: Error) => {
+              invocation.fail({
+                exception: err,
+                errorType: getErrorType(err),
+                statusDescription: err.message,
+              });
+            });
+          return apiPromise;
         }
 
-        // Non-streaming.
         apiPromise
           .then(result => {
-            self._onResponsesCreateResult(
-              span,
-              startNow,
-              commonAttrs,
-              result as Response,
-              config,
-              ctx
-            );
+            try {
+              self._finalizeResponsesSync(
+                invocation,
+                result as Response,
+                captureContent,
+                ctx
+              );
+              invocation.stop();
+            } catch (err) {
+              self._diag.error(
+                'unexpected error getting telemetry from responses result:',
+                err
+              );
+              invocation.stop();
+            }
           })
-          .catch(
-            self._createAPIPromiseRejectionHandler(startNow, span, commonAttrs)
-          );
+          .catch((err: Error) => {
+            invocation.fail({
+              exception: err,
+              errorType: getErrorType(err),
+              statusDescription: err.message,
+            });
+          });
 
         return apiPromise;
       };
     };
   }
 
-  private _startResponsesSpan(
+  private _startResponsesInvocation(
     params: ResponseCreateParams,
-    config: OpenAIInstrumentationConfig,
+    captureContent: boolean,
     baseURL: string | undefined
-  ) {
-    // Common attributes for the span, metrics, and log events.
-    const commonAttrs: Attributes = Object.assign(
-      {
-        [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-        [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
-        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
+  ): InferenceInvocation {
+    const providerName = getProviderNameFromBaseURL(baseURL, this._diag);
+    const { serverAddress, serverPort } = getServerFromBaseURL(
+      baseURL,
+      this._diag
+    );
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+      [ATTR_GEN_AI_REQUEST_MODEL]: params.model,
+      [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
+    };
+    Object.assign(metricAttrs, getAttrsFromBaseURL(baseURL, this._diag));
+
+    const inputs = new ConvertResponseInputsToInputMessagesUseCase(
+      captureContent
+    ).convert(params) as unknown as GenaiInputMessages;
+
+    const extraAttrs: Attributes = {};
+    if (params.instructions != null) {
+      extraAttrs[ATTR_GEN_AI_SYSTEM_INSTRUCTIONS] = params.instructions;
+    }
+
+    const invocation = this._getTelemetryHandler().startInference({
+      providerName,
+      operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
+      requestModel: params.model,
+      requestOptions: responseCreateParamsToInferenceRequestOptions(params),
+      inputMessages: inputs,
+      serverAddress,
+      serverPort,
+      metricAttributes: metricAttrs,
+      attributes: extraAttrs,
+    });
+
+    const ctx = invocation.getContext();
+    this.logger.emit({
+      timestamp: Date.now(),
+      context: ctx,
+      severityNumber: SeverityNumber.INFO,
+      eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
+      attributes: {
+        [ATTR_GEN_AI_PROVIDER_NAME]: providerName,
+        [ATTR_GEN_AI_INPUT_MESSAGES]: inputs as AnyValue,
       },
-      getAttrsFromBaseURL(baseURL, this._diag)
-    );
+    });
 
-    // Span attributes.
-    const attrs: Attributes = Object.assign(
-      {
-        [ATTR_GEN_AI_SYSTEM_INSTRUCTIONS]: params.instructions ?? undefined,
-        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: params.max_output_tokens ?? undefined,
-        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: params.temperature ?? undefined,
-        [ATTR_GEN_AI_REQUEST_TOP_P]: params.top_p ?? undefined,
-      },
-      commonAttrs
-    );
+    return invocation;
+  }
 
-    const span: Span = this.tracer.startSpan(
-      `${attrs[ATTR_GEN_AI_OPERATION_NAME]} ${attrs[ATTR_GEN_AI_REQUEST_MODEL]}`,
-      {
-        kind: SpanKind.CLIENT,
-        attributes: attrs,
-      }
-    );
-    const ctx: Context = trace.setSpan(context.active(), span);
+  private _finalizeResponsesSync(
+    invocation: InferenceInvocation,
+    result: Response,
+    captureContent: boolean,
+    ctx: Context
+  ): void {
+    this._diag.debug('OpenAI.Responses.create result: %O', result);
+    const { id, model, conversation, output, usage } = result;
 
-    const inputs: InputMessages =
-      new ConvertResponseInputsToInputMessagesUseCase(
-        config.captureMessageContent
-      ).convert(params);
+    if (conversation) {
+      invocation.setAttribute(ATTR_GEN_AI_CONVERSATION_ID, conversation.id);
+    }
+    invocation.setResponseId(id);
+    invocation.setResponseModel(model);
+    const usageDetails = tokenUsageDetailsFromResponsesUsage(usage);
+    if (usageDetails) {
+      invocation.setUsage(usageDetails);
+    }
 
-    // Capture inputs as log events.
+    const outputs = new ConvertResponseOutputsToOutputMessagesUseCase(
+      captureContent
+    ).convert(output) as unknown as OutputMessages;
+
+    if (outputs[0]?.finish_reason) {
+      invocation.setFinishReasons([
+        outputs[0].finish_reason as FinishReason,
+      ]);
+    }
+    invocation.addOutputMessages(outputs);
+
     this.logger.emit({
       timestamp: Date.now(),
       context: ctx,
@@ -1019,175 +1216,11 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
       attributes: {
         [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-        [ATTR_GEN_AI_INPUT_MESSAGES]: inputs as AnyValue,
+        [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputs as AnyValue,
       },
     });
-
-    return { span, ctx, commonAttrs };
-  }
-
-  private async *_onResponsesStreamIterator(
-    iterator: AsyncIterator<ResponseStreamEvent>,
-    span: Span,
-    startNow: number,
-    config: OpenAIInstrumentationConfig,
-    commonAttrs: Attributes,
-    ctx: Context
-  ) {
-    const iterable = { [Symbol.asyncIterator]: () => iterator };
-    let model: string | undefined;
-    const converter = new ConvertResponseOutputsToOutputMessagesUseCase(
-      config.captureMessageContent
-    );
-
-    for await (const event of iterable) {
-      yield event;
-
-      try {
-        // Gather telemetry from this chunk.
-        this._diag.debug('OpenAI.Responses.create stream event: %O', event);
-
-        switch (event.type) {
-          case 'response.created': {
-            const response = event.response;
-            model = response.model;
-            span.setAttributes({
-              [ATTR_GEN_AI_RESPONSE_ID]: response.id,
-              [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-              [ATTR_GEN_AI_CONVERSATION_ID]: response.conversation?.id,
-            });
-            break;
-          }
-          case 'response.output_item.done': {
-            const output = converter.convert([event.item]);
-            span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-              output[0].finish_reason,
-            ]);
-            this.logger.emit({
-              timestamp: Date.now(),
-              context: ctx,
-              severityNumber: SeverityNumber.INFO,
-              eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-              attributes: {
-                [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-                [ATTR_GEN_AI_OUTPUT_MESSAGES]: output as AnyValue,
-              },
-            });
-            break;
-          }
-          case 'response.completed': {
-            const usage = event.response.usage;
-            span.setAttributes({
-              [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: usage?.input_tokens,
-              [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: usage?.output_tokens,
-            });
-            if (usage?.input_tokens) {
-              this._genaiClientTokenUsage.record(usage?.input_tokens, {
-                ...commonAttrs,
-                [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-                [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-              });
-            }
-            if (usage?.output_tokens) {
-              this._genaiClientTokenUsage.record(usage?.output_tokens, {
-                ...commonAttrs,
-                [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-                [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-              });
-            }
-            break;
-          }
-        }
-      } catch (e) {
-        this._diag.error('Error processing response stream event telemetry', e);
-      }
-    }
-
-    this._genaiClientOperationDuration.record(
-      (performance.now() - startNow) / 1000,
-      {
-        ...commonAttrs,
-        [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-      }
-    );
-
-    span.end();
-  }
-
-  private _onResponsesCreateResult(
-    span: Span,
-    startNow: number,
-    commonAttrs: Attributes,
-    result: Response,
-    config: OpenAIInstrumentationConfig,
-    ctx: Context
-  ) {
-    this._diag.debug('OpenAI.Responses.create result: %O', result);
-    const { id, model, conversation, output, usage } = result;
-    try {
-      if (conversation) {
-        span.setAttribute(ATTR_GEN_AI_CONVERSATION_ID, conversation.id);
-      }
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_ID, id);
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_MODEL, model);
-      if (usage) {
-        span.setAttribute(ATTR_GEN_AI_USAGE_INPUT_TOKENS, usage.input_tokens);
-        span.setAttribute(ATTR_GEN_AI_USAGE_OUTPUT_TOKENS, usage.output_tokens);
-        this._genaiClientTokenUsage.record(usage.input_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_INPUT,
-        });
-
-        this._genaiClientTokenUsage.record(usage.output_tokens, {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-          [ATTR_GEN_AI_TOKEN_TYPE]: GEN_AI_TOKEN_TYPE_VALUE_OUTPUT,
-        });
-      }
-
-      const outputs = new ConvertResponseOutputsToOutputMessagesUseCase(
-        config.captureMessageContent
-      ).convert(output);
-
-      span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
-        outputs[0].finish_reason,
-      ]);
-
-      // Capture outputs as a log event.
-      this.logger.emit({
-        timestamp: Date.now(),
-        context: ctx,
-        severityNumber: SeverityNumber.INFO,
-        eventName: EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
-        attributes: {
-          [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-          [ATTR_GEN_AI_OUTPUT_MESSAGES]: outputs as AnyValue,
-        },
-      });
-
-      this._genaiClientOperationDuration.record(
-        (performance.now() - startNow) / 1000,
-        {
-          ...commonAttrs,
-          [ATTR_GEN_AI_RESPONSE_MODEL]: model,
-        }
-      );
-    } catch (err) {
-      this._diag.error(
-        'unexpected error getting telemetry from chat result:',
-        err
-      );
-    }
-    span.end();
   }
 }
-function isTextContent(
-  value: ChatCompletionContentPart | ChatCompletionContentPartRefusal
-): value is ChatCompletionContentPartText {
-  return value.type === 'text';
-}
-
 function isStreamPromise<
   Params extends { stream?: boolean | null } | undefined,
   Chunk,

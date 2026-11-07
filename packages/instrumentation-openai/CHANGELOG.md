@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **instrumentation-openai:** `captureMessageContent` accepts genai-util `ContentCaptureMode` (`'none'` | `'span_only'`) in addition to legacy `boolean` (`true` → `'span_only'`, `false` → `'none'`); boolean `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` continues to map the same way ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872))
+* **instrumentation-openai:** adopt `@opentelemetry/genai-util` `TelemetryHandler` and `InferenceInvocation` / `EmbeddingInvocation` for span lifecycle, metrics, and async stream instrumentation (including `wrapAsyncStream` from [#3831](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3831)) ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** set `gen_ai.provider.name` to `openai` per OpenAI semantic conventions for this instrumentation (OpenAI-compatible clients are still traced as the OpenAI conventions document) ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872))
+* **instrumentation-openai:** record `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.reasoning.output_tokens` when the API returns usage details ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** under opt-in content capture, record image parts as a `[image]` placeholder (never raw/signed/`data:` URLs) ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+
 ## [0.23.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.22.0...instrumentation-openai-v0.23.0) (2026-11-05)
 
 

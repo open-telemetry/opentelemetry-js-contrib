@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **genai-util:** export the `MessagePart` and `FinishReason` types for instrumentations building `InputMessages` / `OutputMessages` ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872))
+* **genai-util:** export TelemetryHandler, invocation types, content-capture helpers, `getErrorType`, and GenAI semconv constants for instrumentation consumers ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.4.0...genai-util-v0.5.0) (2026-11-05)
 
 

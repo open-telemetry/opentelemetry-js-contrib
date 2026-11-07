@@ -2,15 +2,20 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
+import type { ContentCaptureMode } from '@opentelemetry/genai-util';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 export interface OpenAIInstrumentationConfig extends InstrumentationConfig {
   /**
-   * Set to true to enable capture of content data, such as prompt and
-   * completion content, tool call function arguments, etc. By default, this is
-   * `false` to avoid possible exposure of sensitive data. This can also be set
-   * via the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=true`
-   * environment variable.
+   * Controls capture of prompt, completion, and tool-call content. Defaults to
+   * `'none'`. Use `'span_only'` to record content on span attributes.
+   *
+   * For backward compatibility, `true` is treated as `'span_only'` and `false`
+   * as `'none'`.
+   *
+   * The environment variable `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`
+   * is also honored (see `@opentelemetry/genai-util`); boolean `true`/`false`
+   * there maps to `'span_only'` / `'none'` when read by this instrumentation.
    */
-  captureMessageContent?: boolean;
+  captureMessageContent?: ContentCaptureMode | boolean;
 }
