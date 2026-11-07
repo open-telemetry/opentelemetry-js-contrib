@@ -7,8 +7,6 @@ import { expect } from 'expect';
 import {
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
-  GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
-  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
 } from '@opentelemetry/genai-util';
 import {
@@ -118,20 +116,20 @@ describe('utils', function () {
       );
     });
 
-    it('detects Azure OpenAI host', () => {
+    it('uses openai for Azure OpenAI-compatible base URLs (OpenAI semconv)', () => {
       expect(
         getProviderNameFromBaseURL(
           'https://my-resource.openai.azure.com/openai/deployments/gpt'
         )
-      ).toBe(GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI);
+      ).toBe(GEN_AI_PROVIDER_NAME_VALUE_OPENAI);
     });
 
-    it('detects Bedrock runtime hostnames only', () => {
+    it('uses openai for Bedrock-style hostnames when using this client (OpenAI semconv)', () => {
       expect(
         getProviderNameFromBaseURL(
           'https://bedrock-runtime.us-east-1.amazonaws.com'
         )
-      ).toBe(GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK);
+      ).toBe(GEN_AI_PROVIDER_NAME_VALUE_OPENAI);
     });
 
     it('does not attribute unrelated amazonaws hosts as Bedrock', () => {
@@ -155,7 +153,7 @@ describe('utils', function () {
       expect(getProviderNameFromBaseURL('not a url', mockDiag)).toBe(
         GEN_AI_PROVIDER_NAME_VALUE_OPENAI
       );
-      expect(debugMsgs.length).toBe(1);
+      expect(debugMsgs.length).toBe(0);
     });
   });
 

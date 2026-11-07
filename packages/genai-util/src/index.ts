@@ -38,11 +38,13 @@ export type { ToolInvocation } from './invocations/tool';
 export type {
   ContentCaptureMode,
   EmbeddingInvocationOptions,
+  FinishReason,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
   InferenceRequestOptions,
   InputMessages,
   InvocationError,
+  MessagePart,
   OutputMessages,
   TokenUsageDetails,
   ToolInvocationOptions,

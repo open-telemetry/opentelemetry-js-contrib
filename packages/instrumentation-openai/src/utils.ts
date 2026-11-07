@@ -3,25 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { diag } from '@opentelemetry/api';
-import type { Attributes, DiagLogger, Span } from '@opentelemetry/api';
+import type { Attributes, DiagLogger } from '@opentelemetry/api';
+import type { ChatCompletionCreateParams } from 'openai/resources/chat/completions';
+import type { ResponseCreateParams } from 'openai/resources/responses/responses';
 import {
   ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
-  GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
-  GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
-  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE,
-  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI,
-  GEN_AI_PROVIDER_NAME_VALUE_COHERE,
-  GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK,
-  GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
-  GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
-  GEN_AI_PROVIDER_NAME_VALUE_GROQ,
-  GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI,
-  GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
-  GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY,
-  GEN_AI_PROVIDER_NAME_VALUE_X_AI,
 } from '@opentelemetry/genai-util';
+import type { InferenceRequestOptions, TokenUsageDetails } from '@opentelemetry/genai-util';
 import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
@@ -76,74 +66,16 @@ const SERVER_PORT_FROM_URL_PROTOCOL: PortFromProtocol = {
 };
 
 /**
- * Hostname suffix → GenAI provider name mappings derived from the donated
- * OpenInference instrumentation, remapped to official GenAI provider enums.
+ * `gen_ai.provider.name` for OpenAI SDK client operations.
  *
- * Hosts without a GenAI enum equivalent (for example Fireworks or Together)
- * are intentionally omitted rather than inventing non-standard provider names.
- *
- * AWS Bedrock is handled separately via {@link isAwsBedrockHostname} so that
- * unrelated `*.amazonaws.com` hosts are not mis-attributed.
- */
-const HOST_SUFFIX_TO_PROVIDER: ReadonlyArray<readonly [string, string]> = [
-  ['openai.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI],
-  ['services.ai.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE],
-  ['cognitiveservices.azure.com', GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI],
-  ['api.openai.com', GEN_AI_PROVIDER_NAME_VALUE_OPENAI],
-  ['api.anthropic.com', GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC],
-  ['api.cohere.com', GEN_AI_PROVIDER_NAME_VALUE_COHERE],
-  ['api.cohere.ai', GEN_AI_PROVIDER_NAME_VALUE_COHERE],
-  ['api.mistral.ai', GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI],
-  ['generativelanguage.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI],
-  ['aiplatform.googleapis.com', GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI],
-  ['api.x.ai', GEN_AI_PROVIDER_NAME_VALUE_X_AI],
-  ['api.deepseek.com', GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK],
-  ['api.groq.com', GEN_AI_PROVIDER_NAME_VALUE_GROQ],
-  ['api.moonshot.cn', GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI],
-  ['api.perplexity.ai', GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY],
-];
-
-function isAwsBedrockHostname(hostname: string): boolean {
-  // Require both amazonaws.com and a bedrock marker to avoid attributing
-  // S3/other AWS endpoints as Bedrock when an OpenAI-compatible baseURL is set.
-  return (
-    (hostname === 'amazonaws.com' || hostname.endsWith('.amazonaws.com')) &&
-    hostname.includes('bedrock')
-  );
-}
-
-/**
- * Resolve `gen_ai.provider.name` from an OpenAI-compatible client base URL.
- *
- * Defaults to `openai` when the host is unrecognized, missing, or malformed.
- * That default matches the OpenAI SDK surface (OpenAI-compatible protocol) and
- * is not a claim that an unknown custom proxy is operated by OpenAI.
+ * Per [OpenAI GenAI semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/openai.md#spans),
+ * this instrumentation MUST use `"openai"` — including for OpenAI-compatible `baseURL`
+ * proxies. Server address / port are captured separately via {@link getAttrsFromBaseURL}.
  */
 export function getProviderNameFromBaseURL(
-  baseURL: string | undefined,
-  diag_: DiagLogger = diag
+  _baseURL: string | undefined,
+  _diag_: DiagLogger = diag
 ): string {
-  if (!baseURL) {
-    return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
-  }
-
-  let hostname: string;
-  try {
-    hostname = new URL(baseURL).hostname.toLowerCase();
-  } catch (ex) {
-    diag_.debug(`could not determine gen_ai.provider.name from baseURL: ${ex}`);
-    return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
-  }
-
-  if (isAwsBedrockHostname(hostname)) {
-    return GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK;
-  }
-
-  for (const [suffix, provider] of HOST_SUFFIX_TO_PROVIDER) {
-    if (hostname === suffix || hostname.endsWith(`.${suffix}`)) {
-      return provider;
-    }
-  }
   return GEN_AI_PROVIDER_NAME_VALUE_OPENAI;
 }
 
@@ -158,13 +90,10 @@ export function getAttrsFromBaseURL(
     return;
   }
 
-  // TODO: would be nice to LRU cache this, but probably not significant perf
   let u;
   try {
     u = new URL(baseURL);
   } catch (ex) {
-    // Note: We should never get to this point as openai should crash prior to this.
-    // Even if it did, instrumentation will still work except lacking these attributes.
     diag_.debug(
       `could not determine server.{address,port} from baseURL: ${ex}`
     );
@@ -177,6 +106,73 @@ export function getAttrsFromBaseURL(
       ? Number(u.port)
       : SERVER_PORT_FROM_URL_PROTOCOL[u.protocol],
   };
+}
+
+export function getServerFromBaseURL(
+  baseURL: string | undefined,
+  diag_: DiagLogger = diag
+): { serverAddress?: string; serverPort?: number } {
+  const attrs = getAttrsFromBaseURL(baseURL, diag_);
+  if (!attrs) {
+    return {};
+  }
+  return {
+    serverAddress: attrs[ATTR_SERVER_ADDRESS] as string,
+    serverPort: attrs[ATTR_SERVER_PORT] as number,
+  };
+}
+
+/**
+ * Map OpenAI chat completion parameters to {@link InferenceRequestOptions}.
+ */
+export function chatCompletionParamsToInferenceRequestOptions(
+  params: ChatCompletionCreateParams
+): InferenceRequestOptions {
+  const opts: InferenceRequestOptions = {
+    temperature: params.temperature ?? undefined,
+    topP: params.top_p ?? undefined,
+    frequencyPenalty: params.frequency_penalty ?? undefined,
+    presencePenalty: params.presence_penalty ?? undefined,
+    stream: params.stream === true,
+  };
+  if (typeof params.max_completion_tokens === 'number') {
+    opts.maxTokens = params.max_completion_tokens;
+  } else if (typeof params.max_tokens === 'number') {
+    opts.maxTokens = params.max_tokens;
+  }
+  if (params.stop != null) {
+    opts.stopSequences = Array.isArray(params.stop) ? params.stop : [params.stop];
+  }
+  if (typeof params.seed === 'number') {
+    opts.seed = params.seed;
+  }
+  if (params.reasoning_effort != null) {
+    opts.reasoningLevel = String(params.reasoning_effort);
+  }
+  return opts;
+}
+
+/**
+ * Map OpenAI Responses API create params to {@link InferenceRequestOptions}.
+ */
+export function responseCreateParamsToInferenceRequestOptions(
+  params: ResponseCreateParams
+): InferenceRequestOptions {
+  const opts: InferenceRequestOptions = {
+    temperature: params.temperature ?? undefined,
+    topP: params.top_p ?? undefined,
+    stream: params.stream === true,
+  };
+  if (typeof params.max_output_tokens === 'number') {
+    opts.maxTokens = params.max_output_tokens;
+  }
+  if (params.reasoning != null && typeof params.reasoning === 'object') {
+    const effort = (params.reasoning as { effort?: string }).effort;
+    if (effort != null) {
+      opts.reasoningLevel = String(effort);
+    }
+  }
+  return opts;
 }
 
 /**
@@ -214,35 +210,139 @@ function isPositiveFiniteNumber(value: unknown): value is number {
 }
 
 /**
- * Set GenAI usage detail attributes (cache read / reasoning) when present.
- * Ported from donated OpenInference coverage, remapped to GenAI semconv names
- * shared via `@opentelemetry/genai-util`.
- *
- * Only positive finite numbers are recorded. Zero, negative, NaN, and
- * non-numeric values are omitted.
+ * Build {@link TokenUsageDetails} from OpenAI Chat Completions usage.
+ */
+export function tokenUsageDetailsFromChatCompletionUsage(
+  usage: ChatCompletionsUsageLike | null | undefined
+): TokenUsageDetails | undefined {
+  if (!usage) {
+    return undefined;
+  }
+  const input = usage.prompt_tokens;
+  const output = usage.completion_tokens;
+  const cacheRead = usage.prompt_tokens_details?.cached_tokens;
+  const reasoning = usage.completion_tokens_details?.reasoning_tokens;
+
+  const details: TokenUsageDetails = {};
+  if (input !== undefined && input >= 0) {
+    details.inputTokenCount = input;
+  }
+  if (output !== undefined && output >= 0) {
+    details.outputTokenCount = output;
+  }
+  if (isPositiveFiniteNumber(cacheRead)) {
+    details.cacheReadTokenCount = cacheRead;
+  }
+  if (isPositiveFiniteNumber(reasoning)) {
+    details.reasoningTokenCount = reasoning;
+  }
+
+  if (
+    details.inputTokenCount !== undefined ||
+    details.outputTokenCount !== undefined
+  ) {
+    details.tokenUsageByModality = {
+      inputTokens:
+        details.inputTokenCount !== undefined
+          ? { text: details.inputTokenCount }
+          : undefined,
+      outputTokens:
+        details.outputTokenCount !== undefined
+          ? { text: details.outputTokenCount }
+          : undefined,
+      cacheReadTokens: isPositiveFiniteNumber(cacheRead)
+        ? { text: cacheRead }
+        : undefined,
+    };
+  }
+
+  return Object.keys(details).length > 0 ? details : undefined;
+}
+
+/**
+ * Build {@link TokenUsageDetails} from OpenAI Responses API usage.
+ */
+export function tokenUsageDetailsFromResponsesUsage(
+  usage: ResponsesUsageLike | null | undefined
+): TokenUsageDetails | undefined {
+  if (!usage) {
+    return undefined;
+  }
+  const input = usage.input_tokens;
+  const output = usage.output_tokens;
+  const cacheRead = usage.input_tokens_details?.cached_tokens;
+  const reasoning = usage.output_tokens_details?.reasoning_tokens;
+
+  const details: TokenUsageDetails = {};
+  if (input !== undefined && input >= 0) {
+    details.inputTokenCount = input;
+  }
+  if (output !== undefined && output >= 0) {
+    details.outputTokenCount = output;
+  }
+  if (isPositiveFiniteNumber(cacheRead)) {
+    details.cacheReadTokenCount = cacheRead;
+  }
+  if (isPositiveFiniteNumber(reasoning)) {
+    details.reasoningTokenCount = reasoning;
+  }
+
+  if (
+    details.inputTokenCount !== undefined ||
+    details.outputTokenCount !== undefined
+  ) {
+    details.tokenUsageByModality = {
+      inputTokens:
+        details.inputTokenCount !== undefined
+          ? { text: details.inputTokenCount }
+          : undefined,
+      outputTokens:
+        details.outputTokenCount !== undefined
+          ? { text: details.outputTokenCount }
+          : undefined,
+      cacheReadTokens: isPositiveFiniteNumber(cacheRead)
+        ? { text: cacheRead }
+        : undefined,
+    };
+  }
+
+  return Object.keys(details).length > 0 ? details : undefined;
+}
+
+/**
+ * @deprecated Use {@link tokenUsageDetailsFromChatCompletionUsage} with {@link InferenceInvocation.setUsage}.
+ * Kept for unit tests that assert attribute keys on a mock span.
  */
 export function setUsageDetailAttributes(
-  span: Span,
+  span: { setAttribute(key: string, value: unknown): void },
   usage: ChatCompletionsUsageLike | ResponsesUsageLike | null | undefined
 ): void {
   if (!usage) {
     return;
   }
 
-  const cacheRead =
-    'prompt_tokens_details' in usage
-      ? usage.prompt_tokens_details?.cached_tokens
-      : usage.input_tokens_details?.cached_tokens;
-  if (isPositiveFiniteNumber(cacheRead)) {
-    span.setAttribute(ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS, cacheRead);
-  }
+  const isChatShape =
+    'prompt_tokens' in usage || 'completion_tokens' in usage;
+  const details = isChatShape
+    ? tokenUsageDetailsFromChatCompletionUsage(
+        usage as ChatCompletionsUsageLike
+      )
+    : tokenUsageDetailsFromResponsesUsage(usage as ResponsesUsageLike);
 
-  const reasoning =
-    'completion_tokens_details' in usage
-      ? usage.completion_tokens_details?.reasoning_tokens
-      : usage.output_tokens_details?.reasoning_tokens;
-  if (isPositiveFiniteNumber(reasoning)) {
-    span.setAttribute(ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS, reasoning);
+  if (details?.cacheReadTokenCount != null && details.cacheReadTokenCount > 0) {
+    span.setAttribute(
+      ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
+      details.cacheReadTokenCount
+    );
+  }
+  if (
+    details?.reasoningTokenCount != null &&
+    details.reasoningTokenCount > 0
+  ) {
+    span.setAttribute(
+      ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
+      details.reasoningTokenCount
+    );
   }
 }
 
@@ -287,7 +387,6 @@ export function formatChatMessageContent(
         return part.refusal;
       }
       if (part.type === 'image_url') {
-        // Intentionally do not read image_url.url / string payloads.
         return IMAGE_CONTENT_PLACEHOLDER;
       }
       return '';
