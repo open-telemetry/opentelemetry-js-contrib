@@ -52,14 +52,16 @@ export const mapSystem = (knexSystem: string) => {
   return systemMap.get(knexSystem) || knexSystem;
 };
 
-export const getName = (db: string, operation?: string, table?: string) => {
-  if (operation) {
-    if (table) {
-      return `${operation} ${db}.${table}`;
-    }
-    return `${operation} ${db}`;
-  }
-  return db;
+export const getName = (
+  db: string | undefined,
+  operation?: string,
+  table?: string,
+  system?: string,
+  server?: string
+): string => {
+  const target = [db, table].filter(Boolean).join('.') || server;
+  const name = [operation, target].filter(Boolean).join(' ');
+  return name || system || 'knex.query';
 };
 
 export const limitLength = (str: string, maxLength: number) => {
