@@ -56,7 +56,7 @@ scripts/verify-pack.mjs
 | Command | Result |
 |---------|--------|
 | `npx nx run @opentelemetry/genai-util:test` | **174 passing** |
-| `npx nx run @opentelemetry/instrumentation-openai:test` | **69 passing** |
+| `npx nx run @opentelemetry/instrumentation-openai:test` (Node 24.11.1) | **50 passing, 23 pending** (Responses suites skipped when OpenAI SDK &lt; 4.87.0 in matrix node); **73 total `it()` cases** (44 `openai.test.ts` + 29 `utils.test.ts`) |
 | `npx nx run @opentelemetry/instrumentation-openai:compile` | **OK** |
 | `npx nx run @opentelemetry/instrumentation-openai:lint` | **0 errors** |
 | `npx nx run @opentelemetry/genai-util:lint` | **0 errors**, 1 warning (pre-existing unused var in stream.test.ts) |
@@ -64,6 +64,71 @@ scripts/verify-pack.mjs
 | `npx tsc --noEmit -p packages/instrumentation-openai` | **OK** |
 | `npm run test-all-versions` (instrumentation-openai) | **OK** (openai 4.19–6.x matrix; Responses tests pending on older SDKs as before) |
 | GenAI semantic-conventions conformance runner | **Not run** (no conformance target in instrumentation-openai; only langchain package has `test:conformance`) |
+
+## Test count audit (PR head `0283aa33` → `review/nov9-maintainer-feedback`)
+
+### Measured counts
+
+| Suite | PR branch `0283aa33` | Review branch (this work) |
+|-------|----------------------|---------------------------|
+| `openai.test.ts` `it()` count | 43 | **44** (+1 privacy default-off integration) |
+| `utils.test.ts` `it()` count | 31 | **29** (−2 net vs psx95 swap, +4 restored edge-case tests in this verification pass) |
+| **Nx reported total** (earlier run on PR head) | **74 passing** | **73 `it()`**; **50 passing + 23 pending** on current dev run |
+
+The “82 → 69” figure from an earlier session maps to **suite-level rewrites**: the Nov 9 refactor replaced the prior PR’s bespoke `utils.test.ts` (provider heuristics, `setUsageDetailAttributes`, `formatChatMessageContent` / `[image]` placeholder) with psx95-style mapping helpers. **`openai.test.ts` titles are unchanged** except for the added default-off multimodal span test.
+
+### Removed `utils.test.ts` tests (intentional / replaced)
+
+| Removed test (PR `0283aa33`) | Disposition |
+|------------------------------|-------------|
+| `getProviderNameFromBaseURL` host heuristics (Bedrock, Azure, fireworks, malformed URL) | **Replaced:** OpenAI semconv requires `gen_ai.provider.name = openai` always; asserted on spans in `openai.test.ts` (`ATTR_GEN_AI_PROVIDER_NAME`). |
+| `setUsageDetailAttributes` (cache/reasoning span attrs) | **Replaced:** `extractChatTokenUsage` / `extractResponsesTokenUsage` + `InferenceInvocation.setUsage` + genai-util end hooks. |
+| `formatChatMessageContent` (text/refusal join, `[image]` placeholder, signed URL never in string) | **Replaced:** `extractChatInputMessages` + `parseUriOrBlobPart` (schema parts). **Privacy model changed** — see privacy section. |
+| Usage detail omission tests (zero/negative/non-finite) for deprecated helper | **Restored (partial):** `extractChatTokenUsage omits zero and negative usage detail fields`. |
+
+### Added / retained regression coverage (review branch)
+
+| Test | Coverage |
+|------|----------|
+| All prior `openai.test.ts` scenarios (chat, stream, tee, withResponse, embeddings, responses, metrics) | **Retained** (psx95 fixture suite). |
+| `does not expose multimodal parts on span when capture is off` | **New** — signed `image_url` absent from span when default `none`. |
+| `parseUriOrBlobPart preserves signed URL query strings` | **New** — documents exposure **when** `span_only` maps messages. |
+| `maps chat input_audio base64 to audio BlobPart bytes` | **New** — audio payload path. |
+| `extractChatTokenUsage` audio modality + zero/negative omission | Token modality per review. |
+| Lifecycle streaming | `tee`, double iteration, withResponse, stream usage, `assertInferenceMetrics` unknown modality — **unchanged**. |
+
+### Lost assertion coverage (gap unless maintainers agree on privacy policy)
+
+| Former assertion | Status |
+|------------------|--------|
+| Image parts never appear as raw URLs even when capture on (`[image]` placeholder) | **Not restored** — conflicts with schema-first `UriPart.uri`; **blocked on maintainer decision** before redaction helper. |
+| No per-message log events | **Still removed** (per review); no replacement conformance tests in this package. |
+
+## Multimodal privacy assessment
+
+### When sensitive data can enter telemetry
+
+| Capture mode | Chat Completions | Responses API |
+|--------------|------------------|---------------|
+| **`none` (default)** | No `gen_ai.input.messages` / `gen_ai.output.messages`; multimodal parts not constructed (`inputMessages` undefined). Integration test asserts signed URL absent from span JSON. | Same; `records multimodal input` asserts `ATTR_GEN_AI_INPUT_MESSAGES` undefined. |
+| **`span_only`** | `extractChatInputMessages` → `image_url` → `parseUriOrBlobPart`: **full `https?://` URI** (including query = signed URLs) in `UriPart`; **`data:...;base64,...`** → **`BlobPart.content` raw bytes**; `input_audio.data` → **audio `BlobPart`**; `file.file_id` → `FilePart` (id only); `file.file_data` / URLs → parseUriOrBlobPart. | `convertResponsesMessageParts`: `input_image.image_url`, `input_file.file_url` / `file_data`, `input_audio` → same helpers (`responses.ts` ~182–234). Serialized JSON on span at inference end. |
+| **Logs / events** | Deprecated `gen_ai.*.message` / `gen_ai.choice` **removed** — no log sink for prompts. | Operation-details log paths **removed** with lifecycle refactor. |
+
+### Privacy-preserving approach (proposed, **not implemented** — no behavior change pending agreement)
+
+Compatible with genai-util schemas without expanding sensitive payloads:
+
+1. **`UriPart`:** set `uri` to **scheme + host + path only** (strip query/fragment); or `uri: ''` with optional `generic` metadata `{ "redacted": true }` if semconv allows extension fields.
+2. **`BlobPart`:** for `data:` URIs, emit **`BlobPart` with empty `content`** and `mime_type` only, or a fixed-size hash attribute outside message JSON if required later.
+3. **`FilePart`:** keep **`file_id` only** (no `file_data` expansion) — already preferred when ID present.
+4. Document in README that **`span_only` is not safe for production** without an approved redaction policy.
+
+Current code **does not** implement (1)–(2) so as not to silently weaken maintainer-requested schema fidelity.
+
+## PR #3872 review activity (checked 2026-11-10)
+
+- **No new inline comments** from @psx95 after [review 5822303045](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872#pullrequestreview-5822303045) (2026-11-09).
+- **Boolean `captureMessageContent`:** [@psx95](https://github.com/psx95) requested dropping boolean support ([discussion r4509977932](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872#discussion_r4509977932)), **cc @hectorhdzg** (component owner) — **no owner reply on thread yet**. Review branch: `OpenAIInstrumentationConfig.captureMessageContent` is **`ContentCaptureMode` only**; `resolveCaptureMode()` still maps runtime `true`/`false` and env `true`/`false` strings for transition.
 
 ## Remaining risks
 
@@ -89,4 +154,4 @@ AI assistance was used while drafting this change and structuring the response t
 
 ---
 
-**Candidate branch:** `review/nov9-maintainer-feedback` — see `git rev-parse HEAD` on that branch for the tip SHA after checkout.
+**Candidate branch tip:** `review/nov9-maintainer-feedback` @ `18c6ab080b838e0eaa77935eb696e9993d998117`

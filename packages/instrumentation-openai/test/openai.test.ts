@@ -400,6 +400,31 @@ describe('OpenAI', function () {
       });
     });
 
+    it('does not expose multimodal parts on span when capture is off', async () => {
+      const signedImageUrl =
+        'https://example.com/private.png?sig=secret-token-xyz';
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Describe the image' },
+            { type: 'image_url', image_url: { url: signedImageUrl } },
+          ],
+        },
+      ];
+      const chatCompletion = await client.chat.completions.create({
+        model,
+        messages,
+      });
+      expect(chatCompletion.choices[0].message.content).toBeTruthy();
+      const spans = getTestSpans();
+      expect(spans.length).toBe(1);
+      expect(spans[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES]).toBeUndefined();
+      const serialized = JSON.stringify(spans[0].attributes);
+      expect(serialized).not.toContain('secret-token');
+      expect(serialized).not.toContain(signedImageUrl);
+    });
+
     it('records all the client options', async () => {
       const messages = [
         {

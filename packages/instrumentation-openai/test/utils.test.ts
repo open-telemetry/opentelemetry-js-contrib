@@ -230,6 +230,16 @@ describe('utils', function () {
       });
     });
 
+    it('preserves signed URL query strings in UriPart (known exposure when capture is on)', () => {
+      const signed =
+        'https://cdn.example.com/img.png?X-Amz-Signature=abc&X-Amz-Expires=3600';
+      expect(parseUriOrBlobPart(signed, 'image')).toEqual({
+        type: 'uri',
+        modality: 'image',
+        uri: signed,
+      });
+    });
+
     it('infers embedding dimensions from float arrays and base64 float32 buffers', () => {
       expect(inferEmbeddingDimensions([0.1, 0.2, 0.3])).toBe(3);
       expect(inferEmbeddingDimensions([])).toBeUndefined();
@@ -277,6 +287,43 @@ describe('utils', function () {
           outputTokens: { audio: 10 },
         },
       });
+    });
+
+    it('omits zero and negative usage detail fields', () => {
+      expect(
+        extractChatTokenUsage({
+          prompt_tokens: 10,
+          completion_tokens: 5,
+          prompt_tokens_details: { cached_tokens: 0, audio_tokens: 0 },
+          completion_tokens_details: { reasoning_tokens: -1, audio_tokens: 0 },
+        })
+      ).toEqual({
+        inputTokenCount: 10,
+        outputTokenCount: 5,
+        tokenUsageByModality: undefined,
+      });
+    });
+
+    it('maps chat input_audio base64 to audio BlobPart bytes', () => {
+      const audioB64 = Buffer.from([9, 8, 7]).toString('base64');
+      const msgs = extractChatInputMessages([
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'input_audio',
+              input_audio: { data: audioB64, format: 'wav' },
+            },
+          ],
+        },
+      ]);
+      const part = msgs[0].parts[0];
+      expect(part.type).toBe('blob');
+      if (part.type === 'blob') {
+        expect(part.modality).toBe('audio');
+        expect(part.mime_type).toBe('audio/wav');
+        expect(Array.from(part.content)).toEqual([9, 8, 7]);
+      }
     });
 
     it('extracts responses token usage', () => {
