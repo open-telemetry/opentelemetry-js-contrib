@@ -154,4 +154,4 @@ AI assistance was used while drafting this change and structuring the response t
 
 ---
 
-**Candidate branch tip:** `review/nov9-maintainer-feedback` @ `18c6ab080b838e0eaa77935eb696e9993d998117`
+**Candidate branch tip:** `review/nov9-maintainer-feedback` @ `ab0fb6db4fe76b11dfe5690643911dbff7a1de75` (tests+audit); preceding refactor @ `d64172e6ec4977c5b2f3bc2aa21f0859d1f8d176`
