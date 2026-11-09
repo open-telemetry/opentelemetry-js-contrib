@@ -40,6 +40,7 @@ import type {
 import {
   bindPromise,
   extractAttributesFromNormalizedRequest,
+  getEndpointUrl,
   normalizeV3Request,
   removeSuffixFromStringIfExists,
 } from './utils';
@@ -409,8 +410,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   origHandler.call(this, command)
                 );
               });
+              let failed = false;
               const promiseWithResponseLogic = resultPromise
                 .then(response => {
+                  normalizedRequest.endpoint =
+                    getEndpointUrl(awsExecutionContext);
                   const requestId = response.output?.$metadata?.requestId;
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
@@ -438,6 +442,11 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     data: response.output,
                     request: normalizedRequest,
                     requestId: requestId,
+                    headers: (
+                      response.response as
+                        | { headers?: Record<string, string> }
+                        | undefined
+                    )?.headers,
                   };
                   const override = self.servicesExtensions.responseHook(
                     normalizedResponse,
@@ -454,6 +463,9 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   return response;
                 })
                 .catch(err => {
+                  failed = true;
+                  normalizedRequest.endpoint ??=
+                    getEndpointUrl(awsExecutionContext);
                   const requestId = err?.RequestId;
                   if (requestId) {
                     span.setAttribute(AttributeNames.AWS_REQUEST_ID, requestId);
@@ -475,6 +487,26 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     );
                   }
 
+                  safeExecuteInTheMiddle(
+                    () =>
+                      self.servicesExtensions.exceptionHook(
+                        normalizedRequest,
+                        err,
+                        span,
+                        self.tracer,
+                        self.getConfig(),
+                        startTime
+                      ),
+                    (e: Error | undefined) => {
+                      if (e)
+                        diag.error(
+                          `${AwsInstrumentation.component} instrumentation: service extension exceptionHook error`,
+                          e
+                        );
+                    },
+                    true
+                  );
+
                   span.setStatus({
                     code: SpanStatusCode.ERROR,
                     message: err.message,
@@ -488,7 +520,8 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                   throw err;
                 })
                 .finally(() => {
-                  if (!requestMetadata.isStream) {
+                  // A failed streaming request has no stream left to end the span.
+                  if (!requestMetadata.isStream || failed) {
                     span.end();
                   }
                 });

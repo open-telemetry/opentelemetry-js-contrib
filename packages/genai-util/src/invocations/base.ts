@@ -76,6 +76,14 @@ export interface BaseInvocationOptions {
   context?: Context;
   /** Start time of the invocation. Defaults to the time the invocation is created. */
   startTime?: TimeInput;
+  /**
+   * An already started span to record this invocation on, instead of starting a new one.
+   *
+   * The caller keeps ownership of the span: the span name and {@link kind} are left
+   * unchanged, {@link attributes} are applied with `setAttributes`, and the span is NOT
+   * ended by {@link BaseInvocation.stop} or {@link BaseInvocation.fail}.
+   */
+  span?: Span;
 }
 
 /**
@@ -133,6 +141,7 @@ export abstract class BaseInvocation {
   protected readonly _startTime: HrTime;
   protected _isEnded = false;
   protected _metricAttributes: Attributes;
+  private readonly _ownsSpan: boolean;
 
   /**
    * Start the invocation by creating and starting the underlying span.
@@ -151,15 +160,25 @@ export abstract class BaseInvocation {
     this._metricAttributes = { ...options.metricAttributes };
 
     const parentContext = options.context ?? context.active();
-    this._span = handler.getTracer().startSpan(
-      spanName,
-      {
-        kind: options.kind,
-        attributes: options.attributes,
-        startTime: this._startTime,
-      },
-      parentContext
-    );
+    if (options.span) {
+      // Adopt a span started (and later ended) by the caller.
+      this._ownsSpan = false;
+      this._span = options.span;
+      if (options.attributes) {
+        this._span.setAttributes(options.attributes);
+      }
+    } else {
+      this._ownsSpan = true;
+      this._span = handler.getTracer().startSpan(
+        spanName,
+        {
+          kind: options.kind,
+          attributes: options.attributes,
+          startTime: this._startTime,
+        },
+        parentContext
+      );
+    }
     this._context = trace.setSpan(parentContext, this._span);
   }
 
@@ -267,7 +286,8 @@ export abstract class BaseInvocation {
   }
 
   /**
-   * Complete the invocation successfully and end the underlying span.
+   * Complete the invocation successfully and end the underlying span (unless the span was
+   * supplied by the caller through the `span` option).
    *
    * Ending an already ended invocation is a no-op. Failures while emitting the
    * invocation's telemetry are logged through the handler's diagnostic logger and are
@@ -278,7 +298,8 @@ export abstract class BaseInvocation {
   }
 
   /**
-   * Complete the invocation with an error and end the underlying span.
+   * Complete the invocation with an error and end the underlying span (unless the span
+   * was supplied by the caller through the `span` option).
    *
    * Ending an already ended invocation is a no-op. Failures while emitting the
    * invocation's telemetry are logged through the handler's diagnostic logger and are
@@ -351,7 +372,9 @@ export abstract class BaseInvocation {
         .getDiag()
         .error('Error while ending GenAI invocation telemetry', err);
     } finally {
-      this._span.end(endHr);
+      if (this._ownsSpan) {
+        this._span.end(endHr);
+      }
     }
   }
 

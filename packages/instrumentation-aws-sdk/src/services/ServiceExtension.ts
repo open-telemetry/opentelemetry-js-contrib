@@ -20,9 +20,9 @@ import {
 export interface RequestMetadata {
   // isIncoming - if true, then the operation callback / promise should be bind with the operation's span
   isIncoming: boolean;
-  // isStream - if true, then the response is a stream so the span should not be ended by the middleware.
-  // the ServiceExtension must end the span itself, generally by wrapping the stream and ending after it is
-  // consumed.
+  // isStream - if true, then the response is a stream so the span should not be ended by the middleware
+  // when the request succeeds. The ServiceExtension must end the span itself, generally by wrapping the
+  // stream and ending after it is consumed. The middleware still ends the span if the request fails.
   isStream?: boolean;
   spanAttributes?: SpanAttributes;
   spanKind?: SpanKind;
@@ -48,6 +48,16 @@ export interface ServiceExtension {
     config: AwsSdkInstrumentationConfig,
     startTime: HrTime
   ) => any | undefined;
+
+  // called when the request fails, before the span status is set and before the span is ended.
+  exceptionHook?: (
+    request: NormalizedRequest,
+    error: unknown,
+    span: Span,
+    tracer: Tracer,
+    config: AwsSdkInstrumentationConfig,
+    startTime: HrTime
+  ) => void;
 
   updateMetricInstruments?: (meter: Meter) => void;
 }

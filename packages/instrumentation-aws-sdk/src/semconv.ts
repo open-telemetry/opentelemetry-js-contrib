@@ -10,6 +10,15 @@
  */
 
 /**
+ * The unique identifier of the AWS Bedrock Guardrail. A [guardrail](https://docs.aws.amazon.com/bedrock/latest/userguide/guardrails.html) helps safeguard and prevent unwanted behavior from model responses or user messages.
+ *
+ * @example sgi5gkybzqak
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_BEDROCK_GUARDRAIL_ID = 'aws.bedrock.guardrail.id' as const;
+
+/**
  * The JSON-serialized value of each item in the `AttributeDefinitions` request field.
  *
  * @example ["{ "AttributeName": "string", "AttributeType": "string" }"]
@@ -341,6 +350,47 @@ export const ATTR_FAAS_INVOKED_REGION = 'faas.invoked_region' as const;
 export const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name' as const;
 
 /**
+ * Represents the content type requested by the client.
+ *
+ * @note This attribute **SHOULD** be used when the client requests output of a specific type. The model may return zero or more outputs of this type.
+ * This attribute specifies the output modality and not the actual output format. For example, if an image is requested, the actual output could be a URL pointing to an image file.
+ * Additional output format details may be recorded in the future in the `gen_ai.output.{type}.*` attributes.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Moved to the [OpenTelemetry GenAI semantic conventions repository](https://github.com/open-telemetry/semantic-conventions-genai).
+ */
+export const ATTR_GEN_AI_OUTPUT_TYPE = 'gen_ai.output.type' as const;
+
+/**
+ * The Generative AI provider as identified by the client or server instrumentation.
+ *
+ * @note The attribute **SHOULD** be set based on the instrumentation's best
+ * knowledge and may differ from the actual model provider.
+ *
+ * Multiple providers, including Azure OpenAI, Gemini, and AI hosting platforms
+ * are accessible using the OpenAI REST API and corresponding client libraries,
+ * but may proxy or host models from different providers.
+ *
+ * The `gen_ai.request.model`, `gen_ai.response.model`, and `server.address`
+ * attributes may help identify the actual system in use.
+ *
+ * The `gen_ai.provider.name` attribute acts as a discriminator that
+ * identifies the GenAI telemetry format flavor specific to that provider
+ * within GenAI semantic conventions.
+ * It **SHOULD** be set consistently with provider-specific attributes and signals.
+ * For example, GenAI spans, metrics, and events related to AWS Bedrock
+ * should have the `gen_ai.provider.name` set to `aws.bedrock` and include
+ * applicable `aws.bedrock.*` attributes and are not expected to include
+ * `openai.*` attributes.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Moved to the [OpenTelemetry GenAI semantic conventions repository](https://github.com/open-telemetry/semantic-conventions-genai).
+ */
+export const ATTR_GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name' as const;
+
+/**
  * The maximum number of tokens the model generates for a request.
  *
  * @example 100
@@ -398,25 +448,6 @@ export const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p' as const;
  */
 export const ATTR_GEN_AI_RESPONSE_FINISH_REASONS =
   'gen_ai.response.finish_reasons' as const;
-
-/**
- * Deprecated, use `gen_ai.provider.name` instead.
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `gen_ai.provider.name`.
- */
-export const ATTR_GEN_AI_SYSTEM = 'gen_ai.system' as const;
-
-/**
- * The type of token being counted.
- *
- * @example input
- * @example output
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const ATTR_GEN_AI_TOKEN_TYPE = 'gen_ai.token.type' as const;
 
 /**
  * The number of tokens used in the GenAI input (prompt).
@@ -576,44 +607,19 @@ export const DB_SYSTEM_NAME_VALUE_DYNAMODB = 'dynamodb' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_CHAT = 'chat' as const;
 
 /**
- * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_SYSTEM}.
+ * Enum value "embeddings" for attribute {@link ATTR_GEN_AI_OPERATION_NAME}.
  *
- * AWS Bedrock
- *
- * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const GEN_AI_SYSTEM_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;
-
-/**
- * Enum value "input" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
- *
- * Input tokens (prompt, input, etc.)
+ * Embeddings operation such as [OpenAI Create embeddings API](https://platform.openai.com/docs/api-reference/embeddings/create)
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_TOKEN_TYPE_VALUE_INPUT = 'input' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS = 'embeddings' as const;
 
 /**
- * Enum value "output" for attribute {@link ATTR_GEN_AI_TOKEN_TYPE}.
+ * Enum value "aws.bedrock" for attribute {@link ATTR_GEN_AI_PROVIDER_NAME}.
  *
- * Output tokens (completion, response, etc.)
+ * [AWS Bedrock](https://aws.amazon.com/bedrock)
  *
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const GEN_AI_TOKEN_TYPE_VALUE_OUTPUT = 'output' as const;
-
-/**
- * GenAI operation duration.
- *
- * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
-  'gen_ai.client.operation.duration' as const;
-
-/**
- * Number of input and output tokens used.
- *
- * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- */
-export const METRIC_GEN_AI_CLIENT_TOKEN_USAGE =
-  'gen_ai.client.token.usage' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK = 'aws.bedrock' as const;

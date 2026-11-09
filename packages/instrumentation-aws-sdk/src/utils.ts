@@ -45,7 +45,17 @@ export const extractAttributesFromNormalizedRequest = (
   };
 };
 
-export const bindPromise = <T = unknown>(
+/**
+ * Return the URL of the endpoint resolved for a request, if the SDK's
+ * endpoint middleware has already set it on the handler execution context.
+ */
+export const getEndpointUrl = (executionContext: {
+  endpointV2?: { url?: URL };
+}): string | undefined => {
+  return executionContext?.endpointV2?.url?.href;
+};
+
+export const bindPromise =<T = unknown>(
   target: Promise<T>,
   contextForCallbacks: Context,
   rebindCount = 1

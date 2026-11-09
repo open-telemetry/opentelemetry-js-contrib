@@ -100,6 +100,7 @@ export class EmbeddingInvocation extends BaseInvocation {
       metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
+      span: options.span,
     });
 
     this._providerName = options.providerName;
