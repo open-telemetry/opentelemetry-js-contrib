@@ -60,7 +60,7 @@
     "@opentelemetry/sdk-metrics": "^3.0.0"
   },
   "dependencies": {
-    "systeminformation": "^5.31.6"
+    "systeminformation": "^5.33.19"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/host-metrics#readme"
 }
