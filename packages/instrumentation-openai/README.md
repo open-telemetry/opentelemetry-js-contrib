@@ -34,21 +34,15 @@ sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
+## Configuration
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `captureMessageContent` | `'none' \| 'span_only' \| boolean` | `'none'` | Controls whether message contents (prompts, completions, system instructions, tool call arguments, and tool outputs) are recorded on spans (`gen_ai.input.messages`, `gen_ai.output.messages`, `gen_ai.system_instructions`). Passing `true` is equivalent to `'span_only'`, and `false` is equivalent to `'none'`. When omitted, falls back to the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable (`none` or `span_only`). |
+
 ## Semantic Conventions
 
-This package implements Semantic Convention [Version 1.36.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/README.md) for Chat Completions, and Semantic Convention [Version 1.38.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.38.0/docs/README.md) for Responses API.
-
-Shared GenAI helpers come from [`@opentelemetry/genai-util`](https://www.npmjs.com/package/@opentelemetry/genai-util). For **OpenAI** semantic conventions, spans use **`gen_ai.provider.name` = `openai`** for this client, including when targeting OpenAI-compatible gateways or Azure OpenAI-style hosts. **`server.address` / `server.port`** still describe where the HTTP request was sent (derived from the client `baseURL`).
-
-Message content capture is **opt-in**. Configure it in either of these ways:
-
-- **Constructor**: `captureMessageContent` accepts a [`ContentCaptureMode`](https://www.npmjs.com/package/@opentelemetry/genai-util) from `@opentelemetry/genai-util`:
-  - `'none'` (default): do not record prompt, completion, or tool-call argument text on spans.
-  - `'span_only'`: record that content on span attributes when the conventions allow it.
-- **Backward compatibility**: `true` is treated as `'span_only'`, and `false` as `'none'`.
-- **Environment**: `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` — boolean **`true` / `false`** maps to `'span_only'` / `'none'` the same way as before; string values follow `genai-util` ([`span_only` | `none`](https://www.npmjs.com/package/@opentelemetry/genai-util)).
-
-When capture is enabled, image content parts are recorded as the placeholder `[image]` only — raw HTTP(S) URLs, signed URLs, and `data:` URIs are never exported.
+This package leverages `@opentelemetry/genai-util` to emit spans and metrics adhering to the [OpenTelemetry GenAI Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/README.md) (`https://opentelemetry.io/schemas/gen-ai-dev/1.42.0-dev`) across Chat Completions (`chat.completions.create`), Embeddings (`embeddings.create`), and Responses (`responses.create`), including streaming Time To First Chunk (TTFT) and Time Per Output Chunk metrics.
 
 ## Useful links
 

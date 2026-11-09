@@ -3,8 +3,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import {
+  GEN_AI_FINISH_REASON_VALUE_COMPACTION,
+  GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER,
+  GEN_AI_FINISH_REASON_VALUE_ERROR,
+  GEN_AI_FINISH_REASON_VALUE_LENGTH,
+  GEN_AI_FINISH_REASON_VALUE_STOP,
+  GEN_AI_FINISH_REASON_VALUE_TOOL_CALL,
+  type ChatMessage,
+  type CompactionPart,
+  type FilePart,
+  type FinishReason,
+  type GenericPart,
+  type InputMessages,
+  type MessagePart,
+  type OutputMessages,
+  type ReasoningPart,
+  type ServerToolCallPart,
+  type ServerToolCallResponsePart,
+  type SystemInstructions,
+  type TextPart,
+  type ToolCallRequestPart,
+  type ToolCallResponsePart,
+} from '@opentelemetry/genai-util';
 import type {
   EasyInputMessage,
+  Response,
   ResponseCodeInterpreterToolCall,
   ResponseComputerToolCall,
   ResponseCreateParams,
@@ -13,698 +37,738 @@ import type {
   ResponseFileSearchToolCall,
   ResponseFunctionToolCall,
   ResponseFunctionWebSearch,
+  ResponseInputItem,
   ResponseOutputItem,
   ResponseOutputMessage,
   ResponseReasoningItem,
-  ResponseInputItem,
   Responses,
 } from 'openai/resources/responses/responses';
-import type {
-  GenericPart,
-  MessagePart,
-  OutputMessages,
-  TextPart,
-  ToolCallRequestPart,
-  ToolCallResponsePart,
-  ChatMessage,
-  InputMessages,
-} from './internal-types';
+import { decodeBase64, parseJsonArguments, parseUriOrBlobPart } from './utils';
 
-export class ConvertResponseInputsToInputMessagesUseCase {
-  constructor(private readonly captureMessageContent = false) {}
+const CLIENT_ACTIONABLE_OUTPUT_ITEM_TYPES = new Set<string>([
+  'function_call',
+  'custom_tool_call',
+  'computer_call',
+  'local_shell_call',
+  'mcp_approval_request',
+]);
 
-  convert(params: ResponseCreateParams): InputMessages {
-    const messages: Array<ChatMessage> = [];
+/**
+ * Extract a conversation ID from OpenAI Responses `conversation` request/response
+ * fields (accepting either a string ID or `{ id: string }`).
+ */
+export function extractResponsesConversationId(
+  conversation:
+    | ResponseCreateParams['conversation']
+    | Response['conversation']
+    | null
+    | undefined
+): string | undefined {
+  if (!conversation) {
+    return undefined;
+  }
+  if (typeof conversation === 'string') {
+    return conversation.length > 0 ? conversation : undefined;
+  }
+  if (typeof conversation === 'object' && 'id' in conversation) {
+    return typeof conversation.id === 'string' && conversation.id.length > 0
+      ? conversation.id
+      : undefined;
+  }
+  return undefined;
+}
 
-    if (typeof params.instructions === 'string') {
-      messages.push(
-        this.message({ role: 'system', content: params.instructions })
-      );
+/**
+ * Check whether an OpenAI Responses `input` or `output` item array contains
+ * any conversation compaction items (`type === 'compaction'`).
+ */
+export function hasCompactionItems(items: unknown): boolean {
+  if (!Array.isArray(items)) {
+    return false;
+  }
+  return items.some(
+    item =>
+      typeof item === 'object' &&
+      item !== null &&
+      'type' in item &&
+      (item as { type?: unknown }).type === 'compaction'
+  );
+}
+
+/**
+ * Derive a standardized `FinishReason` from an OpenAI Responses `Response`
+ * status, incomplete details, and output items.
+ */
+export function deriveResponsesFinishReason(
+  outputItems: ReadonlyArray<ResponseOutputItem>,
+  status?: string | null,
+  incompleteDetails?: Response.IncompleteDetails | null
+): FinishReason {
+  if (status === 'failed' || status === 'cancelled') {
+    return GEN_AI_FINISH_REASON_VALUE_ERROR;
+  }
+  if (status === 'incomplete') {
+    if (incompleteDetails?.reason === 'max_output_tokens') {
+      return GEN_AI_FINISH_REASON_VALUE_LENGTH;
     }
-    if (typeof params.input === 'string') {
-      messages.push(this.message({ role: 'user', content: params.input }));
-    } else if (Array.isArray(params.input)) {
-      messages.push(
-        ...params.input.map(
-          (input): ChatMessage =>
-            (this as any)[input.type ?? 'message'](input as never)
-        )
-      );
+    if (incompleteDetails?.reason === 'content_filter') {
+      return GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER;
     }
+    return 'incomplete';
+  }
+  for (const item of outputItems) {
+    const itemType = (item as { type?: string }).type;
+    if (itemType && CLIENT_ACTIONABLE_OUTPUT_ITEM_TYPES.has(itemType)) {
+      return GEN_AI_FINISH_REASON_VALUE_TOOL_CALL;
+    }
+  }
+  const lastItem = outputItems[outputItems.length - 1] as
+    | { type?: string }
+    | undefined;
+  if (lastItem?.type === 'compaction') {
+    return GEN_AI_FINISH_REASON_VALUE_COMPACTION;
+  }
+  return GEN_AI_FINISH_REASON_VALUE_STOP;
+}
 
-    return messages;
+/**
+ * Convert top-level OpenAI Responses `instructions` into `genai-util`
+ * `SystemInstructions`.
+ */
+export function extractResponsesSystemInstructions(
+  instructions: string | null | undefined
+): SystemInstructions | undefined {
+  if (typeof instructions !== 'string' || instructions.trim().length === 0) {
+    return undefined;
+  }
+  return [{ type: 'text', content: instructions }];
+}
+
+function convertMessageContentItemParts(
+  item:
+    | EasyInputMessage
+    | ResponseInputItem.Message
+    | Responses.ResponseInputMessageItem
+    | ResponseOutputMessage
+): MessagePart[] {
+  const parts: MessagePart[] = [];
+  if (typeof item.content === 'string') {
+    parts.push({
+      type: 'text',
+      content: item.content,
+    } satisfies TextPart);
+    return parts;
   }
 
-  message(
-    item:
-      | EasyInputMessage
-      | ResponseInputItem.Message
-      | Responses.ResponseInputMessageItem
-      | ResponseOutputMessage
-  ): ChatMessage {
-    const parts: Array<MessagePart> = [];
-    if (typeof item.content === 'string') {
-      if (this.captureMessageContent) {
+  if (!Array.isArray(item.content)) {
+    return parts;
+  }
+
+  for (const content of item.content) {
+    switch (content.type) {
+      case 'input_text':
+      case 'output_text':
         parts.push({
           type: 'text',
-          content: item.content,
+          content: content.text,
         } satisfies TextPart);
-      } else {
+        break;
+      case 'refusal':
         parts.push({
-          type: 'text',
-          content: undefined,
+          type: 'refusal',
+          refusal: content.refusal,
         } satisfies GenericPart);
-      }
-    } else if (Array.isArray(item.content)) {
-      for (const content of item.content) {
-        switch (content.type) {
-          case 'input_text':
-          case 'output_text':
-            if (this.captureMessageContent) {
-              parts.push({
-                type: 'text',
-                content: content.text,
-              } satisfies TextPart);
-            } else {
-              parts.push({
-                type: 'text',
-                content: undefined,
-              } satisfies GenericPart);
-            }
-            break;
-          case 'refusal':
-            parts.push({
-              type: 'refusal',
-              refusal: content.refusal,
-            } satisfies GenericPart);
-            break;
-          case 'input_image':
-            parts.push({
-              ...(this.captureMessageContent ? (content as object) : undefined),
-              type: 'image',
-            } satisfies GenericPart);
-            break;
-          case 'input_file':
-            parts.push({
-              ...(this.captureMessageContent ? (content as object) : undefined),
-              type: 'file',
-            } satisfies GenericPart);
-            break;
-          default: {
-            parts.push({
-              ...(this.captureMessageContent ? (content as object) : undefined),
-              type: 'audio',
-            } satisfies GenericPart);
-            break;
-          }
+        break;
+      case 'input_image':
+        if (content.file_id) {
+          parts.push({
+            type: 'file',
+            modality: 'image',
+            file_id: content.file_id,
+          } satisfies FilePart);
+        } else if (content.image_url) {
+          parts.push(parseUriOrBlobPart(content.image_url, 'image'));
+        } else {
+          parts.push({ type: 'image' } satisfies GenericPart);
         }
+        break;
+      case 'input_file': {
+        const fileItem = content as {
+          file_id?: string | null;
+          file_data?: string | null;
+          file_url?: string | null;
+          filename?: string | null;
+        };
+        if (fileItem.file_id) {
+          parts.push({
+            type: 'file',
+            modality: 'document',
+            file_id: fileItem.file_id,
+          } satisfies FilePart);
+        } else if (fileItem.file_data) {
+          parts.push(parseUriOrBlobPart(fileItem.file_data, 'document'));
+        } else if (fileItem.file_url) {
+          parts.push(parseUriOrBlobPart(fileItem.file_url, 'document'));
+        } else {
+          parts.push({
+            ...(content as unknown as Record<string, unknown>),
+            type: 'file',
+          } satisfies GenericPart);
+        }
+        break;
+      }
+      default: {
+        const raw = content as unknown as {
+          type?: string;
+          input_audio?: { data?: string; format?: string };
+          [key: string]: unknown;
+        };
+        if (raw.type === 'input_audio' && raw.input_audio?.data) {
+          parts.push({
+            type: 'blob',
+            modality: 'audio',
+            ...(raw.input_audio.format
+              ? { mime_type: `audio/${raw.input_audio.format}` }
+              : {}),
+            content: decodeBase64(raw.input_audio.data),
+          });
+        } else {
+          parts.push({
+            ...raw,
+            type: typeof raw.type === 'string' ? raw.type : 'unknown',
+          } satisfies GenericPart);
+        }
+        break;
       }
     }
-
-    return {
-      role: item.role,
-      parts,
-    } satisfies ChatMessage;
   }
 
-  function_call(item: ResponseFunctionToolCall): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.name,
-          arguments: this.captureMessageContent ? item.arguments : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
-  }
+  return parts;
+}
 
-  custom_tool_call(item: ResponseCustomToolCall): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.name,
-          arguments: this.captureMessageContent ? item.input : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
+function convertReasoningParts(item: ResponseReasoningItem): MessagePart[] {
+  const parts: MessagePart[] = [];
+  for (const summary of item.summary ?? []) {
+    parts.push({
+      type: 'reasoning',
+      content: summary.text,
+    } satisfies ReasoningPart);
   }
+  for (const content of item.content ?? []) {
+    parts.push({
+      type: 'reasoning',
+      content: content.text,
+    } satisfies ReasoningPart);
+  }
+  return parts;
+}
 
-  reasoning(item: ResponseReasoningItem): ChatMessage {
-    const parts: Array<MessagePart> = [];
-    for (const summary of item.summary) {
-      parts.push({
+function convertCompactionPart(item: {
+  id?: string | null;
+  content?: string | null;
+  encrypted_content?: string | null;
+}): CompactionPart {
+  const part: CompactionPart = {
+    type: 'compaction',
+  };
+  if (item.id) {
+    part.id = item.id;
+  }
+  if (typeof item.content === 'string') {
+    part.content = item.content;
+  }
+  return part;
+}
+
+function convertFileSearchParts(
+  item: ResponseFileSearchToolCall
+): MessagePart[] {
+  const parts: MessagePart[] = [
+    {
+      type: 'server_tool_call',
+      id: item.id,
+      name: item.type,
+      server_tool_call: {
         type: item.type,
-        text: this.captureMessageContent ? summary.text : undefined,
-      });
-    }
-    if (item.content) {
-      for (const content of item.content) {
-        parts.push({
-          type: item.type,
-          text: this.captureMessageContent ? content.text : undefined,
-        });
-      }
-    }
-
-    return {
-      role: 'assistant',
-      parts,
-    } satisfies ChatMessage;
+        queries: item.queries,
+      },
+    } satisfies ServerToolCallPart,
+  ];
+  if (item.results && item.results.length > 0) {
+    parts.push({
+      type: 'server_tool_call_response',
+      id: item.id,
+      server_tool_call_response: {
+        type: item.type,
+        results: item.results,
+      },
+    } satisfies ServerToolCallResponsePart);
   }
+  return parts;
+}
 
-  file_search_call(item: ResponseFileSearchToolCall): ChatMessage {
-    const parts: Array<MessagePart> = [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.queries : undefined,
-      } satisfies ToolCallRequestPart,
-    ];
-    for (const result of item.results ?? []) {
-      parts.push({
-        type: 'tool_call_response',
-        id: item.id,
-        response: this.captureMessageContent ? result : undefined,
-      } satisfies ToolCallResponsePart);
-    }
+function convertWebSearchParts(item: ResponseFunctionWebSearch): MessagePart[] {
+  return [
+    {
+      type: 'server_tool_call',
+      id: item.id,
+      name: item.type,
+      server_tool_call: {
+        type: item.type,
+        action: item.action,
+      },
+    } satisfies ServerToolCallPart,
+  ];
+}
 
-    return {
-      role: 'assistant',
-      parts,
-    } satisfies ChatMessage;
+function convertCodeInterpreterParts(
+  item: ResponseCodeInterpreterToolCall
+): MessagePart[] {
+  const parts: MessagePart[] = [
+    {
+      type: 'server_tool_call',
+      id: item.id,
+      name: item.type,
+      server_tool_call: {
+        type: item.type,
+        code: item.code,
+        container_id: item.container_id,
+      },
+    } satisfies ServerToolCallPart,
+  ];
+  if (item.outputs && item.outputs.length > 0) {
+    parts.push({
+      type: 'server_tool_call_response',
+      id: item.id,
+      server_tool_call_response: {
+        type: item.type,
+        outputs: item.outputs,
+      },
+    } satisfies ServerToolCallResponsePart);
   }
+  return parts;
+}
 
-  web_search_call(item: ResponseFunctionWebSearch): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.type,
-          arguments: this.captureMessageContent ? item.action : undefined,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
+function convertImageGenerationParts(
+  item:
+    | ResponseInputItem.ImageGenerationCall
+    | ResponseOutputItem.ImageGenerationCall
+): MessagePart[] {
+  const parts: MessagePart[] = [
+    {
+      type: 'server_tool_call',
+      id: item.id,
+      name: item.type,
+      server_tool_call: {
+        type: item.type,
+      },
+    } satisfies ServerToolCallPart,
+  ];
+  if (item.result != null) {
+    parts.push({
+      type: 'server_tool_call_response',
+      id: item.id,
+      server_tool_call_response: {
+        type: item.type,
+        result: item.result,
+      },
+    } satisfies ServerToolCallResponsePart);
   }
+  return parts;
+}
 
-  computer_call(item: ResponseComputerToolCall): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.type,
-          arguments: this.captureMessageContent ? item.action : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
+function convertMcpCallParts(
+  item: ResponseInputItem.McpCall | ResponseOutputItem.McpCall
+): MessagePart[] {
+  const parts: MessagePart[] = [
+    {
+      type: 'server_tool_call',
+      id: item.id,
+      name: item.name,
+      server_tool_call: {
+        type: item.type,
+        server_label: item.server_label,
+        arguments: parseJsonArguments(item.arguments),
+      },
+    } satisfies ServerToolCallPart,
+  ];
+  if (item.output != null || item.error != null) {
+    parts.push({
+      type: 'server_tool_call_response',
+      id: item.id,
+      server_tool_call_response: {
+        type: item.type,
+        server_label: item.server_label,
+        ...(item.error != null
+          ? { error: item.error }
+          : { output: item.output }),
+      },
+    } satisfies ServerToolCallResponsePart);
   }
+  return parts;
+}
 
-  computer_call_output(
-    item: ResponseInputItem.ComputerCallOutput
-  ): ChatMessage {
-    return {
-      role: 'user',
-      parts: [
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: this.captureMessageContent ? item.output : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
+function convertMcpListToolsParts(
+  item: ResponseInputItem.McpListTools | ResponseOutputItem.McpListTools
+): MessagePart[] {
+  return [
+    {
+      type: 'server_tool_call_response',
+      id: item.id,
+      server_tool_call_response: {
+        type: item.type,
+        server_label: item.server_label,
+        ...(item.error != null ? { error: item.error } : { tools: item.tools }),
+      },
+    } satisfies ServerToolCallResponsePart,
+  ];
+}
 
-  code_interpreter_call(item: ResponseCodeInterpreterToolCall): ChatMessage {
-    const parts: Array<MessagePart> = [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.code : undefined,
-      } satisfies ToolCallRequestPart,
-    ];
-    for (const output of item.outputs ?? []) {
-      switch (output.type) {
-        case 'image':
-          parts.push({
+function convertFunctionCallPart(
+  item: ResponseFunctionToolCall
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.call_id ?? item.id,
+    name: item.name,
+    arguments: parseJsonArguments(item.arguments),
+  };
+}
+
+function convertCustomToolCallPart(
+  item: ResponseCustomToolCall
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.call_id ?? item.id,
+    name: item.name,
+    arguments: item.input,
+  };
+}
+
+function convertComputerCallPart(
+  item: ResponseComputerToolCall
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.call_id ?? item.id,
+    name: item.type,
+    arguments: item.action,
+  };
+}
+
+function convertLocalShellCallPart(
+  item: ResponseInputItem.LocalShellCall | ResponseOutputItem.LocalShellCall
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.call_id ?? item.id,
+    name: item.type,
+    arguments: item.action,
+  };
+}
+
+function convertMcpApprovalRequestPart(
+  item:
+    | ResponseInputItem.McpApprovalRequest
+    | ResponseOutputItem.McpApprovalRequest
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.id,
+    name: item.name,
+    arguments: parseJsonArguments(item.arguments),
+    server_label: item.server_label,
+  };
+}
+
+function convertInputItemToChatMessage(item: ResponseInputItem): ChatMessage {
+  const itemType = (item as { type?: string }).type ?? 'message';
+  switch (itemType) {
+    case 'message':
+      return {
+        role: (item as EasyInputMessage).role,
+        parts: convertMessageContentItemParts(item as EasyInputMessage),
+      };
+    case 'function_call':
+      return {
+        role: 'assistant',
+        parts: [convertFunctionCallPart(item as ResponseFunctionToolCall)],
+      };
+    case 'function_call_output': {
+      const out = item as ResponseInputItem.FunctionCallOutput;
+      const response =
+        typeof out.output === 'string'
+          ? (parseJsonArguments(out.output) ?? out.output)
+          : out.output;
+      return {
+        role: 'tool',
+        parts: [
+          {
             type: 'tool_call_response',
-            id: item.id,
-            response: this.captureMessageContent ? output.url : undefined,
-          } satisfies ToolCallResponsePart);
-          break;
-        case 'logs':
-          parts.push({
-            type: 'tool_call_response',
-            id: item.id,
-            response: this.captureMessageContent ? output.logs : undefined,
-          } satisfies ToolCallResponsePart);
-          break;
-      }
+            id: out.call_id ?? out.id,
+            response,
+          } satisfies ToolCallResponsePart,
+        ],
+      };
     }
-
-    return {
-      role: 'assistant',
-      parts,
-    } satisfies ChatMessage;
-  }
-
-  image_generation_call(
-    item:
-      | ResponseInputItem.ImageGenerationCall
-      | ResponseOutputItem.ImageGenerationCall
-  ): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.type,
-        } satisfies ToolCallRequestPart,
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: this.captureMessageContent ? item.result : undefined,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  function_call_output(
-    item: ResponseInputItem.FunctionCallOutput
-  ): ChatMessage {
-    return {
-      role: 'user',
-      parts: [
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: this.captureMessageContent ? item.output : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  local_shell_call(
-    item: ResponseInputItem.LocalShellCall | ResponseOutputItem.LocalShellCall
-  ): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.type,
-          arguments: this.captureMessageContent ? item.action : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  local_shell_call_output(
-    item: ResponseInputItem.LocalShellCallOutput
-  ): ChatMessage {
-    return {
-      role: 'user',
-      parts: [
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: this.captureMessageContent ? item.output : undefined,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  mcp_call(
-    item: ResponseInputItem.McpCall | ResponseOutputItem.McpCall
-  ): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: item.type,
-          arguments: this.captureMessageContent
-            ? `${item.name}(${item.arguments})`
-            : undefined,
-          server: item.server_label,
-        } satisfies ToolCallRequestPart,
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: item.error
-            ? item.error
-            : this.captureMessageContent
-              ? item.output
-              : undefined,
-          server: item.server_label,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  mcp_list_tools(item: ResponseInputItem.McpListTools): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: item.error
-            ? item.error
-            : this.captureMessageContent
-              ? item.tools
-              : undefined,
-          server: item.server_label,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  mcp_approval_request(
-    item: ResponseInputItem.McpApprovalRequest
-  ): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'tool_call',
-          id: item.id,
-          name: `${item.type}${this.captureMessageContent ? `: ${item.name}` : ''}`,
-          arguments: this.captureMessageContent ? item.arguments : undefined,
-          server: item.server_label,
-        } satisfies ToolCallRequestPart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  mcp_approval_response(
-    item: ResponseInputItem.McpApprovalResponse
-  ): ChatMessage {
-    return {
-      role: 'user',
-      parts: [
-        {
-          type: 'tool_call_response',
-          response: this.captureMessageContent ? item.approve : undefined,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  custom_tool_call_output(item: ResponseCustomToolCallOutput): ChatMessage {
-    return {
-      role: 'user',
-      parts: [
-        {
-          type: 'tool_call_response',
-          id: item.id,
-          response: this.captureMessageContent ? item.output : undefined,
-          call_id: item.call_id,
-        } satisfies ToolCallResponsePart,
-      ],
-    } satisfies ChatMessage;
-  }
-
-  item_reference(item: ResponseInputItem.ItemReference): ChatMessage {
-    return {
-      role: 'assistant',
-      parts: [
-        {
-          type: 'item_reference',
-          id: item.id,
-        } satisfies GenericPart,
-      ],
-    } satisfies ChatMessage;
+    case 'custom_tool_call':
+      return {
+        role: 'assistant',
+        parts: [convertCustomToolCallPart(item as ResponseCustomToolCall)],
+      };
+    case 'custom_tool_call_output': {
+      const out = item as ResponseCustomToolCallOutput;
+      return {
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool_call_response',
+            id: out.call_id ?? out.id,
+            response: out.output,
+          } satisfies ToolCallResponsePart,
+        ],
+      };
+    }
+    case 'reasoning':
+      return {
+        role: 'assistant',
+        parts: convertReasoningParts(item as ResponseReasoningItem),
+      };
+    case 'compaction':
+      return {
+        role: 'assistant',
+        parts: [
+          convertCompactionPart(
+            item as unknown as {
+              id?: string | null;
+              content?: string | null;
+              encrypted_content?: string | null;
+            }
+          ),
+        ],
+      };
+    case 'file_search_call':
+      return {
+        role: 'assistant',
+        parts: convertFileSearchParts(item as ResponseFileSearchToolCall),
+      };
+    case 'web_search_call':
+      return {
+        role: 'assistant',
+        parts: convertWebSearchParts(item as ResponseFunctionWebSearch),
+      };
+    case 'code_interpreter_call':
+      return {
+        role: 'assistant',
+        parts: convertCodeInterpreterParts(
+          item as ResponseCodeInterpreterToolCall
+        ),
+      };
+    case 'image_generation_call':
+      return {
+        role: 'assistant',
+        parts: convertImageGenerationParts(
+          item as ResponseInputItem.ImageGenerationCall
+        ),
+      };
+    case 'mcp_call':
+      return {
+        role: 'assistant',
+        parts: convertMcpCallParts(item as ResponseInputItem.McpCall),
+      };
+    case 'mcp_list_tools':
+      return {
+        role: 'assistant',
+        parts: convertMcpListToolsParts(item as ResponseInputItem.McpListTools),
+      };
+    case 'mcp_approval_request':
+      return {
+        role: 'assistant',
+        parts: [
+          convertMcpApprovalRequestPart(
+            item as ResponseInputItem.McpApprovalRequest
+          ),
+        ],
+      };
+    case 'mcp_approval_response': {
+      const resp = item as ResponseInputItem.McpApprovalResponse;
+      return {
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool_call_response',
+            id: resp.approval_request_id ?? resp.id,
+            response: resp.approve,
+          } satisfies ToolCallResponsePart,
+        ],
+      };
+    }
+    case 'computer_call':
+      return {
+        role: 'assistant',
+        parts: [convertComputerCallPart(item as ResponseComputerToolCall)],
+      };
+    case 'computer_call_output': {
+      const out = item as ResponseInputItem.ComputerCallOutput;
+      return {
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool_call_response',
+            id: out.call_id ?? out.id,
+            response: out.output,
+          } satisfies ToolCallResponsePart,
+        ],
+      };
+    }
+    case 'local_shell_call':
+      return {
+        role: 'assistant',
+        parts: [
+          convertLocalShellCallPart(item as ResponseInputItem.LocalShellCall),
+        ],
+      };
+    case 'local_shell_call_output': {
+      const out = item as ResponseInputItem.LocalShellCallOutput;
+      return {
+        role: 'tool',
+        parts: [
+          {
+            type: 'tool_call_response',
+            id: out.id,
+            response: out.output,
+          } satisfies ToolCallResponsePart,
+        ],
+      };
+    }
+    case 'item_reference': {
+      const ref = item as ResponseInputItem.ItemReference;
+      return {
+        role: 'assistant',
+        parts: [
+          {
+            type: 'item_reference',
+            id: ref.id,
+          } satisfies GenericPart,
+        ],
+      };
+    }
+    default: {
+      const generic = item as unknown as Record<string, unknown>;
+      return {
+        role:
+          typeof generic.role === 'string' && generic.role.length > 0
+            ? generic.role
+            : 'user',
+        parts: [
+          {
+            ...generic,
+            type: itemType,
+          } satisfies GenericPart,
+        ],
+      };
+    }
   }
 }
 
-export class ConvertResponseOutputsToOutputMessagesUseCase {
-  constructor(private readonly captureMessageContent = false) {}
-
-  convert(responseOutput: Array<ResponseOutputItem>): OutputMessages {
-    const parts: Array<MessagePart> = responseOutput.flatMap(
-      (item: ResponseOutputItem) => (this as any)[item.type](item as never)
-    );
-
+/**
+ * Convert OpenAI Responses `params.input` into `genai-util` `InputMessages`.
+ */
+export function convertResponsesInputToMessages(
+  input: ResponseCreateParams['input']
+): InputMessages {
+  if (!input) {
+    return [];
+  }
+  if (typeof input === 'string') {
     return [
       {
-        role: 'assistant',
-        parts,
-        finish_reason:
-          parts[parts.length - 1]?.type === 'tool_call' ? 'tool_call' : 'stop',
+        role: 'user',
+        parts: [{ type: 'text', content: input }],
       },
     ];
   }
+  if (Array.isArray(input)) {
+    return input.map(convertInputItemToChatMessage);
+  }
+  return [];
+}
 
-  message(item: ResponseOutputMessage): Array<MessagePart> {
-    const parts: Array<MessagePart> = [];
-    for (const content of item.content) {
-      switch (content.type) {
-        case 'output_text':
-          if (this.captureMessageContent) {
-            parts.push({
-              type: 'text',
-              content: content.text,
-            } satisfies TextPart);
-          } else {
-            parts.push({
-              type: 'text',
-              content: undefined,
-            } satisfies GenericPart);
+function convertOutputItemToParts(item: ResponseOutputItem): MessagePart[] {
+  const itemType = (item as { type?: string }).type ?? 'unknown';
+  switch (itemType) {
+    case 'message':
+      return convertMessageContentItemParts(item as ResponseOutputMessage);
+    case 'function_call':
+      return [convertFunctionCallPart(item as ResponseFunctionToolCall)];
+    case 'custom_tool_call':
+      return [convertCustomToolCallPart(item as ResponseCustomToolCall)];
+    case 'reasoning':
+      return convertReasoningParts(item as ResponseReasoningItem);
+    case 'compaction':
+      return [
+        convertCompactionPart(
+          item as unknown as {
+            id?: string | null;
+            content?: string | null;
+            encrypted_content?: string | null;
           }
-          break;
-        case 'refusal':
-          parts.push({
-            type: content.type,
-            refusal: content.refusal,
-          } satisfies GenericPart);
-          break;
-      }
+        ),
+      ];
+    case 'file_search_call':
+      return convertFileSearchParts(item as ResponseFileSearchToolCall);
+    case 'web_search_call':
+      return convertWebSearchParts(item as ResponseFunctionWebSearch);
+    case 'code_interpreter_call':
+      return convertCodeInterpreterParts(
+        item as ResponseCodeInterpreterToolCall
+      );
+    case 'image_generation_call':
+      return convertImageGenerationParts(
+        item as ResponseOutputItem.ImageGenerationCall
+      );
+    case 'mcp_call':
+      return convertMcpCallParts(item as ResponseOutputItem.McpCall);
+    case 'mcp_list_tools':
+      return convertMcpListToolsParts(item as ResponseOutputItem.McpListTools);
+    case 'mcp_approval_request':
+      return [
+        convertMcpApprovalRequestPart(
+          item as ResponseOutputItem.McpApprovalRequest
+        ),
+      ];
+    case 'computer_call':
+      return [convertComputerCallPart(item as ResponseComputerToolCall)];
+    case 'local_shell_call':
+      return [
+        convertLocalShellCallPart(item as ResponseOutputItem.LocalShellCall),
+      ];
+    default: {
+      const generic = item as unknown as Record<string, unknown>;
+      return [
+        {
+          ...generic,
+          type: itemType,
+        } satisfies GenericPart,
+      ];
     }
-
-    return parts;
   }
+}
 
-  function_call(item: ResponseFunctionToolCall): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.name,
-        arguments: this.captureMessageContent ? item.arguments : undefined,
-        call_id: item.call_id,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
-
-  custom_tool_call(item: ResponseCustomToolCall): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.name,
-        arguments: this.captureMessageContent ? item.input : undefined,
-        call_id: item.call_id,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
-
-  reasoning(item: ResponseReasoningItem): Array<MessagePart> {
-    const parts: Array<MessagePart> = [];
-    for (const summary of item.summary) {
-      parts.push({
-        type: item.type,
-        text: this.captureMessageContent ? summary.text : undefined,
-      });
-    }
-    if (item.content) {
-      for (const content of item.content) {
-        parts.push({
-          type: item.type,
-          text: this.captureMessageContent ? content.text : undefined,
-        });
-      }
-    }
-
-    return parts;
-  }
-
-  file_search_call(item: ResponseFileSearchToolCall): Array<MessagePart> {
-    const parts: Array<MessagePart> = [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.queries : undefined,
-      } satisfies ToolCallRequestPart,
-    ];
-    for (const result of item.results ?? []) {
-      parts.push({
-        type: 'tool_call_response',
-        id: item.id,
-        response: this.captureMessageContent ? result : undefined,
-      } satisfies ToolCallResponsePart);
-    }
-
-    return parts;
-  }
-
-  web_search_call(item: ResponseFunctionWebSearch): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.action : undefined,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
-
-  computer_call(item: ResponseComputerToolCall): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.action : undefined,
-        call_id: item.call_id,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
-
-  code_interpreter_call(
-    item: ResponseCodeInterpreterToolCall
-  ): Array<MessagePart> {
-    const parts: Array<MessagePart> = [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.code : undefined,
-      } satisfies ToolCallRequestPart,
-    ];
-    for (const output of item.outputs ?? []) {
-      switch (output.type) {
-        case 'image':
-          parts.push({
-            type: 'tool_call_response',
-            id: item.id,
-            response: this.captureMessageContent ? output.url : undefined,
-          } satisfies ToolCallResponsePart);
-          break;
-        case 'logs':
-          parts.push({
-            type: 'tool_call_response',
-            id: item.id,
-            response: this.captureMessageContent ? output.logs : undefined,
-          } satisfies ToolCallResponsePart);
-          break;
-      }
-    }
-
-    return parts;
-  }
-
-  image_generation_call(
-    item: ResponseOutputItem.ImageGenerationCall
-  ): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-      } satisfies ToolCallRequestPart,
-      {
-        type: 'tool_call_response',
-        id: item.id,
-        response: this.captureMessageContent ? item.result : undefined,
-      } satisfies ToolCallResponsePart,
-    ];
-  }
-
-  local_shell_call(
-    item: ResponseOutputItem.LocalShellCall
-  ): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.type,
-        arguments: this.captureMessageContent ? item.action : undefined,
-        call_id: item.call_id,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
-
-  mcp_call(item: ResponseOutputItem.McpCall): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: item.name,
-        arguments: this.captureMessageContent
-          ? `${item.name}(${item.arguments})`
-          : undefined,
-        server: item.server_label,
-      } satisfies ToolCallRequestPart,
-      {
-        type: 'tool_call_response',
-        id: item.id,
-        response: item.error
-          ? item.error
-          : this.captureMessageContent
-            ? item.output
-            : undefined,
-        server: item.server_label,
-      } satisfies ToolCallResponsePart,
-    ];
-  }
-
-  mcp_list_tools(item: ResponseOutputItem.McpListTools): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call_response',
-        id: item.id,
-        response: item.error
-          ? item.error
-          : this.captureMessageContent
-            ? item.tools
-            : undefined,
-        server: item.server_label,
-      } satisfies ToolCallResponsePart,
-    ];
-  }
-
-  mcp_approval_request(
-    item: ResponseOutputItem.McpApprovalRequest
-  ): Array<MessagePart> {
-    return [
-      {
-        type: 'tool_call',
-        id: item.id,
-        name: `${item.type}${this.captureMessageContent ? `: ${item.name}` : ''}`,
-        arguments: this.captureMessageContent ? item.arguments : undefined,
-        server: item.server_label,
-      } satisfies ToolCallRequestPart,
-    ];
-  }
+/**
+ * Convert OpenAI Responses `output` items into `genai-util` `OutputMessages`.
+ */
+export function convertResponsesOutputToMessages(
+  outputItems: ReadonlyArray<ResponseOutputItem>,
+  finishReason: FinishReason
+): OutputMessages {
+  const parts: MessagePart[] = outputItems.flatMap(convertOutputItemToParts);
+  return [
+    {
+      role: 'assistant',
+      parts,
+      finish_reason: finishReason,
+    },
+  ];
 }

@@ -193,31 +193,6 @@ export function wrapAsyncStream<
     };
   };
 
-  /**
-   * OpenAI's `Stream` class implements async iteration via an `iterator` method
-   * (`[Symbol.asyncIterator]()` returns `this.iterator()`), and `tee()` calls
-   * `this.iterator()` directly. Without wrapping that factory, tee'd branches
-   * bypass instrumentation hooks entirely.
-   */
-  const streamWithIterator = stream as unknown as {
-    iterator?: () => AsyncIterator<TChunk>;
-  };
-  const rawIteratorFactory =
-    typeof streamWithIterator.iterator === 'function'
-      ? streamWithIterator.iterator.bind(streamWithIterator)
-      : undefined;
-
-  if (rawIteratorFactory) {
-    Object.defineProperty(streamWithIterator, 'iterator', {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value(): AsyncIterableIterator<TChunk> {
-        return wrapIterator(rawIteratorFactory());
-      },
-    });
-  }
-
   const originalAsyncIterator = stream[Symbol.asyncIterator];
   const streamAsIterator = stream as unknown as AsyncIterator<TChunk>;
   const wrappedSelfIterator =
@@ -256,9 +231,6 @@ export function wrapAsyncStream<
     enumerable: false,
     writable: true,
     value(this: TStream): AsyncIterableIterator<TChunk> {
-      if (rawIteratorFactory) {
-        return wrapIterator(rawIteratorFactory());
-      }
       if (typeof originalAsyncIterator === 'function') {
         const iterator = originalAsyncIterator.call(this);
         if ((iterator as unknown) !== this) {
