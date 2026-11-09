@@ -43,7 +43,11 @@ import type {
   ResponseReasoningItem,
   Responses,
 } from 'openai/resources/responses/responses';
-import { decodeBase64, parseJsonArguments, parseUriOrBlobPart } from './utils';
+import {
+  parseJsonArguments,
+  parseUriOrBlobPart,
+  telemetryBlobPart,
+} from './utils';
 
 const CLIENT_ACTIONABLE_OUTPUT_ITEM_TYPES = new Set<string>([
   'function_call',
@@ -224,14 +228,14 @@ function convertMessageContentItemParts(
           [key: string]: unknown;
         };
         if (raw.type === 'input_audio' && raw.input_audio?.data) {
-          parts.push({
-            type: 'blob',
-            modality: 'audio',
-            ...(raw.input_audio.format
-              ? { mime_type: `audio/${raw.input_audio.format}` }
-              : {}),
-            content: decodeBase64(raw.input_audio.data),
-          });
+          parts.push(
+            telemetryBlobPart(
+              'audio',
+              raw.input_audio.format
+                ? `audio/${raw.input_audio.format}`
+                : undefined
+            )
+          );
         } else {
           parts.push({
             ...raw,

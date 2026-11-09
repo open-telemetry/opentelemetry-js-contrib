@@ -21,9 +21,11 @@ import {
   parseBaseURL,
   parseJsonArguments,
   parseUriOrBlobPart,
-  resolveCaptureMode,
+  redactHttpUriForTelemetry,
   responseFormatToOutputType,
+  telemetryBlobPart,
 } from '../src/utils';
+import { getContentCaptureMode } from '@opentelemetry/genai-util';
 import {
   convertResponsesInputToMessages,
   convertResponsesOutputToMessages,
@@ -124,29 +126,30 @@ describe('utils', function () {
     });
   });
 
-  describe('resolveCaptureMode', function () {
-    it('normalizes boolean, ContentCaptureMode, and env var strings', () => {
-      expect(resolveCaptureMode(undefined)).toBe('none');
-      expect(resolveCaptureMode(null)).toBe('none');
-      expect(resolveCaptureMode(false)).toBe('none');
-      expect(resolveCaptureMode('none')).toBe('none');
-      expect(resolveCaptureMode('NO_CONTENT')).toBe('none');
-      expect(resolveCaptureMode('false')).toBe('none');
-      expect(resolveCaptureMode('')).toBe('none');
+  describe('getContentCaptureMode (genai-util)', function () {
+    const envVar = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
 
-      expect(resolveCaptureMode(true)).toBe('span_only');
-      expect(resolveCaptureMode('span_only')).toBe('span_only');
-      expect(resolveCaptureMode('SPAN_ONLY')).toBe('span_only');
-      expect(resolveCaptureMode('span')).toBe('span_only');
-      expect(resolveCaptureMode('TRUE')).toBe('span_only');
+    afterEach(() => {
+      delete process.env[envVar];
     });
 
-    it('warns and falls back to none for unrecognized values', () => {
-      const warnings: string[] = [];
-      const mockDiag = { warn: (msg: string) => warnings.push(msg) } as any;
-      expect(resolveCaptureMode('event_only', mockDiag)).toBe('none');
-      expect(resolveCaptureMode(123, mockDiag)).toBe('none');
-      expect(warnings.length).toBe(2);
+    it('uses config when env is unset', () => {
+      delete process.env[envVar];
+      expect(getContentCaptureMode('span_only')).toBe('span_only');
+      expect(getContentCaptureMode('none')).toBe('none');
+      expect(getContentCaptureMode(undefined)).toBe('none');
+    });
+
+    it('prefers environment variable over config', () => {
+      process.env[envVar] = 'span_only';
+      expect(getContentCaptureMode('none')).toBe('span_only');
+    });
+
+    it('does not treat legacy true/false env strings as booleans', () => {
+      process.env[envVar] = 'true';
+      expect(getContentCaptureMode(undefined)).toBe('none');
+      process.env[envVar] = 'false';
+      expect(getContentCaptureMode('span_only')).toBe('none');
     });
   });
 
@@ -201,7 +204,7 @@ describe('utils', function () {
   });
 
   describe('parseUriOrBlobPart & inferEmbeddingDimensions', function () {
-    it('parses https URLs into UriPart and data: base64 URIs into BlobPart', () => {
+    it('parses https URLs into redacted UriPart and data: base64 into empty BlobPart', () => {
       expect(
         parseUriOrBlobPart('https://example.com/cat.png', 'image')
       ).toEqual({
@@ -215,29 +218,28 @@ describe('utils', function () {
         `data:image/png;base64,${b64}`,
         'image'
       );
-      expect(blobPart.type).toBe('blob');
-      if (blobPart.type === 'blob') {
-        expect(blobPart.modality).toBe('image');
-        expect(blobPart.mime_type).toBe('image/png');
-        expect(Array.from(blobPart.content)).toEqual([1, 2, 3, 4]);
-      }
+      expect(blobPart).toEqual(
+        telemetryBlobPart('image', 'image/png')
+      );
 
-      // Non-base64 data URI falls back to UriPart
       expect(parseUriOrBlobPart('data:text/plain,hello', 'document')).toEqual({
         type: 'uri',
         modality: 'document',
-        uri: 'data:text/plain,hello',
+        uri: 'data:[redacted]',
       });
     });
 
-    it('preserves signed URL query strings in UriPart (known exposure when capture is on)', () => {
+    it('strips signed URL query strings from UriPart', () => {
       const signed =
         'https://cdn.example.com/img.png?X-Amz-Signature=abc&X-Amz-Expires=3600';
       expect(parseUriOrBlobPart(signed, 'image')).toEqual({
         type: 'uri',
         modality: 'image',
-        uri: signed,
+        uri: 'https://cdn.example.com/img.png',
       });
+      expect(redactHttpUriForTelemetry(signed)).toBe(
+        'https://cdn.example.com/img.png'
+      );
     });
 
     it('infers embedding dimensions from float arrays and base64 float32 buffers', () => {
@@ -304,7 +306,7 @@ describe('utils', function () {
       });
     });
 
-    it('maps chat input_audio base64 to audio BlobPart bytes', () => {
+    it('maps chat input_audio to redacted audio BlobPart (no raw bytes)', () => {
       const audioB64 = Buffer.from([9, 8, 7]).toString('base64');
       const msgs = extractChatInputMessages([
         {
@@ -317,13 +319,9 @@ describe('utils', function () {
           ],
         },
       ]);
-      const part = msgs[0].parts[0];
-      expect(part.type).toBe('blob');
-      if (part.type === 'blob') {
-        expect(part.modality).toBe('audio');
-        expect(part.mime_type).toBe('audio/wav');
-        expect(Array.from(part.content)).toEqual([9, 8, 7]);
-      }
+      expect(msgs[0].parts[0]).toEqual(
+        telemetryBlobPart('audio', 'audio/wav')
+      );
     });
 
     it('extracts responses token usage', () => {
@@ -392,7 +390,7 @@ describe('utils', function () {
               type: 'uri',
               modality: 'image',
               uri: 'https://example.com/img.jpg',
-            },
+            } satisfies { type: 'uri'; modality: 'image'; uri: string },
             { type: 'file', modality: 'document', file_id: 'file-123' },
           ],
         },

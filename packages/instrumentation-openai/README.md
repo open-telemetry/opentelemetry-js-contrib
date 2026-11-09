@@ -38,7 +38,7 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
-| `captureMessageContent` | `'none' \| 'span_only' \| boolean` | `'none'` | Controls whether message contents (prompts, completions, system instructions, tool call arguments, and tool outputs) are recorded on spans (`gen_ai.input.messages`, `gen_ai.output.messages`, `gen_ai.system_instructions`). Passing `true` is equivalent to `'span_only'`, and `false` is equivalent to `'none'`. When omitted, falls back to the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable (`none` or `span_only`). |
+| `captureMessageContent` | `'none' \| 'span_only'` | `'none'` | When `'span_only'`, records message content on spans (`gen_ai.input.messages`, `gen_ai.output.messages`, `gen_ai.system_instructions`) using genai-util message part schemas. Multimodal parts omit query strings, credentials, and raw binary payloads (see package docs). When omitted, falls back to `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` (`none`, `span_only`, or `span`). |
 
 ## Semantic Conventions
 

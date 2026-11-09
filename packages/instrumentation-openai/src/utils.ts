@@ -10,7 +10,6 @@ import {
   GEN_AI_OUTPUT_TYPE_VALUE_TEXT,
   type BlobPart,
   type ChatMessage,
-  type ContentCaptureMode,
   type FilePart,
   type FinishReason,
   type GenericPart,
@@ -144,41 +143,23 @@ export function getAttrsFromBaseURL(
   return attrs;
 }
 
+/** Empty blob payload used when only modality / MIME type should be captured. */
+export const REDACTED_BLOB_CONTENT = new Uint8Array(0);
+
 /**
- * Normalize an `OpenAIInstrumentationConfig['captureMessageContent']` value or
- * `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable
- * string into a `ContentCaptureMode` (`'none' | 'span_only'`), warning on
- * unrecognized values.
+ * HTTP(S) URIs for telemetry omit query, fragment, and credentials so signed
+ * URLs and tokens are not exported. Non-HTTP(S) URIs are not replayed verbatim.
  */
-export function resolveCaptureMode(
-  value: unknown,
-  diag_: DiagLogger = diag
-): ContentCaptureMode {
-  if (value === undefined || value === null || value === false) {
-    return 'none';
-  }
-  if (value === true) {
-    return 'span_only';
-  }
-  if (typeof value === 'string') {
-    const normalized = value.trim().toLowerCase();
-    switch (normalized) {
-      case '':
-      case 'none':
-      case 'no_content':
-      case 'false':
-        return 'none';
-      case 'span_only':
-      case 'span':
-      case 'true':
-        return 'span_only';
-      default:
-        diag_.warn('OpenAI: invalid captureMessageContent mode; using none');
-        return 'none';
+export function redactHttpUriForTelemetry(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      return '[redacted-uri]';
     }
+    return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+  } catch {
+    return '[invalid-uri]';
   }
-  diag_.warn('OpenAI: invalid captureMessageContent mode; using none');
-  return 'none';
 }
 
 /**
@@ -258,7 +239,23 @@ export function decodeBase64(base64Data: string): Uint8Array {
 }
 
 /**
- * Convert a URL or `data:` URI into a `UriPart` or `BlobPart`.
+ * Build a {@link BlobPart} for telemetry without exporting raw binary payloads.
+ */
+export function telemetryBlobPart(
+  modality: Modality,
+  mimeType?: string | null
+): BlobPart {
+  return {
+    type: 'blob',
+    modality,
+    ...(mimeType ? { mime_type: mimeType } : {}),
+    content: REDACTED_BLOB_CONTENT,
+  };
+}
+
+/**
+ * Convert a URL or `data:` URI into a schema-valid {@link UriPart} or
+ * {@link BlobPart} without exporting signed query strings or decoded payloads.
  */
 export function parseUriOrBlobPart(
   url: string,
@@ -267,19 +264,26 @@ export function parseUriOrBlobPart(
   if (url.startsWith('data:')) {
     const match = /^data:([^;,]+)?(?:;[^,]*)?;base64,(.*)$/s.exec(url);
     if (match) {
-      const [, mimeType, b64] = match;
-      return {
-        type: 'blob',
-        modality,
-        ...(mimeType ? { mime_type: mimeType } : {}),
-        content: decodeBase64(b64),
-      };
+      const [, mimeType] = match;
+      return telemetryBlobPart(modality, mimeType);
     }
+    return {
+      type: 'uri',
+      modality,
+      uri: 'data:[redacted]',
+    };
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return {
+      type: 'uri',
+      modality,
+      uri: redactHttpUriForTelemetry(url),
+    };
   }
   return {
     type: 'uri',
     modality,
-    uri: url,
+    uri: '[redacted-uri]',
   };
 }
 
@@ -409,14 +413,14 @@ function chatContentToParts(
         break;
       case 'input_audio':
         if (part.input_audio?.data) {
-          parts.push({
-            type: 'blob',
-            modality: 'audio',
-            ...(part.input_audio.format
-              ? { mime_type: `audio/${part.input_audio.format}` }
-              : {}),
-            content: decodeBase64(part.input_audio.data),
-          } satisfies BlobPart);
+          parts.push(
+            telemetryBlobPart(
+              'audio',
+              part.input_audio.format
+                ? `audio/${part.input_audio.format}`
+                : undefined
+            )
+          );
         }
         break;
       case 'file':

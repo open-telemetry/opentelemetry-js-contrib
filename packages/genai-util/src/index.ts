@@ -28,7 +28,10 @@
  * ```
  */
 export { TelemetryHandler, type TelemetryHandlerOptions } from './handler';
-export { ENV_GENAI_CAPTURE_MESSAGE_CONTENT } from './environment-variables';
+export {
+  ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  getContentCaptureMode,
+} from './environment-variables';
 export type { EmbeddingInvocation } from './invocations/embedding';
 export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';

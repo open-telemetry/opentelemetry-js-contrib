@@ -5,7 +5,6 @@
 
 import {
   context,
-  diag,
   type Attributes,
   type MeterProvider,
   type TracerProvider,
@@ -16,7 +15,7 @@ import {
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_OUTPUT_TYPE,
   ATTR_GEN_AI_RESPONSE_STATUS,
-  ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  getContentCaptureMode,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
@@ -67,7 +66,6 @@ import {
   getOpenAIErrorType,
   inferEmbeddingDimensions,
   parseBaseURL,
-  resolveCaptureMode,
   responseFormatToOutputType,
 } from './utils';
 /** @knipignore */
@@ -80,24 +78,10 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
 
   constructor(config: OpenAIInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-
-    const envVal = process.env[ENV_GENAI_CAPTURE_MESSAGE_CONTENT]?.trim();
-    if (envVal) {
-      this.setConfig({
-        ...this.getConfig(),
-        captureMessageContent: resolveCaptureMode(envVal, this._diag),
-      });
-    }
   }
 
   override setConfig(config: OpenAIInstrumentationConfig = {}): void {
-    super.setConfig({
-      ...config,
-      captureMessageContent: resolveCaptureMode(
-        config.captureMessageContent,
-        this._diag ?? diag
-      ),
-    });
+    super.setConfig(config);
     this._telemetryHandler = undefined;
   }
 
@@ -120,9 +104,8 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       tracerProvider: this._tracerProvider,
       meterProvider: this._meterProvider,
       diag: this._diag,
-      contentCaptureMode: resolveCaptureMode(
-        this.getConfig().captureMessageContent,
-        this._diag
+      contentCaptureMode: getContentCaptureMode(
+        this.getConfig().captureMessageContent
       ),
     }));
   }
