@@ -3,26 +3,25 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
+> [!NOTE]
+> This package is deprecated. Use
+> [`UserActionInstrumentation`](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#user-action)
+> from `@opentelemetry/browser-instrumentation/experimental/user-action` instead.
+> It records clicks as log events without Zone.js. It does not replace the legacy
+> interaction spans, arbitrary `eventNames`, or their async context propagation.
+> See the [browser migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md#user-interactions)
+> before migrating.
+>
+> The instrumentation scope name changes from
+> `@opentelemetry/instrumentation-user-interaction` to
+> `@opentelemetry/browser-instrumentation/user-action`, so queries and dashboards
+> that filter on the scope name need updating. The config type changes from
+> `UserInteractionInstrumentationConfig` to `UserActionInstrumentationConfig`.
+
 This module provides automatic instrumentation for *user interactions* for Web applications.
 
 This module can work either with [zone-js] or without it, with [zone-js] and ZoneContextManager it will fully support the async operations. Without [zone-js] it will still work but with limited support.
 If you use Angular or [@opentelemetry/context-zone] you will have [zone-js] included.
-
-## Deprecation
-
-This package is deprecated. Use
-[`UserActionInstrumentation`](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#user-action)
-from `@opentelemetry/browser-instrumentation/experimental/user-action` instead.
-It records clicks as log events without Zone.js. It does not replace the legacy
-interaction spans, arbitrary `eventNames`, or their async context propagation.
-See the [browser migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md#user-interactions)
-before migrating.
-
-The instrumentation scope name changes from
-`@opentelemetry/instrumentation-user-interaction` to
-`@opentelemetry/browser-instrumentation/user-action`, so queries and dashboards
-that filter on the scope name need updating. The config type changes from
-`UserInteractionInstrumentationConfig` to `UserActionInstrumentationConfig`.
 
 ## Installation
 
