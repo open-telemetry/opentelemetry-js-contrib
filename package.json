@@ -81,7 +81,7 @@
     "knip": "6.41.0",
     "lerna": "9.0.7",
     "markdownlint-cli2": "0.19.1",
-    "minimatch": "10.2.5",
+    "minimatch": "11.0.1",
     "mocha": "11.7.5",
     "nock": "14.0.15",
     "nx": "20.8.4",
