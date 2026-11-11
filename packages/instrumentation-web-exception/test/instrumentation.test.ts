@@ -17,7 +17,7 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 
 const STRING_ERROR = 'Some error string.';
 

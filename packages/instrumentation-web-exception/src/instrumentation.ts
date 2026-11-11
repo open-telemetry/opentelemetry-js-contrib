@@ -12,13 +12,12 @@ import {
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
 } from '@opentelemetry/semantic-conventions';
-import type { Attributes } from '@opentelemetry/api';
 import {
   SeverityNumber,
   logs,
+  type Attributes,
   type LogRecord,
-  type AnyValueMap,
-} from '@opentelemetry/api-logs';
+} from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 
 /** @knipignore */
@@ -64,7 +63,7 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
       ? config.applyCustomAttributes(error)
       : {};
 
-    let errorAttributes: AnyValueMap = {};
+    let errorAttributes: Attributes = {};
 
     if (typeof error === 'string') {
       errorAttributes = { [ATTR_EXCEPTION_MESSAGE]: error };

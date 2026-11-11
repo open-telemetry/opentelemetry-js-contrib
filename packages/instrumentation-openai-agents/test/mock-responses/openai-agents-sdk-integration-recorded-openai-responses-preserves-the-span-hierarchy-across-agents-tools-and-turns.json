@@ -1,0 +1,454 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "You triage refund requests for order A-1 with SKU S-9. First call lookup_order for the order id. Then call check_inventory for the SKU. Then hand off to the Support agent to issue the refund. Never answer the customer yourself.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "Please refund order A-1."
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "lookup_order",
+                    "description": "Look up the status of an order.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "orderId": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "orderId"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                },
+                {
+                    "type": "function",
+                    "name": "check_inventory",
+                    "description": "Check remaining stock for a SKU.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "sku": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "sku"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                },
+                {
+                    "name": "transfer_to_Support_agent",
+                    "description": "Handoff to the Support agent agent to handle the request. ",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                        "additionalProperties": false
+                    },
+                    "strict": true,
+                    "type": "function"
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1b930e001c07b939f49a94946fd2e0b24b9dee5da69cda31b2805edd0836c237c9094ba6965b04a4ab6f2b80e870b56cef2fc17e8c43389c46588c783b7b372147edaa365977dffd064810a62955bab3c4236493866014424a7488f36ed501254cf46fe65759d464912ef409b91750802f9485ca95b5e5dc160538e31a1f7c05ae962554529942066d54dd6845a64a454b5431afea16921cc4c2fd16e1c06b69b8542bcd838423c5756fb2d84398af4e7118f25db393e4bc38aea4e23b74678ad40a510fc0684b93af5810a7d889bce347b2ae07a1a0584ff18c1f4cf1e841bab9d08e11921fe9800d7db8acccc2a40bb0174792031d3c7940851db7e7e6ea6e72437dd633b66879118ca931e1d85a668679b84d2eeaac4f747886a0f4e190fa6763f77d96888357418730177029ba068b19c3d241d364cd70ca7a6bd7ae59238ec5417e2aa7e636c517968384053252861ea4e4252cb2ee0439bd892c324b03d5912ab147a9e45253eea800e231755ac105d7148b6b7a91019504caf0f99aead00e245880577da36a2b7990d23928a15e2122d101b289250db9a797bcc0f2168b2ace53bfaf18f6be8bfa95ecdf0115afe4dfbf449d30d7faf5c3aa8b83e80e20d9258474671ecb1f75de563747a1a494cbc9ca06841dc73a13a3d5ff078d144e295e41a1ad966235d5af464274fc86fa6f7338eb1e4e8ed6e3f2b4f9b93eb95dc1e9d6afaae16c5526f7e159ecd2c4c48e61c10960c0e7163b66875c498fcaba179598e691dbdda98b9b3420105c0f57e1db7dbd0b43d88aef1c596c112c54b61535bc220b9a9c51c24101ad6417d47d5853d9294a9d8c1de778d51694fc300e6ebd04367105f8380a598c10b51988831c32cb8a35fc8d32a37ebd68eef111ba32f60b52f7903a31e61d4c528c152f32184de308b4342903e42ee02c6ccf8038a37fcee4d32dd5360333cedc3d54b275c58e954545944d9aae3fef0aec779eec61de67282d2447a4f9edb84100b2c13c178ef71a35af034c39b47685aca505c6f098fe4af8a9623b19ce702d4aac94746a7e0601a607636e9510b36f2f480fa9a1141bb99bbac03484fd3a47b96387bedd445999b45cacab31a398a6aea35ef74e3e423532fbc84ec9ed598963b4c940fd5c223c352fa0b1824d87ded1402a1517e466a41a4a3765a5fe7c463d346b86314ebc54981ab529e9df95d77fb25f8d5b24f08bf0587a1fa8ce46a4a5a87d5a85e58a90e17eacf599c721626415acbf1cd499935531e1c7d09ac6c663434cb88eb3d4c5529bc3e15882cf8d6edc5605bde37099e16e502e0b689d16da4e75333c505f9a05267839adc68e3ca025b3afede0ac995cf459cc6a13deeea0f24b2c150c2040ea49c1c84107"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a3b2d5f68f064368-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Mon, 14 Sep 2026 22:30:26 GMT",
+            "openai-processing-ms": "3045",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9999",
+            "x-ratelimit-remaining-tokens": "199637",
+            "x-ratelimit-reset-requests": "8.64s",
+            "x-ratelimit-reset-tokens": "108ms",
+            "x-request-id": "req_58b3dfef6fa04e88a2bccdd5f5d7d433"
+        },
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "You triage refund requests for order A-1 with SKU S-9. First call lookup_order for the order id. Then call check_inventory for the SKU. Then hand off to the Support agent to issue the refund. Never answer the customer yourself.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "Please refund order A-1."
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582868887d29f3d620e22778b8d",
+                    "type": "function_call",
+                    "name": "lookup_order",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "arguments": "{\"orderId\":\"A-1\"}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582869887d295217330c8a46421",
+                    "type": "function_call",
+                    "name": "check_inventory",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "arguments": "{\"sku\":\"S-9\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "output": "{\"orderId\":\"A-1\",\"status\":\"shipped\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "output": "{\"sku\":\"S-9\",\"inStock\":3}",
+                    "status": "completed"
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "lookup_order",
+                    "description": "Look up the status of an order.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "orderId": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "orderId"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                },
+                {
+                    "type": "function",
+                    "name": "check_inventory",
+                    "description": "Check remaining stock for a SKU.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "sku": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "sku"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                },
+                {
+                    "name": "transfer_to_Support_agent",
+                    "description": "Handoff to the Support agent agent to handle the request. ",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                        "additionalProperties": false
+                    },
+                    "strict": true,
+                    "type": "function"
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1b850d001c07762cf846b2d80c169f5d6be63f9f9743f294a3d8f099d2eace22e87518c46b691091aebea900a2e3d78fb519ea958ce64e09b76fffdfe1dc1262b27b1fb5503425b196498118194ac24670ce7aa6abc1dfe61f4d0c39126cef81d742a1aa312b55536953725e22aaaa50b22d355795914aa9b22daa22c35c73a3739222a2a92adf574e734de600d39f1195aa73597059a5731fa89c709ca7aa8b49227c4ef2af213fd02da8e7d1f9b8c7ad0d4b51a9098217e06a03cd471498139d90bee342115d125c417458e7233e53e69104be99d24610d41f7a00dbfa1826d8d92458b7e7df2407185c3ba4228edbf07cfd9a3cd37af4646c4279528cfae0e1dd5a9a716c37b589193d131d99a1286978a5fe960bdb2555ecb2927758e0da36892ed545cc782d1ddc9acc1d8e8f9ed6ce8f66f57eccbfe4274b6a70811bb0833818a4e78c6420cb8b83c99a05f4949835bff391e68e82588ce2f54aca2b2a14c9180fa8608a738bd175fc5b07581344876fd936b3bebcb265f3655dcba6b5d2e42ae785c66ac0151106d0c85b1a7a2f59c20a2b1b6faa585efa7f22d513872ef2d91f7337e2c33d5f1c6deeaf5efb93978faa3b7e9c7f7c8a5264d2b4f0383204d181e4221027b9278e3146bfa78061b9f3481dfabd0c42baede1290566cbbd95f1421fdcc24780bec7c1cc6ed3a7828d7629b0413259023cb2341927ade93aec922a91c010de66e200ce0dc5bc19978f8787a3586376b056809896228e026bc0ade1904645020ac71cf450bacce82a9789ba20af1789ebf5c2950ddaf5135627c9750fe93b84c45e85b2d00b47aa44f807d53260fd0e7476b9bc3a595adc8d3c1d0b504961a933b47524eb544c842c31bd60d392fafbd6f07626939e0db5b63a26304c1a5a0e0b805c5dcc4ae1688f2161f35716a93d290de926fbc2e0ff3cf73a2e9357d60d58b281f36309eb38e0326a4f731560b46166faa048925c85a2a8304153100c21621ba4bc62b3f47ea342a6f86a9daa0207dd2686e8f9d54b93642be4b02a4d26cc6e2b4acc7d1402ee871a91c5e11554719f7a68b30f09daaa0b7a536ca2758baeecbf9c71ad51aefee15de0e2e85c03eb76aef86fddffcb7e36c8190dfc2132a607ccef2e2a92d8889f5be47e4983fd72d4fbaf07fb2cc95d09e1d7f05a828df7a2f330779d0f4ea339128e78f7391d866583fcf6af448c74e5e5820eaddf5294a9448107ae89051d13b29c647c47d8a13d59e4a9898e6642d5077d56a7ccf85eac2b6c36105e68231a8c28c89c03"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a3b2d611ffe44368-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Mon, 14 Sep 2026 22:30:28 GMT",
+            "openai-processing-ms": "1720",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9998",
+            "x-ratelimit-remaining-tokens": "199567",
+            "x-ratelimit-reset-requests": "15.046s",
+            "x-ratelimit-reset-tokens": "129ms",
+            "x-request-id": "req_ab7e818eefec492ba1ba16f6fc29ff0a"
+        },
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "Call issue_refund with the order id you were given, then reply with exactly: Refund issued.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "Please refund order A-1."
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582868887d29f3d620e22778b8d",
+                    "type": "function_call",
+                    "name": "lookup_order",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "arguments": "{\"orderId\":\"A-1\"}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582869887d295217330c8a46421",
+                    "type": "function_call",
+                    "name": "check_inventory",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "arguments": "{\"sku\":\"S-9\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "output": "{\"orderId\":\"A-1\",\"status\":\"shipped\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "output": "{\"sku\":\"S-9\",\"inStock\":3}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa875847e6c87d2992cfe2d48405ba7",
+                    "type": "function_call",
+                    "name": "transfer_to_Support_agent",
+                    "call_id": "call_oL1XoSHBxOJUsDTX7gCQlXY1",
+                    "arguments": "{}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_oL1XoSHBxOJUsDTX7gCQlXY1",
+                    "output": "{\"assistant\":\"Support agent\"}",
+                    "status": "completed"
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "issue_refund",
+                    "description": "Refund an order.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "orderId": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "orderId"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1bac09002c0663e74393d2ee1ced53f271ed09544a16ba39ad45460b15db3a76523beca19a04f10611e9eaebef372975b36e20029fbcb077a15d05672be804f54d2e1005bfba1767a2210b7b04eebddddbb4da69f75fd2a98154a2d28c331ec020c6c4dc66fa825a16b914fcc774e81daaada69449b019231129863da9704c64995357ac6f7408fef5f34cce2aa66e69e27bdc8ce8a29155a655c2b4c82e78e12f388e585369225c68403ae3b88c8ec45655f81294bf43be315e40799a97a4d750ba9a4a2dab7802c9b6507c6d90396980bef34e135d2b5c416a87d9c526671eade05b481d04017af0440d85348494dc1e9eb125fe76bf43940194535bf0d932fefb1fd5b291b96d2ef2e7178543337faf86fe35c31002458c008d6f86a98485fa0122b7c6323787628047938993fb074d064f5bc4e6d41a43722931edcd37de8b044c77ee1805539d1a03df169308a9bedaf41d795e2319c1f6d0650d27f516a5ac2876989a631deec4e4df2dc3bb9a66f2bd3d3eb26e01d5bcf967fbc13fda7e87eff4a77559edcd42f8f9eef3452a581796205028599ad3d03cf6f86ff4af603cf1abc6ff924049b33238b4c1688440ebf56fd00fcb1cc0f3347ca9095f4d29272eb619f5cd014e225341a968388a1c96250304402b0685176dcdb804152fc79b41a22929a8f4200f6b53619a3bc12e70c86312cc5499430a8d64c136bbcf9446e2aa4894ea2325a5bec8def9dcaad6fc8d760a49301d5100dbe7d440a2b32b99a07a0f31f1f5fa9bdbddadacf7061396d8f22c9d7ac93e94835d961960b1680bfd7f3b7d4d88e4a7d92af23d7260d22c2ffef03b3e5994c2c50c49ca20e08cd0fb31b40a88c31eef7d91ed49acb5925752bf097a8ed9f9f30aeeb5eb495ad5472ca884b59821ac7bb0823463b2c93db56b85da75996bf4a1ce4f6b99d62a80c5a098a1fc8b411b84bf51769cb3d327bb4b85d8727e095d35cbbd93387be04afd2035bd416ece55a8f8512e247e2296a9f0d58e0117a49dafa5050f3ce1e62f2c65b833c7a2e5d5dbb1e85a424856d88a16c42857854a5eb6bc673bd10d1e764bd9178d6bdc01ac04f5bae8b7b752ee855eee5ddad01d"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a3b2d61dbd1b4368-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Mon, 14 Sep 2026 22:30:29 GMT",
+            "openai-processing-ms": "763",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9997",
+            "x-ratelimit-remaining-tokens": "199614",
+            "x-ratelimit-reset-requests": "22.899s",
+            "x-ratelimit-reset-tokens": "115ms",
+            "x-request-id": "req_32359ffa423443e1ac8d937f2eda9ba0"
+        },
+        "responseIsBinary": false
+    },
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "Call issue_refund with the order id you were given, then reply with exactly: Refund issued.",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "Please refund order A-1."
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582868887d29f3d620e22778b8d",
+                    "type": "function_call",
+                    "name": "lookup_order",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "arguments": "{\"orderId\":\"A-1\"}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87582869887d295217330c8a46421",
+                    "type": "function_call",
+                    "name": "check_inventory",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "arguments": "{\"sku\":\"S-9\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_cIAo7A8p6j8epU5Xbz3HqcSC",
+                    "output": "{\"orderId\":\"A-1\",\"status\":\"shipped\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_BgrWEClujFfzRETk8Fn9kctG",
+                    "output": "{\"sku\":\"S-9\",\"inStock\":3}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa875847e6c87d2992cfe2d48405ba7",
+                    "type": "function_call",
+                    "name": "transfer_to_Support_agent",
+                    "call_id": "call_oL1XoSHBxOJUsDTX7gCQlXY1",
+                    "arguments": "{}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_oL1XoSHBxOJUsDTX7gCQlXY1",
+                    "output": "{\"assistant\":\"Support agent\"}",
+                    "status": "completed"
+                },
+                {
+                    "id": "fc_0918a89a368c7bd6006aa87585618887d2b03993b25627cfaa",
+                    "type": "function_call",
+                    "name": "issue_refund",
+                    "call_id": "call_T3XfRk4G8I5bYOcQA31CkTtA",
+                    "arguments": "{\"orderId\":\"A-1\"}",
+                    "status": "completed"
+                },
+                {
+                    "type": "function_call_output",
+                    "call_id": "call_T3XfRk4G8I5bYOcQA31CkTtA",
+                    "output": "{\"orderId\":\"A-1\",\"refunded\":true}",
+                    "status": "completed"
+                }
+            ],
+            "include": [],
+            "tools": [
+                {
+                    "type": "function",
+                    "name": "issue_refund",
+                    "description": "Refund an order.",
+                    "parameters": {
+                        "$schema": "http://json-schema.org/draft-07/schema#",
+                        "type": "object",
+                        "properties": {
+                            "orderId": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "orderId"
+                        ],
+                        "additionalProperties": false
+                    },
+                    "strict": true
+                }
+            ],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1bf009009c85b13379933f1f845e4b74ebcd1064e25cca8eec9e48b837ea4ad938cd801b4444a1af8d4dea2b91acff80e241a95f9750b6faada0d3d5d7b7f6b619141ee34e7b8cb8bcecbeab8d224b292af90b5ddda05a53ae4b8110021ba3f9eb00d4270eb7fe33072a5d14ea69105c423c3d722c3fd8f5625e991f98db99e98ed2fdb8e7de973089aa2f94da68a4a5a8d856a5852a5bd0f40f041e538d35e8da0691a3c675619a588d8cafa4f81df2c57c2d2dcfaf96446fd46fe8524b112ec062b3aa1f1b03cac9cfc5df71274d57452ac84fa6f873599af0a8426f4eda1942da234fd4c04893e829edc933b6c0df76e95046a01cde229f2dc3bfff095e36fdf32b45fffca26a68a6d52bfcaf8c40882d2283787c19a1e2d6f00f69e4d65cc6f4f1efe0514a71727f677471622cf7d1e8c4b5c6fcae7ceb5e2d40dfb9673be4f35c68d6e5179fcfb948e27d1f90b5c2042549f0c934f82589691f2143706136cc35ce171dd425de8f12c864a24dea19bec770b3f1f9ff8248ad51d86d21f390adfa5b942c8518224534ea469895f17c3f0be0ac1792ca88fd3982947b4684a921f2cab00b67dba5f7ad8c40aff7a1a68dbedad3486cfb192a1908a78ea150e7a32fc00f8b04415138631e302a4c18a10aad97e31d253e1e03327530d26a84f5d801319d862cb049ac07e5a0856cb20224efa38780379a24b4fac84cbdf14339aeaaf4f0816d87913431088b60ffb9880888373503995f2027de0c971cbcd7729b116b28cc32fdc13ba6a562ced162145b2e47fdaf7523617926b39c6d2193d69d9266796a91bcac98b7426d88fc844d639e34606193a10ddd29cdc1b7e11a6649a6c2e5f0fbd24857da49727e2e2bd329c8d05e3d11a9d2c31ee9c955520a3a30e865cda4177c97f5b8528e17f3aba59a641feae4042336fcafa32f50bb42842cae9ced64157b0e5077aa12ae2d429eabaf66de8e1cd378a67fa0355d3b8673162a3e1fbd0086eb4cb82071bed64f6cb571e3b79e826ec2311979e356e1a61242a2d7e7a2c0b35ce59c3c1d79a376e2a545dd54e9c9d8caa9d805639f81a8475a1ab5d3a31eb3c93b"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a3b2d6237b8a4368-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Mon, 14 Sep 2026 22:30:33 GMT",
+            "openai-processing-ms": "3591",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9996",
+            "x-ratelimit-remaining-tokens": "199573",
+            "x-ratelimit-reset-requests": "27.738s",
+            "x-ratelimit-reset-tokens": "128ms",
+            "x-request-id": "req_0a8dc6a36dd54bb4bf2797457d0809f9"
+        },
+        "responseIsBinary": false
+    }
+]

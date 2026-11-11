@@ -22,7 +22,7 @@ const {
   TracerProvider,
   SimpleSpanProcessor,
 } = require('@opentelemetry/sdk-trace');
-const { LangChainInstrumentation } = require('../../build/src');
+const { LangChainInstrumentation } = require('../../dist/index.cjs');
 
 const image =
   'otel/opentelemetry-collector-contrib@sha256:fd328de2552466ad78385e1b1289c3f2402b1c45f265b252aab1955b42845ac1';

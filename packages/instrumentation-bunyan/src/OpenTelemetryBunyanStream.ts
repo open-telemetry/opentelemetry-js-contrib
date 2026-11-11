@@ -8,7 +8,7 @@ import {
   SeverityNumber,
   Logger,
   type LogRecord,
-} from '@opentelemetry/api-logs';
+} from '@opentelemetry/api';
 import type { LogLevelString } from 'bunyan';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';

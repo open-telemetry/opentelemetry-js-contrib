@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+const path = require('path');
 const webpack = require('webpack');
 
 // This is the webpack configuration for browser Karma tests with coverage.
@@ -22,6 +23,9 @@ module.exports = {
       util: require.resolve('util/'),
       // Polyfill Node's process for browser bundles
       process: require.resolve('process/browser'),
+      // Only node-only platform code uses `path`; browser code paths never reach
+      // it. If that breaks: `TypeError: path.normalize is not a function`.
+      path: false,
     },
   },
   devtool: 'eval-source-map',
@@ -36,6 +40,12 @@ module.exports = {
   ],
   module: {
     rules: [
+      {
+        // #platform resolves to src for the package under test only; dependencies
+        // keep their dist, as a global condition would resolve them to their src too.
+        include: path.resolve('src'),
+        resolve: { conditionNames: ['otel', '...'] },
+      },
       { test: /\.tsx?$/, use: 'ts-loader' },
       {
         test: /\.js$/,

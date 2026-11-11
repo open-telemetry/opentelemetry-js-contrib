@@ -25,13 +25,12 @@ npm install --save @opentelemetry/baggage-log-record-processor
 Add to the log record processors that copies all baggage entries during configuration:
 
 ```javascript
-import { NodeSDK, logs } from '@opentelemetry/sdk-node';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import { ConsoleLogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import { ALLOW_ALL_BAGGAGE_KEYS, BaggageLogRecordProcessor } from '@opentelemetry/baggage-log-record-processor';
 
 const logRecordProcessor = [
-  new logs.SimpleLogRecordProcessor({
-    exporter: new logs.ConsoleLogRecordExporter()
-  }),
+  new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
   new BaggageLogRecordProcessor(ALLOW_ALL_BAGGAGE_KEYS)];
 
 const sdk = new NodeSDK({

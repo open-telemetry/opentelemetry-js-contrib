@@ -8,7 +8,14 @@ import { Writable } from 'stream';
 
 import * as semver from 'semver';
 import * as sinon from 'sinon';
-import { INVALID_SPAN_CONTEXT, context, trace, Span } from '@opentelemetry/api';
+import {
+  INVALID_SPAN_CONTEXT,
+  context,
+  trace,
+  Span,
+  logs,
+  SeverityNumber,
+} from '@opentelemetry/api';
 import { diag, DiagLogLevel } from '@opentelemetry/api';
 import { hrTimeToMilliseconds } from '@opentelemetry/core';
 import {
@@ -24,7 +31,6 @@ import {
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { logs, SeverityNumber } from '@opentelemetry/api-logs';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,

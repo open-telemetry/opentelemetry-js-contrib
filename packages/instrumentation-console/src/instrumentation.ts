@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context } from '@opentelemetry/api';
-import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import { context, logs, Logger, SeverityNumber } from '@opentelemetry/api';
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
 import { format } from 'util';
 import { ConsoleInstrumentationConfig } from './types';

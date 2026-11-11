@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SeverityNumber, logs } from '@opentelemetry/api-logs';
+import { SeverityNumber, logs } from '@opentelemetry/api';
 import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 import {
   LoggerProvider,
@@ -102,7 +102,9 @@ describe('OpenTelemetryTransportV3', () => {
 
     const logRecords = memoryLogExporter.getFinishedLogRecords();
     assert.strictEqual(logRecords.length, 1);
-    const serializedMetadata = logRecords[0].attributes['metadata'] as {
+    const serializedMetadata = logRecords[0].attributes[
+      'metadata'
+    ] as unknown as {
       error: {
         name: string;
         message: string;

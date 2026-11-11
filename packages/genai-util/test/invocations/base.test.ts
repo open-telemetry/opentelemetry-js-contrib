@@ -152,6 +152,27 @@ describe('BaseInvocation', () => {
     assert.strictEqual(inv.isEnded(), true);
   });
 
+  it('exposes callback parentage even without a registered context manager', () => {
+    context.disable();
+    try {
+      const parent = new CustomInvocation('parent', handler);
+      const child = new CustomInvocation('child', handler, {
+        context: parent.getContext(),
+      });
+      assert.strictEqual(trace.getSpan(parent.getContext()), parent.getSpan());
+      assert.strictEqual(trace.getSpan(context.active()), undefined);
+      child.stop();
+      parent.stop();
+      const [childSpan, parentSpan] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        childSpan.parentSpanContext?.spanId,
+        parentSpan.spanContext().spanId
+      );
+    } finally {
+      context.setGlobalContextManager(contextManager.enable());
+    }
+  });
+
   it('should use the span kind supplied by the concrete invocation', () => {
     new CustomInvocation('subclass-kind-span', handler).stop();
 

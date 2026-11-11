@@ -1,6 +1,46 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.32.0...resource-detector-azure-v0.33.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+* **resource-detector-azure:** detect AKS pod identity ([#3860](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3860)) ([d49c2fd](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d49c2fd5ac5a0758f9b1569e3f2ba7e8232ee912))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.71.0 to ^0.72.0
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.31.0...resource-detector-azure-v0.32.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.70.0 to ^0.71.0
+
 ## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-azure-v0.30.0...resource-detector-azure-v0.31.0) (2026-10-06)
 
 

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
-import type { LogRecord } from '@opentelemetry/api-logs';
+import { type LogRecord } from '@opentelemetry/api';
 
 /**
  * BrowserNavigationInstrumentationConfig

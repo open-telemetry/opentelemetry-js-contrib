@@ -12,7 +12,7 @@ import {
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import { TelemetryHandler } from '../../src/handler';
+import { TelemetryHandler } from '../../src';
 import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
