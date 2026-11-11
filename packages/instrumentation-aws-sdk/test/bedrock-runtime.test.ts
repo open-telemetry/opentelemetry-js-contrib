@@ -17,7 +17,11 @@
  */
 
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
-import { meterProvider, metricExporter } from './load-instrumentation';
+import {
+  instrumentation,
+  meterProvider,
+  metricExporter,
+} from './load-instrumentation';
 
 import {
   BedrockRuntimeClient,
@@ -32,6 +36,7 @@ import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 
+import { SpanStatusCode } from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -103,6 +108,58 @@ describe('Bedrock', () => {
     metricExporter.reset();
   });
 
+  // The tool-calling, error and embedding recordings are converted from the
+  // opentelemetry-python-genai Bedrock cassettes so both languages are tested
+  // against the same responses. The requests below must match them exactly.
+  const weatherPrompt =
+    'What is the weather in Seattle and San Francisco today?';
+  const weatherToolConfig = {
+    tools: [
+      {
+        toolSpec: {
+          name: 'get_current_weather',
+          description: 'Get the current weather in a given location.',
+          inputSchema: {
+            json: {
+              type: 'object',
+              properties: {
+                location: {
+                  type: 'string',
+                  description: 'The name of the city',
+                },
+              },
+              required: ['location'],
+            },
+          },
+        },
+      },
+    ],
+  };
+  const weatherMessages = [
+    { role: ConversationRole.USER, content: [{ text: weatherPrompt }] },
+  ];
+
+  function withContentCapture(mode: 'none' | 'span_only') {
+    beforeEach(() => {
+      instrumentation.setConfig({ captureMessageContent: mode });
+    });
+    afterEach(() => {
+      instrumentation.setConfig({});
+    });
+  }
+
+  function getSpan(name: string): ReadableSpan {
+    const spans = getTestSpans().filter(s => s.name === name);
+    expect(spans.length).toBe(1);
+    return spans[0];
+  }
+
+  function expectNoContent(span: ReadableSpan) {
+    expect(span.attributes).not.toHaveProperty('gen_ai.input.messages');
+    expect(span.attributes).not.toHaveProperty('gen_ai.output.messages');
+    expect(span.attributes).not.toHaveProperty('gen_ai.tool.definitions');
+  }
+
   describe('Converse', () => {
     it('adds genai conventions', async () => {
       const modelId = 'amazon.titan-text-lite-v1';
@@ -150,6 +207,75 @@ describe('Bedrock', () => {
       });
 
       await expectConverseMetrics('amazon.titan-text-lite-v1', 8, 10);
+    });
+
+    describe('with content capture', () => {
+      withContentCapture('span_only');
+
+      it('records tool calls with content', async () => {
+        const response = await client.send(
+          new ConverseCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: weatherMessages,
+            toolConfig: weatherToolConfig,
+          })
+        );
+        expect(response.stopReason).toBe('tool_use');
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+          'tool_call',
+        ]);
+        const output = JSON.parse(
+          span.attributes['gen_ai.output.messages'] as string
+        );
+        expect(output.length).toBe(1);
+        const toolCalls = output[0].parts.filter(
+          (p: any) => p.type === 'tool_call'
+        );
+        expect(toolCalls.length).toBeGreaterThanOrEqual(1);
+        expect(toolCalls[0].name).toBe('get_current_weather');
+      });
+
+      it('records invalid model errors', async () => {
+        await expect(
+          client.send(
+            new ConverseCommand({
+              modelId: 'does-not-exist',
+              messages: [
+                {
+                  role: ConversationRole.USER,
+                  content: [{ text: 'Say this is a test' }],
+                },
+              ],
+            })
+          )
+        ).rejects.toMatchObject({ name: 'ValidationException' });
+
+        const span = getSpan('chat does-not-exist');
+        expect(span.status.code).toBe(SpanStatusCode.ERROR);
+        expect(span.attributes['error.type']).toBe('ValidationException');
+      });
+    });
+
+    describe('without content capture', () => {
+      withContentCapture('none');
+
+      it('records tool calls without content', async () => {
+        await client.send(
+          new ConverseCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: weatherMessages,
+            toolConfig: weatherToolConfig,
+          })
+        );
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+          'tool_call',
+        ]);
+        expectNoContent(span);
+      });
     });
   });
 
@@ -207,9 +333,177 @@ describe('Bedrock', () => {
 
       await expectConverseMetrics('amazon.titan-text-lite-v1', 8, 10);
     });
+
+    describe('with content capture', () => {
+      withContentCapture('span_only');
+
+      it('records tool calls with content', async () => {
+        const response = await client.send(
+          new ConverseStreamCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: weatherMessages,
+            toolConfig: weatherToolConfig,
+          })
+        );
+        let events = 0;
+        for await (const _event of response.stream!) {
+          events++;
+        }
+        expect(events).toBeGreaterThan(0);
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+          'tool_call',
+        ]);
+        const output = JSON.parse(
+          span.attributes['gen_ai.output.messages'] as string
+        );
+        const toolCalls = output[0].parts.filter(
+          (p: any) => p.type === 'tool_call'
+        );
+        expect(toolCalls.length).toBeGreaterThanOrEqual(1);
+        expect(toolCalls[0].name).toBe('get_current_weather');
+      });
+
+      it('records invalid model errors', async () => {
+        await expect(
+          client.send(
+            new ConverseStreamCommand({
+              modelId: 'does-not-exist',
+              messages: [
+                {
+                  role: ConversationRole.USER,
+                  content: [{ text: 'Say this is a test' }],
+                },
+              ],
+            })
+          )
+        ).rejects.toMatchObject({ name: 'ValidationException' });
+
+        const span = getSpan('chat does-not-exist');
+        expect(span.status.code).toBe(SpanStatusCode.ERROR);
+        expect(span.attributes['error.type']).toBe('ValidationException');
+      });
+
+      // TODO: recording generated by AI, re-record. The recorded frames come from
+      // the python cassette; the trailing modelStreamErrorException frame is
+      // synthetic (python injects the error by patching botocore instead).
+      it('records event stream errors', async () => {
+        const response = await client.send(
+          new ConverseStreamCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: [
+              {
+                role: ConversationRole.USER,
+                content: [{ text: 'Say this is a test' }],
+              },
+            ],
+            inferenceConfig: {
+              maxTokens: 10,
+              temperature: 0.8,
+              topP: 1,
+              stopSequences: ['|'],
+            },
+          })
+        );
+        await expect(
+          (async () => {
+            for await (const _event of response.stream!) {
+              // drain
+            }
+          })()
+        ).rejects.toMatchObject({ name: 'ModelStreamErrorException' });
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.status.code).toBe(SpanStatusCode.ERROR);
+        expect(span.attributes['error.type']).toBe('ModelStreamErrorException');
+      });
+
+      // Python records the caller's exception on the span. In JS, throwing inside
+      // `for await` only calls the iterator's `return()`, so the instrumentation
+      // cannot see the error and ends the span as an early, successful stop.
+      it('ends the span when the caller stops reading', async () => {
+        const response = await client.send(
+          new ConverseStreamCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: [
+              {
+                role: ConversationRole.USER,
+                content: [{ text: 'Say this is a test' }],
+              },
+            ],
+            inferenceConfig: {
+              maxTokens: 10,
+              temperature: 0.8,
+              topP: 1,
+              stopSequences: ['|'],
+            },
+          })
+        );
+        await expect(
+          (async () => {
+            for await (const _event of response.stream!) {
+              throw new Error('caller aborted stream');
+            }
+          })()
+        ).rejects.toThrow('caller aborted stream');
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.status.code).not.toBe(SpanStatusCode.ERROR);
+        expect(span.attributes).not.toHaveProperty('error.type');
+      });
+    });
+
+    describe('without content capture', () => {
+      withContentCapture('none');
+
+      it('records tool calls without content', async () => {
+        const response = await client.send(
+          new ConverseStreamCommand({
+            modelId: 'amazon.nova-micro-v1:0',
+            messages: weatherMessages,
+            toolConfig: weatherToolConfig,
+          })
+        );
+        for await (const _event of response.stream!) {
+          // drain
+        }
+
+        const span = getSpan('chat amazon.nova-micro-v1:0');
+        expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+          'tool_call',
+        ]);
+        expectNoContent(span);
+      });
+    });
   });
 
   describe('InvokeModel', () => {
+    // TODO: recording generated by AI, re-record (the python cassette is synthetic too).
+    it('records embeddings', async () => {
+      const modelId = 'amazon.titan-embed-text-v1';
+      const response = await client.send(
+        new InvokeModelCommand({
+          modelId,
+          body: JSON.stringify({
+            inputText: 'The quick brown fox jumps over the lazy dog',
+          }),
+        })
+      );
+      const output = JSON.parse(response.body.transformToString());
+      expect(output.embedding).toEqual([0.1, 0.2, 0.3]);
+
+      const span = getSpan(`embeddings ${modelId}`);
+      expect(span.attributes).toMatchObject({
+        [ATTR_GEN_AI_PROVIDER_NAME]: GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
+        [ATTR_GEN_AI_OPERATION_NAME]: 'embeddings',
+        [ATTR_GEN_AI_REQUEST_MODEL]: modelId,
+        [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 9,
+      });
+      expect(span.attributes).not.toHaveProperty(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS
+      );
+    });
     it('adds amazon titan model attributes to span', async () => {
       const modelId = 'amazon.titan-text-express-v1';
       const inputText = 'Say this is a test';
@@ -890,7 +1184,9 @@ describe('Bedrock', () => {
     }
   }
 
-  function getInvokeModelWithResponseStreamSpans(modelId: string): ReadableSpan[] {
+  function getInvokeModelWithResponseStreamSpans(
+    modelId: string
+  ): ReadableSpan[] {
     return getTestSpans().filter((s: ReadableSpan) => {
       return s.name === `chat ${modelId}`;
     });

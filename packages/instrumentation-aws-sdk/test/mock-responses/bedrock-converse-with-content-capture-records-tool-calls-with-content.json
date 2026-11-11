@@ -1,0 +1,89 @@
+[
+  {
+    "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+    "method": "POST",
+    "path": "/model/amazon.nova-micro-v1%3A0/converse",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "text": "What is the weather in Seattle and San Francisco today?"
+            }
+          ]
+        }
+      ],
+      "toolConfig": {
+        "tools": [
+          {
+            "toolSpec": {
+              "name": "get_current_weather",
+              "description": "Get the current weather in a given location.",
+              "inputSchema": {
+                "json": {
+                  "type": "object",
+                  "properties": {
+                    "location": {
+                      "type": "string",
+                      "description": "The name of the city"
+                    }
+                  },
+                  "required": [
+                    "location"
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    "status": 200,
+    "response": {
+      "metrics": {
+        "latencyMs": 522
+      },
+      "output": {
+        "message": {
+          "content": [
+            {
+              "text": "<thinking> To provide the current weather in both Seattle and San Francisco, I will need to use the `get_current_weather` tool twice, once for each city. I will call the tool with the location argument set to \"Seattle\" and then again with the location argument set to \"San Francisco\". </thinking>\n"
+            },
+            {
+              "toolUse": {
+                "input": {
+                  "location": "Seattle"
+                },
+                "name": "get_current_weather",
+                "toolUseId": "tooluse_Zz8T4pYt9ha27V5Qz6Qige"
+              }
+            },
+            {
+              "toolUse": {
+                "input": {
+                  "location": "San Francisco"
+                },
+                "name": "get_current_weather",
+                "toolUseId": "tooluse_SxvvcYkS9z332WLbGpKY4F"
+              }
+            }
+          ],
+          "role": "assistant"
+        }
+      },
+      "stopReason": "tool_use",
+      "usage": {
+        "inputTokens": 416,
+        "outputTokens": 95,
+        "serverToolUsage": {},
+        "totalTokens": 511
+      }
+    },
+    "rawHeaders": [
+      "Content-Type",
+      "application/json"
+    ],
+    "responseIsBinary": false
+  }
+]
