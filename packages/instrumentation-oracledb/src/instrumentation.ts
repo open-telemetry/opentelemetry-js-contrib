@@ -41,27 +41,28 @@ export class OracleInstrumentation extends InstrumentationBase {
         if (!moduleExports) {
           return;
         }
-        const oracledb = extractModuleExports(moduleExports);
+        const oracledbMod = extractModuleExports(moduleExports);
         if (this._tmHandler) {
           // Already registered, so unregister it.
-          oracledb.traceHandler.setTraceInstance();
+          oracledbMod.traceHandler.setTraceInstance();
           this._tmHandler = null;
         }
         const config = this.getConfig();
-        const thClass = getOracleTelemetryTraceHandlerClass(oracledb);
+        const thClass = getOracleTelemetryTraceHandlerClass(oracledbMod);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();
 
           // Register the instance with oracledb.
-          oracledb.traceHandler.setTraceInstance(obj);
+          oracledbMod.traceHandler.setTraceInstance(obj);
           this._tmHandler = obj;
         }
         return moduleExports;
       },
       moduleExports => {
         if (this._tmHandler) {
-          extractModuleExports(moduleExports).traceHandler.setTraceInstance();
+          const oracledbMod = extractModuleExports(moduleExports);
+          oracledbMod.traceHandler.setTraceInstance();
           this._tmHandler = null;
         }
       }
