@@ -166,17 +166,19 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_SEED], 42);
     });
 
-    it('should support invoke_workflow and invoke_runner operation names', () => {
+    it('should support invoke_workflow and invoke_runner operation names and omit request.model from duration metric', async () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
         tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
       });
 
       handler
         .startAgent({
           operationName: 'invoke_workflow',
           agentName: 'CustomerSupportPipeline',
+          requestModel: 'gpt-4o',
         })
         .stop();
 
@@ -200,6 +202,48 @@ describe('AgentInvocation', () => {
       assert.strictEqual(
         spans[1].attributes[ATTR_GEN_AI_OPERATION_NAME],
         'invoke_runner'
+      );
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      const durationMetric = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_DURATION
+      );
+      assert.ok(durationMetric);
+      const workflowPoint = (
+        durationMetric.dataPoints as Array<{
+          attributes: Record<string, unknown>;
+        }>
+      ).find(
+        dp => dp.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_workflow'
+      );
+      assert.ok(workflowPoint);
+      assert.deepStrictEqual(workflowPoint.attributes, {
+        [ATTR_GEN_AI_OPERATION_NAME]: 'invoke_workflow',
+        [ATTR_GEN_AI_AGENT_NAME]: 'CustomerSupportPipeline',
+      });
+    });
+
+    it('should ignore remote-only setters (setAgentId, setAgentVersion, setStreaming) on in-process spans', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const invocation = handler.startAgent({ agentName: 'LocalAgent' });
+      invocation
+        .setAgentId('asst_ignored')
+        .setAgentVersion('1.0.0')
+        .setStreaming();
+      invocation.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_ID], undefined);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_VERSION], undefined);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_REQUEST_STREAM],
+        undefined
       );
     });
 
@@ -278,6 +322,22 @@ describe('AgentInvocation', () => {
       );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS], 150);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS], 75);
+
+      ctx.reset();
+
+      const invMissingReason = handler.startAgent({ agentName: 'Planner' });
+      invMissingReason.addOutputMessages([
+        { role: 'assistant', parts: [{ type: 'text', content: 'A' }] },
+        { role: 'assistant', parts: [{ type: 'text', content: 'B' }] },
+      ]);
+      invMissingReason.setFinishReasons(['stop', '']);
+      invMissingReason.stop();
+
+      const [spanMissingReason] = ctx.memoryExporter.getFinishedSpans();
+      assert.deepStrictEqual(
+        spanMissingReason.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['stop', 'error']
+      );
     });
 
     it('should respect content capture mode (none vs span_only) for messages, system instructions, and tool definitions', () => {

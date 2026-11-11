@@ -39,6 +39,7 @@ import {
   ATTR_GEN_AI_USAGE_TEXT_CACHE_READ_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_TEXT_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_TEXT_OUTPUT_TOKENS,
+  GEN_AI_FINISH_REASON_VALUE_ERROR,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
 } from '../semconv';
 import type {
@@ -248,7 +249,9 @@ export class AgentInvocation extends BaseInvocation {
    * Set the unique identifier of the GenAI agent (`gen_ai.agent.id`).
    */
   public setAgentId(id: string): this {
-    this._span.setAttribute(ATTR_GEN_AI_AGENT_ID, id);
+    if (this._isRemote) {
+      this._span.setAttribute(ATTR_GEN_AI_AGENT_ID, id);
+    }
     return this;
   }
 
@@ -256,7 +259,9 @@ export class AgentInvocation extends BaseInvocation {
    * Set the version of the GenAI agent (`gen_ai.agent.version`).
    */
   public setAgentVersion(version: string): this {
-    this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, version);
+    if (this._isRemote) {
+      this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, version);
+    }
     return this;
   }
 
@@ -297,7 +302,9 @@ export class AgentInvocation extends BaseInvocation {
    * Set the request streaming attribute to true (`gen_ai.request.stream`).
    */
   public setStreaming(): this {
-    this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    if (this._isRemote) {
+      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    }
     return this;
   }
 
@@ -422,7 +429,11 @@ export class AgentInvocation extends BaseInvocation {
     if (this._agentName) {
       metricAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
     }
-    if (this._requestModel) {
+    if (
+      this._requestModel &&
+      (this._isRemote ||
+        this._operationName === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT)
+    ) {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
     }
     if (this._isRemote && this._serverAddress) {
@@ -499,10 +510,7 @@ export class AgentInvocation extends BaseInvocation {
     _errorType?: string
   ): void {
     if (this._finishReasons && this._finishReasons.length > 0) {
-      this._span.setAttribute(
-        ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
-        this._finishReasons
-      );
+      this._setFinishReasonsAttribute();
     }
 
     if (this._usage) {
@@ -537,6 +545,28 @@ export class AgentInvocation extends BaseInvocation {
     if (toolDefinitions) {
       this._span.setAttribute(ATTR_GEN_AI_TOOL_DEFINITIONS, toolDefinitions);
     }
+  }
+
+  /**
+   * Populate `gen_ai.response.finish_reasons` on the span, filling any expected
+   * choice position that did not receive a finish reason with `'error'`.
+   */
+  private _setFinishReasonsAttribute(): void {
+    const expectedCount = Math.max(
+      1,
+      this._outputMessages?.length ?? 0,
+      this._finishReasons?.length ?? 0
+    );
+    const reasons: FinishReason[] = [];
+    for (let i = 0; i < expectedCount; i++) {
+      const reason = this._finishReasons?.[i];
+      reasons.push(
+        reason != null && reason !== ''
+          ? reason
+          : GEN_AI_FINISH_REASON_VALUE_ERROR
+      );
+    }
+    this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, reasons);
   }
 
   private _setUsageAttributes(usage: TokenUsageDetails): void {
