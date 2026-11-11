@@ -14,9 +14,13 @@ import {
 import {
   createCacheReadInputTokenUsageCounter,
   createCacheWriteInputTokenUsageCounter,
+  createClientInvokeAgentDurationHistogram,
   createDurationHistogram,
   createInputTokenOperationHistogram,
   createInputTokenUsageCounter,
+  createInvokeAgentDurationHistogram,
+  createInvokeAgentInferenceCallsHistogram,
+  createInvokeAgentToolCallsHistogram,
   createOutputTokenOperationHistogram,
   createOutputTokenUsageCounter,
   createReasoningOutputTokenUsageCounter,
@@ -31,6 +35,10 @@ import {
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_REASONING_OUTPUT_TOKENS,
+  METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
 } from '../src/semconv';
 
 class TestMetricReader extends MetricReader {
@@ -127,5 +135,63 @@ describe('GenAI Metrics Helpers', () => {
     const histogram = createTimePerOutputChunkHistogram(meter);
 
     assert.ok(histogram);
+  });
+
+  it('should create agent invocation histograms', async () => {
+    const meter = meterProvider.getMeter('test-meter');
+    createInvokeAgentDurationHistogram(meter).record(1.5);
+    createInvokeAgentInferenceCallsHistogram(meter).record(3);
+    createInvokeAgentToolCallsHistogram(meter).record(2);
+    createClientInvokeAgentDurationHistogram(meter).record(0.5);
+
+    const metrics = await collectMetrics();
+
+    const invokeAgentDuration = metrics.get(
+      METRIC_GEN_AI_INVOKE_AGENT_DURATION
+    );
+    assert.ok(invokeAgentDuration?.dataPointType === DataPointType.HISTOGRAM);
+    assert.strictEqual(invokeAgentDuration.descriptor.unit, 's');
+    assert.deepStrictEqual(
+      invokeAgentDuration.dataPoints[0].value.buckets.boundaries,
+      [
+        0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8,
+        409.6, 900, 1800, 3600, 7200, 14400, 43200, 86400,
+      ]
+    );
+
+    const inferenceCalls = metrics.get(
+      METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS
+    );
+    assert.ok(inferenceCalls?.dataPointType === DataPointType.HISTOGRAM);
+    assert.strictEqual(inferenceCalls.descriptor.unit, '{inference_call}');
+    assert.strictEqual(inferenceCalls.descriptor.valueType, ValueType.INT);
+    assert.deepStrictEqual(
+      inferenceCalls.dataPoints[0].value.buckets.boundaries,
+      [1, 2, 4, 8, 16, 32, 64, 128]
+    );
+
+    const toolCalls = metrics.get(METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS);
+    assert.ok(toolCalls?.dataPointType === DataPointType.HISTOGRAM);
+    assert.strictEqual(toolCalls.descriptor.unit, '{tool_call}');
+    assert.strictEqual(toolCalls.descriptor.valueType, ValueType.INT);
+    assert.deepStrictEqual(
+      toolCalls.dataPoints[0].value.buckets.boundaries,
+      [1, 2, 4, 8, 16, 32, 64, 128]
+    );
+
+    const clientInvokeAgentDuration = metrics.get(
+      METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION
+    );
+    assert.ok(
+      clientInvokeAgentDuration?.dataPointType === DataPointType.HISTOGRAM
+    );
+    assert.strictEqual(clientInvokeAgentDuration.descriptor.unit, 's');
+    assert.deepStrictEqual(
+      clientInvokeAgentDuration.dataPoints[0].value.buckets.boundaries,
+      [
+        0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24,
+        20.48, 40.96, 81.92,
+      ]
+    );
   });
 });

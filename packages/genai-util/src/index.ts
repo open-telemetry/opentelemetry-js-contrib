@@ -28,5 +28,10 @@
  * ```
  */
 export { TelemetryHandler } from './handler';
+export type { AgentInvocation } from './invocations/agent';
 export type { ToolInvocation } from './invocations/tool';
+export type {
+  AgentInvocationOptions,
+  RemoteAgentInvocationOptions,
+} from './types';
 export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';

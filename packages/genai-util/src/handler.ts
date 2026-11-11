@@ -21,16 +21,21 @@ import {
   getContentCaptureMode,
   parseContentCaptureMode,
 } from './environment-variables';
+import { AgentInvocation } from './invocations/agent';
 import { EmbeddingInvocation } from './invocations/embedding';
 import { InferenceInvocation } from './invocations/inference';
 import { ToolInvocation } from './invocations/tool';
 import {
   createCacheReadInputTokenUsageCounter,
   createCacheWriteInputTokenUsageCounter,
+  createClientInvokeAgentDurationHistogram,
   createDurationHistogram,
   createExecuteToolDurationHistogram,
   createInputTokenOperationHistogram,
   createInputTokenUsageCounter,
+  createInvokeAgentDurationHistogram,
+  createInvokeAgentInferenceCallsHistogram,
+  createInvokeAgentToolCallsHistogram,
   createOutputTokenOperationHistogram,
   createOutputTokenUsageCounter,
   createReasoningOutputTokenUsageCounter,
@@ -51,10 +56,12 @@ import {
   type AsyncStreamWrapperOptions,
 } from './stream';
 import type {
+  AgentInvocationOptions,
   ContentCaptureMode,
   EmbeddingInvocationOptions,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
+  RemoteAgentInvocationOptions,
   TokenCountsByModality,
   TokenModality,
   TokenUsageDetails,
@@ -121,6 +128,10 @@ export class TelemetryHandler {
   private readonly _timeToFirstChunkHistogram: Histogram;
   private readonly _timePerOutputChunkHistogram: Histogram;
   private readonly _executeToolDurationHistogram: Histogram;
+  private readonly _invokeAgentDurationHistogram: Histogram;
+  private readonly _invokeAgentInferenceCallsHistogram: Histogram;
+  private readonly _invokeAgentToolCallsHistogram: Histogram;
+  private readonly _clientInvokeAgentDurationHistogram: Histogram;
 
   constructor(options: TelemetryHandlerOptions) {
     const { instrumentationName, instrumentationVersion } = options;
@@ -175,6 +186,16 @@ export class TelemetryHandler {
     this._executeToolDurationHistogram = createExecuteToolDurationHistogram(
       this._meter
     );
+    this._invokeAgentDurationHistogram = createInvokeAgentDurationHistogram(
+      this._meter
+    );
+    this._invokeAgentInferenceCallsHistogram =
+      createInvokeAgentInferenceCallsHistogram(this._meter);
+    this._invokeAgentToolCallsHistogram = createInvokeAgentToolCallsHistogram(
+      this._meter
+    );
+    this._clientInvokeAgentDurationHistogram =
+      createClientInvokeAgentDurationHistogram(this._meter);
   }
 
   /**
@@ -241,6 +262,21 @@ export class TelemetryHandler {
    */
   public startTool(options: ToolInvocationOptions): ToolInvocation {
     return new ToolInvocation(this, options);
+  }
+
+  /**
+   * Start an Agent, Workflow, or Framework Entrypoint invocation.
+   *
+   * Creates an in-process span (`SpanKind.INTERNAL`, `gen_ai.invoke_agent.internal`)
+   * by default, or a remote client span (`SpanKind.CLIENT`, `gen_ai.client.invoke_agent`)
+   * when `providerName` is specified on `options`.
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startAgent(
+    options: AgentInvocationOptions | RemoteAgentInvocationOptions = {}
+  ): AgentInvocation {
+    return new AgentInvocation(this, options);
   }
 
   /**
@@ -419,6 +455,78 @@ export class TelemetryHandler {
     context?: Context
   ): void {
     this._executeToolDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record the `gen_ai.invoke_agent.duration` metric for an in-process agent, workflow,
+   * or framework entrypoint invocation.
+   *
+   * @param durationSeconds - The duration of the invocation, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the measurement.
+   */
+  public recordInvokeAgentDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._invokeAgentDurationHistogram.record(
+      durationSeconds,
+      attributes,
+      context
+    );
+  }
+
+  /**
+   * Record the `gen_ai.invoke_agent.inference_calls` metric for an in-process agent,
+   * workflow, or framework entrypoint invocation.
+   *
+   * @param count - The number of inference calls made during the invocation.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the measurement.
+   */
+  public recordInvokeAgentInferenceCalls(
+    count: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._invokeAgentInferenceCallsHistogram.record(count, attributes, context);
+  }
+
+  /**
+   * Record the `gen_ai.invoke_agent.tool_calls` metric for an in-process agent,
+   * workflow, or framework entrypoint invocation.
+   *
+   * @param count - The number of tool calls made during the invocation.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the measurement.
+   */
+  public recordInvokeAgentToolCalls(
+    count: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._invokeAgentToolCallsHistogram.record(count, attributes, context);
+  }
+
+  /**
+   * Record the `gen_ai.client.invoke_agent.duration` metric for a remote client agent
+   * invocation.
+   *
+   * @param durationSeconds - The duration of the remote agent invocation, in seconds.
+   * @param attributes - Metric attributes.
+   * @param context - Context used to associate an exemplar with the measurement.
+   */
+  public recordClientInvokeAgentDuration(
+    durationSeconds: number,
+    attributes?: Attributes,
+    context?: Context
+  ): void {
+    this._clientInvokeAgentDurationHistogram.record(
       durationSeconds,
       attributes,
       context

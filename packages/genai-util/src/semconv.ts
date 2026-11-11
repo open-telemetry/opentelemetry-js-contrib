@@ -217,6 +217,60 @@ export const ATTR_GEN_AI_USAGE_CACHE_WRITE_INPUT_TOKENS =
   'gen_ai.usage.cache_write.input_tokens' as const;
 
 /**
+ * The number of text input tokens used in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_TEXT_INPUT_TOKENS =
+  'gen_ai.usage.text.input_tokens' as const;
+
+/**
+ * The number of text output tokens generated in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_TEXT_OUTPUT_TOKENS =
+  'gen_ai.usage.text.output_tokens' as const;
+
+/**
+ * The number of cached text input tokens read from the prompt cache.
+ */
+export const ATTR_GEN_AI_USAGE_TEXT_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.text.cache_read.input_tokens' as const;
+
+/**
+ * The number of image input tokens used in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_IMAGE_INPUT_TOKENS =
+  'gen_ai.usage.image.input_tokens' as const;
+
+/**
+ * The number of image output tokens generated in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_IMAGE_OUTPUT_TOKENS =
+  'gen_ai.usage.image.output_tokens' as const;
+
+/**
+ * The number of cached image input tokens read from the prompt cache.
+ */
+export const ATTR_GEN_AI_USAGE_IMAGE_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.image.cache_read.input_tokens' as const;
+
+/**
+ * The number of audio input tokens used in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_AUDIO_INPUT_TOKENS =
+  'gen_ai.usage.audio.input_tokens' as const;
+
+/**
+ * The number of audio output tokens generated in the operation.
+ */
+export const ATTR_GEN_AI_USAGE_AUDIO_OUTPUT_TOKENS =
+  'gen_ai.usage.audio.output_tokens' as const;
+
+/**
+ * The number of cached audio input tokens read from the prompt cache.
+ */
+export const ATTR_GEN_AI_USAGE_AUDIO_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.audio.cache_read.input_tokens' as const;
+
+/**
  * The modality of the tokens being counted.
  * When the provider does not break usage down by modality and the modality cannot be reliably determined, instrumentations SHOULD report the tokens under the unknown modality.
  *
@@ -240,6 +294,41 @@ export const ATTR_GEN_AI_OUTPUT_MESSAGES = 'gen_ai.output.messages' as const;
  */
 export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS =
   'gen_ai.system_instructions' as const;
+
+/**
+ * The tool definitions available to the model or agent.
+ */
+export const ATTR_GEN_AI_TOOL_DEFINITIONS = 'gen_ai.tool.definitions' as const;
+
+/**
+ * Reference URI to the chat history provided to the model or agent as input.
+ */
+export const ATTR_GEN_AI_INPUT_MESSAGES_REF =
+  'gen_ai.input.messages_ref' as const;
+
+/**
+ * Reference URI to the messages returned by the model or agent.
+ */
+export const ATTR_GEN_AI_OUTPUT_MESSAGES_REF =
+  'gen_ai.output.messages_ref' as const;
+
+/**
+ * Reference URI to the system instructions provided to the model or agent.
+ */
+export const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS_REF =
+  'gen_ai.system_instructions_ref' as const;
+
+/**
+ * Reference URI to the tool definitions available to the model or agent.
+ */
+export const ATTR_GEN_AI_TOOL_DEFINITIONS_REF =
+  'gen_ai.tool.definitions_ref' as const;
+
+/**
+ * Unique identifier of the previous response when chaining stateful interactions.
+ */
+export const ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID =
+  'gen_ai.request.previous_response.id' as const;
 
 /**
  * Represents the content type requested by the client.
@@ -415,6 +504,8 @@ export const GEN_AI_OPERATION_NAME_VALUE_FETCH_RESPONSE =
   'fetch_response' as const;
 export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW =
   'invoke_workflow' as const;
+export const GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER =
+  'invoke_runner' as const;
 
 // Providers
 export const GEN_AI_PROVIDER_NAME_VALUE_OPENAI = 'openai' as const;
@@ -504,6 +595,8 @@ export const METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS =
   'gen_ai.invoke_agent.inference_calls' as const;
 export const METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS =
   'gen_ai.invoke_agent.tool_calls' as const;
+export const METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION =
+  'gen_ai.client.invoke_agent.duration' as const;
 export const METRIC_GEN_AI_EXECUTE_TOOL_DURATION =
   'gen_ai.execute_tool.duration' as const;
 
@@ -515,3 +608,7 @@ export const EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS =
   'gen_ai.client.inference.operation.details' as const;
 export const EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION =
   'gen_ai.client.operation.exception' as const;
+export const EVENT_GEN_AI_INVOKE_AGENT_EXCEPTION =
+  'gen_ai.invoke_agent.exception' as const;
+export const EVENT_GEN_AI_CLIENT_INVOKE_AGENT_EXCEPTION =
+  'gen_ai.client.invoke_agent.exception' as const;
