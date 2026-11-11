@@ -15,9 +15,6 @@ import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandl
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
-// When oracledb is loaded with an ESM `import`, the hook passes the module
-// namespace object. oracledb is CommonJS, so its exports (including
-// `traceHandler`) are on the namespace's `default` property.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function extractModuleExports(module: any) {
   return module[Symbol.toStringTag] === 'Module'
