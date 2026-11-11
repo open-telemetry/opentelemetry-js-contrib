@@ -115,7 +115,7 @@ describe('LangChain application workflow boundaries', () => {
     let count = 0;
     for (const scope of result.resourceMetrics.scopeMetrics) {
       for (const metric of scope.metrics) {
-        assert.equal(metric.descriptor.name, 'gen_ai.invoke_workflow.duration');
+        assert.equal(metric.descriptor.name, 'gen_ai.invoke_agent.duration');
         assert.ok(metric.dataPointType === DataPointType.HISTOGRAM);
         count += metric.dataPoints.reduce(
           (sum, point) => sum + point.value.count,

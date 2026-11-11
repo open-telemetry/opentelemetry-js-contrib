@@ -31,13 +31,13 @@ import {
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import {
+  ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
-  ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-  METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
 } from './semconv';
 import type * as Runnables from '@langchain/core/runnables';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -205,13 +205,17 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   override _updateMetricInstruments() {
     try {
       this._workflowDuration = this.meter.createHistogram(
-        METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
+        METRIC_GEN_AI_INVOKE_AGENT_DURATION,
         {
-          description: 'Records duration of GenAI workflow.',
+          description:
+            'The end-to-end duration of a single in-process agent, workflow, or ' +
+            'framework entrypoint invocation, from the moment the invocation starts until ' +
+            'it emits the last chunk of its final response or terminates with an error.',
           unit: 's',
           advice: {
             explicitBucketBoundaries: [
-              1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200,
+              0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8,
+              409.6, 900, 1800, 3600, 7200, 14400, 43200, 86400,
             ],
           },
         }
@@ -1015,10 +1019,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       capture
     );
     const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
-    const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
-    const metricAttributes: Attributes = {};
+    const name = attributes[ATTR_GEN_AI_AGENT_NAME];
+    const metricAttributes: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: operation,
+    };
     if (typeof name === 'string')
-      metricAttributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
+      metricAttributes[ATTR_GEN_AI_AGENT_NAME] = name;
     const startTime = hrTime();
     const span = this.tracer.startSpan(
       name ? `${operation} ${name}` : operation,
@@ -1066,7 +1072,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
     };
     if (typeof name === 'string' && name.trim().length > 0)
-      attributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
+      attributes[ATTR_GEN_AI_AGENT_NAME] = name;
     if (conversation !== undefined)
       attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
     if (capture) {

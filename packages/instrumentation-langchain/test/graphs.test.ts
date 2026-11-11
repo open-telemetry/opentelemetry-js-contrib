@@ -100,7 +100,12 @@ describe('LangChain donated graph callbacks', () => {
         assert.equal(span.name, 'invoke_workflow test_graph');
         assert.equal(span.kind, SpanKind.INTERNAL);
         assert.deepEqual(span.status, { code: SpanStatusCode.UNSET });
-        assert.equal(span.attributes['gen_ai.workflow.name'], 'test_graph');
+        assert.equal(
+          span.attributes['gen_ai.operation.name'],
+          'invoke_workflow'
+        );
+        assert.equal(span.attributes['gen_ai.agent.name'], 'test_graph');
+        assert.equal(span.attributes['gen_ai.workflow.name'], undefined);
         assert.equal(
           span.attributes['gen_ai.conversation.id'],
           'conversation-1'
@@ -134,7 +139,7 @@ describe('LangChain donated graph callbacks', () => {
         assert.equal(recorded.length, 1);
         assert.equal(
           recorded[0].descriptor.name,
-          'gen_ai.invoke_workflow.duration'
+          'gen_ai.invoke_agent.duration'
         );
         assert.ok(recorded[0].dataPointType === DataPointType.HISTOGRAM);
         assert.equal(recorded[0].dataPoints[0].value.count, 1);
@@ -143,7 +148,8 @@ describe('LangChain donated graph callbacks', () => {
           hrTimeToSeconds(span.duration)
         );
         assert.deepEqual(recorded[0].dataPoints[0].attributes, {
-          'gen_ai.workflow.name': 'test_graph',
+          'gen_ai.operation.name': 'invoke_workflow',
+          'gen_ai.agent.name': 'test_graph',
         });
       });
     }
@@ -621,7 +627,7 @@ describe('LangChain donated graph callbacks', () => {
     assert.deepEqual(getTestSpans(), []);
   });
 
-  it('does not create workflow-name dimensions from the SDK class name', async () => {
+  it('does not create agent-name dimensions from the SDK class name', async () => {
     const unnamed = new StateGraph(State)
       .addNode('step', state => state)
       .addEdge(START, 'step')
@@ -629,10 +635,16 @@ describe('LangChain donated graph callbacks', () => {
       .compile();
     await unnamed.invoke(input());
     assert.equal(getTestSpans()[0].name, 'invoke_workflow');
-    assert.equal(
-      getTestSpans()[0].attributes['gen_ai.workflow.name'],
-      undefined
+    assert.equal(getTestSpans()[0].attributes['gen_ai.agent.name'], undefined);
+    const collection = await reader.collect();
+    const recorded = collection.resourceMetrics.scopeMetrics.flatMap(
+      scope => scope.metrics
     );
+    assert.equal(recorded.length, 1);
+    assert.equal(recorded[0].descriptor.name, 'gen_ai.invoke_agent.duration');
+    assert.deepEqual(recorded[0].dataPoints[0].attributes, {
+      'gen_ai.operation.name': 'invoke_workflow',
+    });
   });
 
   it('does not relabel an agent internal graph as a workflow', async () => {

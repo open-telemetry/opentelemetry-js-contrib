@@ -28,8 +28,11 @@ import {
 } from '@langchain/core/runnables';
 import * as sinon from 'sinon';
 
-const metricName = 'gen_ai.invoke_workflow.duration';
-const boundaries = [1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200];
+const metricName = 'gen_ai.invoke_agent.duration';
+const boundaries = [
+  0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6, 900,
+  1800, 3600, 7200, 14400, 43200, 86400,
+];
 const workflow = () =>
   RunnableSequence.from([
     RunnableLambda.from((value: unknown) => value),
@@ -83,7 +86,7 @@ describe('LangChain workflow duration metrics', () => {
   });
 
   for (const capture of ['none', 'span_only'] as const) {
-    it(`uses workflow buckets and seconds matching the span (capture=${capture})`, async () => {
+    it(`uses invocation buckets and seconds matching the span (capture=${capture})`, async () => {
       let now = 1000;
       sinon.stub(performance, 'now').callsFake(() => now);
       instrumentation.setConfig({ captureMessageContent: capture });
@@ -105,13 +108,16 @@ describe('LangChain workflow duration metrics', () => {
       const metric = await histogram(reader);
       assert.equal(
         metric.descriptor.description,
-        'Records duration of GenAI workflow.'
+        'The end-to-end duration of a single in-process agent, workflow, or ' +
+          'framework entrypoint invocation, from the moment the invocation starts until ' +
+          'it emits the last chunk of its final response or terminates with an error.'
       );
       assert.equal(metric.descriptor.unit, 's');
       assert.equal(metric.dataPoints.length, 1);
       const point = metric.dataPoints[0];
       assert.deepEqual(point.attributes, {
-        'gen_ai.workflow.name': 'application-workflow',
+        'gen_ai.operation.name': 'invoke_workflow',
+        'gen_ai.agent.name': 'application-workflow',
       });
       assert.deepEqual(point.value.buckets.boundaries, boundaries);
       assert.equal(point.value.count, 1);
@@ -120,7 +126,7 @@ describe('LangChain workflow duration metrics', () => {
       assert.equal(point.value.max, 1.25);
       assert.deepEqual(
         point.value.buckets.counts,
-        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
       );
       assert.equal(getTestSpans().length, 1);
       assert.equal(
@@ -142,7 +148,9 @@ describe('LangChain workflow duration metrics', () => {
     await map.batch(['one', 'two']);
     const points = (await histogram(reader)).dataPoints;
     assert.equal(points.length, 1);
-    assert.deepEqual(points[0].attributes, {});
+    assert.deepEqual(points[0].attributes, {
+      'gen_ai.operation.name': 'invoke_workflow',
+    });
     assert.equal(points[0].value.count, 5);
     assert.equal(getTestSpans().length, 5);
   });
@@ -162,7 +170,9 @@ describe('LangChain workflow duration metrics', () => {
     assert.equal(result[0], 'ok');
     assert.equal(result[1], error);
     const point = (await histogram(reader)).dataPoints[0];
-    assert.deepEqual(point.attributes, {});
+    assert.deepEqual(point.attributes, {
+      'gen_ai.operation.name': 'invoke_workflow',
+    });
     assert.equal(point.value.count, 1);
   });
 
@@ -190,7 +200,8 @@ describe('LangChain workflow duration metrics', () => {
           assert.equal(points.length, 1);
           assert.equal(points[0].value.count, 1);
           assert.deepEqual(points[0].attributes, {
-            'gen_ai.workflow.name': 'failed-workflow',
+            'gen_ai.operation.name': 'invoke_workflow',
+            'gen_ai.agent.name': 'failed-workflow',
             'error.type': error instanceof TypeError ? 'TypeError' : '_OTHER',
           });
           assert.equal(getTestSpans().length, 1);
@@ -228,6 +239,7 @@ describe('LangChain workflow duration metrics', () => {
       actual => actual === error
     );
     assert.deepEqual((await histogram(reader)).dataPoints[0].attributes, {
+      'gen_ai.operation.name': 'invoke_workflow',
       'error.type': '_OTHER',
     });
     assert.equal(sensitive.callCount, 0);
@@ -262,7 +274,13 @@ describe('LangChain workflow duration metrics', () => {
       assert.equal(points.length, 2);
       assert.deepEqual(
         points.map(point => point.attributes),
-        [{ 'gen_ai.workflow.name': 'unsampled' }, {}]
+        [
+          {
+            'gen_ai.operation.name': 'invoke_workflow',
+            'gen_ai.agent.name': 'unsampled',
+          },
+          { 'gen_ai.operation.name': 'invoke_workflow' },
+        ]
       );
       assert.deepEqual(
         points.map(point => point.value.count),
@@ -361,11 +379,27 @@ describe('LangChain workflow duration metrics', () => {
       const updated = (await histogram(secondReader)).dataPoints;
       assert.deepEqual(
         original.map(p => [p.attributes, p.value.count]),
-        [[{ 'gen_ai.workflow.name': 'original-name' }, 1]]
+        [
+          [
+            {
+              'gen_ai.operation.name': 'invoke_workflow',
+              'gen_ai.agent.name': 'original-name',
+            },
+            1,
+          ],
+        ]
       );
       assert.deepEqual(
         updated.map(p => [p.attributes, p.value.count]),
-        [[{ 'gen_ai.workflow.name': 'new-name' }, 1]]
+        [
+          [
+            {
+              'gen_ai.operation.name': 'invoke_workflow',
+              'gen_ai.agent.name': 'new-name',
+            },
+            1,
+          ],
+        ]
       );
     } finally {
       release('answer');
@@ -381,7 +415,9 @@ describe('LangChain workflow duration metrics', () => {
     instrumentation.setMeterProvider({ getMeter: () => meter });
     assert.equal(await workflow().invoke('input'), 'input');
     assert.equal(record.callCount, 1);
-    assert.deepEqual(record.firstCall.args[1], {});
+    assert.deepEqual(record.firstCall.args[1], {
+      'gen_ai.operation.name': 'invoke_workflow',
+    });
     assert.equal(
       trace.getSpan(record.firstCall.args[2])?.spanContext().spanId,
       getTestSpans()[0].spanContext().spanId
@@ -406,7 +442,10 @@ describe('LangChain workflow duration metrics', () => {
     ]);
     await assert.rejects(broken.invoke('input'), error => error === failure);
     assert.equal(record.callCount, 2);
-    assert.deepEqual(record.secondCall.args[1], { 'error.type': 'TypeError' });
+    assert.deepEqual(record.secondCall.args[1], {
+      'gen_ai.operation.name': 'invoke_workflow',
+      'error.type': 'TypeError',
+    });
     assert.equal(getTestSpans().length, 2);
   });
 

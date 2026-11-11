@@ -73,17 +73,19 @@ The sequence/map layer does **not** instrument `stream` or `transform`, agents
 or retrieval. Internal graph adapter sequences are excluded.
 Sequence/map streaming retains its original behavior without workflow stream telemetry.
 Provider inference remains the responsibility of provider-specific instrumentation.
-Workflows emit spans and the `gen_ai.invoke_workflow.duration` histogram in
+Workflows emit spans and the `gen_ai.invoke_agent.duration` histogram in
 seconds, not `gen_ai.client.*` metrics or content events. Each completed
-instrumented operation records one duration, with `gen_ai.workflow.name` when
-available and `error.type` on failure. Prompt/completion content and conversation
-IDs are not included in metric attributes.
+instrumented operation records one duration, with
+`gen_ai.operation.name=invoke_workflow`, `gen_ai.agent.name` when available,
+and `error.type` on failure. The histogram uses the recommended invocation
+boundaries from 0.1 seconds to 24 hours. Prompt/completion content and
+conversation IDs are not included in metric attributes.
 
 Span names use the effective SDK `runName`, falling back to the runnable's
 explicit `name`. Only non-blank strings are used. The instrumentation does not
 call `getName()`. If neither name is available, the span name is `invoke_workflow`
-and `gen_ai.workflow.name` is omitted. Otherwise, the span name is
-`invoke_workflow {name}` and `gen_ai.workflow.name` contains that same name.
+and `gen_ai.agent.name` is omitted. Otherwise, the span name is
+`invoke_workflow {name}` and `gen_ai.agent.name` contains that same name.
 When no native callback manager exists, LangChain can propagate a parent's
 `runName` to nested workflows, overriding their own names or `withConfig` defaults.
 Their spans may therefore share a name, but remain distinct spans with the same
@@ -221,8 +223,8 @@ than guessing from names.
 
 Names come from the invocation's `runName`, configured defaults, or the graph's
 explicit compile-time name. Without an application name, the span is
-`invoke_workflow` and the workflow-name attribute is omitted. The existing
-workflow duration histogram and error handling are reused; graph runs do not
+`invoke_workflow` and `gen_ai.agent.name` is omitted. The existing
+invocation duration histogram and error handling are reused. Graph runs do not
 add inference metrics, usage aggregation, or another telemetry framework.
 
 With content capture enabled, the final SDK callback inputs and outputs are
@@ -353,11 +355,18 @@ This is scoped regression proof, not the later full migration conformance suite.
 ## Semantic Conventions
 
 This package uses the experimental GenAI conventions
-`gen_ai.operation.name`, `gen_ai.workflow.name`, `gen_ai.conversation.id`,
+`gen_ai.operation.name`, `gen_ai.agent.name`, `gen_ai.conversation.id`,
 `gen_ai.input.messages`, `gen_ai.output.messages`, and
-`gen_ai.invoke_workflow.duration`. Their exact provenance is pinned in this
+`gen_ai.invoke_agent.duration`. Their exact provenance is pinned in this
 package's `src/semconv.ts`. Stable `error.type` is imported from
 `@opentelemetry/semantic-conventions`.
+
+Composed workflows and application-defined graphs follow the
+`gen_ai.invoke_agent.internal` span convention, while keeping
+`gen_ai.operation.name=invoke_workflow` and `INTERNAL` span kind.
+This replaces `gen_ai.workflow.name` and `gen_ai.invoke_workflow.duration`
+with `gen_ai.agent.name` and `gen_ai.invoke_agent.duration`.
+Span names, instrumented operations, and content-capture behavior are unchanged.
 
 Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
 `gen_ai.tool.type`, `gen_ai.tool.call.id`, `gen_ai.tool.call.arguments`,
@@ -385,8 +394,14 @@ Tool spans and metrics include the shared handler's schema URL, so no missing
 schema-URL exception is needed for tools. Graph scenarios reuse the existing
 workflow tracer/meter, which lack a schema URL. Each graph scenario declares
 that specific expected violation under the
-[migration tracking issue](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668);
-upstream policies and tool expectations are unchanged.
+[migration tracking issue](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668).
+Graph scenarios explicitly classify workflows as `gen_ai.invoke_agent.internal`.
+They also declare the runner's outdated workflow span-name check as an expected
+violation, scoped to its use of the retired `gen_ai.workflow.name` attribute.
+Regression tests assert the correct names with `gen_ai.agent.name`.
+These compatibility declarations can be removed once the upstream runner
+adopts the merged invocation conventions. Upstream policies and tool expectations
+are unchanged.
 No provider requests or Docker containers are needed.
 
 ## Useful links
