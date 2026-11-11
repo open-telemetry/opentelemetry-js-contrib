@@ -37,12 +37,25 @@ async function main() {
     for (const mode of modes) {
       modules.push(
         mode === 'cjs'
-          ? require('@langchain/langgraph')
-          : await import('@langchain/langgraph')
+          ? {
+              graph: require('@langchain/langgraph'),
+              prebuilt: require('@langchain/langgraph/prebuilt'),
+              testing: require('@langchain/core/utils/testing'),
+              messages: require('@langchain/core/messages'),
+            }
+          : {
+              graph: await import('@langchain/langgraph'),
+              prebuilt: await import('@langchain/langgraph/prebuilt'),
+              testing: await import('@langchain/core/utils/testing'),
+              messages: await import('@langchain/core/messages'),
+            }
       );
     }
     for (const module of modules) {
-      const { Annotation, StateGraph, START, END } = module;
+      const { Annotation, StateGraph, START, END } = module.graph;
+      const { createReactAgent } = module.prebuilt;
+      const { FakeChatModel } = module.testing;
+      const { HumanMessage } = module.messages;
       const State = Annotation.Root({ value: Annotation() });
       const nested = new StateGraph(State)
         .addNode('step', state => ({ value: state.value + 1 }))
@@ -115,6 +128,24 @@ async function main() {
             .spanId,
           graphSpan.spanContext().spanId
         );
+        firstExporter.reset();
+        secondExporter.reset();
+        class Model extends FakeChatModel {
+          bindTools() {
+            return this;
+          }
+        }
+        const agent = createReactAgent({
+          llm: new Model({}),
+          tools: [],
+          includeAgentName: 'inline',
+        });
+        const result = await agent.invoke({
+          messages: [new HumanMessage('hello')],
+        });
+        assert.equal(result.messages.at(-1).content, 'hello');
+        assert.deepEqual(firstExporter.getFinishedSpans(), []);
+        assert.deepEqual(secondExporter.getFinishedSpans(), []);
       }
     }
   } finally {

@@ -54,11 +54,14 @@ import { batchOutputMessages, isRecord, messages } from './content';
 import { addToolCallbacks, getToolContext } from './tool-callbacks';
 import { addGraphCallbacks, getGraphContext } from './graph-callbacks';
 import {
+  trackAgentComposition,
+  trackReactAgentFactory,
+} from './internal-react-agent';
+import {
   isInternalWorkflow,
   isTrackingFactory,
   markAgentGraph,
   markAgentPrompt,
-  markAgentPromptComposition,
   markStructuredOutput,
   markWorkflow,
   ownValue,
@@ -492,6 +495,21 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               this._unpatchMethod(module.RunnableCallable.prototype, 'invoke')
           ),
           createTrackedModuleFile(
+            `@langchain/langgraph/dist/prebuilt/agentName.${extension}`,
+            () => {},
+            () => {},
+            (module: {
+              withAgentName: (model: unknown, mode: unknown) => unknown;
+            }) => {
+              if (!isTrackingFactory(module.withAgentName))
+                this._wrapTracking(
+                  module,
+                  'withAgentName',
+                  trackFactory(markWorkflow, this._diag)
+                );
+            }
+          ),
+          createTrackedModuleFile(
             `@langchain/langgraph/dist/prebuilt/react_agent_executor.${extension}`,
             () => {},
             () => {},
@@ -500,7 +518,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 this._wrapTracking(
                   module,
                   'createReactAgent',
-                  trackFactory(markWorkflow, this._diag)
+                  trackReactAgentFactory(this._diag)
                 );
             }
           ),
@@ -767,12 +785,17 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _trackRunnableFactories(module: typeof Runnables) {
     if (!module.Runnable) return;
-    if (!isTrackingFactory(module.Runnable.prototype.pipe))
-      this._wrapTracking(
-        module.Runnable.prototype,
-        'pipe',
-        trackFactory(markAgentPromptComposition, this._diag)
-      );
+    for (const owner of [module.Runnable, module.RunnableSequence]) {
+      if (
+        typeof owner.prototype.pipe === 'function' &&
+        !isTrackingFactory(owner.prototype.pipe)
+      )
+        this._wrapTracking(
+          owner.prototype,
+          'pipe',
+          trackAgentComposition(this._diag)
+        );
+    }
     this._trackWorkflowOwner(module.RunnableToolLike);
     if (!isTrackingFactory(module.Runnable.prototype.asTool))
       this._wrapTracking(

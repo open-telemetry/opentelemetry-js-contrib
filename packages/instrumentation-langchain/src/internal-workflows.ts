@@ -71,7 +71,7 @@ export function markStructuredOutput(
   if (includeRaw === true) markWorkflow(ownValue(sequence, 'first'));
 }
 
-function trackingProxy<F extends (...args: never[]) => unknown>(
+export function trackingProxy<F extends (...args: never[]) => unknown>(
   original: F,
   apply: (receiver: unknown, args: unknown[]) => unknown
 ): F {

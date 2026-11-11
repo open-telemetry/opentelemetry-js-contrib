@@ -21,10 +21,20 @@ import {
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
 import { TracerProvider } from '@opentelemetry/sdk-trace';
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
-import { AIMessage, HumanMessage } from '@langchain/core/messages';
+import { createReactAgent } from '@langchain/langgraph/prebuilt';
+import {
+  AIMessage,
+  AIMessageChunk,
+  HumanMessage,
+} from '@langchain/core/messages';
+import type { BaseLanguageModelInput } from '@langchain/core/language_models/base';
 import { CallbackManager } from '@langchain/core/callbacks/manager';
 import { DynamicTool } from '@langchain/core/tools';
-import { RunnableLambda, RunnableSequence } from '@langchain/core/runnables';
+import {
+  Runnable,
+  RunnableLambda,
+  RunnableSequence,
+} from '@langchain/core/runnables';
 import { Pregel } from '@langchain/langgraph/pregel';
 import * as sinon from 'sinon';
 import { FakeChatModel } from '@langchain/core/utils/testing';
@@ -663,6 +673,246 @@ describe('LangChain donated graph callbacks', () => {
       assert.deepEqual(getTestSpans(), []);
     }
   });
+
+  for (const includeAgentName of [undefined, 'inline'] as const) {
+    for (const dynamic of [false, true]) {
+      it(`excludes prebuilt agent model pipelines (inline=${!!includeAgentName}, dynamic=${dynamic})`, async () => {
+        class Model extends FakeChatModel {
+          override bindTools() {
+            return this;
+          }
+        }
+        const model = new Model({});
+        const agent = createReactAgent({
+          llm: dynamic ? async () => model : model,
+          tools: [],
+          name: 'prebuilt-agent',
+          includeAgentName,
+        });
+        for (const configured of [
+          agent,
+          agent.withConfig({ runName: 'renamed' }),
+        ]) {
+          const result = await configured.invoke({
+            messages: [new HumanMessage('hello')],
+          });
+          assert.equal(result.messages.at(-1)?.content, 'hello');
+          for await (const chunk of await configured.stream({
+            messages: [new HumanMessage('hello')],
+          })) {
+            assert.ok(chunk);
+          }
+        }
+        assert.deepEqual(getTestSpans(), []);
+        const result = await reader.collect();
+        assert.deepEqual(
+          result.resourceMetrics.scopeMetrics.flatMap(scope => scope.metrics),
+          []
+        );
+      });
+    }
+  }
+
+  for (const dynamic of [false, true]) {
+    it(`preserves application compositions during prebuilt model setup and execution (dynamic=${dynamic})`, async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const application = () =>
+        RunnableLambda.from((value: unknown) => value)
+          .pipe(RunnableLambda.from((value: unknown) => value))
+          .withConfig({ runName: 'agent' });
+      let createdDuringSetup!: ReturnType<typeof application>;
+      class Model extends FakeChatModel {
+        override bindTools() {
+          createdDuringSetup = application();
+          return RunnableLambda.from((value: unknown) => value)
+            .pipe(this)
+            .withConfig({ runName: 'application-model' });
+        }
+        override async _generate(
+          ...args: Parameters<FakeChatModel['_generate']>
+        ) {
+          await application().invoke('inside-model');
+          return super._generate(...args);
+        }
+      }
+      const model = new Model({});
+      const agent = createReactAgent({
+        llm: dynamic
+          ? async () => {
+              createdDuringSetup = application();
+              await createdDuringSetup.invoke('inside-selector');
+              return model;
+            }
+          : model,
+        tools: [],
+        includeAgentName: 'inline',
+        prompt: RunnableLambda.from(
+          (state: { messages: HumanMessage[] }) => state.messages
+        )
+          .pipe(RunnableLambda.from(messages => messages))
+          .withConfig({ runName: 'application-prompt' }),
+      });
+      await agent.invoke({ messages: [new HumanMessage('hello')] });
+      await createdDuringSetup.invoke('after-agent');
+      const spans = getTestSpans();
+      assert.deepEqual(
+        spans.map(span => span.attributes['gen_ai.input.messages']).sort(),
+        dynamic
+          ? ['after-agent', 'hello', 'inside-model', 'inside-selector']
+              .map(content =>
+                JSON.stringify([
+                  { role: 'user', parts: [{ type: 'text', content }] },
+                ])
+              )
+              .sort()
+          : ['after-agent', 'hello', 'hello', 'inside-model']
+              .map(content =>
+                JSON.stringify([
+                  { role: 'user', parts: [{ type: 'text', content }] },
+                ])
+              )
+              .sort()
+      );
+      const result = await reader.collect();
+      const metrics = result.resourceMetrics.scopeMetrics.flatMap(
+        scope => scope.metrics
+      );
+      assert.equal(metrics.length, 1);
+      assert.ok(metrics[0].dataPointType === DataPointType.HISTOGRAM);
+      assert.equal(
+        metrics[0].dataPoints.reduce(
+          (sum, point) => sum + point.value.count,
+          0
+        ),
+        spans.length
+      );
+    });
+  }
+
+  it('tracks prebuilt pipelines built while disabled without hiding later application workflows', async () => {
+    instrumentation.disable();
+    class Model extends FakeChatModel {
+      override bindTools() {
+        return this;
+      }
+    }
+    const agent = createReactAgent({
+      llm: new Model({}),
+      tools: [],
+      includeAgentName: 'inline',
+    });
+    await agent.invoke({ messages: [new HumanMessage('disabled')] });
+    instrumentation.enable();
+    await agent.invoke({ messages: [new HumanMessage('enabled')] });
+    assert.deepEqual(getTestSpans(), []);
+    await RunnableLambda.from((value: string) => value)
+      .pipe(RunnableLambda.from((value: string) => value))
+      .invoke('application');
+    assert.equal(getTestSpans().length, 1);
+  });
+
+  it('preserves compositions created in prebuilt agent callbacks', async () => {
+    class Model extends FakeChatModel {
+      override bindTools() {
+        return this;
+      }
+    }
+    const created: Runnable<string, string>[] = [];
+    const agent = createReactAgent({ llm: new Model({}), tools: [] });
+    await agent.invoke(
+      { messages: [new HumanMessage('hello')] },
+      {
+        callbacks: [
+          {
+            handleChainStart() {
+              created.push(
+                RunnableLambda.from((value: string) => value).pipe(
+                  RunnableLambda.from((value: string) => value)
+                )
+              );
+            },
+          },
+        ],
+      }
+    );
+    assert.deepEqual(getTestSpans(), []);
+    assert.ok(created.length > 1);
+    for (const workflow of created) await workflow.invoke('after-callback');
+    assert.equal(getTestSpans().length, created.length);
+  });
+
+  it('preserves configurable-model resolution and bound application pipelines', async () => {
+    class Model extends FakeChatModel {
+      override bindTools() {
+        return RunnableLambda.from((value: BaseLanguageModelInput) => value)
+          .pipe(this)
+          .withConfig({ runName: 'application-model' });
+      }
+    }
+    const model = new Model({});
+    const resolved = Promise.resolve(model);
+    class ConfigurableModel extends Runnable<
+      BaseLanguageModelInput,
+      AIMessageChunk
+    > {
+      lc_namespace = ['test'];
+      _queuedMethodOperations = {};
+      _model() {
+        return resolved;
+      }
+      async invoke(input: BaseLanguageModelInput) {
+        return model.invoke(input);
+      }
+    }
+    const configurable = new ConfigurableModel();
+    const agent = createReactAgent({
+      llm: configurable,
+      tools: [],
+      includeAgentName: 'inline',
+    });
+    assert.equal(configurable._model(), resolved);
+    await agent.invoke({ messages: [new HumanMessage('hello')] });
+    assert.equal(getTestSpans().length, 1);
+    assert.equal(getTestSpans()[0].name, 'invoke_workflow agent');
+  });
+
+  for (const phase of ['binding', 'selection', 'execution'] as const) {
+    it(`preserves prebuilt agent ${phase} errors without internal workflow telemetry`, async () => {
+      const failure = new TypeError('private model failure');
+      class Model extends FakeChatModel {
+        override bindTools() {
+          if (phase === 'binding') throw failure;
+          return this;
+        }
+        override async _generate(
+          ...args: Parameters<FakeChatModel['_generate']>
+        ) {
+          if (phase === 'execution') throw failure;
+          return super._generate(...args);
+        }
+      }
+      const agent = createReactAgent({
+        llm:
+          phase === 'selection'
+            ? async () => {
+                throw failure;
+              }
+            : new Model({}),
+        tools: [],
+        includeAgentName: 'inline',
+      });
+      await assert.rejects(
+        agent.invoke({ messages: [new HumanMessage('hello')] }),
+        error => error === failure
+      );
+      assert.deepEqual(getTestSpans(), []);
+      const result = await reader.collect();
+      assert.deepEqual(
+        result.resourceMetrics.scopeMetrics.flatMap(scope => scope.metrics),
+        []
+      );
+    });
+  }
 
   it('preserves callback behavior when graph tracing is enabled', async () => {
     const operation = graph();

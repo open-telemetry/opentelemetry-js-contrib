@@ -221,6 +221,14 @@ Internal node/writer sequences and graphs created by `createAgent` or
 remain outside this migration. Factory tracking identifies these objects rather
 than guessing from names.
 
+Prebuilt `createReactAgent` model pipelines and inline agent-name adapters are
+also excluded. The private model node is tracked only while constructing its
+SDK-owned pipelines, not while binding or selecting user models or executing
+the resulting pipelines. Application workflows in prompts, model setup, model
+execution, and callbacks remain eligible for tracing. Ownership tracking stays
+active while instrumentation is disabled so cached pipelines are still recognized
+after re-enabling.
+
 Names come from the invocation's `runName`, configured defaults, or the graph's
 explicit compile-time name. Without an application name, the span is
 `invoke_workflow` and `gen_ai.agent.name` is omitted. The existing
