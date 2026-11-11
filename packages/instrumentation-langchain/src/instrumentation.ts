@@ -24,12 +24,6 @@ import {
   isTracingSuppressed,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
-import { TelemetryHandler } from '@opentelemetry/genai-util';
-import {
-  InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-  InstrumentationNodeModuleFile,
-} from '@opentelemetry/instrumentation';
 import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
@@ -38,7 +32,13 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   METRIC_GEN_AI_INVOKE_AGENT_DURATION,
-} from './semconv';
+  TelemetryHandler,
+} from '@opentelemetry/genai-util';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
+} from '@opentelemetry/instrumentation';
 import type * as Runnables from '@langchain/core/runnables';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type {

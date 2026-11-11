@@ -29,4 +29,13 @@
  */
 export { TelemetryHandler } from './handler';
 export type { ToolInvocation } from './invocations/tool';
-export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
+export {
+  ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_CONVERSATION_ID,
+  ATTR_GEN_AI_INPUT_MESSAGES,
+  ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_OUTPUT_MESSAGES,
+  ATTR_GEN_AI_TOOL_CALL_ID,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+} from './semconv';
