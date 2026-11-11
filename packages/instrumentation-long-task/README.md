@@ -1,6 +1,6 @@
 # OpenTelemetry Long Task Instrumentation for web
 
-> **Deprecated:** This package is deprecated because the Long Tasks API is deprecated. Use instrumentation based on the [Long Animation Frames API][mdn-long-animation-frames] when available.
+> **Deprecated:** This package is deprecated because the Long Tasks API is deprecated. Use `LongAnimationFrameInstrumentation` from [`@opentelemetry/browser-instrumentation`][loaf-instrumentation] instead (0.12.0 and later), which reports the same long frames as log records, with the script attribution that the [Long Animation Frames API][mdn-long-animation-frames] provides.
 
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
@@ -81,3 +81,4 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [mdn-long-task]: https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API
 [mdn-performance-long-task-timing]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongTaskTiming
 [mdn-long-animation-frames]: https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Long_animation_frame_timing
+[loaf-instrumentation]: https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#long-animation-frames

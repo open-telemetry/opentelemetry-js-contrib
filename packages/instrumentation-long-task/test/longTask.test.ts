@@ -92,7 +92,7 @@ describe('LongTaskInstrumentation', () => {
 
     assert.ok(
       warn.calledWithExactly(
-        '@opentelemetry/instrumentation-long-task is deprecated. Use instrumentation based on the Long Animation Frames API when available.'
+        '@opentelemetry/instrumentation-long-task is deprecated. Use LongAnimationFrameInstrumentation from @opentelemetry/browser-instrumentation instead.'
       )
     );
     assert.strictEqual(warn.callCount, 1);
