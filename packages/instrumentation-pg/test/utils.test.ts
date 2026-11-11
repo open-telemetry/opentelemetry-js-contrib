@@ -294,7 +294,7 @@ describe('utils.ts', () => {
       );
     });
 
-    it('prefers connectionString over conflicting discrete fields', () => {
+    it('prefers discrete options over conflicting connectionString values matching pg-pool precedence', () => {
       const dummyPool = {
         connectionString: 'postgresql://db.example.com:6543/users_db',
         host: 'other_host',
@@ -304,7 +304,19 @@ describe('utils.ts', () => {
 
       assert.strictEqual(
         utils.getPoolName(dummyPool),
-        'db.example.com:6543/users_db'
+        'other_host:9999/other_db'
+      );
+    });
+
+    it('derives port and database from connectionString when discrete options only supply host', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543/users_db',
+        host: 'other_host',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'other_host:6543/users_db'
       );
     });
 

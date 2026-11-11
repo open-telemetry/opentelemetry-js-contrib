@@ -347,11 +347,11 @@ export function getPoolName(pool: PgPoolOptionsParams): string {
     url = undefined;
   }
 
-  const host = url?.hostname || pool?.host || 'unknown_host';
+  const host = pool?.host || url?.hostname || 'unknown_host';
   const port =
-    url?.port || (pool?.port ? `${pool.port}` : undefined) || 'unknown_port';
+    (pool?.port ? `${pool.port}` : undefined) || url?.port || 'unknown_port';
   const database =
-    url?.pathname?.slice(1) || pool?.database || 'unknown_database';
+    pool?.database || url?.pathname?.slice(1) || 'unknown_database';
 
   return `${host}:${port}/${database}`.trim();
 }
