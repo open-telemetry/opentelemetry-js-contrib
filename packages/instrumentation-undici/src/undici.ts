@@ -56,6 +56,7 @@ import {
   ResponseHeadersMessage,
 } from './internal-types';
 import { UndiciInstrumentationConfig, UndiciRequest } from './types';
+import { redactQueryString, redactUrl } from './redact-url';
 
 interface InstrumentationRecord {
   span: Span;
@@ -236,9 +237,9 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const attributes: Attributes = {
       [ATTR_HTTP_REQUEST_METHOD]: requestMethod,
       [ATTR_HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
-      [ATTR_URL_FULL]: requestUrl.toString(),
+      [ATTR_URL_FULL]: redactUrl(requestUrl.toString()),
       [ATTR_URL_PATH]: requestUrl.pathname,
-      [ATTR_URL_QUERY]: requestUrl.search,
+      [ATTR_URL_QUERY]: redactQueryString(requestUrl.search),
       [ATTR_URL_SCHEME]: urlScheme,
     };
 
