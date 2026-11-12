@@ -25,7 +25,7 @@ import {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { redactUrl } from './redact-url';
+import { redactQueryString, redactUrl } from './redact-url';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -407,15 +407,23 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         if (!plugin._isEnabled) {
           return original.apply(this, args);
         }
-        const url = `${location.pathname}${location.hash}${location.search}`;
+        const url = plugin._getNavigationUrl();
         const result = original.apply(this, args);
-        const urlAfter = `${location.pathname}${location.hash}${location.search}`;
+        const urlAfter = plugin._getNavigationUrl();
         if (url !== urlAfter) {
           plugin._updateInteractionName(urlAfter);
         }
         return result;
       };
     };
+  }
+
+  /**
+   * Returns the current location used for the navigation span name, with
+   * sensitive query string values redacted.
+   */
+  _getNavigationUrl(): string {
+    return `${location.pathname}${location.hash}${redactQueryString(location.search)}`;
   }
 
   /**
