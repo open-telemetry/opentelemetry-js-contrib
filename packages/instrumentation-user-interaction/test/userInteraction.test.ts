@@ -113,6 +113,26 @@ describe('UserInteractionInstrumentation', () => {
       assertClickSpan(spanClick);
     });
 
+    it('should redact sensitive information in url.full', () => {
+      const originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+      );
+      try {
+        fakeClickInteraction();
+      } finally {
+        history.replaceState(history.state, '', originalUrl);
+      }
+      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      assert.equal(
+        spanClick.attributes['url.full'],
+        `${location.origin}${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+      );
+    });
+
     it('should ignore timeout when nothing happens afterwards', done => {
       fakeClickInteraction(() => {
         originalSetTimeout(() => {
