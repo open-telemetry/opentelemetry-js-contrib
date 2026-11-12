@@ -37,6 +37,7 @@ import {
   ATTR_GEN_AI_USAGE_AUDIO_INPUT_TOKENS,
   ATTR_GEN_AI_USAGE_AUDIO_OUTPUT_TOKENS,
   ATTR_GEN_AI_USAGE_AUDIO_CACHE_READ_INPUT_TOKENS,
+  GEN_AI_FINISH_REASON_VALUE_INTERRUPTED,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
@@ -208,6 +209,7 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE, 'image');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_TEXT, 'text');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN, 'unknown');
+    assert.strictEqual(GEN_AI_FINISH_REASON_VALUE_INTERRUPTED, 'interrupted');
   });
 
   it('should define expected metric and event names', () => {

@@ -938,7 +938,7 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_SERVER_PORT], undefined);
     });
 
-    it('should support dynamic setters for agentId, agentVersion, and streaming', () => {
+    it('should support dynamic setters for agentId, agentVersion, previousResponseId, and streaming', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -951,16 +951,22 @@ describe('AgentInvocation', () => {
       invocation
         .setAgentId('asst_dynamic')
         .setAgentVersion('1.0.0')
+        .setPreviousResponseId('resp_prev_dyn')
+        .setFinishReasons(['interrupted'])
         .setStreaming();
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_ID], 'asst_dynamic');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_VERSION], '1.0.0');
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID],
+        'resp_prev_dyn'
+      );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
       assert.deepStrictEqual(
         span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
-        ['error']
+        ['interrupted']
       );
     });
 

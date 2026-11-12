@@ -9,7 +9,7 @@
  *
  * These conventions were referenced from the repository
  * https://github.com/open-telemetry/semantic-conventions-genai at commit ID
- * fee465db333bdd6a7d2faa320edab5cf3101a4f4
+ * e6658f14c9d9ea0760825f029cb82e7673f48fab
  *
  * Rationale:
  * Per OpenTelemetry JavaScript Contrib repository guidelines (GUIDELINES.md),
@@ -18,6 +18,7 @@
  * to breaking changes across minor releases.
  *
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-agent-spans.md
+ * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/client-invoke-agent.md
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-events.md
  * @see https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-metrics.md
  */
@@ -542,6 +543,7 @@ export const GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER =
   'content_filter' as const;
 export const GEN_AI_FINISH_REASON_VALUE_TOOL_CALL = 'tool_call' as const;
 export const GEN_AI_FINISH_REASON_VALUE_COMPACTION = 'compaction' as const;
+export const GEN_AI_FINISH_REASON_VALUE_INTERRUPTED = 'interrupted' as const;
 export const GEN_AI_FINISH_REASON_VALUE_ERROR = 'error' as const;
 
 // Response Status
@@ -587,6 +589,9 @@ export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
   'gen_ai.client.operation.time_to_first_chunk' as const;
 export const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =
   'gen_ai.client.operation.time_per_output_chunk' as const;
+/**
+ * @deprecated Use {@link METRIC_GEN_AI_INVOKE_AGENT_DURATION} with `gen_ai.operation.name = 'invoke_workflow'` instead.
+ */
 export const METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION =
   'gen_ai.invoke_workflow.duration' as const;
 export const METRIC_GEN_AI_INVOKE_AGENT_DURATION =

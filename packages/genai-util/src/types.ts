@@ -35,6 +35,7 @@ export type FinishReason =
   | 'content_filter'
   | 'tool_call'
   | 'compaction'
+  | 'interrupted'
   | 'error'
   | (string & {});
 

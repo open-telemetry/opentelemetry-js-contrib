@@ -286,7 +286,12 @@ export abstract class AgentInvocation extends BaseInvocation {
   }
 
   /**
-   * Record token usage details.
+   * Record token usage details onto the agent span (`gen_ai.usage.*`).
+   *
+   * Populates span attributes only (does not record `gen_ai.client.inference.*`
+   * token metrics, avoiding double-counting with child `InferenceInvocation` spans).
+   * `cacheReadTokenCount`, `cacheWriteTokenCount`, and `tokenUsageByModality` apply
+   * only to {@link RemoteAgentInvocation} (`SpanKind.CLIENT`) spans.
    *
    * May be called multiple times; fields are merged and finalized onto the span
    * when the invocation ends.
@@ -656,6 +661,14 @@ export class RemoteAgentInvocation extends AgentInvocation {
    */
   public setAgentVersion(version: string): this {
     this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, version);
+    return this;
+  }
+
+  /**
+   * Set the unique identifier of the previous response (`gen_ai.request.previous_response.id`).
+   */
+  public setPreviousResponseId(id: string): this {
+    this._span.setAttribute(ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID, id);
     return this;
   }
 
