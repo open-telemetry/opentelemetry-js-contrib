@@ -25,7 +25,7 @@ import {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import { redactUrl } from './redact-url';
+import { redactQueryString, redactUrl } from './redact-url';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -411,7 +411,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         const result = original.apply(this, args);
         const urlAfter = `${location.pathname}${location.hash}${location.search}`;
         if (url !== urlAfter) {
-          plugin._updateInteractionName(urlAfter);
+          plugin._updateInteractionName(
+            `${location.pathname}${location.hash}${redactQueryString(location.search)}`
+          );
         }
         return result;
       };

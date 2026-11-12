@@ -202,6 +202,36 @@ describe('UserInteractionInstrumentation', () => {
       });
     });
 
+    it('should redact sensitive query string values in navigation span name', done => {
+      const originalUrl = location.href;
+      fakeClickInteraction(() => {
+        history.pushState(
+          { test: 'testing' },
+          '',
+          `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+        );
+        getData(FILE_URL, () => {
+          sandbox.clock.tick(1000);
+        }).then(() => {
+          originalSetTimeout(() => {
+            history.replaceState(history.state, '', originalUrl);
+            try {
+              assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+
+              const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
+              assert.equal(
+                spanClick.name,
+                `Navigation: ${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+    });
+
     it('should handle task with timeout and async operation', done => {
       fakeClickInteraction(() => {
         getData(FILE_URL, () => {
