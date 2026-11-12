@@ -59,11 +59,11 @@ import {
   type AsyncStreamWrapperOptions,
 } from './stream';
 import type {
-  AgentInvocationOptions,
   ContentCaptureMode,
   EmbeddingInvocationOptions,
   GenAIInstrumentationConfig,
   InferenceInvocationOptions,
+  LocalAgentInvocationOptions,
   RemoteAgentInvocationOptions,
   TokenCountsByModality,
   TokenModality,
@@ -274,7 +274,7 @@ export class TelemetryHandler {
    * The returned invocation owns its span: complete it with `stop()` or `fail()`.
    */
   public startLocalAgent(
-    options: AgentInvocationOptions = {}
+    options: LocalAgentInvocationOptions = {}
   ): LocalAgentInvocation {
     return new LocalAgentInvocation(this, options);
   }

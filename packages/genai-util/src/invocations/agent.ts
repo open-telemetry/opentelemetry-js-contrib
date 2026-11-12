@@ -43,10 +43,10 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
 } from '../semconv';
 import type {
-  AgentInvocationOptions,
   ContentCaptureMode,
   FinishReason,
   InputMessages,
+  LocalAgentInvocationOptions,
   OutputMessages,
   OutputType,
   RemoteAgentInvocationOptions,
@@ -85,11 +85,11 @@ function getAgentSpanName(operationName: string, agentName?: string): string {
  * Build the common span attributes known when an agent span is started.
  *
  * These are passed to the span at creation time so that they are visible to samplers.
- * Content attributes (system instructions, input/output messages, tool definitions)
- * are intentionally excluded: they are serialized once when the invocation ends.
+ * Deferred structured attributes (system instructions, input/output messages, tool
+ * definitions) are intentionally excluded: they are serialized once when the invocation ends.
  */
 function buildCommonInitialAttributes(
-  options: AgentInvocationOptions | RemoteAgentInvocationOptions,
+  options: LocalAgentInvocationOptions | RemoteAgentInvocationOptions,
   operationName: string,
   supportsModelAttributes: boolean,
   includeStream: boolean
@@ -189,7 +189,7 @@ export abstract class AgentInvocation extends BaseInvocation {
 
   protected constructor(
     handler: TelemetryHandler,
-    options: AgentInvocationOptions | RemoteAgentInvocationOptions,
+    options: LocalAgentInvocationOptions | RemoteAgentInvocationOptions,
     operationName: string,
     supportsModelAttributes: boolean,
     kind: SpanKind,
@@ -336,6 +336,8 @@ export abstract class AgentInvocation extends BaseInvocation {
   /**
    * Set tool definitions available to the agent (`gen_ai.tool.definitions`), replacing any previously set value.
    *
+   * Per GenAI semantic conventions, schema attributes are opt-in and are not governed by
+   * `contentCaptureMode`; call this method only when tool definition capture is enabled.
    * Serialized once when the invocation ends.
    */
   public setToolDefinitions(definitions: ToolDefinitions): this {
@@ -344,26 +346,24 @@ export abstract class AgentInvocation extends BaseInvocation {
   }
 
   /**
-   * Return whether `gen_ai.response.finish_reasons` should be recorded on the span.
-   */
-  protected _shouldRecordFinishReasons(_errorType?: string): boolean {
-    return this._supportsModelAttributes && this._finishReasons !== undefined;
-  }
-
-  /**
-   * Finalize finish reasons, token usage, and serialize the invocation's content
-   * onto the span.
+   * Finalize finish reasons, token usage, opt-in tool definitions, and serialize
+   * message content onto the span.
    */
   protected override _onInvocationEnd(
     _endTime: HrTime,
-    errorType?: string
+    _errorType?: string
   ): void {
-    if (this._shouldRecordFinishReasons(errorType)) {
+    if (this._supportsModelAttributes && this._finishReasons !== undefined) {
       this._setFinishReasonsAttribute();
     }
 
     if (this._supportsModelAttributes && this._usage) {
       this._setUsageAttributes(this._usage);
+    }
+
+    const toolDefinitions = formatToolDefinitions(this._toolDefinitions);
+    if (toolDefinitions) {
+      this._span.setAttribute(ATTR_GEN_AI_TOOL_DEFINITIONS, toolDefinitions);
     }
 
     if (this._contentCaptureMode !== 'span_only') {
@@ -388,11 +388,6 @@ export abstract class AgentInvocation extends BaseInvocation {
     const outputMessages = formatOutputMessages(this._outputMessages);
     if (outputMessages) {
       this._span.setAttribute(ATTR_GEN_AI_OUTPUT_MESSAGES, outputMessages);
-    }
-
-    const toolDefinitions = formatToolDefinitions(this._toolDefinitions);
-    if (toolDefinitions) {
-      this._span.setAttribute(ATTR_GEN_AI_TOOL_DEFINITIONS, toolDefinitions);
     }
   }
 
@@ -465,7 +460,10 @@ export class LocalAgentInvocation extends AgentInvocation {
    * @param handler Handler providing the tracer, meter, and completion hooks.
    * @param options Agent details, parent context, and initial attributes.
    */
-  constructor(handler: TelemetryHandler, options: AgentInvocationOptions = {}) {
+  constructor(
+    handler: TelemetryHandler,
+    options: LocalAgentInvocationOptions = {}
+  ) {
     const operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
     const supportsModelAttributes =
@@ -605,7 +603,6 @@ export class RemoteAgentInvocation extends AgentInvocation {
   private readonly _providerName: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
-  private _isStreaming: boolean;
 
   /**
    * Start a remote client agent invocation, creating and starting the underlying
@@ -645,7 +642,6 @@ export class RemoteAgentInvocation extends AgentInvocation {
     this._providerName = providerName;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-    this._isStreaming = options.requestOptions?.stream === true;
   }
 
   /**
@@ -676,17 +672,8 @@ export class RemoteAgentInvocation extends AgentInvocation {
    * Set the request streaming attribute to true (`gen_ai.request.stream`).
    */
   public setStreaming(): this {
-    this._isStreaming = true;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
     return this;
-  }
-
-  protected override _shouldRecordFinishReasons(errorType?: string): boolean {
-    return (
-      super._shouldRecordFinishReasons(errorType) ||
-      errorType !== undefined ||
-      this._isStreaming
-    );
   }
 
   /**

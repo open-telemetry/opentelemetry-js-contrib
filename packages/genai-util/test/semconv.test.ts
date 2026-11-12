@@ -48,6 +48,8 @@ import {
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
+  GEN_AI_PROVIDER_NAME_VALUE_MISTRAL,
+  GEN_AI_PROVIDER_NAME_VALUE_OLLAMA,
   GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
   GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
   GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
@@ -205,6 +207,8 @@ describe('GenAI Semantic Conventions', () => {
       'gcp.vertex_ai'
     );
     assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI, 'gcp.gemini');
+    assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_MISTRAL, 'mistral');
+    assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_OLLAMA, 'ollama');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO, 'audio');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE, 'image');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_TEXT, 'text');

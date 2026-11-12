@@ -27,6 +27,10 @@ import type {
   LocalAgentInvocation,
   RemoteAgentInvocation,
 } from '../../src/invocations/agent';
+import type {
+  LocalAgentInvocationOptions,
+  LocalAgentRequestOptions,
+} from '../../src/types';
 import {
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_ID,
@@ -123,24 +127,26 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startLocalAgent({
+      const requestOptions: LocalAgentRequestOptions = {
+        temperature: 0.7,
+        topP: 0.95,
+        maxTokens: 2048,
+        stopSequences: ['STOP'],
+        frequencyPenalty: 0.2,
+        presencePenalty: 0.3,
+        choiceCount: 2,
+        seed: 42,
+      };
+      const localOptions: LocalAgentInvocationOptions = {
         agentName: 'Math Tutor',
         agentDescription: 'Helps with math problems',
         conversationId: 'conv_123',
         dataSourceId: 'ds_456',
         outputType: 'json',
         requestModel: 'gpt-4o',
-        requestOptions: {
-          temperature: 0.7,
-          topP: 0.95,
-          maxTokens: 2048,
-          stopSequences: ['STOP'],
-          frequencyPenalty: 0.2,
-          presencePenalty: 0.3,
-          choiceCount: 2,
-          seed: 42,
-        },
-      });
+        requestOptions,
+      };
+      const invocation = handler.startLocalAgent(localOptions);
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -395,7 +401,7 @@ describe('AgentInvocation', () => {
       );
     });
 
-    it('should respect content capture mode (none vs span_only) for messages, system instructions, and tool definitions', () => {
+    it('should respect content capture mode (none vs span_only) for messages and system instructions, while recording opt-in tool definitions independently', () => {
       const inputMessages = [
         {
           role: 'user' as const,
@@ -423,7 +429,7 @@ describe('AgentInvocation', () => {
         },
       ];
 
-      // 1. Mode: none
+      // 1. Mode: none — message/instruction payload content is omitted, while opt-in tool schemas are still recorded when supplied
       const handlerNone = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -439,7 +445,13 @@ describe('AgentInvocation', () => {
       invNone.addOutputMessages(outputMessages);
       invNone.stop();
 
-      const [spanNone] = ctx.memoryExporter.getFinishedSpans();
+      const invNoneNoTools = handlerNone.startLocalAgent({
+        agentName: 'ToollessAgent',
+        inputMessages,
+      });
+      invNoneNoTools.stop();
+
+      const [spanNone, spanNoneNoTools] = ctx.memoryExporter.getFinishedSpans();
       assert.strictEqual(
         spanNone.attributes[ATTR_GEN_AI_INPUT_MESSAGES],
         undefined
@@ -454,6 +466,10 @@ describe('AgentInvocation', () => {
       );
       assert.strictEqual(
         spanNone.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
+        JSON.stringify(toolDefinitions)
+      );
+      assert.strictEqual(
+        spanNoneNoTools.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
         undefined
       );
 
@@ -844,6 +860,10 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_SERVER_PORT], 443);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.5);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        undefined
+      );
     });
 
     it('should stay SpanKind.CLIENT, preserve remote attributes, omit blank providerName, and warn on empty or whitespace providerName', async () => {
@@ -970,7 +990,7 @@ describe('AgentInvocation', () => {
       );
     });
 
-    it('should default gen_ai.response.finish_reasons to error on failed or early-ended streaming remote invocations, and omit when unset on non-streaming success', () => {
+    it('should omit gen_ai.response.finish_reasons on remote invocations unless setFinishReasons is called, and fill missing expected slots with error', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -985,7 +1005,16 @@ describe('AgentInvocation', () => {
         })
         .stop();
 
-      // 2. Failed remote invocation without finishReasons -> ['error']
+      // 2. Successful streaming remote invocation without finishReasons -> omitted (not ['error'])
+      handler
+        .startRemoteAgent({
+          providerName: 'aws.bedrock',
+          agentName: 'StreamingSuccess',
+          requestOptions: { stream: true },
+        })
+        .stop();
+
+      // 3. Failed remote invocation without finishReasons -> omitted
       handler
         .startRemoteAgent({
           providerName: 'openai',
@@ -993,27 +1022,32 @@ describe('AgentInvocation', () => {
         })
         .fail({ exception: new Error('upstream timeout') });
 
-      // 3. Streaming remote invocation stopped before receiving finishReasons -> ['error']
+      // 4. Remote invocation where finish reasons were expected (`setFinishReasons([])`) -> ['error']
       handler
         .startRemoteAgent({
           providerName: 'openai',
-          agentName: 'InterruptedStream',
+          agentName: 'InterruptedExpectedFinishReason',
           requestOptions: { stream: true },
         })
+        .setFinishReasons([])
         .stop();
 
       const spans = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 3);
+      assert.strictEqual(spans.length, 4);
       assert.strictEqual(
         spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
         undefined
       );
-      assert.deepStrictEqual(
+      assert.strictEqual(
         spans[1].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
-        ['error']
+        undefined
+      );
+      assert.strictEqual(
+        spans[2].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        undefined
       );
       assert.deepStrictEqual(
-        spans[2].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        spans[3].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
         ['error']
       );
     });

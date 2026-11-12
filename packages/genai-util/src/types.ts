@@ -435,7 +435,7 @@ export interface InferenceRequestOptions {
 /**
  * Standard request parameters for an in-process GenAI agent invocation (`gen_ai.invoke_agent.internal`).
  */
-export interface AgentRequestOptions {
+export interface LocalAgentRequestOptions {
   /** Sampling temperature (`gen_ai.request.temperature`). */
   temperature?: number;
   /** Top-p nucleus sampling parameter (`gen_ai.request.top_p`). */
@@ -457,7 +457,7 @@ export interface AgentRequestOptions {
 /**
  * Standard request parameters for a remote client GenAI agent invocation (`gen_ai.client.invoke_agent`).
  */
-export interface RemoteAgentRequestOptions extends AgentRequestOptions {
+export interface RemoteAgentRequestOptions extends LocalAgentRequestOptions {
   /** Whether the request was streamed (`gen_ai.request.stream`). */
   stream?: boolean;
 }
@@ -563,7 +563,7 @@ export interface ToolInvocationOptions extends CommonInvocationOptions {
 interface CommonAgentInvocationOptions extends CommonInvocationOptions {
   /**
    * Operation name (`gen_ai.operation.name`).
-   * Defaults to `'invoke_agent'`. May also be set to `'invoke_workflow'`, `'invoke_runner'`, or a custom value.
+   * Defaults to `'invoke_agent'`.
    */
   operationName?: string;
   /** Human-readable name of the GenAI agent (`gen_ai.agent.name`). */
@@ -579,19 +579,31 @@ interface CommonAgentInvocationOptions extends CommonInvocationOptions {
   /** Model name requested (`gen_ai.request.model`). */
   requestModel?: string;
   /** Request parameters/settings. */
-  requestOptions?: AgentRequestOptions;
+  requestOptions?: LocalAgentRequestOptions;
   /** Input messages provided to the agent (`gen_ai.input.messages`). */
   inputMessages?: InputMessages;
   /** System instructions provided to the agent (`gen_ai.system_instructions`). */
   systemInstructions?: SystemInstructions;
-  /** Tool definitions available to the agent (`gen_ai.tool.definitions`). */
+  /**
+   * Tool definitions available to the agent (`gen_ai.tool.definitions`).
+   *
+   * Per GenAI semantic conventions, schema attributes are opt-in and are not
+   * governed by `contentCaptureMode`; supply them only when tool definition
+   * capture is enabled.
+   */
   toolDefinitions?: ToolDefinitions;
 }
 
 /**
  * Options for starting an in-process agent, workflow, or framework entrypoint invocation (`gen_ai.invoke_agent.internal`).
  */
-export interface AgentInvocationOptions extends CommonAgentInvocationOptions {
+export interface LocalAgentInvocationOptions
+  extends CommonAgentInvocationOptions {
+  /**
+   * Operation name (`gen_ai.operation.name`).
+   * Defaults to `'invoke_agent'`. May also be set to `'invoke_workflow'`, `'invoke_runner'`, or a custom value.
+   */
+  operationName?: string;
   /**
    * Initialize inference call tracking at `0` so `gen_ai.invoke_agent.inference_calls`
    * records `0` even when `recordInferenceCall()` is never invoked during the run.

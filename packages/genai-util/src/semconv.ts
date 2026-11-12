@@ -467,6 +467,7 @@ export const ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK =
  * Human-readable name of the GenAI workflow.
  *
  * @example customer_support_pipeline
+ * @deprecated Use {@link ATTR_GEN_AI_AGENT_NAME} with `gen_ai.operation.name = 'invoke_workflow'` instead.
  */
 export const ATTR_GEN_AI_WORKFLOW_NAME = 'gen_ai.workflow.name' as const;
 
@@ -523,8 +524,13 @@ export const GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE =
 export const GEN_AI_PROVIDER_NAME_VALUE_COHERE = 'cohere' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK = 'deepseek' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_GROQ = 'groq' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_MISTRAL = 'mistral' as const;
+/**
+ * @deprecated Use {@link GEN_AI_PROVIDER_NAME_VALUE_MISTRAL} instead.
+ */
 export const GEN_AI_PROVIDER_NAME_VALUE_MISTRAL_AI = 'mistral_ai' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI = 'moonshot_ai' as const;
+export const GEN_AI_PROVIDER_NAME_VALUE_OLLAMA = 'ollama' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI =
   'ibm.watsonx.ai' as const;
 export const GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY = 'perplexity' as const;

@@ -21,9 +21,9 @@ import {
   ATTR_GEN_AI_REQUEST_TOP_P,
 } from './semconv';
 import type {
-  AgentRequestOptions,
   InferenceRequestOptions,
   InputMessages,
+  LocalAgentRequestOptions,
   OutputMessages,
   RemoteAgentRequestOptions,
   SystemInstructionPart,
@@ -375,7 +375,7 @@ export function getRequestOptionsAttributes(
  * @returns Attributes object populated with GenAI agent request semantic conventions.
  */
 export function getAgentRequestOptionsAttributes(
-  requestOptions?: AgentRequestOptions | RemoteAgentRequestOptions,
+  requestOptions?: LocalAgentRequestOptions | RemoteAgentRequestOptions,
   includeStream = false
 ): Attributes {
   const attrs: Attributes = {};
