@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.18.0...instrumentation-browser-navigation-v0.19.0) (2026-11-12)
+
+
+### Features
+
+* **instrumentation-browser-navigation:** redact sensitive URL query parameters ([#3905](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3905)) ([3aeca30](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3aeca307a3f4dd756f11b9f4d463bd8c9b9e2fb1))
+
 ## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.17.0...instrumentation-browser-navigation-v0.18.0) (2026-11-05)
 
 

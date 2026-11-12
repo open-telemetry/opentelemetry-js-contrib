@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.70.0...instrumentation-document-load-v0.70.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-document-load:** redact sensitive URL query parameters ([#3906](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3906)) ([7819a53](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7819a53e588577c3f8ed5aaae544fbd9b7cb5e66))
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.69.0...instrumentation-document-load-v0.70.0) (2026-11-05)
 
 

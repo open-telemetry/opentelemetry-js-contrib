@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-aws-lambda",
-  "version": "0.77.0",
+  "version": "0.77.1",
   "description": "OpenTelemetry instrumentation for AWS Lambda function invocations",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

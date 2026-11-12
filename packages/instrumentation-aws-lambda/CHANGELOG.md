@@ -1,6 +1,14 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.77.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.77.0...instrumentation-aws-lambda-v0.77.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-lambda:** force flush logger provider on invocation completion ([#3714](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3714)) ([c9ddfed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c9ddfed6ee4cd1ca0e9430485b5b73289400f436))
+* **instrumentation-aws-lambda:** redact sensitive URL query parameters ([#3904](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3904)) ([0ec846f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0ec846f2e44f258e8a7b2d5a1b9e845b4832651f))
+
 ## [0.77.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.76.0...instrumentation-aws-lambda-v0.77.0) (2026-11-05)
 
 

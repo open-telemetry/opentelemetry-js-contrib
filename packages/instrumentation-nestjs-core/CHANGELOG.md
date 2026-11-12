@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.72.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.72.0...instrumentation-nestjs-core-v0.72.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-nestjs-core:** redact sensitive URL query parameters ([#3907](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3907)) ([2f7190a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2f7190a9f553c411c8fd81b3552c4cc9a8d367cf))
+
 ## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.71.0...instrumentation-nestjs-core-v0.72.0) (2026-11-05)
 
 

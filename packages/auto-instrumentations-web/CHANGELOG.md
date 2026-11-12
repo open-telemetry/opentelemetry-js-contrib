@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.70.0...auto-instrumentations-web-v0.70.1) (2026-11-12)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-document-load bumped from ^0.70.0 to ^0.70.1
+    * @opentelemetry/instrumentation-user-interaction bumped from ^0.69.0 to ^0.69.1
+
 ## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-web-v0.69.0...auto-instrumentations-web-v0.70.0) (2026-11-05)
 
 
