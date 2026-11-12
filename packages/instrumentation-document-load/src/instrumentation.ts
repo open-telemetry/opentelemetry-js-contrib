@@ -34,6 +34,7 @@ import {
 import { AttributeNames } from './enums/AttributeNames';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { redactUrl } from './redact-url';
 import {
   addSpanPerformancePaintEvents,
   getPerformanceNavigationEntries,
@@ -103,7 +104,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
           entries
         );
         if (fetchSpan) {
-          fetchSpan.setAttribute(ATTR_URL_FULL, location.href);
+          fetchSpan.setAttribute(ATTR_URL_FULL, redactUrl(location.href));
           context.with(trace.setSpan(context.active(), fetchSpan), () => {
             addSpanNetworkEvents(
               fetchSpan,
@@ -119,7 +120,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
         }
       });
 
-      rootSpan.setAttribute(ATTR_URL_FULL, location.href);
+      rootSpan.setAttribute(ATTR_URL_FULL, redactUrl(location.href));
       rootSpan.setAttribute(ATTR_USER_AGENT_ORIGINAL, navigator.userAgent);
 
       this._addResourcesSpans(rootSpan);
@@ -194,7 +195,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
       parentSpan
     );
     if (span) {
-      span.setAttribute(ATTR_URL_FULL, resource.name);
+      span.setAttribute(ATTR_URL_FULL, redactUrl(resource.name));
 
       addSpanNetworkEvents(
         span,
