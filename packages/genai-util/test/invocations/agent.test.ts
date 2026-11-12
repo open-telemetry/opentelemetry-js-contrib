@@ -630,6 +630,63 @@ describe('AgentInvocation', () => {
       );
     });
 
+    it('should report 0 on call count histograms when trackInferenceCalls and trackToolCalls are enabled', async () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      // Run 1: 0 inference calls, 0 tool calls
+      handler
+        .startLocalAgent({
+          agentName: 'HookInstrumentedAgent',
+          trackInferenceCalls: true,
+          trackToolCalls: true,
+        })
+        .stop();
+
+      // Run 2: 1 inference call, 3 tool calls
+      const run2 = handler.startLocalAgent({
+        agentName: 'HookInstrumentedAgent',
+        trackInferenceCalls: true,
+        trackToolCalls: true,
+      });
+      run2.recordInferenceCall();
+      run2.recordToolCall(3);
+      run2.stop();
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      const infMetric = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS
+      );
+      const toolMetric = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS
+      );
+
+      assert.ok(infMetric);
+      assert.strictEqual(
+        (infMetric.dataPoints[0].value as { count: number }).count,
+        2
+      );
+      assert.strictEqual(
+        (infMetric.dataPoints[0].value as { sum?: number }).sum,
+        1
+      );
+
+      assert.ok(toolMetric);
+      assert.strictEqual(
+        (toolMetric.dataPoints[0].value as { count: number }).count,
+        2
+      );
+      assert.strictEqual(
+        (toolMetric.dataPoints[0].value as { sum?: number }).sum,
+        3
+      );
+    });
+
     it('should record error.type on duration metric when in-process agent fails, but not on call count metrics', async () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',

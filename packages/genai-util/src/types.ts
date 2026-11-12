@@ -557,9 +557,9 @@ export interface ToolInvocationOptions extends CommonInvocationOptions {
 }
 
 /**
- * Options for starting an in-process agent, workflow, or framework entrypoint invocation (`gen_ai.invoke_agent.internal`).
+ * Shared options for starting an agent invocation.
  */
-export interface AgentInvocationOptions extends CommonInvocationOptions {
+interface CommonAgentInvocationOptions extends CommonInvocationOptions {
   /**
    * Operation name (`gen_ai.operation.name`).
    * Defaults to `'invoke_agent'`. May also be set to `'invoke_workflow'`, `'invoke_runner'`, or a custom value.
@@ -588,9 +588,28 @@ export interface AgentInvocationOptions extends CommonInvocationOptions {
 }
 
 /**
+ * Options for starting an in-process agent, workflow, or framework entrypoint invocation (`gen_ai.invoke_agent.internal`).
+ */
+export interface AgentInvocationOptions extends CommonAgentInvocationOptions {
+  /**
+   * Initialize inference call tracking at `0` so `gen_ai.invoke_agent.inference_calls`
+   * records `0` even when `recordInferenceCall()` is never invoked during the run.
+   * Leave unset for delegating entrypoints or workflows that never issue model calls directly.
+   */
+  trackInferenceCalls?: boolean;
+  /**
+   * Initialize tool call tracking at `0` so `gen_ai.invoke_agent.tool_calls`
+   * records `0` even when `recordToolCall()` is never invoked during the run.
+   * Leave unset for delegating entrypoints, workflows, or toolless agents that cannot issue tool calls.
+   */
+  trackToolCalls?: boolean;
+}
+
+/**
  * Options for starting a remote client agent invocation (`gen_ai.client.invoke_agent`).
  */
-export interface RemoteAgentInvocationOptions extends AgentInvocationOptions {
+export interface RemoteAgentInvocationOptions
+  extends CommonAgentInvocationOptions {
   /** Name of the provider hosting the remote agent (`gen_ai.provider.name`). */
   providerName: string;
   /** Unique identifier of the GenAI agent (`gen_ai.agent.id`). */

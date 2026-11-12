@@ -479,6 +479,13 @@ export class LocalAgentInvocation extends AgentInvocation {
         false
       )
     );
+
+    if (options.trackInferenceCalls) {
+      this._inferenceCalls = 0;
+    }
+    if (options.trackToolCalls) {
+      this._toolCalls = 0;
+    }
   }
 
   /**
