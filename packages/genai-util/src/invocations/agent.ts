@@ -91,11 +91,14 @@ function getAgentSpanName(operationName: string, agentName?: string): string {
 function buildCommonInitialAttributes(
   options: AgentInvocationOptions | RemoteAgentInvocationOptions,
   operationName: string,
+  supportsModelAttributes: boolean,
   includeStream: boolean
 ): Attributes {
   const attrs: Attributes = {
     ...options.attributes,
-    ...getAgentRequestOptionsAttributes(options.requestOptions, includeStream),
+    ...(supportsModelAttributes
+      ? getAgentRequestOptionsAttributes(options.requestOptions, includeStream)
+      : undefined),
     [ATTR_GEN_AI_OPERATION_NAME]: operationName,
   };
 
@@ -111,11 +114,13 @@ function buildCommonInitialAttributes(
   if (options.dataSourceId) {
     attrs[ATTR_GEN_AI_DATA_SOURCE_ID] = options.dataSourceId;
   }
-  if (options.outputType) {
-    attrs[ATTR_GEN_AI_OUTPUT_TYPE] = options.outputType;
-  }
-  if (options.requestModel) {
-    attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
+  if (supportsModelAttributes) {
+    if (options.outputType) {
+      attrs[ATTR_GEN_AI_OUTPUT_TYPE] = options.outputType;
+    }
+    if (options.requestModel) {
+      attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
+    }
   }
 
   return attrs;
@@ -129,7 +134,12 @@ function buildRemoteInitialAttributes(
   operationName: string,
   providerName: string
 ): Attributes {
-  const attrs = buildCommonInitialAttributes(options, operationName, true);
+  const attrs = buildCommonInitialAttributes(
+    options,
+    operationName,
+    true,
+    true
+  );
 
   if (providerName) {
     attrs[ATTR_GEN_AI_PROVIDER_NAME] = providerName;
@@ -166,6 +176,7 @@ function buildRemoteInitialAttributes(
  */
 export abstract class AgentInvocation extends BaseInvocation {
   protected readonly _operationName: string;
+  protected readonly _supportsModelAttributes: boolean;
   protected _agentName?: string;
   protected _requestModel?: string;
   private readonly _contentCaptureMode: ContentCaptureMode;
@@ -180,6 +191,7 @@ export abstract class AgentInvocation extends BaseInvocation {
     handler: TelemetryHandler,
     options: AgentInvocationOptions | RemoteAgentInvocationOptions,
     operationName: string,
+    supportsModelAttributes: boolean,
     kind: SpanKind,
     initialAttributes: Attributes
   ) {
@@ -192,8 +204,11 @@ export abstract class AgentInvocation extends BaseInvocation {
     });
 
     this._operationName = operationName;
+    this._supportsModelAttributes = supportsModelAttributes;
     this._agentName = options.agentName;
-    this._requestModel = options.requestModel;
+    this._requestModel = supportsModelAttributes
+      ? options.requestModel
+      : undefined;
     this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages = options.inputMessages
       ? [...options.inputMessages]
@@ -243,7 +258,9 @@ export abstract class AgentInvocation extends BaseInvocation {
    * Set the content type requested or produced (`gen_ai.output.type`).
    */
   public setOutputType(outputType: OutputType): this {
-    this._span.setAttribute(ATTR_GEN_AI_OUTPUT_TYPE, outputType);
+    if (this._supportsModelAttributes) {
+      this._span.setAttribute(ATTR_GEN_AI_OUTPUT_TYPE, outputType);
+    }
     return this;
   }
 
@@ -251,8 +268,10 @@ export abstract class AgentInvocation extends BaseInvocation {
    * Set the requested model name (`gen_ai.request.model`).
    */
   public setRequestModel(model: string): this {
-    this._requestModel = model;
-    this._span.setAttribute(ATTR_GEN_AI_REQUEST_MODEL, model);
+    if (this._supportsModelAttributes) {
+      this._requestModel = model;
+      this._span.setAttribute(ATTR_GEN_AI_REQUEST_MODEL, model);
+    }
     return this;
   }
 
@@ -320,18 +339,25 @@ export abstract class AgentInvocation extends BaseInvocation {
   }
 
   /**
+   * Return whether `gen_ai.response.finish_reasons` should be recorded on the span.
+   */
+  protected _shouldRecordFinishReasons(_errorType?: string): boolean {
+    return this._supportsModelAttributes && this._finishReasons !== undefined;
+  }
+
+  /**
    * Finalize finish reasons, token usage, and serialize the invocation's content
    * onto the span.
    */
   protected override _onInvocationEnd(
     _endTime: HrTime,
-    _errorType?: string
+    errorType?: string
   ): void {
-    if (this._finishReasons && this._finishReasons.length > 0) {
+    if (this._shouldRecordFinishReasons(errorType)) {
       this._setFinishReasonsAttribute();
     }
 
-    if (this._usage) {
+    if (this._supportsModelAttributes && this._usage) {
       this._setUsageAttributes(this._usage);
     }
 
@@ -437,13 +463,21 @@ export class LocalAgentInvocation extends AgentInvocation {
   constructor(handler: TelemetryHandler, options: AgentInvocationOptions = {}) {
     const operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+    const supportsModelAttributes =
+      operationName === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
 
     super(
       handler,
       options,
       operationName,
+      supportsModelAttributes,
       SpanKind.INTERNAL,
-      buildCommonInitialAttributes(options, operationName, false)
+      buildCommonInitialAttributes(
+        options,
+        operationName,
+        supportsModelAttributes,
+        false
+      )
     );
   }
 
@@ -497,10 +531,7 @@ export class LocalAgentInvocation extends AgentInvocation {
     if (this._agentName) {
       metricAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
     }
-    if (
-      this._requestModel &&
-      this._operationName === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
-    ) {
+    if (this._requestModel) {
       metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
     }
     return metricAttrs;
@@ -562,6 +593,7 @@ export class RemoteAgentInvocation extends AgentInvocation {
   private readonly _providerName: string;
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
+  private _isStreaming: boolean;
 
   /**
    * Start a remote client agent invocation, creating and starting the underlying
@@ -585,6 +617,7 @@ export class RemoteAgentInvocation extends AgentInvocation {
       handler,
       options,
       operationName,
+      true,
       SpanKind.CLIENT,
       buildRemoteInitialAttributes(options, operationName, providerName)
     );
@@ -600,6 +633,7 @@ export class RemoteAgentInvocation extends AgentInvocation {
     this._providerName = providerName;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
+    this._isStreaming = options.requestOptions?.stream === true;
   }
 
   /**
@@ -622,8 +656,17 @@ export class RemoteAgentInvocation extends AgentInvocation {
    * Set the request streaming attribute to true (`gen_ai.request.stream`).
    */
   public setStreaming(): this {
+    this._isStreaming = true;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
     return this;
+  }
+
+  protected override _shouldRecordFinishReasons(errorType?: string): boolean {
+    return (
+      super._shouldRecordFinishReasons(errorType) ||
+      errorType !== undefined ||
+      this._isStreaming
+    );
   }
 
   /**

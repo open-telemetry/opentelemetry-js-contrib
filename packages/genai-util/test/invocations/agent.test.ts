@@ -181,7 +181,7 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_SEED], 42);
     });
 
-    it('should support invoke_workflow and invoke_runner operation names and omit request.model from duration metric', async () => {
+    it('should support invoke_workflow and invoke_runner operation names and omit invoke_agent-only attributes from span and metric', async () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -189,17 +189,27 @@ describe('AgentInvocation', () => {
         meterProvider: ctx.meterProvider,
       });
 
-      handler
-        .startLocalAgent({
-          operationName: 'invoke_workflow',
-          agentName: 'CustomerSupportPipeline',
-          requestModel: 'gpt-4o',
-        })
-        .stop();
+      const workflow = handler.startLocalAgent({
+        operationName: 'invoke_workflow',
+        agentName: 'CustomerSupportPipeline',
+        outputType: 'json',
+        requestModel: 'gpt-4o',
+        requestOptions: {
+          temperature: 0.7,
+          maxTokens: 1024,
+        },
+      });
+      workflow
+        .setOutputType('text')
+        .setRequestModel('gpt-4o-mini')
+        .setFinishReasons(['stop'])
+        .setUsage({ inputTokenCount: 100, outputTokenCount: 50 });
+      workflow.stop();
 
       handler
         .startLocalAgent({
           operationName: 'invoke_runner',
+          requestModel: 'gpt-4o',
         })
         .stop();
 
@@ -213,10 +223,43 @@ describe('AgentInvocation', () => {
         spans[0].attributes[ATTR_GEN_AI_OPERATION_NAME],
         'invoke_workflow'
       );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_OUTPUT_TYPE],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_REQUEST_MODEL],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS],
+        undefined
+      );
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS],
+        undefined
+      );
+
       assert.strictEqual(spans[1].name, 'invoke_runner');
       assert.strictEqual(
         spans[1].attributes[ATTR_GEN_AI_OPERATION_NAME],
         'invoke_runner'
+      );
+      assert.strictEqual(
+        spans[1].attributes[ATTR_GEN_AI_REQUEST_MODEL],
+        undefined
       );
 
       const { resourceMetrics } = await ctx.metricReader.collect();
@@ -331,6 +374,24 @@ describe('AgentInvocation', () => {
       assert.deepStrictEqual(
         spanMissingReason.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
         ['stop', 'error']
+      );
+
+      ctx.reset();
+
+      const invEmptyReasons = handler.startLocalAgent({
+        agentName: 'Planner',
+      });
+      invEmptyReasons.addOutputMessages([
+        { role: 'assistant', parts: [{ type: 'text', content: 'A' }] },
+        { role: 'assistant', parts: [{ type: 'text', content: 'B' }] },
+      ]);
+      invEmptyReasons.setFinishReasons([]);
+      invEmptyReasons.stop();
+
+      const [spanEmptyReasons] = ctx.memoryExporter.getFinishedSpans();
+      assert.deepStrictEqual(
+        spanEmptyReasons.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['error', 'error']
       );
     });
 
@@ -840,6 +901,58 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_ID], 'asst_dynamic');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_VERSION], '1.0.0');
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+      assert.deepStrictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['error']
+      );
+    });
+
+    it('should default gen_ai.response.finish_reasons to error on failed or early-ended streaming remote invocations, and omit when unset on non-streaming success', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      // 1. Successful non-streaming remote invocation without finishReasons -> omitted
+      handler
+        .startRemoteAgent({
+          providerName: 'openai',
+          agentName: 'NonStreamingSuccess',
+        })
+        .stop();
+
+      // 2. Failed remote invocation without finishReasons -> ['error']
+      handler
+        .startRemoteAgent({
+          providerName: 'openai',
+          agentName: 'FailedRemote',
+        })
+        .fail({ exception: new Error('upstream timeout') });
+
+      // 3. Streaming remote invocation stopped before receiving finishReasons -> ['error']
+      handler
+        .startRemoteAgent({
+          providerName: 'openai',
+          agentName: 'InterruptedStream',
+          requestOptions: { stream: true },
+        })
+        .stop();
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 3);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        undefined
+      );
+      assert.deepStrictEqual(
+        spans[1].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['error']
+      );
+      assert.deepStrictEqual(
+        spans[2].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['error']
+      );
     });
 
     it('should record cache and modality token usage attributes on remote client agent spans', () => {
