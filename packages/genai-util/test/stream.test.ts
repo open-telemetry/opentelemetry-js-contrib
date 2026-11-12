@@ -4,7 +4,8 @@
  */
 
 import * as assert from 'assert';
-import { SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -26,8 +27,12 @@ import {
   GEN_AI_FINISH_REASON_VALUE_ERROR,
   GEN_AI_FINISH_REASON_VALUE_STOP,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
 } from '../src/semconv';
 import {
   createTestTelemetryContext,
@@ -1155,5 +1160,175 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+  });
+
+  it('should support LocalAgentInvocation streams, preserve parent span context across yield points, and omit inference chunk metrics', async () => {
+    const contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    try {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test',
+        instrumentationVersion: '1.2.3',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      const agent = handler.startLocalAgent({
+        agentName: 'StreamingAgent',
+        trackInferenceCalls: true,
+        trackToolCalls: true,
+      });
+
+      async function* runAgentStream() {
+        await Promise.resolve();
+        const inf = handler.startInference({
+          providerName: 'openai',
+          requestModel: 'gpt-4o',
+        });
+        inf.stop();
+        agent.recordInferenceCall();
+        yield 'step-1';
+
+        await Promise.resolve();
+        const tool = handler.startTool({ toolName: 'search_docs' });
+        tool.stop();
+        agent.recordToolCall();
+        yield 'step-2';
+      }
+
+      const wrapped = handler.wrapAsyncStream(runAgentStream(), {
+        invocation: agent,
+      });
+
+      const consumerActiveSpans: Array<unknown> = [];
+      const events: string[] = [];
+      for await (const ev of wrapped) {
+        events.push(ev);
+        // Consumer loop body must remain in the caller's outer context, not the agent span context
+        consumerActiveSpans.push(trace.getSpan(context.active()));
+      }
+
+      assert.deepStrictEqual(events, ['step-1', 'step-2']);
+      assert.deepStrictEqual(consumerActiveSpans, [undefined, undefined]);
+      assert.strictEqual(agent.isEnded(), true);
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      const agentSpan = spans.find(
+        s => s.name === 'invoke_agent StreamingAgent'
+      );
+      const infSpan = spans.find(s => s.name === 'chat gpt-4o');
+      const toolSpan = spans.find(s => s.name === 'execute_tool search_docs');
+
+      assert.ok(agentSpan);
+      assert.ok(infSpan);
+      assert.ok(toolSpan);
+
+      const agentSpanId = agentSpan.spanContext().spanId;
+      assert.strictEqual(infSpan.parentSpanContext?.spanId, agentSpanId);
+      assert.strictEqual(toolSpan.parentSpanContext?.spanId, agentSpanId);
+      assert.strictEqual(
+        agentSpan.attributes[ATTR_GEN_AI_REQUEST_STREAM],
+        undefined
+      );
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_DURATION
+        )
+      );
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS
+        )
+      );
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS
+        )
+      );
+      // TTFT and TPOC must NOT be recorded for LocalAgentInvocation chunks (only if a child InferenceInvocation streamed, which it didn't here)
+      assert.strictEqual(
+        metrics.find(
+          m =>
+            m.descriptor.name ===
+            METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+        ),
+        undefined
+      );
+      assert.strictEqual(
+        metrics.find(
+          m =>
+            m.descriptor.name ===
+            METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+        ),
+        undefined
+      );
+    } finally {
+      context.disable();
+    }
+  });
+
+  it('should support RemoteAgentInvocation streams, mark request.stream, and omit inference chunk metrics', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const remoteAgent = handler.startRemoteAgent({
+      providerName: 'aws.bedrock',
+      agentName: 'RemoteStreamAgent',
+    });
+
+    const wrapped = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['delta-1', 'delta-2']),
+      {
+        invocation: remoteAgent,
+      }
+    );
+
+    const received: string[] = [];
+    for await (const chunk of wrapped) {
+      received.push(chunk);
+      break;
+    }
+
+    assert.deepStrictEqual(received, ['delta-1']);
+    assert.strictEqual(remoteAgent.isEnded(), true);
+
+    const [span] = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.deepStrictEqual(
+      span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_ERROR]
+    );
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.ok(
+      metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION
+      )
+    );
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+      ),
+      undefined
+    );
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+      ),
+      undefined
+    );
   });
 });
