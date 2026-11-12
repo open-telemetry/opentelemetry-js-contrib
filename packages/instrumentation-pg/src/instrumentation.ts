@@ -577,6 +577,14 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
             })
             .catch((error: Error) => {
               return new Promise((_, reject) => {
+                if (
+                  error != null &&
+                  Object.prototype.hasOwnProperty.call(error, 'code')
+                ) {
+                  attributes[ATTR_ERROR_TYPE] = (
+                    error as Error & { code: string }
+                  ).code;
+                }
                 if (error instanceof Error) {
                   span.recordException(utils.sanitizedErrorMessage(error));
                 }
