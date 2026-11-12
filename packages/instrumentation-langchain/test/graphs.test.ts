@@ -19,7 +19,12 @@ import {
   TestMetricReader,
 } from '@opentelemetry/contrib-test-utils';
 import { DataPointType, MeterProvider } from '@opentelemetry/sdk-metrics';
-import { TracerProvider } from '@opentelemetry/sdk-trace';
+import {
+  InMemorySpanExporter,
+  SamplingDecision,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
@@ -34,12 +39,14 @@ import {
   Runnable,
   RunnableLambda,
   RunnableSequence,
+  type RunnableConfig,
 } from '@langchain/core/runnables';
 import { Pregel } from '@langchain/langgraph/pregel';
 import * as sinon from 'sinon';
 import { FakeChatModel } from '@langchain/core/utils/testing';
 import { createAgent } from 'langchain';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import * as content from '../src/content';
 
 const State = Annotation.Root({
   messages: Annotation<Array<HumanMessage | AIMessage>>,
@@ -164,6 +171,250 @@ describe('LangChain donated graph callbacks', () => {
       });
     }
   }
+
+  for (const capture of ['none', 'span_only'] as const) {
+    for (const fails of [false, true]) {
+      it(`captures original graph input once at span start (capture=${capture}, fails=${fails})`, async () => {
+        const shouldSample = sinon.stub().returns({
+          decision: SamplingDecision.RECORD_AND_SAMPLED,
+        });
+        const exporter = new InMemorySpanExporter();
+        const provider = new TracerProvider({
+          sampler: { shouldSample, toString: () => 'graph-input-sampler' },
+          spanProcessors: [new SimpleSpanProcessor({ exporter })],
+        });
+        const serialize = sinon.spy(content, 'messages');
+        const payload = input();
+        const failure = new TypeError('synthetic failure');
+        const operation = new StateGraph(State)
+          .addNode('step', state => {
+            state.messages[0].content = 'changed during execution';
+            if (fails) throw failure;
+            return { messages: [new AIMessage('result')] };
+          })
+          .addEdge(START, 'step')
+          .addEdge('step', END)
+          .compile({ name: 'input-snapshot' });
+        instrumentation.setTracerProvider(provider);
+        instrumentation.setConfig({ captureMessageContent: capture });
+        try {
+          if (fails) {
+            await assert.rejects(
+              operation.invoke(payload),
+              error => error === failure
+            );
+          } else {
+            await operation.invoke(payload);
+          }
+          assert.equal(payload.messages[0].content, 'changed during execution');
+          const expected =
+            capture === 'span_only'
+              ? JSON.stringify([
+                  { role: 'user', parts: [{ type: 'text', content: 'hello' }] },
+                ])
+              : undefined;
+          const spans = exporter.getFinishedSpans();
+          assert.equal(spans.length, 1);
+          assert.equal(spans[0].attributes['gen_ai.input.messages'], expected);
+          assert.equal(shouldSample.callCount, 1);
+          assert.equal(
+            shouldSample.firstCall.args[4]['gen_ai.input.messages'],
+            expected
+          );
+          assert.equal(
+            serialize.getCalls().filter(call => call.args[0] === payload)
+              .length,
+            capture === 'span_only' ? 1 : 0
+          );
+        } finally {
+          instrumentation.setTracerProvider(trace.getTracerProvider());
+          await provider.shutdown();
+        }
+      });
+    }
+  }
+
+  it('uses effective graph configurable before callback metadata for conversation IDs', async () => {
+    const defaults: RunnableConfig = {
+      configurable: { thread_id: 'default-thread' },
+      metadata: { thread_id: 'default-metadata-thread' },
+    };
+    const cases: RunnableConfig[] = [
+      { metadata: { session_id: 'request-metadata' } },
+      {
+        configurable: { thread_id: 'request-thread' },
+        metadata: {
+          session_id: 'request-metadata',
+          thread_id: 'metadata-thread',
+        },
+      },
+      {
+        configurable: { session_id: 'request-session' },
+        metadata: { session_id: 'request-metadata' },
+      },
+      {
+        configurable: { conversation_id: 'request-conversation' },
+        metadata: { session_id: 'request-metadata' },
+      },
+      { configurable: {}, metadata: { session_id: 'request-metadata' } },
+      {
+        configurable: { thread_id: '', session_id: 'request-session' },
+        metadata: { session_id: 'request-metadata' },
+      },
+    ];
+    for (const options of cases) {
+      let received: RunnableConfig | undefined;
+      const operation = new StateGraph(State)
+        .addNode('step', (state, config) => {
+          received = config;
+          return state;
+        })
+        .addEdge(START, 'step')
+        .addEdge('step', END)
+        .compile()
+        .withConfig(defaults);
+      await operation.invoke(input(), options);
+      assert.ok(received);
+      const expected = [
+        received.configurable?.thread_id,
+        received.configurable?.session_id,
+        received.configurable?.conversation_id,
+        received.metadata?.session_id,
+        received.metadata?.thread_id,
+        received.metadata?.conversation_id,
+      ].find(value => typeof value === 'string' && value.length > 0);
+      assert.ok(expected);
+      assert.equal(
+        getTestSpans().at(-1)?.attributes['gen_ai.conversation.id'],
+        expected
+      );
+    }
+    const manager = CallbackManager.fromHandlers({});
+    manager.addMetadata({ session_id: 'manager-session' });
+    await graph().invoke(input(), { callbacks: manager });
+    assert.equal(
+      getTestSpans().at(-1)?.attributes['gen_ai.conversation.id'],
+      'manager-session'
+    );
+  });
+
+  for (const source of ['call', 'withConfig'] as const) {
+    for (const shape of ['array', 'manager'] as const) {
+      it(`retains inherited graph context with ${source} ${shape} callbacks without changing SDK notifications`, async () => {
+        // Exercise the callback-only parentage path, not active OTel context.
+        context.disable();
+        const observe = async (enabled: boolean) => {
+          if (enabled) instrumentation.enable();
+          else instrumentation.disable();
+          resetMemoryExporter();
+          const events: string[] = [];
+          let childThread: unknown;
+          const childCallbacks = CallbackManager.fromHandlers({
+            handleChainStart(_s, _i, _id, _parent, _tags, _meta, _type, name) {
+              events.push(`child:${name}`);
+            },
+          });
+          const handlers = [...childCallbacks.handlers];
+          const inheritable = [...childCallbacks.inheritableHandlers];
+          const config: RunnableConfig = {
+            callbacks: shape === 'array' ? handlers : childCallbacks,
+            metadata: { session_id: 'child-metadata' },
+          };
+          if (source === 'withConfig')
+            config.configurable = { thread_id: 'child-default' };
+          const childGraph = new StateGraph(State)
+            .addNode('step', (state, config) => {
+              childThread = config.configurable?.thread_id;
+              return state;
+            })
+            .addEdge(START, 'step')
+            .addEdge('step', END)
+            .compile({ name: 'child' });
+          const child =
+            source === 'withConfig'
+              ? childGraph.withConfig(config)
+              : childGraph;
+          const parent = new StateGraph(State)
+            .addNode('step', state =>
+              child.invoke(state, source === 'call' ? config : undefined)
+            )
+            .addEdge(START, 'step')
+            .addEdge('step', END)
+            .compile({ name: 'parent' });
+          await parent.invoke(input(), {
+            configurable: { thread_id: 'parent-thread' },
+            callbacks: [
+              {
+                handleChainStart(
+                  _s,
+                  _i,
+                  _id,
+                  _parent,
+                  _tags,
+                  _meta,
+                  _type,
+                  name
+                ) {
+                  events.push(`parent:${name}`);
+                },
+              },
+            ],
+          });
+          assert.deepEqual(childCallbacks.handlers, handlers);
+          assert.deepEqual(childCallbacks.inheritableHandlers, inheritable);
+          return { events, childThread };
+        };
+        try {
+          const baseline = await observe(false);
+          assert.deepEqual(await observe(true), baseline);
+          assert.ok(baseline.events.some(event => event.endsWith(':child')));
+          const spans = getTestSpans();
+          assert.equal(spans.length, 2);
+          const parent = spans.find(
+            span => span.name === 'invoke_workflow parent'
+          )!;
+          const child = spans.find(
+            span => span.name === 'invoke_workflow child'
+          )!;
+          assert.equal(
+            child.parentSpanContext?.spanId,
+            parent.spanContext().spanId
+          );
+          assert.equal(
+            child.attributes['gen_ai.conversation.id'],
+            baseline.childThread
+          );
+        } finally {
+          context.setGlobalContextManager(
+            new AsyncLocalStorageContextManager().enable()
+          );
+          instrumentation.enable();
+        }
+      });
+    }
+  }
+
+  it('traces piped graph streaming through the same normalized callbacks', async () => {
+    const operation = graph().pipe(RunnableLambda.from(value => value));
+    const chunks: unknown[] = [];
+    for await (const chunk of await operation.stream(input()))
+      chunks.push(chunk);
+    assert.equal(chunks.length, 1);
+    const spans = getTestSpans();
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].name, 'invoke_workflow test_graph');
+    const collection = await reader.collect();
+    const recorded = collection.resourceMetrics.scopeMetrics.flatMap(
+      scope => scope.metrics
+    );
+    assert.equal(recorded.length, 1);
+    assert.ok(recorded[0].dataPointType === DataPointType.HISTOGRAM);
+    assert.equal(recorded[0].dataPoints[0].value.count, 1);
+    assert.equal(
+      recorded[0].dataPoints[0].value.sum,
+      hrTimeToSeconds(spans[0].duration)
+    );
+  });
 
   it('uses explicit run names and preserves user callbacks and manager state', async () => {
     const events: string[] = [];
@@ -626,7 +877,7 @@ describe('LangChain donated graph callbacks', () => {
     instrumentation.enable();
     await consume();
     assert.deepEqual({ reads, starts }, baseline);
-    assert.deepEqual(getTestSpans(), []);
+    assert.equal(getTestSpans().length, 1);
   });
 
   it('does not make a validation failure into a successful operation', async () => {

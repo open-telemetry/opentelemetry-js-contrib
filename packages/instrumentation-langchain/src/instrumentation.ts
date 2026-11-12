@@ -78,6 +78,7 @@ interface WorkflowPatch {
 }
 
 const workflowPatches = new WeakMap<object, Map<PropertyKey, WorkflowPatch>>();
+const graphConfigurations = new WeakMap<object, (config: unknown) => void>();
 
 interface ToolExecutor {
   _call(
@@ -434,16 +435,41 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             () => {},
             () => {},
             (
-              module: Pick<typeof import('@langchain/langgraph'), 'getConfig'>
+              module: Pick<
+                typeof import('@langchain/langgraph'),
+                'getConfig'
+              > & {
+                ensureLangGraphConfig: (...args: never[]) => unknown;
+              }
             ) => {
               this._getGraphConfig = module.getConfig;
+              if (
+                typeof module.ensureLangGraphConfig === 'function' &&
+                !isTrackingFactory(module.ensureLangGraphConfig)
+              )
+                this._wrapTracking(
+                  module,
+                  'ensureLangGraphConfig',
+                  trackFactory((result, _receiver, args) => {
+                    if (!isRecord(args[1])) return;
+                    const configure = graphConfigurations.get(args[1]);
+                    graphConfigurations.delete(args[1]);
+                    try {
+                      configure?.(result);
+                    } catch {
+                      this._diag.warn(
+                        'LangChain: could not register graph callbacks'
+                      );
+                    }
+                  }, this._diag)
+                );
             }
           ),
           createTrackedModuleFile(
             `@langchain/langgraph/dist/pregel/index.${extension}`,
             (module: typeof PregelModule) => this._patchGraphs(module),
             (module: typeof PregelModule) => {
-              this._unpatchMethod(module.Pregel.prototype, 'stream');
+              this._unpatchMethod(module.Pregel.prototype, '_streamIterator');
             },
             (module: typeof PregelModule) => {
               if (!isTrackingFactory(module.Pregel.prototype.withConfig))
@@ -540,11 +566,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _patchGraphs(module: typeof PregelModule) {
-    // streamEvents merges configured callbacks before delegating to stream.
-    // Register only after that merge, without adding managers to handler arrays.
+    // Observe the SDK's resolved configuration instead of duplicating its
+    // version-dependent merging of callbacks, metadata and configurable.
     this._patchMethod(
       module.Pregel.prototype,
-      'stream',
+      '_streamIterator',
       (owners, restore) => original =>
         new Proxy(original, {
           apply(
@@ -572,42 +598,45 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             }
             let state: WorkflowState | undefined;
             try {
-              const defaults = ownValue(receiver, 'config');
               const inherited = owner._getGraphConfig?.();
-              const configValue = (key: string): unknown => {
-                for (const config of [args[1], defaults, inherited]) {
-                  const descriptor = isRecord(config)
-                    ? Object.getOwnPropertyDescriptor(config, key)
-                    : undefined;
-                  if (descriptor && !('value' in descriptor))
-                    throw new TypeError(
-                      'Accessor-backed graph callback configuration'
-                    );
-                  if (descriptor?.value !== undefined) return descriptor.value;
+              const inheritedParent = getGraphContext(
+                ownValue(inherited, 'callbacks')
+              );
+              // Each iterator needs its own identity even when options are reused.
+              const options: Runnables.RunnableConfig = Object.create(
+                Object.getPrototypeOf(args[1] ?? {}),
+                Object.getOwnPropertyDescriptors(args[1] ?? {})
+              );
+              graphConfigurations.set(options, config => {
+                if (!owner.isEnabled()) return;
+                if (!isRecord(config))
+                  throw new TypeError(
+                    'Unsupported normalized graph configuration'
+                  );
+                const callbacks = ownValue(config, 'callbacks');
+                function isManager(value: unknown): value is CallbackManager {
+                  return (
+                    isRecord(value) &&
+                    typeof value.copy === 'function' &&
+                    Array.isArray(value.handlers)
+                  );
                 }
-                return undefined;
-              };
-              const callbacks = configValue('callbacks');
-              function isManager(value: unknown): value is CallbackManager {
-                return (
-                  isRecord(value) &&
-                  typeof value.copy === 'function' &&
-                  Array.isArray(value.handlers)
-                );
-              }
-              if (
-                callbacks !== undefined &&
-                !Array.isArray(callbacks) &&
-                !isManager(callbacks)
-              )
-                throw new TypeError('Unsupported graph callback configuration');
-              const runName = configValue('runName');
-              const configured = manager._configureSync(callbacks ?? []);
-              if (configured) {
+                if (
+                  callbacks !== undefined &&
+                  !Array.isArray(callbacks) &&
+                  !isManager(callbacks)
+                )
+                  throw new TypeError(
+                    'Unsupported graph callback configuration'
+                  );
+                const runName = ownValue(config, 'runName');
+                const configurable = ownValue(config, 'configurable');
+                const configured = manager._configureSync(callbacks ?? []);
+                if (!configured) return;
                 const graphCallbacks = addGraphCallbacks(
                   configured,
                   manager,
-                  (_input, metadata, parent) => {
+                  (input, metadata, parent) => {
                     if (
                       !owner.isEnabled() ||
                       isTracingSuppressed(context.active())
@@ -616,10 +645,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                     try {
                       state = owner._startWorkflow(
                         receiver,
-                        undefined,
-                        { runName, metadata },
+                        input,
+                        { runName, configurable, metadata },
                         false,
-                        trace.getSpan(active) ? active : (parent ?? active)
+                        trace.getSpan(active)
+                          ? active
+                          : (parent ?? inheritedParent ?? active)
                       );
                       return state.context;
                     } catch {
@@ -629,28 +660,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                       return undefined;
                     }
                   },
-                  (input, output, failure) => {
-                    if (!state) return;
-                    try {
-                      if (state.capture) {
-                        const content = messages(input, owner._diag);
-                        if (content !== undefined)
-                          state.span.setAttribute(
-                            ATTR_GEN_AI_INPUT_MESSAGES,
-                            content
-                          );
-                      }
-                    } catch {
-                      owner._diag.warn(
-                        'LangChain: could not extract graph input telemetry'
-                      );
-                    } finally {
-                      owner._end(state, output, failure);
-                    }
+                  (output, failure) => {
+                    if (state) owner._end(state, output, failure);
                   }
                 );
-                args[1] = { ...args[1], callbacks: graphCallbacks };
-              }
+                config.callbacks = graphCallbacks;
+              });
+              args[1] = options;
             } catch {
               owner._diag.warn('LangChain: could not register graph callbacks');
             }
@@ -921,7 +937,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _unpatchMethod(
     target: object,
-    method: 'invoke' | 'batch' | 'call' | '_call' | 'handleToolStart' | 'stream'
+    method:
+      | 'invoke'
+      | 'batch'
+      | 'call'
+      | '_call'
+      | 'handleToolStart'
+      | '_streamIterator'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;

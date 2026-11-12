@@ -40,23 +40,16 @@ export function addGraphCallbacks(
     metadata: Record<string, unknown> | undefined,
     parent: Context | undefined
   ) => Context | undefined,
-  end: (input: unknown, output: unknown, failure?: { error: unknown }) => void
+  end: (output: unknown, failure?: { error: unknown }) => void
 ): CallbackManager {
   const parent = getGraphContext(configured);
   const invocation: GraphInvocation = {};
-  let input: unknown;
   let ended = false;
-  const finish = (
-    output: unknown,
-    kwargs: unknown,
-    failure?: { error: unknown }
-  ) => {
+  const finish = (output: unknown, failure?: { error: unknown }) => {
     if (ended) return;
     ended = true;
     invocation.context = undefined;
-    const finalInput = ownValue(kwargs, 'inputs');
-    end(finalInput !== undefined ? finalInput : input, output, failure);
-    input = undefined;
+    end(output, failure);
   };
   const callbacks: CallbackHandlerMethods = {
     handleChainStart(
@@ -67,17 +60,16 @@ export function addGraphCallbacks(
       _tags,
       metadata
     ) {
-      input = inputs;
       const toolParent = parentRunId
         ? getToolContext({ runId: parentRunId, handlers: configured.handlers })
         : undefined;
       invocation.context = start(inputs, metadata, toolParent ?? parent);
     },
-    handleChainEnd(output, _runId, _parentRunId, _tags, kwargs) {
-      finish(output, kwargs);
+    handleChainEnd(output) {
+      finish(output);
     },
-    handleChainError(error, _runId, _parentRunId, _tags, kwargs) {
-      finish(undefined, kwargs, { error });
+    handleChainError(error) {
+      finish(undefined, { error });
     },
   };
   const handler = manager.fromHandlers(callbacks).handlers[0];
