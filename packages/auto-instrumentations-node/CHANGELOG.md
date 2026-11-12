@@ -1,6 +1,17 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.83.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.83.0...auto-instrumentations-node-v0.83.1) (2026-11-12)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-aws-lambda bumped from ^0.77.0 to ^0.77.1
+    * @opentelemetry/instrumentation-nestjs-core bumped from ^0.72.0 to ^0.72.1
+    * @opentelemetry/instrumentation-undici bumped from ^0.35.0 to ^0.35.1
+
 ## [0.83.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.82.0...auto-instrumentations-node-v0.83.0) (2026-11-05)
 
 

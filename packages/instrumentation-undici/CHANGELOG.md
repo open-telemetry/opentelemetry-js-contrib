@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.35.0...instrumentation-undici-v0.35.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** redact sensitive URL query parameters ([#3908](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3908)) ([5101a95](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5101a9578c02347faaff0acdb97aa696032122a0))
+
 ## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.34.0...instrumentation-undici-v0.35.0) (2026-11-05)
 
 
