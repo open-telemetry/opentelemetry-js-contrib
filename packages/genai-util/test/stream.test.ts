@@ -1612,4 +1612,71 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
     assert.strictEqual(spans[1].status.code, SpanStatusCode.UNSET);
   });
+
+  it('should not execute onEnd or onError hooks if invocation was already ended in onChunk or externally', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // 1. Invocation ended inside onChunk before generator completes cleanly
+    const inv1 = handler.startLocalAgent({ agentName: 'ResultEndingAgent' });
+    let onEndCalled = false;
+    const wrappedSuccess = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['step', 'result_error']),
+      {
+        invocation: inv1,
+        onChunk: chunk => {
+          if (chunk === 'result_error') {
+            inv1.fail({ errorType: 'error_max_turns' });
+          }
+        },
+        onEnd: () => {
+          onEndCalled = true;
+        },
+      }
+    );
+
+    const chunks1: string[] = [];
+    for await (const chunk of wrappedSuccess) {
+      chunks1.push(chunk);
+    }
+    assert.deepStrictEqual(chunks1, ['step', 'result_error']);
+    assert.strictEqual(onEndCalled, false);
+    assert.strictEqual(inv1.isEnded(), true);
+
+    // 2. Invocation ended externally before stream throws
+    const inv2 = handler.startLocalAgent({ agentName: 'ClosedBeforeError' });
+    let onErrorCalled = false;
+    async function* errorAfterStopGen() {
+      yield 'first';
+      inv2.stop();
+      throw new Error('Abort after external close');
+    }
+    const wrappedFail = handler.wrapAsyncStream(errorAfterStopGen(), {
+      invocation: inv2,
+      onError: () => {
+        onErrorCalled = true;
+      },
+    });
+
+    await assert.rejects(
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedFail) {
+          // iterate
+        }
+      },
+      (err: Error) => err.message === 'Abort after external close'
+    );
+    assert.strictEqual(onErrorCalled, false);
+    assert.strictEqual(inv2.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'error_max_turns');
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.UNSET);
+  });
 });

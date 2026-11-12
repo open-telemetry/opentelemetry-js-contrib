@@ -82,15 +82,14 @@ export function wrapAsyncStream<
    */
   const finalizeSuccess = async (): Promise<void> => {
     await pendingChunks;
-    if (isFinalized) {
+    if (isFinalized || invocation.isEnded()) {
+      isFinalized = true;
       return;
     }
     isFinalized = true;
     try {
       if (options.onEnd) {
-        await (invocation.isEnded()
-          ? options.onEnd()
-          : context.with(invocation.getContext(), () => options.onEnd!()));
+        await context.with(invocation.getContext(), () => options.onEnd!());
       }
     } catch (err) {
       invocation.getDiag().error('Error in GenAI stream onEnd hook', err);
@@ -108,17 +107,16 @@ export function wrapAsyncStream<
    */
   const finalizeFailure = async (error: unknown): Promise<void> => {
     await pendingChunks;
-    if (isFinalized) {
+    if (isFinalized || invocation.isEnded()) {
+      isFinalized = true;
       return;
     }
     isFinalized = true;
     try {
       if (options.onError) {
-        await (invocation.isEnded()
-          ? options.onError(error)
-          : context.with(invocation.getContext(), () =>
-              options.onError!(error)
-            ));
+        await context.with(invocation.getContext(), () =>
+          options.onError!(error)
+        );
       }
     } catch (err) {
       invocation.getDiag().error('Error in GenAI stream onError hook', err);
