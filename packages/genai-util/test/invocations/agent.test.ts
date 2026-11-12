@@ -21,12 +21,12 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  TelemetryHandler,
-  type AgentInvocation,
-  type LocalAgentInvocation,
-  type RemoteAgentInvocation,
-} from '../../src';
+import { TelemetryHandler } from '../../src';
+import type {
+  AgentInvocation,
+  LocalAgentInvocation,
+  RemoteAgentInvocation,
+} from '../../src/invocations/agent';
 import {
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_ID,

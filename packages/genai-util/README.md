@@ -53,10 +53,11 @@ npm install --save @opentelemetry/genai-util
 
 `TelemetryHandler` is exported for instrumentation integrations. Use its
 `startLocalAgent`, `startRemoteAgent`, and `startTool` factories to create
-invocations rather than constructing them directly. The invocation and agent
-option types are also exported for type annotations, along with
-`ATTR_GEN_AI_TOOL_CALL_ID` for integrations that need to set the tool-call ID
-after starting an invocation.
+invocations rather than constructing them directly. `ToolInvocation` and
+`ATTR_GEN_AI_TOOL_CALL_ID` are also exported for integrations that need type
+annotations or to set the tool-call ID after starting an invocation; additional
+invocation and option types are exported incrementally as instrumentations adopt
+them.
 
 ```typescript
 import { TelemetryHandler } from '@opentelemetry/genai-util';
