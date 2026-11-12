@@ -422,7 +422,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * Returns the current location used for the navigation span name, with
    * sensitive query string values redacted.
    */
-  _getNavigationUrl(): string {
+ private _getNavigationUrl(): string {
     return `${location.pathname}${location.hash}${redactQueryString(location.search)}`;
   }
 
