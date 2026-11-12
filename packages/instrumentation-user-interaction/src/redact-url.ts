@@ -85,14 +85,9 @@ export function redactQueryString(query: string): string {
  * Works on absolute URLs as well as on relative ones (e.g. `/path?query`).
  * A URL with nothing to redact is returned unchanged, byte-for-byte.
  *
- * Input that is not a string is returned unchanged.
- *
  * @param url the URL to redact
  */
 export function redactUrl(url: string): string {
-  if (typeof url !== 'string') {
-    return url;
-  }
   let result = url;
 
   // Credentials can only be present in an authority (`scheme://user:pass@host`

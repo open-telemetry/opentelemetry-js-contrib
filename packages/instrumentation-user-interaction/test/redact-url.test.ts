@@ -194,12 +194,6 @@ describe('redactQueryString', () => {
   });
 
   describe('garbage input', () => {
-    it('does not throw on non-string input and returns it unchanged', () => {
-      for (const value of [undefined, null, 123, {}, []]) {
-        assert.strictEqual((redactUrl as any)(value), value);
-      }
-    });
-
     it('does not throw on malformed strings', () => {
       for (const value of [
         '',
