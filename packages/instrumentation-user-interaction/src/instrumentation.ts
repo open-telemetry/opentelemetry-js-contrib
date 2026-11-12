@@ -407,23 +407,17 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         if (!plugin._isEnabled) {
           return original.apply(this, args);
         }
-        const url = plugin._getNavigationUrl();
+        const url = `${location.pathname}${location.hash}${location.search}`;
         const result = original.apply(this, args);
-        const urlAfter = plugin._getNavigationUrl();
+        const urlAfter = `${location.pathname}${location.hash}${location.search}`;
         if (url !== urlAfter) {
-          plugin._updateInteractionName(urlAfter);
+          plugin._updateInteractionName(
+            `${location.pathname}${location.hash}${redactQueryString(location.search)}`
+          );
         }
         return result;
       };
     };
-  }
-
-  /**
-   * Returns the current location used for the navigation span name, with
-   * sensitive query string values redacted.
-   */
- private _getNavigationUrl(): string {
-    return `${location.pathname}${location.hash}${redactQueryString(location.search)}`;
   }
 
   /**
