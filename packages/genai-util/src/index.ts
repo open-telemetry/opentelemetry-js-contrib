@@ -28,7 +28,11 @@
  * ```
  */
 export { TelemetryHandler } from './handler';
-export type { AgentInvocation } from './invocations/agent';
+export type {
+  AgentInvocation,
+  LocalAgentInvocation,
+  RemoteAgentInvocation,
+} from './invocations/agent';
 export type { ToolInvocation } from './invocations/tool';
 export type {
   AgentInvocationOptions,

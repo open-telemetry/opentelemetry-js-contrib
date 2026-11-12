@@ -21,7 +21,10 @@ import {
   getContentCaptureMode,
   parseContentCaptureMode,
 } from './environment-variables';
-import { AgentInvocation } from './invocations/agent';
+import {
+  LocalAgentInvocation,
+  RemoteAgentInvocation,
+} from './invocations/agent';
 import { EmbeddingInvocation } from './invocations/embedding';
 import { InferenceInvocation } from './invocations/inference';
 import { ToolInvocation } from './invocations/tool';
@@ -265,18 +268,27 @@ export class TelemetryHandler {
   }
 
   /**
-   * Start an Agent, Workflow, or Framework Entrypoint invocation.
-   *
-   * Creates an in-process span (`SpanKind.INTERNAL`, `gen_ai.invoke_agent.internal`)
-   * by default, or a remote client span (`SpanKind.CLIENT`, `gen_ai.client.invoke_agent`)
-   * when `providerName` is specified on `options`.
+   * Start an in-process Agent, Workflow, or Framework Entrypoint invocation
+   * (`gen_ai.invoke_agent.internal`, `SpanKind.INTERNAL`).
    *
    * The returned invocation owns its span: complete it with `stop()` or `fail()`.
    */
-  public startAgent(
-    options: AgentInvocationOptions | RemoteAgentInvocationOptions = {}
-  ): AgentInvocation {
-    return new AgentInvocation(this, options);
+  public startLocalAgent(
+    options: AgentInvocationOptions = {}
+  ): LocalAgentInvocation {
+    return new LocalAgentInvocation(this, options);
+  }
+
+  /**
+   * Start a remote client Agent invocation (`gen_ai.client.invoke_agent`,
+   * `SpanKind.CLIENT`).
+   *
+   * The returned invocation owns its span: complete it with `stop()` or `fail()`.
+   */
+  public startRemoteAgent(
+    options: RemoteAgentInvocationOptions
+  ): RemoteAgentInvocation {
+    return new RemoteAgentInvocation(this, options);
   }
 
   /**

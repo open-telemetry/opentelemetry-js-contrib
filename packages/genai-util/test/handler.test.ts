@@ -506,12 +506,12 @@ describe('TelemetryHandler', () => {
     });
     tool.stop();
 
-    const localAgent = handler.startAgent({
+    const localAgent = handler.startLocalAgent({
       agentName: 'LocalAgent',
     });
     localAgent.stop();
 
-    const remoteAgent = handler.startAgent({
+    const remoteAgent = handler.startRemoteAgent({
       providerName: 'openai',
       agentName: 'RemoteAgent',
     });

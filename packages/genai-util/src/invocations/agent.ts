@@ -66,21 +66,6 @@ import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
 /**
- * Determine whether the provided options represent a remote client agent invocation
- * (`gen_ai.client.invoke_agent`) rather than an in-process agent invocation
- * (`gen_ai.invoke_agent.internal`).
- */
-function isRemoteAgentOptions(
-  options: AgentInvocationOptions | RemoteAgentInvocationOptions
-): options is RemoteAgentInvocationOptions {
-  return (
-    'providerName' in options &&
-    typeof options.providerName === 'string' &&
-    options.providerName.length > 0
-  );
-}
-
-/**
  * Format a GenAI span name for an agent invocation adhering to
  * OpenTelemetry semantic conventions.
  *
@@ -97,20 +82,20 @@ function getAgentSpanName(operationName: string, agentName?: string): string {
 }
 
 /**
- * Build the span attributes that are known when the agent span is started.
+ * Build the common span attributes known when an agent span is started.
  *
  * These are passed to the span at creation time so that they are visible to samplers.
  * Content attributes (system instructions, input/output messages, tool definitions)
  * are intentionally excluded: they are serialized once when the invocation ends.
  */
-function buildInitialAttributes(
+function buildCommonInitialAttributes(
   options: AgentInvocationOptions | RemoteAgentInvocationOptions,
   operationName: string,
-  isRemote: boolean
+  includeStream: boolean
 ): Attributes {
   const attrs: Attributes = {
     ...options.attributes,
-    ...getAgentRequestOptionsAttributes(options.requestOptions, isRemote),
+    ...getAgentRequestOptionsAttributes(options.requestOptions, includeStream),
     [ATTR_GEN_AI_OPERATION_NAME]: operationName,
   };
 
@@ -133,24 +118,36 @@ function buildInitialAttributes(
     attrs[ATTR_GEN_AI_REQUEST_MODEL] = options.requestModel;
   }
 
-  if (isRemoteAgentOptions(options)) {
-    attrs[ATTR_GEN_AI_PROVIDER_NAME] = options.providerName;
+  return attrs;
+}
 
-    if (options.agentId) {
-      attrs[ATTR_GEN_AI_AGENT_ID] = options.agentId;
-    }
-    if (options.agentVersion) {
-      attrs[ATTR_GEN_AI_AGENT_VERSION] = options.agentVersion;
-    }
-    if (options.previousResponseId) {
-      attrs[ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID] =
-        options.previousResponseId;
-    }
-    if (options.serverAddress) {
-      attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
-      if (options.serverPort !== undefined) {
-        attrs[ATTR_SERVER_PORT] = options.serverPort;
-      }
+/**
+ * Build the span attributes known when a remote client agent span is started.
+ */
+function buildRemoteInitialAttributes(
+  options: RemoteAgentInvocationOptions,
+  operationName: string,
+  providerName: string
+): Attributes {
+  const attrs = buildCommonInitialAttributes(options, operationName, true);
+
+  if (providerName) {
+    attrs[ATTR_GEN_AI_PROVIDER_NAME] = providerName;
+  }
+  if (options.agentId) {
+    attrs[ATTR_GEN_AI_AGENT_ID] = options.agentId;
+  }
+  if (options.agentVersion) {
+    attrs[ATTR_GEN_AI_AGENT_VERSION] = options.agentVersion;
+  }
+  if (options.previousResponseId) {
+    attrs[ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID] =
+      options.previousResponseId;
+  }
+  if (options.serverAddress) {
+    attrs[ATTR_SERVER_ADDRESS] = options.serverAddress;
+    if (options.serverPort !== undefined) {
+      attrs[ATTR_SERVER_PORT] = options.serverPort;
     }
   }
 
@@ -158,55 +155,42 @@ function buildInitialAttributes(
 }
 
 /**
- * Manages the lifecycle and telemetry of an Agent, Workflow, or Framework Entrypoint invocation.
+ * Base class managing shared lifecycle and telemetry for GenAI Agent invocations.
  *
- * Supports both:
- * - In-process agent / workflow / entrypoint invocations (`gen_ai.invoke_agent.internal`, {@link SpanKind.INTERNAL})
- * - Remote client agent invocations (`gen_ai.client.invoke_agent`, {@link SpanKind.CLIENT}) when `providerName` is specified.
+ * Concrete subclasses separate in-process executions ({@link LocalAgentInvocation},
+ * `SpanKind.INTERNAL`) from remote hosted agent calls ({@link RemoteAgentInvocation},
+ * `SpanKind.CLIENT`). Create instances via {@link TelemetryHandler.startLocalAgent}
+ * and {@link TelemetryHandler.startRemoteAgent}.
  *
  * @experimental This class is experimental and subject to change.
  */
-export class AgentInvocation extends BaseInvocation {
-  private readonly _isRemote: boolean;
-  private readonly _providerName?: string;
-  private readonly _operationName: string;
-  private readonly _serverAddress?: string;
-  private readonly _serverPort?: number;
+export abstract class AgentInvocation extends BaseInvocation {
+  protected readonly _operationName: string;
+  protected _agentName?: string;
+  protected _requestModel?: string;
   private readonly _contentCaptureMode: ContentCaptureMode;
-  private _agentName?: string;
-  private _requestModel?: string;
   private _finishReasons?: FinishReason[];
   private _usage?: TokenUsageDetails;
   private _inputMessages?: InputMessages;
   private _outputMessages?: OutputMessages;
   private _systemInstructions?: SystemInstructions;
   private _toolDefinitions?: ToolDefinitions;
-  private _inferenceCalls?: number;
-  private _toolCalls?: number;
 
-  /**
-   * Start an agent invocation, creating and starting the underlying span.
-   *
-   * @param handler Handler providing the tracer, meter, and completion hooks.
-   * @param options Agent details, parent context, and initial attributes.
-   */
-  constructor(
+  protected constructor(
     handler: TelemetryHandler,
-    options: AgentInvocationOptions | RemoteAgentInvocationOptions = {}
+    options: AgentInvocationOptions | RemoteAgentInvocationOptions,
+    operationName: string,
+    kind: SpanKind,
+    initialAttributes: Attributes
   ) {
-    const isRemote = isRemoteAgentOptions(options);
-    const operationName =
-      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
-
     super(getAgentSpanName(operationName, options.agentName), handler, {
-      kind: isRemote ? SpanKind.CLIENT : SpanKind.INTERNAL,
-      attributes: buildInitialAttributes(options, operationName, isRemote),
+      kind,
+      attributes: initialAttributes,
       metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
     });
 
-    this._isRemote = isRemote;
     this._operationName = operationName;
     this._agentName = options.agentName;
     this._requestModel = options.requestModel;
@@ -218,12 +202,6 @@ export class AgentInvocation extends BaseInvocation {
     this._toolDefinitions = options.toolDefinitions
       ? [...options.toolDefinitions]
       : undefined;
-
-    if (isRemoteAgentOptions(options)) {
-      this._providerName = options.providerName;
-      this._serverAddress = options.serverAddress;
-      this._serverPort = options.serverPort;
-    }
   }
 
   /**
@@ -242,26 +220,6 @@ export class AgentInvocation extends BaseInvocation {
    */
   public setAgentDescription(description: string): this {
     this._span.setAttribute(ATTR_GEN_AI_AGENT_DESCRIPTION, description);
-    return this;
-  }
-
-  /**
-   * Set the unique identifier of the GenAI agent (`gen_ai.agent.id`).
-   */
-  public setAgentId(id: string): this {
-    if (this._isRemote) {
-      this._span.setAttribute(ATTR_GEN_AI_AGENT_ID, id);
-    }
-    return this;
-  }
-
-  /**
-   * Set the version of the GenAI agent (`gen_ai.agent.version`).
-   */
-  public setAgentVersion(version: string): this {
-    if (this._isRemote) {
-      this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, version);
-    }
     return this;
   }
 
@@ -295,16 +253,6 @@ export class AgentInvocation extends BaseInvocation {
   public setRequestModel(model: string): this {
     this._requestModel = model;
     this._span.setAttribute(ATTR_GEN_AI_REQUEST_MODEL, model);
-    return this;
-  }
-
-  /**
-   * Set the request streaming attribute to true (`gen_ai.request.stream`).
-   */
-  public setStreaming(): this {
-    if (this._isRemote) {
-      this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
-    }
     return this;
   }
 
@@ -369,136 +317,6 @@ export class AgentInvocation extends BaseInvocation {
   public setToolDefinitions(definitions: ToolDefinitions): this {
     this._toolDefinitions = [...definitions];
     return this;
-  }
-
-  /**
-   * Set the total number of inference (model) calls made during this in-process agent invocation.
-   *
-   * Recorded on the `gen_ai.invoke_agent.inference_calls` histogram when the invocation ends.
-   */
-  public setInferenceCalls(count: number): this {
-    this._inferenceCalls = count;
-    return this;
-  }
-
-  /**
-   * Increment the number of inference (model) calls made during this in-process agent invocation.
-   *
-   * Recorded on the `gen_ai.invoke_agent.inference_calls` histogram when the invocation ends.
-   */
-  public recordInferenceCall(count = 1): this {
-    this._inferenceCalls = (this._inferenceCalls ?? 0) + count;
-    return this;
-  }
-
-  /**
-   * Set the total number of tool calls made during this in-process agent invocation.
-   *
-   * Recorded on the `gen_ai.invoke_agent.tool_calls` histogram when the invocation ends.
-   */
-  public setToolCalls(count: number): this {
-    this._toolCalls = count;
-    return this;
-  }
-
-  /**
-   * Increment the number of tool calls made during this in-process agent invocation.
-   *
-   * Recorded on the `gen_ai.invoke_agent.tool_calls` histogram when the invocation ends.
-   */
-  public recordToolCall(count = 1): this {
-    this._toolCalls = (this._toolCalls ?? 0) + count;
-    return this;
-  }
-
-  /**
-   * Semantic convention dimensions for duration metrics (`gen_ai.invoke_agent.duration`
-   * for in-process invocations, `gen_ai.client.invoke_agent.duration` for remote client
-   * invocations).
-   *
-   * Caller-supplied metric attributes override these; see
-   * {@link BaseInvocation._getMetricAttributes}.
-   */
-  protected override _getSemconvMetricAttributes(): Attributes {
-    const metricAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
-    };
-    if (this._isRemote && this._providerName) {
-      metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
-    }
-    if (this._agentName) {
-      metricAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
-    }
-    if (
-      this._requestModel &&
-      (this._isRemote ||
-        this._operationName === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT)
-    ) {
-      metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
-    }
-    if (this._isRemote && this._serverAddress) {
-      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
-      if (this._serverPort !== undefined) {
-        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
-      }
-    }
-    return metricAttrs;
-  }
-
-  /**
-   * Build metric attributes for `gen_ai.invoke_agent.inference_calls` and
-   * `gen_ai.invoke_agent.tool_calls`, which define `gen_ai.operation.name` and
-   * `gen_ai.agent.name` as dimensions (without `gen_ai.request.model` or `error.type`).
-   */
-  private _getCallCountMetricAttributes(): Attributes {
-    const semconvAttrs: Attributes = {
-      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
-    };
-    if (this._agentName) {
-      semconvAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
-    }
-    return {
-      ...semconvAttrs,
-      ...this._metricAttributes,
-    };
-  }
-
-  protected override _recordMetrics(
-    durationSec: number,
-    errorType?: string
-  ): void {
-    const durationAttrs = this._getMetricAttributes(errorType);
-
-    if (this._isRemote) {
-      this._handler.recordClientInvokeAgentDuration(
-        durationSec,
-        durationAttrs,
-        this._context
-      );
-      return;
-    }
-
-    this._handler.recordInvokeAgentDuration(
-      durationSec,
-      durationAttrs,
-      this._context
-    );
-
-    if (this._inferenceCalls !== undefined && this._inferenceCalls >= 0) {
-      this._handler.recordInvokeAgentInferenceCalls(
-        this._inferenceCalls,
-        this._getCallCountMetricAttributes(),
-        this._context
-      );
-    }
-
-    if (this._toolCalls !== undefined && this._toolCalls >= 0) {
-      this._handler.recordInvokeAgentToolCalls(
-        this._toolCalls,
-        this._getCallCountMetricAttributes(),
-        this._context
-      );
-    }
   }
 
   /**
@@ -569,7 +387,7 @@ export class AgentInvocation extends BaseInvocation {
     this._span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, reasons);
   }
 
-  private _setUsageAttributes(usage: TokenUsageDetails): void {
+  protected _setUsageAttributes(usage: TokenUsageDetails): void {
     this._setTokenUsageAttributeIfNonNegative(
       ATTR_GEN_AI_USAGE_INPUT_TOKENS,
       usage.inputTokenCount
@@ -578,10 +396,274 @@ export class AgentInvocation extends BaseInvocation {
       ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
       usage.outputTokenCount
     );
+  }
 
-    if (!this._isRemote) {
-      return;
+  protected _setTokenUsageAttributeIfNonNegative(
+    key: string,
+    tokenCount: number | undefined
+  ): void {
+    if (tokenCount !== undefined && tokenCount >= 0) {
+      this._span.setAttribute(key, tokenCount);
     }
+  }
+
+  protected _setTokenUsageAttributeIfPositive(
+    key: string,
+    tokenCount: number | undefined
+  ): void {
+    if (tokenCount !== undefined && tokenCount > 0) {
+      this._span.setAttribute(key, tokenCount);
+    }
+  }
+}
+
+/**
+ * Manages the lifecycle and telemetry of an in-process Agent, Workflow, or Framework
+ * Entrypoint invocation (`gen_ai.invoke_agent.internal`, {@link SpanKind.INTERNAL}).
+ *
+ * @experimental This class is experimental and subject to change.
+ */
+export class LocalAgentInvocation extends AgentInvocation {
+  private _inferenceCalls?: number;
+  private _toolCalls?: number;
+
+  /**
+   * Start an in-process agent invocation, creating and starting the underlying
+   * `SpanKind.INTERNAL` span.
+   *
+   * @param handler Handler providing the tracer, meter, and completion hooks.
+   * @param options Agent details, parent context, and initial attributes.
+   */
+  constructor(handler: TelemetryHandler, options: AgentInvocationOptions = {}) {
+    const operationName =
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+
+    super(
+      handler,
+      options,
+      operationName,
+      SpanKind.INTERNAL,
+      buildCommonInitialAttributes(options, operationName, false)
+    );
+  }
+
+  /**
+   * Set the total number of inference (model) calls made during this in-process agent invocation.
+   *
+   * Recorded on the `gen_ai.invoke_agent.inference_calls` histogram when the invocation ends.
+   */
+  public setInferenceCalls(count: number): this {
+    this._inferenceCalls = count;
+    return this;
+  }
+
+  /**
+   * Increment the number of inference (model) calls made during this in-process agent invocation.
+   *
+   * Recorded on the `gen_ai.invoke_agent.inference_calls` histogram when the invocation ends.
+   */
+  public recordInferenceCall(count = 1): this {
+    this._inferenceCalls = (this._inferenceCalls ?? 0) + count;
+    return this;
+  }
+
+  /**
+   * Set the total number of tool calls made during this in-process agent invocation.
+   *
+   * Recorded on the `gen_ai.invoke_agent.tool_calls` histogram when the invocation ends.
+   */
+  public setToolCalls(count: number): this {
+    this._toolCalls = count;
+    return this;
+  }
+
+  /**
+   * Increment the number of tool calls made during this in-process agent invocation.
+   *
+   * Recorded on the `gen_ai.invoke_agent.tool_calls` histogram when the invocation ends.
+   */
+  public recordToolCall(count = 1): this {
+    this._toolCalls = (this._toolCalls ?? 0) + count;
+    return this;
+  }
+
+  /**
+   * Semantic convention dimensions for `gen_ai.invoke_agent.duration`.
+   */
+  protected override _getSemconvMetricAttributes(): Attributes {
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
+    };
+    if (this._agentName) {
+      metricAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
+    }
+    if (
+      this._requestModel &&
+      this._operationName === GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+    ) {
+      metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    return metricAttrs;
+  }
+
+  /**
+   * Build metric attributes for `gen_ai.invoke_agent.inference_calls` and
+   * `gen_ai.invoke_agent.tool_calls`, which define `gen_ai.operation.name` and
+   * `gen_ai.agent.name` as dimensions (without `gen_ai.request.model` or `error.type`).
+   */
+  private _getCallCountMetricAttributes(): Attributes {
+    const semconvAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
+    };
+    if (this._agentName) {
+      semconvAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
+    }
+    return {
+      ...semconvAttrs,
+      ...this._metricAttributes,
+    };
+  }
+
+  protected override _recordMetrics(
+    durationSec: number,
+    errorType?: string
+  ): void {
+    this._handler.recordInvokeAgentDuration(
+      durationSec,
+      this._getMetricAttributes(errorType),
+      this._context
+    );
+
+    if (this._inferenceCalls !== undefined && this._inferenceCalls >= 0) {
+      this._handler.recordInvokeAgentInferenceCalls(
+        this._inferenceCalls,
+        this._getCallCountMetricAttributes(),
+        this._context
+      );
+    }
+
+    if (this._toolCalls !== undefined && this._toolCalls >= 0) {
+      this._handler.recordInvokeAgentToolCalls(
+        this._toolCalls,
+        this._getCallCountMetricAttributes(),
+        this._context
+      );
+    }
+  }
+}
+
+/**
+ * Manages the lifecycle and telemetry of a remote client Agent invocation
+ * (`gen_ai.client.invoke_agent`, {@link SpanKind.CLIENT}).
+ *
+ * @experimental This class is experimental and subject to change.
+ */
+export class RemoteAgentInvocation extends AgentInvocation {
+  private readonly _providerName: string;
+  private readonly _serverAddress?: string;
+  private readonly _serverPort?: number;
+
+  /**
+   * Start a remote client agent invocation, creating and starting the underlying
+   * `SpanKind.CLIENT` span.
+   *
+   * @param handler Handler providing the tracer, meter, and completion hooks.
+   * @param options Remote agent details, provider name, parent context, and initial attributes.
+   */
+  constructor(
+    handler: TelemetryHandler,
+    options: RemoteAgentInvocationOptions
+  ) {
+    const operationName =
+      options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT;
+    const providerName =
+      typeof options.providerName === 'string'
+        ? options.providerName.trim()
+        : '';
+
+    super(
+      handler,
+      options,
+      operationName,
+      SpanKind.CLIENT,
+      buildRemoteInitialAttributes(options, operationName, providerName)
+    );
+
+    if (!providerName) {
+      handler
+        .getDiag()
+        .warn(
+          'RemoteAgentInvocation started with an empty providerName; gen_ai.provider.name will be omitted.'
+        );
+    }
+
+    this._providerName = providerName;
+    this._serverAddress = options.serverAddress;
+    this._serverPort = options.serverPort;
+  }
+
+  /**
+   * Set the unique identifier of the GenAI agent (`gen_ai.agent.id`).
+   */
+  public setAgentId(id: string): this {
+    this._span.setAttribute(ATTR_GEN_AI_AGENT_ID, id);
+    return this;
+  }
+
+  /**
+   * Set the version of the GenAI agent (`gen_ai.agent.version`).
+   */
+  public setAgentVersion(version: string): this {
+    this._span.setAttribute(ATTR_GEN_AI_AGENT_VERSION, version);
+    return this;
+  }
+
+  /**
+   * Set the request streaming attribute to true (`gen_ai.request.stream`).
+   */
+  public setStreaming(): this {
+    this._span.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
+    return this;
+  }
+
+  /**
+   * Semantic convention dimensions for `gen_ai.client.invoke_agent.duration`.
+   */
+  protected override _getSemconvMetricAttributes(): Attributes {
+    const metricAttrs: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: this._operationName,
+    };
+    if (this._providerName) {
+      metricAttrs[ATTR_GEN_AI_PROVIDER_NAME] = this._providerName;
+    }
+    if (this._agentName) {
+      metricAttrs[ATTR_GEN_AI_AGENT_NAME] = this._agentName;
+    }
+    if (this._requestModel) {
+      metricAttrs[ATTR_GEN_AI_REQUEST_MODEL] = this._requestModel;
+    }
+    if (this._serverAddress) {
+      metricAttrs[ATTR_SERVER_ADDRESS] = this._serverAddress;
+      if (this._serverPort !== undefined) {
+        metricAttrs[ATTR_SERVER_PORT] = this._serverPort;
+      }
+    }
+    return metricAttrs;
+  }
+
+  protected override _recordMetrics(
+    durationSec: number,
+    errorType?: string
+  ): void {
+    this._handler.recordClientInvokeAgentDuration(
+      durationSec,
+      this._getMetricAttributes(errorType),
+      this._context
+    );
+  }
+
+  protected override _setUsageAttributes(usage: TokenUsageDetails): void {
+    super._setUsageAttributes(usage);
 
     this._setTokenUsageAttributeIfPositive(
       ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
@@ -635,23 +717,5 @@ export class AgentInvocation extends BaseInvocation {
       ATTR_GEN_AI_USAGE_AUDIO_CACHE_READ_INPUT_TOKENS,
       modality.cacheReadTokens?.audio
     );
-  }
-
-  private _setTokenUsageAttributeIfNonNegative(
-    key: string,
-    tokenCount: number | undefined
-  ): void {
-    if (tokenCount !== undefined && tokenCount >= 0) {
-      this._span.setAttribute(key, tokenCount);
-    }
-  }
-
-  private _setTokenUsageAttributeIfPositive(
-    key: string,
-    tokenCount: number | undefined
-  ): void {
-    if (tokenCount !== undefined && tokenCount > 0) {
-      this._span.setAttribute(key, tokenCount);
-    }
   }
 }

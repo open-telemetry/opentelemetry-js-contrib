@@ -4,7 +4,12 @@
  */
 
 import * as assert from 'assert';
-import { SpanKind, SpanStatusCode, type Attributes } from '@opentelemetry/api';
+import {
+  SpanKind,
+  SpanStatusCode,
+  type Attributes,
+  type DiagLogger,
+} from '@opentelemetry/api';
 import {
   InMemorySpanExporter,
   SamplingDecision,
@@ -16,7 +21,12 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import { TelemetryHandler } from '../../src';
+import {
+  TelemetryHandler,
+  type AgentInvocation,
+  type LocalAgentInvocation,
+  type RemoteAgentInvocation,
+} from '../../src';
 import {
   ATTR_GEN_AI_AGENT_DESCRIPTION,
   ATTR_GEN_AI_AGENT_ID,
@@ -77,7 +87,7 @@ describe('AgentInvocation', () => {
     await ctx.shutdown();
   });
 
-  describe('in-process agent invocation (gen_ai.invoke_agent.internal)', () => {
+  describe('LocalAgentInvocation (gen_ai.invoke_agent.internal)', () => {
     it('should create an INTERNAL span with default invoke_agent operation name', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
@@ -85,7 +95,12 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent();
+      const invocation: LocalAgentInvocation = handler.startLocalAgent();
+      const baseRef: AgentInvocation = invocation;
+      assert.strictEqual(baseRef, invocation);
+      assert.strictEqual('setAgentId' in invocation, false);
+      assert.strictEqual('setAgentVersion' in invocation, false);
+      assert.strictEqual('setStreaming' in invocation, false);
       invocation.stop();
 
       const spans = ctx.memoryExporter.getFinishedSpans();
@@ -108,7 +123,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent({
+      const invocation = handler.startLocalAgent({
         agentName: 'Math Tutor',
         agentDescription: 'Helps with math problems',
         conversationId: 'conv_123',
@@ -175,7 +190,7 @@ describe('AgentInvocation', () => {
       });
 
       handler
-        .startAgent({
+        .startLocalAgent({
           operationName: 'invoke_workflow',
           agentName: 'CustomerSupportPipeline',
           requestModel: 'gpt-4o',
@@ -183,7 +198,7 @@ describe('AgentInvocation', () => {
         .stop();
 
       handler
-        .startAgent({
+        .startLocalAgent({
           operationName: 'invoke_runner',
         })
         .stop();
@@ -224,29 +239,6 @@ describe('AgentInvocation', () => {
       });
     });
 
-    it('should ignore remote-only setters (setAgentId, setAgentVersion, setStreaming) on in-process spans', () => {
-      const handler = new TelemetryHandler({
-        instrumentationName: 'test-instrumentation',
-        instrumentationVersion: '1.0.0',
-        tracerProvider: ctx.tracerProvider,
-      });
-
-      const invocation = handler.startAgent({ agentName: 'LocalAgent' });
-      invocation
-        .setAgentId('asst_ignored')
-        .setAgentVersion('1.0.0')
-        .setStreaming();
-      invocation.stop();
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_ID], undefined);
-      assert.strictEqual(span.attributes[ATTR_GEN_AI_AGENT_VERSION], undefined);
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_REQUEST_STREAM],
-        undefined
-      );
-    });
-
     it('should update span name and attribute when setAgentName is called dynamically', async () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
@@ -255,7 +247,7 @@ describe('AgentInvocation', () => {
         meterProvider: ctx.meterProvider,
       });
 
-      const invocation = handler.startAgent();
+      const invocation = handler.startLocalAgent();
       invocation
         .setAgentName('DynamicAgent')
         .setAgentDescription('Dynamically discovered agent')
@@ -309,7 +301,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent({ agentName: 'Planner' });
+      const invocation = handler.startLocalAgent({ agentName: 'Planner' });
       invocation.setFinishReasons(['stop']);
       invocation.setUsage({ inputTokenCount: 150 });
       invocation.setUsage({ outputTokenCount: 75 });
@@ -325,7 +317,9 @@ describe('AgentInvocation', () => {
 
       ctx.reset();
 
-      const invMissingReason = handler.startAgent({ agentName: 'Planner' });
+      const invMissingReason = handler.startLocalAgent({
+        agentName: 'Planner',
+      });
       invMissingReason.addOutputMessages([
         { role: 'assistant', parts: [{ type: 'text', content: 'A' }] },
         { role: 'assistant', parts: [{ type: 'text', content: 'B' }] },
@@ -375,7 +369,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
         contentCaptureMode: 'none',
       });
-      const invNone = handlerNone.startAgent({
+      const invNone = handlerNone.startLocalAgent({
         agentName: 'WeatherAgent',
         inputMessages,
         systemInstructions,
@@ -411,7 +405,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
         contentCaptureMode: 'span_only',
       });
-      const invSpan = handlerSpan.startAgent({
+      const invSpan = handlerSpan.startLocalAgent({
         agentName: 'WeatherAgent',
         inputMessages,
       });
@@ -459,7 +453,7 @@ describe('AgentInvocation', () => {
         meterProvider: ctx.meterProvider,
       });
 
-      const invocation = handler.startAgent({
+      const invocation = handler.startLocalAgent({
         agentName: 'ResearchAgent',
         requestModel: 'gpt-4o',
       });
@@ -532,7 +526,7 @@ describe('AgentInvocation', () => {
       });
 
       // First invocation: no inference/tool call counts set
-      handler.startAgent({ agentName: 'SimpleAgent' }).stop();
+      handler.startLocalAgent({ agentName: 'SimpleAgent' }).stop();
 
       let { resourceMetrics } = await ctx.metricReader.collect();
       let metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
@@ -550,7 +544,7 @@ describe('AgentInvocation', () => {
       );
 
       // Second invocation: explicit counts set via setInferenceCalls / setToolCalls
-      const inv2 = handler.startAgent({ agentName: 'SimpleAgent' });
+      const inv2 = handler.startLocalAgent({ agentName: 'SimpleAgent' });
       inv2.setInferenceCalls(4);
       inv2.setToolCalls(0);
       inv2.stop();
@@ -583,7 +577,7 @@ describe('AgentInvocation', () => {
         meterProvider: ctx.meterProvider,
       });
 
-      const invocation = handler.startAgent({ agentName: 'FailingAgent' });
+      const invocation = handler.startLocalAgent({ agentName: 'FailingAgent' });
       invocation.setInferenceCalls(1);
       invocation.setToolCalls(2);
       invocation.fail({
@@ -617,9 +611,59 @@ describe('AgentInvocation', () => {
         undefined
       );
     });
+
+    it('should record caller-supplied metric attributes on every metric, overriding semantic convention dimensions', async () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      const invocation = handler.startLocalAgent({
+        agentName: 'OriginalAgent',
+        metricAttributes: { [ATTR_GEN_AI_AGENT_NAME]: 'OverriddenAgent' },
+      });
+      invocation.setMetricAttribute('custom.metric.attr', 'metric-value');
+      invocation.setInferenceCalls(2);
+      invocation.setToolCalls(1);
+      invocation.stop();
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      assert.strictEqual(metrics.length, 3);
+
+      for (const metric of metrics) {
+        for (const { attributes } of metric.dataPoints) {
+          const name = metric.descriptor.name;
+          assert.strictEqual(
+            attributes['custom.metric.attr'],
+            'metric-value',
+            name
+          );
+          assert.strictEqual(
+            attributes[ATTR_GEN_AI_AGENT_NAME],
+            'OverriddenAgent',
+            name
+          );
+          assert.strictEqual(
+            attributes[ATTR_GEN_AI_OPERATION_NAME],
+            'invoke_agent',
+            name
+          );
+        }
+      }
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
+      assert.strictEqual(
+        span.attributes[ATTR_GEN_AI_AGENT_NAME],
+        'OriginalAgent'
+      );
+    });
   });
 
-  describe('remote client agent invocation (gen_ai.client.invoke_agent)', () => {
+  describe('RemoteAgentInvocation (gen_ai.client.invoke_agent)', () => {
     it('should create a CLIENT span with remote agent attributes', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
@@ -627,8 +671,8 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent({
-        providerName: 'aws.bedrock',
+      const invocation: RemoteAgentInvocation = handler.startRemoteAgent({
+        providerName: '  aws.bedrock  ',
         agentName: 'CustomerServiceBot',
         agentId: 'asst_123',
         agentVersion: '2.1.0',
@@ -642,6 +686,12 @@ describe('AgentInvocation', () => {
           temperature: 0.5,
         },
       });
+      const baseRef: AgentInvocation = invocation;
+      assert.strictEqual(baseRef, invocation);
+      assert.strictEqual('setInferenceCalls' in invocation, false);
+      assert.strictEqual('recordInferenceCall' in invocation, false);
+      assert.strictEqual('setToolCalls' in invocation, false);
+      assert.strictEqual('recordToolCall' in invocation, false);
       invocation.stop();
 
       const [span] = ctx.memoryExporter.getFinishedSpans();
@@ -678,6 +728,79 @@ describe('AgentInvocation', () => {
       assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.5);
     });
 
+    it('should stay SpanKind.CLIENT, preserve remote attributes, omit blank providerName, and warn on empty or whitespace providerName', async () => {
+      const warnings: string[] = [];
+      const customDiag: DiagLogger = {
+        verbose: () => {},
+        debug: () => {},
+        info: () => {},
+        warn: (msg: string) => {
+          warnings.push(msg);
+        },
+        error: () => {},
+      };
+
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+        diag: customDiag,
+      });
+
+      handler
+        .startRemoteAgent({
+          providerName: '   ',
+          agentName: 'RemoteAgent',
+          agentId: 'asst_999',
+          serverAddress: 'api.example.com',
+          serverPort: 443,
+        })
+        .stop();
+
+      // Also guard non-string providerName passed from untyped JS callers
+      handler
+        .startRemoteAgent({
+          providerName: undefined as unknown as string,
+          agentName: 'UntypedRemoteAgent',
+        })
+        .stop();
+
+      assert.strictEqual(warnings.length, 2);
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(spans[0].kind, SpanKind.CLIENT);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_GEN_AI_PROVIDER_NAME],
+        undefined
+      );
+      assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_AGENT_ID], 'asst_999');
+      assert.strictEqual(
+        spans[0].attributes[ATTR_SERVER_ADDRESS],
+        'api.example.com'
+      );
+      assert.strictEqual(spans[0].attributes[ATTR_SERVER_PORT], 443);
+
+      assert.strictEqual(spans[1].kind, SpanKind.CLIENT);
+      assert.strictEqual(
+        spans[1].attributes[ATTR_GEN_AI_PROVIDER_NAME],
+        undefined
+      );
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      const clientDuration = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION
+      );
+      assert.ok(clientDuration);
+      assert.strictEqual(clientDuration.dataPoints.length, 2);
+      assert.strictEqual(
+        clientDuration.dataPoints[0].attributes[ATTR_GEN_AI_PROVIDER_NAME],
+        undefined
+      );
+    });
+
     it('should omit server.port when server.address is not provided', () => {
       const handler = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
@@ -686,7 +809,7 @@ describe('AgentInvocation', () => {
       });
 
       handler
-        .startAgent({
+        .startRemoteAgent({
           providerName: 'openai',
           serverPort: 443,
         })
@@ -704,7 +827,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent({
+      const invocation = handler.startRemoteAgent({
         providerName: 'openai',
       });
       invocation
@@ -726,7 +849,7 @@ describe('AgentInvocation', () => {
         tracerProvider: ctx.tracerProvider,
       });
 
-      const invocation = handler.startAgent({
+      const invocation = handler.startRemoteAgent({
         providerName: 'gcp.vertex_ai',
         agentName: 'MultimodalAgent',
       });
@@ -794,7 +917,7 @@ describe('AgentInvocation', () => {
       ctx.reset();
 
       // Remote agent usage without modality breakdown
-      const invNoModality = handler.startAgent({
+      const invNoModality = handler.startRemoteAgent({
         providerName: 'gcp.vertex_ai',
         agentName: 'SimpleRemoteAgent',
       });
@@ -828,7 +951,7 @@ describe('AgentInvocation', () => {
       });
 
       handler
-        .startAgent({
+        .startRemoteAgent({
           providerName: 'aws.bedrock',
           agentName: 'SupportBot',
           requestModel: 'claude-3-5-sonnet',
@@ -879,7 +1002,7 @@ describe('AgentInvocation', () => {
       });
 
       handler
-        .startAgent({
+        .startRemoteAgent({
           providerName: 'openai',
           agentName: 'Math Tutor',
           serverAddress: 'api.openai.com',
@@ -903,7 +1026,7 @@ describe('AgentInvocation', () => {
       });
 
       handler
-        .startAgent({
+        .startRemoteAgent({
           providerName: 'openai',
           attributes: {
             [ATTR_GEN_AI_OPERATION_NAME]: 'chat',
@@ -920,56 +1043,6 @@ describe('AgentInvocation', () => {
       );
       assert.strictEqual(span.attributes[ATTR_GEN_AI_PROVIDER_NAME], 'openai');
       assert.strictEqual(span.attributes['custom.attr'], 'kept');
-    });
-
-    it('should record caller-supplied metric attributes on every metric, overriding semantic convention dimensions', async () => {
-      const handler = new TelemetryHandler({
-        instrumentationName: 'test-instrumentation',
-        instrumentationVersion: '1.0.0',
-        tracerProvider: ctx.tracerProvider,
-        meterProvider: ctx.meterProvider,
-      });
-
-      const invocation = handler.startAgent({
-        agentName: 'OriginalAgent',
-        metricAttributes: { [ATTR_GEN_AI_AGENT_NAME]: 'OverriddenAgent' },
-      });
-      invocation.setMetricAttribute('custom.metric.attr', 'metric-value');
-      invocation.setInferenceCalls(2);
-      invocation.setToolCalls(1);
-      invocation.stop();
-
-      const { resourceMetrics } = await ctx.metricReader.collect();
-      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
-      assert.strictEqual(metrics.length, 3);
-
-      for (const metric of metrics) {
-        for (const { attributes } of metric.dataPoints) {
-          const name = metric.descriptor.name;
-          assert.strictEqual(
-            attributes['custom.metric.attr'],
-            'metric-value',
-            name
-          );
-          assert.strictEqual(
-            attributes[ATTR_GEN_AI_AGENT_NAME],
-            'OverriddenAgent',
-            name
-          );
-          assert.strictEqual(
-            attributes[ATTR_GEN_AI_OPERATION_NAME],
-            'invoke_agent',
-            name
-          );
-        }
-      }
-
-      const [span] = ctx.memoryExporter.getFinishedSpans();
-      assert.strictEqual(span.attributes['custom.metric.attr'], undefined);
-      assert.strictEqual(
-        span.attributes[ATTR_GEN_AI_AGENT_NAME],
-        'OriginalAgent'
-      );
     });
   });
 });
