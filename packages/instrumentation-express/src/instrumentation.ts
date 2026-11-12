@@ -124,9 +124,13 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         this: express.Application,
         ...args: Parameters<typeof original>
       ) {
+        const prevLength = this.stack.length;
         const route = original.apply(this, args);
-        const layer = this.stack[this.stack.length - 1] as ExpressLayer;
-        instrumentation._applyPatch(layer, getLayerPath(args));
+        const layerPath = getLayerPath(args);
+        for (let i = prevLength; i < this.stack.length; i++) {
+          const layer = this.stack[i] as ExpressLayer;
+          instrumentation._applyPatch(layer, layerPath);
+        }
         return route;
       };
     };
@@ -148,10 +152,13 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         const router = isExpressWithRouterPrototype
           ? this.router
           : this._router;
+        const prevLength = router?.stack.length ?? 0;
         const route = original.apply(this, args);
         if (router) {
-          const layer = router.stack[router.stack.length - 1];
-          instrumentation._applyPatch(layer, getLayerPath(args));
+          const layerPath = getLayerPath(args);
+          for (let i = prevLength; i < router.stack.length; i++) {
+            instrumentation._applyPatch(router.stack[i], layerPath);
+          }
         }
         return route;
       };
