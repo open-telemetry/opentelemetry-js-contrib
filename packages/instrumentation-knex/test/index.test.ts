@@ -18,6 +18,7 @@ import {
 import * as assert from 'assert';
 
 import { KnexInstrumentation } from '../src';
+import { extractTableName } from '../src/utils';
 const plugin = new KnexInstrumentation({
   maxQueryLength: 50,
 });
@@ -550,6 +551,51 @@ describe('Knex instrumentation', () => {
           }
         );
       });
+
+      it('should not use a callback subquery as the table name', async () => {
+        const parentSpan = tracer.startSpan('parentSpan');
+        await context.with(
+          trace.setSpan(context.active(), parentSpan),
+          async () => {
+            await client.schema.createTable('testTable1', (table: any) => {
+              table.string('title');
+            });
+            await client.insert({ title: 'test1' }).into('testTable1');
+
+            const rows = await client.select('*').from(function (this: any) {
+              this.select('title').from('testTable1').as('inner');
+            });
+            assert.deepEqual(rows, [{ title: 'test1' }]);
+
+            parentSpan.end();
+
+            const instrumentationSpans = memoryExporter.getFinishedSpans();
+            assertSpans(instrumentationSpans, [
+              {
+                statement: 'create table `testTable1` (`title` varchar(255))',
+                parentSpan,
+              },
+              {
+                op: 'insert',
+                table: 'testTable1',
+                statement: 'insert into `testTable1` (`title`) values (?)',
+                parentSpan,
+              },
+              {
+                op: 'select',
+                table: undefined,
+                statement:
+                  'select * from (select `title` from `testTable1`) a..',
+                parentSpan,
+              },
+              null,
+            ]);
+            const selectSpan = instrumentationSpans[2];
+            assert.strictEqual(selectSpan.name, 'select :memory:');
+            assert.ok(!('db.collection.name' in selectSpan.attributes));
+          }
+        );
+      });
     });
   });
 
@@ -688,6 +734,25 @@ describe('utils: connectionString parsing', () => {
     );
     assert.strictEqual(extractPortFromConnectionString('not-a-url'), undefined);
     assert.strictEqual(extractPortFromConnectionString(undefined), undefined);
+  });
+});
+
+describe('utils: extractTableName', () => {
+  it('should only return string table names', () => {
+    assert.strictEqual(
+      extractTableName({ _single: { table: 'testTable' } }),
+      'testTable'
+    );
+    assert.strictEqual(
+      extractTableName({ _single: { table: { _single: { table: 'inner' } } } }),
+      'inner'
+    );
+    assert.strictEqual(
+      extractTableName({ _single: { table: function () {} } }),
+      undefined
+    );
+    assert.strictEqual(extractTableName({ _single: {} }), undefined);
+    assert.strictEqual(extractTableName(undefined), undefined);
   });
 });
 
