@@ -56,6 +56,7 @@ import { FakeChatModel } from '@langchain/core/utils/testing';
 import { createAgent } from 'langchain';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as content from '../src/content';
+import { addGraphCallbacks, getGraphContext } from '../src/graph-callbacks';
 
 const State = Annotation.Root({
   messages: Annotation<Array<HumanMessage | AIMessage>>,
@@ -978,11 +979,19 @@ describe('LangChain donated graph callbacks', () => {
     assert.ok(spans[0].attributes['gen_ai.output.messages']);
   });
 
-  it('retains inherited user callbacks for recursive calls to the same graph', async () => {
+  it('keeps one graph marker and retains user callbacks for recursive calls to the same graph', async () => {
     const names: string[] = [];
     const step = async (
-      state: typeof State.State
+      state: typeof State.State,
+      config: RunnableConfig
     ): Promise<typeof State.State> => {
+      assert.ok(config.callbacks instanceof CallbackManager);
+      assert.equal(
+        config.callbacks.handlers.filter(
+          handler => handler.name === 'opentelemetry_langchain_graph_parent'
+        ).length,
+        1
+      );
       if (state.privateState === 'nested') {
         trace.getTracer('graph-test').startSpan('inside-recursive-graph').end();
         return state;
@@ -1028,6 +1037,49 @@ describe('LangChain donated graph callbacks', () => {
       inner.spanContext().spanId
     );
   });
+
+  for (const outcome of ['completed', 'skipped'] as const) {
+    it(`does not fall back to an ancestor marker for a ${outcome} child graph`, async () => {
+      const parentContext = context.active();
+      const parentCallbacks = addGraphCallbacks(
+        new CallbackManager(),
+        CallbackManager,
+        () => parentContext,
+        () => {}
+      );
+      const serialized = graph().toJSON();
+      const parentRun = await parentCallbacks.handleChainStart(serialized, {});
+      const inherited = parentRun.getChild();
+      const originalHandlers = [...inherited.handlers];
+      const start = sinon
+        .stub()
+        .returns(
+          outcome === 'skipped'
+            ? undefined
+            : parentContext.setValue(Symbol('child'), true)
+        );
+      const childCallbacks = addGraphCallbacks(
+        inherited.copy(),
+        CallbackManager,
+        start,
+        () => {}
+      );
+      const childRun = await childCallbacks.handleChainStart(serialized, {});
+      try {
+        assert.equal(start.firstCall.args[2], parentContext);
+        if (outcome === 'completed') await childRun.handleChainEnd({});
+        const descendants = childRun.getChild();
+        assert.equal(getGraphContext(descendants), undefined);
+        assert.equal(getGraphContext(descendants.handlers), undefined);
+        assert.deepEqual(inherited.handlers, originalHandlers);
+        assert.deepEqual(inherited.inheritableHandlers, originalHandlers);
+        assert.equal(getGraphContext(inherited), parentContext);
+      } finally {
+        await childRun.handleChainEnd({});
+        await parentRun.handleChainEnd({});
+      }
+    });
+  }
 
   it('does not synthesize a completion when stream consumption stops early', async () => {
     let graphRun: string | undefined;

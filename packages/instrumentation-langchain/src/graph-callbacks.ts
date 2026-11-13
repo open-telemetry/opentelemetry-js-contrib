@@ -43,6 +43,9 @@ export function addGraphCallbacks(
   end: (output: unknown, failure?: { error: unknown }) => void
 ): CallbackManager {
   const parent = getGraphContext(configured);
+  for (const handler of configured.handlers) {
+    if (graphInvocations.has(handler)) configured.removeHandler(handler);
+  }
   const invocation: GraphInvocation = {};
   let ended = false;
   const finish = (output: unknown, failure?: { error: unknown }) => {
