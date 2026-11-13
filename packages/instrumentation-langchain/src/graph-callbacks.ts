@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Context } from '@opentelemetry/api';
+import type { Context, DiagLogger } from '@opentelemetry/api';
 import type { CallbackManager } from '@langchain/core/callbacks/manager';
 import type { CallbackHandlerMethods } from '@langchain/core/callbacks/base';
 import { isRecord } from './content';
@@ -40,7 +40,8 @@ export function addGraphCallbacks(
     metadata: Record<string, unknown> | undefined,
     parent: Context | undefined
   ) => Context | undefined,
-  end: (output: unknown, failure?: { error: unknown }) => void
+  end: (output: unknown, failure?: { error: unknown }) => void,
+  diag: DiagLogger
 ): CallbackManager {
   const parent = getGraphContext(configured);
   for (const handler of configured.handlers) {
@@ -52,7 +53,19 @@ export function addGraphCallbacks(
     if (ended) return;
     ended = true;
     invocation.context = undefined;
-    end(output, failure);
+    try {
+      // LangGraph uses bubble-up errors for interrupts and parent commands.
+      if (
+        failure &&
+        isRecord(failure.error) &&
+        failure.error.is_bubble_up === true
+      )
+        failure = undefined;
+    } catch {
+      diag.warn('LangChain: could not classify graph failure');
+    } finally {
+      end(output, failure);
+    }
   };
   const callbacks: CallbackHandlerMethods = {
     handleChainStart(
@@ -72,10 +85,7 @@ export function addGraphCallbacks(
       finish(output);
     },
     handleChainError(error) {
-      // LangGraph uses bubble-up errors for interrupts and parent commands.
-      const failure =
-        isRecord(error) && error.is_bubble_up === true ? undefined : { error };
-      finish(undefined, failure);
+      finish(undefined, { error });
     },
   };
   const handler = manager.fromHandlers(callbacks).handlers[0];

@@ -669,7 +669,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                   },
                   (output, failure) => {
                     if (state) owner._end(state, output, failure);
-                  }
+                  },
+                  owner._diag
                 );
                 config.callbacks = graphCallbacks;
               });

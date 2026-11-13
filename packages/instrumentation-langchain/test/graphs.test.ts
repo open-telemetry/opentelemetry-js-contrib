@@ -7,6 +7,7 @@ import { instrumentation } from './load-instrumentation';
 import * as assert from 'node:assert/strict';
 import {
   context,
+  diag,
   metrics,
   SpanKind,
   SpanStatusCode,
@@ -802,6 +803,55 @@ describe('LangChain donated graph callbacks', () => {
     });
   }
 
+  for (const kind of ['getter', 'proxy'] as const) {
+    it(`completes graph failures when the bubble-up ${kind} throws`, async () => {
+      const end = sinon.spy();
+      const warn = sinon.spy();
+      const callbacks = addGraphCallbacks(
+        new CallbackManager(),
+        CallbackManager,
+        () => context.active(),
+        end,
+        { ...diag, warn }
+      );
+      const run = await callbacks.handleChainStart(
+        { lc: 1, type: 'not_implemented', id: ['graph'] },
+        {}
+      );
+      const inherited = run.getChild();
+      const inspectedContexts: unknown[] = [];
+      const readMarker = sinon.spy(() => {
+        inspectedContexts.push(getGraphContext(inherited));
+        throw new Error('private marker failure');
+      });
+      const error = new Error('private graph failure');
+      const failure =
+        kind === 'getter'
+          ? Object.defineProperty(error, 'is_bubble_up', { get: readMarker })
+          : new Proxy(error, {
+              get(target, key, receiver) {
+                return key === 'is_bubble_up'
+                  ? readMarker()
+                  : Reflect.get(target, key, receiver);
+              },
+            });
+      assert.equal(getGraphContext(inherited), context.active());
+      await run.handleChainError(failure);
+      await run.handleChainError(failure);
+      await run.handleChainEnd({});
+      assert.equal(end.callCount, 1);
+      assert.equal(end.firstCall.args[0], undefined);
+      assert.equal(end.firstCall.args[1].error, failure);
+      assert.equal(getGraphContext(inherited), undefined);
+      assert.equal(readMarker.callCount, 1);
+      assert.deepEqual(inspectedContexts, [undefined]);
+      assert.equal(warn.callCount, 1);
+      assert.deepEqual(warn.firstCall.args, [
+        'LangChain: could not classify graph failure',
+      ]);
+    });
+  }
+
   it('does not emit graph telemetry when disabled or suppressed', async () => {
     instrumentation.disable();
     await graph().invoke(input());
@@ -1045,7 +1095,8 @@ describe('LangChain donated graph callbacks', () => {
         new CallbackManager(),
         CallbackManager,
         () => parentContext,
-        () => {}
+        () => {},
+        diag
       );
       const serialized = graph().toJSON();
       const parentRun = await parentCallbacks.handleChainStart(serialized, {});
@@ -1062,7 +1113,8 @@ describe('LangChain donated graph callbacks', () => {
         inherited.copy(),
         CallbackManager,
         start,
-        () => {}
+        () => {},
+        diag
       );
       const childRun = await childCallbacks.handleChainStart(serialized, {});
       try {
