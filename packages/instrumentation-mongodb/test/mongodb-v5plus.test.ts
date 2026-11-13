@@ -10,9 +10,7 @@ import {
   registerInstrumentationTesting,
   getTestSpans,
   resetMemoryExporter,
-  getPackageVersion,
 } from '@opentelemetry/contrib-test-utils';
-import * as semver from 'semver';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import { ATTR_DB_QUERY_TEXT } from '@opentelemetry/semantic-conventions';
 import {
@@ -33,8 +31,6 @@ let instrumentation: MongoDBInstrumentation;
     instrumentation = instance;
   }
 }
-
-const mongodbVer = getPackageVersion('mongodb');
 
 describe('MongoDBInstrumentation-Tracing-v5+', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -254,17 +250,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .createIndex({ a: 1 })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'createIndexes',
-              // mongodb versions before 6.19.0 would set the `ns.collection`
-              // to the internal `$cmd` database name. My guess is this is due
-              // to https://github.com/mongodb/node-mongodb-native/pull/4623
-              // but I am not positive.
-              semver.satisfies(mongodbVer, '>=6.19.0')
-                ? COLLECTION_NAME
-                : '$cmd'
-            );
+            assertSpans(getTestSpans(), 'createIndexes', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -284,7 +270,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'aggregate', '$cmd');
+            assertSpans(getTestSpans(), 'aggregate', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -343,7 +329,7 @@ describe('MongoDBInstrumentation-Tracing-v5+', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(spans, 'aggregate', '$cmd', false, false);
+            assertSpans(spans, 'aggregate', COLLECTION_NAME, false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
