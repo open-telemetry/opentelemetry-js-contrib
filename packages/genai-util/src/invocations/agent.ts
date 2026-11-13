@@ -293,8 +293,14 @@ export abstract class AgentInvocation extends BaseInvocation {
    * `cacheReadTokenCount`, `cacheWriteTokenCount`, and `tokenUsageByModality` apply
    * only to {@link RemoteAgentInvocation} (`SpanKind.CLIENT`) spans.
    *
-   * May be called multiple times; fields are merged and finalized onto the span
-   * when the invocation ends.
+   * May be called multiple times (e.g. when input and output counts arrive separately);
+   * defined fields overwrite previously set values rather than summing across turns, and
+   * the merged usage is finalized onto the span when the invocation ends.
+   *
+   * For in-process (`LocalAgentInvocation`) multi-agent runs where nested agents emit
+   * their own `invoke_agent` spans (e.g. an agent invoked as a tool), prefer passing
+   * only usage from this agent's own model calls when the framework distinguishes it,
+   * so token counts are not double-counted across `invoke_agent` spans.
    */
   public setUsage(usage: TokenUsageDetails): this {
     this._usage = mergeTokenUsageDetails(this._usage, usage);
