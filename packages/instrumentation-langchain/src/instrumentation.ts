@@ -25,6 +25,7 @@ import {
   isTracingSuppressed,
 } from '@opentelemetry/core';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
   ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
@@ -33,8 +34,7 @@ import {
   ATTR_GEN_AI_OUTPUT_MESSAGES,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
   METRIC_GEN_AI_INVOKE_AGENT_DURATION,
-  TelemetryHandler,
-} from '@opentelemetry/genai-util';
+} from './semconv';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
