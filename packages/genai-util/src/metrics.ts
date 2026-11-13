@@ -10,10 +10,14 @@ import {
   type Meter,
 } from '@opentelemetry/api';
 import {
+  METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
   METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_CACHE_READ_INPUT_TOKENS,
@@ -62,6 +66,23 @@ const GENAI_TIME_PER_OUTPUT_CHUNK_BUCKETS = [
   0.01, 0.02, 0.04, 0.08, 0.16, 0.32, 0.64, 1.28, 2.56, 5.12, 10.24, 20.48,
   40.96, 81.92,
 ];
+
+/**
+ * Standard explicit bucket boundaries for in-process GenAI agent invocation duration (in seconds).
+ *
+ * @experimental
+ */
+const GENAI_INVOKE_AGENT_DURATION_BUCKETS = [
+  0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8, 409.6, 900,
+  1800, 3600, 7200, 14400, 43200, 86400,
+];
+
+/**
+ * Standard explicit bucket boundaries for GenAI agent inference and tool call counts.
+ *
+ * @experimental
+ */
+const GENAI_INVOKE_AGENT_CALLS_BUCKETS = [1, 2, 4, 8, 16, 32, 64, 128];
 
 /**
  * Create standard `gen_ai.client.operation.duration` histogram.
@@ -247,6 +268,75 @@ export function createTimePerOutputChunkHistogram(meter: Meter): Histogram {
 export function createExecuteToolDurationHistogram(meter: Meter): Histogram {
   return meter.createHistogram(METRIC_GEN_AI_EXECUTE_TOOL_DURATION, {
     description: 'The duration of a single tool execution.',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,
+    },
+  });
+}
+
+/**
+ * Create standard `gen_ai.invoke_agent.duration` histogram.
+ *
+ * @experimental
+ */
+export function createInvokeAgentDurationHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_INVOKE_AGENT_DURATION, {
+    description:
+      'The end-to-end duration of a single in-process agent, workflow, or framework entrypoint invocation, from the moment the invocation starts until it emits the last chunk of its final response or terminates with an error.',
+    unit: 's',
+    advice: {
+      explicitBucketBoundaries: GENAI_INVOKE_AGENT_DURATION_BUCKETS,
+    },
+  });
+}
+
+/**
+ * Create standard `gen_ai.invoke_agent.inference_calls` histogram.
+ *
+ * @experimental
+ */
+export function createInvokeAgentInferenceCallsHistogram(
+  meter: Meter
+): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS, {
+    description:
+      'The number of inference (model) calls a GenAI agent, workflow, or framework entrypoint makes during a single invocation.',
+    unit: '{inference_call}',
+    valueType: ValueType.INT,
+    advice: {
+      explicitBucketBoundaries: GENAI_INVOKE_AGENT_CALLS_BUCKETS,
+    },
+  });
+}
+
+/**
+ * Create standard `gen_ai.invoke_agent.tool_calls` histogram.
+ *
+ * @experimental
+ */
+export function createInvokeAgentToolCallsHistogram(meter: Meter): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS, {
+    description:
+      'The number of tool calls a GenAI agent, workflow, or framework entrypoint makes during a single invocation.',
+    unit: '{tool_call}',
+    valueType: ValueType.INT,
+    advice: {
+      explicitBucketBoundaries: GENAI_INVOKE_AGENT_CALLS_BUCKETS,
+    },
+  });
+}
+
+/**
+ * Create standard `gen_ai.client.invoke_agent.duration` histogram.
+ *
+ * @experimental
+ */
+export function createClientInvokeAgentDurationHistogram(
+  meter: Meter
+): Histogram {
+  return meter.createHistogram(METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION, {
+    description: 'GenAI client invoke agent operation duration.',
     unit: 's',
     advice: {
       explicitBucketBoundaries: GENAI_OPERATION_DURATION_BUCKETS,

@@ -506,10 +506,21 @@ describe('TelemetryHandler', () => {
     });
     tool.stop();
 
-    const spans = ctx.memoryExporter.getFinishedSpans();
-    assert.strictEqual(spans.length, 3);
+    const localAgent = handler.startLocalAgent({
+      agentName: 'LocalAgent',
+    });
+    localAgent.stop();
 
-    const [infSpan, embSpan, toolSpan] = spans;
+    const remoteAgent = handler.startRemoteAgent({
+      providerName: 'openai',
+      agentName: 'RemoteAgent',
+    });
+    remoteAgent.stop();
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 5);
+
+    const [infSpan, embSpan, toolSpan, localAgentSpan, remoteAgentSpan] = spans;
     assert.strictEqual(infSpan.name, 'chat gpt-4o');
     assert.strictEqual(infSpan.kind, SpanKind.CLIENT);
 
@@ -518,6 +529,12 @@ describe('TelemetryHandler', () => {
 
     assert.strictEqual(toolSpan.name, 'execute_tool calculator');
     assert.strictEqual(toolSpan.kind, SpanKind.INTERNAL);
+
+    assert.strictEqual(localAgentSpan.name, 'invoke_agent LocalAgent');
+    assert.strictEqual(localAgentSpan.kind, SpanKind.INTERNAL);
+
+    assert.strictEqual(remoteAgentSpan.name, 'invoke_agent RemoteAgent');
+    assert.strictEqual(remoteAgentSpan.kind, SpanKind.CLIENT);
   });
 
   it('should nest invocations started inside another invocation context', () => {

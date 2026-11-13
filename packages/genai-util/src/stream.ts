@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { context } from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
+import type { BaseInvocation } from './invocations/base';
 import { InferenceInvocation } from './invocations/inference';
 
 /**
@@ -17,8 +19,8 @@ export type AsyncStream<TChunk> = AsyncIterable<TChunk>;
  * @experimental This interface is experimental and subject to change.
  */
 export interface AsyncStreamWrapperOptions<TChunk> {
-  /** The active invocation (InferenceInvocation). */
-  invocation: InferenceInvocation;
+  /** The active invocation owning the stream lifecycle. */
+  invocation: BaseInvocation;
   /** Hook called for each stream chunk. */
   onChunk?: (chunk: TChunk) => void | Promise<void>;
   /** Hook called when the stream ends or is closed cleanly. */
@@ -32,9 +34,10 @@ export interface AsyncStreamWrapperOptions<TChunk> {
  *
  * Replaces `[Symbol.asyncIterator]` on the stream object to:
  * 1. Track stream lifecycle (start -> chunks -> end/error) and complete the active invocation.
- * 2. Record stream metrics (`time_to_first_chunk` and `time_per_output_chunk`).
- * 3. Invoke telemetry hooks (`onChunk`, `onEnd`, `onError`).
- * 4. Preserve the original stream instance identity, prototype (`instanceof`), and SDK members.
+ * 2. Activate the invocation's span context while advancing the underlying async iterator and executing hooks (`onChunk`, `onEnd`, `onError`), without leaking ended span contexts on post-finalization re-iteration.
+ * 3. Record stream chunk timing metrics (`time_to_first_chunk` and `time_per_output_chunk`) for inference invocations.
+ * 4. Invoke telemetry hooks (`onChunk`, `onEnd`, `onError`).
+ * 5. Preserve the original stream instance identity, prototype (`instanceof`), and SDK members.
  *
  * @experimental This function is experimental and subject to change.
  */
@@ -43,15 +46,27 @@ export function wrapAsyncStream<
   TChunk = TStream extends AsyncIterable<infer C> ? C : unknown,
 >(stream: TStream, options: AsyncStreamWrapperOptions<TChunk>): TStream {
   const { invocation } = options;
-  invocation.setStreaming();
+  if (
+    'setStreaming' in invocation &&
+    typeof invocation.setStreaming === 'function'
+  ) {
+    invocation.setStreaming();
+  }
 
   let isFinalized = false;
   let pendingChunks: Promise<void> = Promise.resolve();
 
+  const runWithInvocationContext = <T>(fn: () => T): T =>
+    isFinalized || invocation.isEnded()
+      ? fn()
+      : context.with(invocation.getContext(), fn);
+
   const processChunk = async (chunk: TChunk): Promise<void> => {
-    if (options.onChunk) {
+    if (options.onChunk && !isFinalized && !invocation.isEnded()) {
       try {
-        await options.onChunk(chunk);
+        await context.with(invocation.getContext(), () =>
+          options.onChunk!(chunk)
+        );
       } catch (err) {
         invocation.getDiag().error('Error in GenAI stream onChunk hook', err);
       }
@@ -67,13 +82,14 @@ export function wrapAsyncStream<
    */
   const finalizeSuccess = async (): Promise<void> => {
     await pendingChunks;
-    if (isFinalized) {
+    if (isFinalized || invocation.isEnded()) {
+      isFinalized = true;
       return;
     }
     isFinalized = true;
     try {
       if (options.onEnd) {
-        await options.onEnd();
+        await context.with(invocation.getContext(), () => options.onEnd!());
       }
     } catch (err) {
       invocation.getDiag().error('Error in GenAI stream onEnd hook', err);
@@ -91,13 +107,16 @@ export function wrapAsyncStream<
    */
   const finalizeFailure = async (error: unknown): Promise<void> => {
     await pendingChunks;
-    if (isFinalized) {
+    if (isFinalized || invocation.isEnded()) {
+      isFinalized = true;
       return;
     }
     isFinalized = true;
     try {
       if (options.onError) {
-        await options.onError(error);
+        await context.with(invocation.getContext(), () =>
+          options.onError!(error)
+        );
       }
     } catch (err) {
       invocation.getDiag().error('Error in GenAI stream onError hook', err);
@@ -137,12 +156,25 @@ export function wrapAsyncStream<
           return result;
         }
 
+        if (isFinalized || invocation.isEnded()) {
+          return result;
+        }
+
         const chunkTime = hrTime();
         const chunkTask = pendingChunks.then(async () => {
+          if (isFinalized || invocation.isEnded()) {
+            return;
+          }
           await processChunk(result.value);
-          // Record after processChunk so response.model set during chunk processing is included on metrics,
-          // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
-          invocation.recordStreamChunk(chunkTime);
+          if (
+            invocation instanceof InferenceInvocation &&
+            !isFinalized &&
+            !invocation.isEnded()
+          ) {
+            // Record after processChunk so response.model set during chunk processing is included on metrics,
+            // passing chunkTime captured when the chunk arrived so processing overhead is excluded.
+            invocation.recordStreamChunk(chunkTime);
+          }
         });
         pendingChunks = chunkTask;
         await chunkTask;
@@ -155,13 +187,15 @@ export function wrapAsyncStream<
 
     return {
       async next(...args): Promise<IteratorResult<TChunk>> {
-        return advance(() => originalNext(...args));
+        return advance(() =>
+          runWithInvocationContext(() => originalNext(...args))
+        );
       },
 
       async return(value?: unknown): Promise<IteratorResult<TChunk>> {
         try {
           const result: IteratorResult<TChunk> = originalReturn
-            ? await originalReturn(value)
+            ? await runWithInvocationContext(() => originalReturn(value))
             : { done: true, value };
           await finalizeSuccess();
           return result;
@@ -173,13 +207,15 @@ export function wrapAsyncStream<
 
       async throw(error?: unknown): Promise<IteratorResult<TChunk>> {
         if (originalThrow) {
-          return advance(() => originalThrow(error));
+          return advance(() =>
+            runWithInvocationContext(() => originalThrow(error))
+          );
         }
         // Let any cleanup error from `originalReturn()` surface to the caller (matching
         // `yield*` delegation) while telemetry records the original `error` in `finally`.
         try {
           if (originalReturn) {
-            await originalReturn();
+            await runWithInvocationContext(() => originalReturn());
           }
         } finally {
           await finalizeFailure(error);
@@ -232,7 +268,15 @@ export function wrapAsyncStream<
     writable: true,
     value(this: TStream): AsyncIterableIterator<TChunk> {
       if (typeof originalAsyncIterator === 'function') {
-        const iterator = originalAsyncIterator.call(this);
+        let iterator: AsyncIterator<TChunk>;
+        try {
+          iterator = runWithInvocationContext(() =>
+            originalAsyncIterator.call(this)
+          );
+        } catch (error) {
+          void finalizeFailure(error);
+          throw error;
+        }
         if ((iterator as unknown) !== this) {
           return wrapIterator(iterator);
         }

@@ -8,7 +8,7 @@
 
 This package provides shared utilities, data models, invocation lifecycle handlers, stream wrappers, and semantic convention constants for Generative AI (GenAI) instrumentation packages in OpenTelemetry JavaScript.
 
-It is the TypeScript / JavaScript equivalent of [`opentelemetry-util-genai`](https://github.com/open-telemetry/opentelemetry-python-genai/tree/main/util/opentelemetry-util-genai) in Python and aligns with the latest [OpenTelemetry GenAI Semantic Conventions](https://github.com/open-telemetry/semantic-conventions/blob/main/docs/gen-ai/README.md).
+It is the TypeScript / JavaScript equivalent of [`opentelemetry-util-genai`](https://github.com/open-telemetry/opentelemetry-python-genai/tree/main/util/opentelemetry-util-genai) in Python and aligns with the latest [OpenTelemetry GenAI Semantic Conventions](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/README.md).
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -24,10 +24,9 @@ npm install --save @opentelemetry/genai-util
 - **TelemetryHandler**: Central lifecycle façade managing spans, metrics, and events for LLM and GenAI operations.
 - **Invocations Lifecycle**: Structured handlers for all GenAI operations:
   - `InferenceInvocation`: Chat completions, text completions, and multimodal content generation (`chat`, `text_completion`, `generate_content`).
-  - `AgentInvocation`: Agent / assistant invocations with support for both local in-process agents (`SpanKind.INTERNAL`) and remote agents (`SpanKind.CLIENT`).
+  - `LocalAgentInvocation` / `RemoteAgentInvocation` (`AgentInvocation`): In-process agent, workflow, and framework entrypoint invocations (`invoke_agent`, `invoke_workflow`, `invoke_runner` with `SpanKind.INTERNAL`) and remote hosted agent invocations (`invoke_agent` with `SpanKind.CLIENT`).
   - `EmbeddingInvocation`: Text and multimodal embedding generation (`embeddings`).
   - `ToolInvocation`: Tool / function execution (`execute_tool`).
-  - `WorkflowInvocation`: Multi-step AI workflows and pipelines (`invoke_workflow`).
   - `RetrievalInvocation`: RAG vector database lookups and document retrieval (`retrieval`).
   - `FetchResponseInvocation`: Asynchronous response polling and retrieval (`fetch_response`).
 - **Streaming Telemetry & TTFT (`wrapAsyncStream`)**:
@@ -43,6 +42,9 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.client.operation.time_to_first_chunk` (in seconds)
   - `gen_ai.client.operation.time_per_output_chunk` (in seconds)
   - `gen_ai.execute_tool.duration` (in seconds)
+  - `gen_ai.invoke_agent.duration` (in seconds)
+  - `gen_ai.invoke_agent.inference_calls` and `gen_ai.invoke_agent.tool_calls` (per-invocation call count histograms)
+  - `gen_ai.client.invoke_agent.duration` (in seconds)
 - **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
 
 ---
@@ -50,10 +52,12 @@ npm install --save @opentelemetry/genai-util
 ## Usage Examples
 
 `TelemetryHandler` is exported for instrumentation integrations. Use its
-`startTool` factory to create a `ToolInvocation` rather than constructing one
-directly. The invocation type is also exported for type annotations.
-`ATTR_GEN_AI_TOOL_CALL_ID` is also exported for integrations that need to set
-the tool-call ID after starting an invocation.
+`startLocalAgent`, `startRemoteAgent`, and `startTool` factories to create
+invocations rather than constructing them directly. `ToolInvocation` and
+`ATTR_GEN_AI_TOOL_CALL_ID` are also exported for integrations that need type
+annotations or to set the tool-call ID after starting an invocation; additional
+invocation and option types are exported incrementally as instrumentations adopt
+them.
 
 ```typescript
 import { TelemetryHandler } from '@opentelemetry/genai-util';
@@ -63,13 +67,28 @@ const handler = new TelemetryHandler({
   instrumentationVersion: '1.0.0',
   contentCaptureMode: 'none',
 });
-const invocation = handler.startTool({ toolName: 'lookup' });
+
+const agent = handler.startLocalAgent({
+  agentName: 'ResearchAgent',
+  trackInferenceCalls: true,
+  trackToolCalls: true,
+});
 try {
-  const result = invocation.withContext(() => lookup());
-  invocation.setResult(result);
-  invocation.stop();
+  await agent.withContext(async () => {
+    const tool = handler.startTool({ toolName: 'lookup' });
+    try {
+      const result = lookup();
+      tool.setResult(result);
+      tool.stop();
+      agent.recordToolCall();
+    } catch (error) {
+      tool.fail({ exception: error instanceof Error ? error : undefined });
+      throw error;
+    }
+  });
+  agent.stop();
 } catch (error) {
-  invocation.fail({ exception: error instanceof Error ? error : undefined });
+  agent.fail({ exception: error instanceof Error ? error : undefined });
   throw error;
 }
 ```
