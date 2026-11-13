@@ -45,6 +45,8 @@ components:
   packages/genai-util:
     - psx95
     - JacksonWeber
+  packages/tanstack-ai:
+    - Yashisinghal285
   packages/redis-common: []
     # Unmaintained
   packages/contrib-test-utils:
