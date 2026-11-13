@@ -21,6 +21,7 @@
   "packages/winston-transport": "0.35.0",
   "packages/instrumentation-amqplib": "0.72.0",
   "packages/instrumentation-anthropic": "0.2.0",
+  "packages/instrumentation-beeai": "0.1.0",
   "packages/instrumentation-cucumber": "0.41.0",
   "packages/instrumentation-dataloader": "0.42.0",
   "packages/instrumentation-fs": "0.44.0",

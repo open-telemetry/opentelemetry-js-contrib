@@ -156,6 +156,7 @@ process.once('beforeExit', async () => { await sdk.shutdown(); });
 - [@opentelemetry/instrumentation-amqplib](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-amqplib)
 - [@opentelemetry/instrumentation-aws-lambda](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-lambda)
 - [@opentelemetry/instrumentation-aws-sdk](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-aws-sdk)
+- [@opentelemetry/instrumentation-beeai](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-beeai)
 - [@opentelemetry/instrumentation-bunyan](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-bunyan)
 - [@opentelemetry/instrumentation-cassandra-driver](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-cassandra-driver)
 - [@opentelemetry/instrumentation-connect](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-connect)

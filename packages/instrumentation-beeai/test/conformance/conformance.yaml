@@ -1,0 +1,159 @@
+runner: genai-conformance
+instrumented_library: 'beeai-framework'
+instrumentation_library: '@opentelemetry/instrumentation-beeai'
+
+weaver:
+  registry: https://github.com/open-telemetry/semantic-conventions-genai.git@e6658f14c9d9ea0760825f029cb82e7673f48fab[model]
+
+scenarios:
+  agent_content_disabled:
+    run: node beeai.cjs agent
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: ReAct
+            gen_ai.request.model: llama3.1
+            gen_ai.input.messages: {present: false}
+            gen_ai.output.messages: {present: false}
+            error.type: {present: false}
+    metrics:
+      - gen_ai.invoke_agent.duration
+      - gen_ai.invoke_agent.inference_calls
+      - gen_ai.invoke_agent.tool_calls
+    events: []
+
+  agent_content_enabled:
+    run: node beeai.cjs agent
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: ReAct
+            gen_ai.request.model: llama3.1
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"Final response"}]}]'
+            error.type: {present: false}
+    metrics:
+      - gen_ai.invoke_agent.duration
+      - gen_ai.invoke_agent.inference_calls
+      - gen_ai.invoke_agent.tool_calls
+    events: []
+
+  chat_content_disabled:
+    run: node beeai.cjs chat
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: CLIENT
+          attributes:
+            gen_ai.operation.name: chat
+        expect:
+          count: 1
+          attributes:
+            gen_ai.provider.name: ollama
+            gen_ai.request.model: llama3.1
+            gen_ai.input.messages: {present: false}
+            gen_ai.output.messages: {present: false}
+            error.type: {present: false}
+    metrics:
+      - gen_ai.client.operation.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+    events: []
+
+  chat_content_enabled:
+    run: node beeai.cjs chat
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: CLIENT
+          attributes:
+            gen_ai.operation.name: chat
+        expect:
+          count: 1
+          attributes:
+            gen_ai.provider.name: ollama
+            gen_ai.request.model: llama3.1
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"chat response"}]}]'
+            error.type: {present: false}
+    metrics:
+      - gen_ai.client.operation.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+    events: []
+
+  embeddings:
+    run: node beeai.cjs embeddings
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: CLIENT
+          attributes:
+            gen_ai.operation.name: embeddings
+        expect:
+          count: 1
+          attributes:
+            gen_ai.provider.name: ollama
+            gen_ai.request.model: nomic-embed-text
+            gen_ai.embeddings.dimension.count: 3
+            gen_ai.usage.input_tokens: 10
+            error.type: {present: false}
+    metrics: [gen_ai.client.operation.duration]
+    events: []
+
+  tool_content_disabled:
+    run: node beeai.cjs tool
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.type: function
+            gen_ai.tool.call.arguments: {present: false}
+            gen_ai.tool.call.result: {present: false}
+            error.type: {present: false}
+    metrics: [gen_ai.execute_tool.duration]
+    events: []
+
+  tool_content_enabled:
+    run: node beeai.cjs tool
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: execute_tool
+        expect:
+          count: 1
+          attributes:
+            gen_ai.tool.name: test_tool
+            gen_ai.tool.type: function
+            gen_ai.tool.call.arguments: '{"input":"hello"}'
+            gen_ai.tool.call.result: 'tool result'
+            error.type: {present: false}
+    metrics: [gen_ai.execute_tool.duration]
+    events: []

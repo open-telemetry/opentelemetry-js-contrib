@@ -1,0 +1,5 @@
+beeai-framework:
+  versions:
+    include: '>=0.1.9 <0.1.14'
+    mode: max-5
+  commands: npm test
