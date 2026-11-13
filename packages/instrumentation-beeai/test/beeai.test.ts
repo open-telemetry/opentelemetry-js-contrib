@@ -983,15 +983,18 @@ describe('BeeAIInstrumentation', () => {
           s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
           GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
       );
-      const lookupSpan = spans.find(
+      const toolSpans = spans.filter(
         s =>
           s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
-            GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL &&
-          s.attributes[ATTR_GEN_AI_TOOL_NAME] === 'lookup_user'
+          GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
+      );
+      const lookupSpan = toolSpans.find(
+        s => s.attributes[ATTR_GEN_AI_TOOL_NAME] === 'lookup_user'
       );
 
       expect(agentSpan).toBeDefined();
       expect(agentSpan!.name).toBe('invoke_agent ToolCalling');
+      expect(toolSpans).toHaveLength(1);
       expect(lookupSpan).toBeDefined();
       expect(lookupSpan!.parentSpanContext?.spanId).toBe(
         agentSpan!.spanContext().spanId
@@ -1001,6 +1004,15 @@ describe('BeeAIInstrumentation', () => {
       );
       expect(lookupSpan!.attributes[ATTR_GEN_AI_AGENT_NAME]).toBe(
         'ToolCalling'
+      );
+
+      const { resourceMetrics } = await metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      const toolCalls = metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS
+      );
+      expect((toolCalls?.dataPoints[0]?.value as { sum?: number })?.sum).toBe(
+        1
       );
     });
 
@@ -1057,16 +1069,22 @@ describe('BeeAIInstrumentation', () => {
       expect(getTestSpans()).toHaveLength(0);
     });
 
-    it('parents spans to the active OpenTelemetry context', async () => {
+    it('parents spans to the caller OpenTelemetry context even when an outer span is active', async () => {
       const tracer = trace.getTracer('test-outer');
-      const outerSpan = tracer.startSpan('outer-operation');
-      const outerContext = trace.setSpan(context.active(), outerSpan);
+      const httpSpan = tracer.startSpan('http-request');
+      const httpContext = trace.setSpan(context.active(), httpSpan);
+
+      const customSpan = tracer.startSpan('custom-parent', undefined, httpContext);
+      const customContext = trace.setSpan(httpContext, customSpan);
 
       const agent = new CustomAgent();
-      await context.with(outerContext, () =>
-        agent.run({ prompt: 'Parentage test' })
-      );
-      outerSpan.end();
+      await context.with(httpContext, async () => {
+        await context.with(customContext, () =>
+          agent.run({ prompt: 'Parentage test' })
+        );
+      });
+      customSpan.end();
+      httpSpan.end();
 
       const spans = getTestSpans();
       const agentSpan = spans.find(
@@ -1074,11 +1092,11 @@ describe('BeeAIInstrumentation', () => {
       );
       expect(agentSpan).toBeDefined();
       expect(agentSpan!.parentSpanContext?.spanId).toBe(
-        outerSpan.spanContext().spanId
+        customSpan.spanContext().spanId
       );
     });
 
-    it('preserves Run middleware, observe, and context chaining without duplicate execution', async () => {
+    it('preserves Run middleware, observe, context, and catch chaining without duplicate execution', async () => {
       let handlerRuns = 0;
       let middlewareCalled = false;
       let observeCalled = false;
@@ -1105,6 +1123,8 @@ describe('BeeAIInstrumentation', () => {
             observeCalled = true;
           });
         });
+
+      run.catch(() => {});
 
       expect(handlerRuns).toBe(0);
       const output = await run;

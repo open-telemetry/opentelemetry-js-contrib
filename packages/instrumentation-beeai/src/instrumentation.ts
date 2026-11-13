@@ -5,6 +5,7 @@
 
 import {
   context,
+  createContextKey,
   trace,
   type Context,
   type MeterProvider,
@@ -101,11 +102,11 @@ interface BeeAIRunLike<R = unknown> extends Promise<R> {
       on?: (
         event: string,
         callback: (data: unknown, meta: unknown) => void
-      ) => void;
+      ) => (() => void) | void;
       match?: (
         matcher: string | ((event: { name?: string }) => boolean),
         callback: (data: unknown, meta: unknown) => void
-      ) => void;
+      ) => (() => void) | void;
     };
   };
 }
@@ -119,6 +120,7 @@ interface RunStartParams {
   callerContext: Context;
   runId: string | undefined;
   parentId: string | undefined;
+  parentRun: ActiveRun | undefined;
   runContext: BeeAIRunLike['runContext'];
   enclosingAgent: ActiveAgentRun | undefined;
 }
@@ -126,6 +128,7 @@ interface RunStartParams {
 interface StartedRunOperation<TInvocation extends AnyInvocation> {
   invocation: TInvocation;
   activeRun?: ActiveRun;
+  cleanup?: () => void;
   onSuccess?: (result: unknown) => void;
   onFailure?: () => void;
 }
@@ -139,9 +142,14 @@ interface RunOperationSpec<TInvocation extends AnyInvocation> {
     inputArg: unknown,
     callerContext: Context
   ) => TInvocation;
-  startRun: (params: RunStartParams) => StartedRunOperation<TInvocation>;
+  startRun: (
+    params: RunStartParams
+  ) => StartedRunOperation<TInvocation> | undefined;
 }
 
+const ACTIVE_AGENT_CONTEXT_KEY = createContextKey(
+  'OpenTelemetry BeeAI Active Agent Run'
+);
 const methodPatches = new WeakMap<object, Map<PropertyKey, MethodPatch>>();
 const wrappedRuns = new WeakSet<object>();
 const activeRuns = new Map<string, ActiveRun>();
@@ -401,35 +409,55 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         parentId,
         runContext,
       }) => {
+        const metadata = extractAgentMetadata(instance);
         const invocation = owner._startAgentInvocation(
           handler,
           instance,
           effectiveInput,
-          parentContext
+          parentContext,
+          metadata
         );
-        const { agentName } = extractAgentMetadata(instance);
         const activeRecord: ActiveAgentRun | undefined = runId
           ? {
               kind: 'agent',
               runId,
               parentId,
               invocation,
-              agentName,
+              agentName: metadata.agentName,
               callerSpan: trace.getSpan(callerContext),
             }
           : undefined;
 
         let eventMessage: { role: string; text: string } | undefined;
-        runContext?.emitter?.match?.(
-          event => event?.name === 'success',
-          (data: unknown) => {
-            eventMessage = extractSuccessEventMessage(data) ?? eventMessage;
-          }
-        );
+        let unsubscribe: (() => void) | void;
+        try {
+          unsubscribe = runContext?.emitter?.match?.(
+            event => event?.name === 'success',
+            (data: unknown) => {
+              try {
+                eventMessage = extractSuccessEventMessage(data) ?? eventMessage;
+              } catch {
+                // Ignore event extraction errors
+              }
+            }
+          );
+        } catch {
+          // Ignore listener registration errors
+        }
 
         return {
           invocation,
           activeRun: activeRecord,
+          cleanup:
+            typeof unsubscribe === 'function'
+              ? () => {
+                  try {
+                    unsubscribe();
+                  } catch {
+                    // Ignore listener cleanup errors
+                  }
+                }
+              : undefined,
           onSuccess: result => {
             owner._finalizeAgentInvocation(
               invocation,
@@ -459,9 +487,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     handler: TelemetryHandler,
     agentInstance: unknown,
     inputArg: unknown,
-    parentContext: Context
+    parentContext: Context,
+    metadata = extractAgentMetadata(agentInstance)
   ): LocalAgentInvocation {
-    const { agentName, agentDescription } = extractAgentMetadata(agentInstance);
+    const { agentName, agentDescription } = metadata;
 
     const agentInput = isRecord(agentInstance)
       ? ownDataValue(agentInstance, 'input')
@@ -566,9 +595,13 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         callerContext,
         runId,
         parentId,
+        parentRun,
         runContext,
         enclosingAgent,
       }) => {
+        if (isInternalFinalAnswerTool(instance, enclosingAgent)) {
+          return undefined;
+        }
         const toolCallMsg = isRecord(runContext?.context)
           ? runContext.context.toolCallMsg
           : undefined;
@@ -588,7 +621,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           parentContext
         );
 
-        enclosingAgent?.invocation.recordToolCall();
+        if (parentRun?.kind !== 'tool') {
+          enclosingAgent?.invocation.recordToolCall();
+        }
 
         return {
           invocation,
@@ -688,10 +723,19 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
         enclosingAgent?.invocation.recordInferenceCall();
 
+        let unsubscribe: (() => void) | void;
         if (isStreaming) {
-          runContext?.emitter?.on?.('newToken', () => {
-            invocation.recordStreamChunk();
-          });
+          try {
+            unsubscribe = runContext?.emitter?.on?.('newToken', () => {
+              try {
+                invocation.recordStreamChunk();
+              } catch {
+                // Ignore chunk recording errors
+              }
+            });
+          } catch {
+            // Ignore listener registration errors
+          }
         }
 
         return {
@@ -705,6 +749,16 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
                 callerSpan: trace.getSpan(callerContext),
               }
             : undefined,
+          cleanup:
+            typeof unsubscribe === 'function'
+              ? () => {
+                  try {
+                    unsubscribe();
+                  } catch {
+                    // Ignore listener cleanup errors
+                  }
+                }
+              : undefined,
           onSuccess: result => {
             owner._finalizeChatInvocation(
               invocation,
@@ -1022,7 +1076,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     spec: RunOperationSpec<TInvocation>
   ): void {
     const originalHandler = run.handler;
-    run.handler = async () => {
+    let inFlightPromise: Promise<unknown> | undefined;
+    const executeWrappedRun = async () => {
       const owner = this._resolveActiveOwner(owners, restore);
       const executionContext = context.active();
       if (
@@ -1037,7 +1092,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       const runId = runContext?.runId;
       const parentId = runContext?.parentId;
       const parentRun = parentId ? activeRuns.get(parentId) : undefined;
-      const enclosingAgent = findEnclosingAgentRun(parentId);
+      const enclosingAgent = findEnclosingAgentRun(
+        parentId,
+        callerContext,
+        executionContext
+      );
       const parentContext = resolveParentContext(
         callerContext,
         executionContext,
@@ -1060,10 +1119,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           callerContext,
           runId,
           parentId,
+          parentRun,
           runContext,
           enclosingAgent,
         });
-        if (runId && started.activeRun) {
+        if (runId && started?.activeRun) {
           activeRuns.set(runId, started.activeRun);
         }
       } catch (err) {
@@ -1074,9 +1134,19 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         return originalHandler.call(run);
       }
 
-      const { invocation, onSuccess, onFailure } = started;
+      const { invocation, activeRun, onSuccess, onFailure } = started;
+      const runScopeContext =
+        activeRun?.kind === 'agent'
+          ? invocation
+              .getContext()
+              .setValue(ACTIVE_AGENT_CONTEXT_KEY, activeRun)
+          : enclosingAgent
+            ? invocation
+                .getContext()
+                .setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
+            : invocation.getContext();
       try {
-        const result = await invocation.withContext(() =>
+        const result = await context.with(runScopeContext, () =>
           originalHandler.call(run)
         );
         try {
@@ -1096,10 +1166,18 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         });
         throw error;
       } finally {
-        if (runId) {
+        started.cleanup?.();
+        if (runId && activeRuns.get(runId) === activeRun) {
           activeRuns.delete(runId);
         }
       }
+    };
+
+    run.handler = () => {
+      if (!inFlightPromise) {
+        inFlightPromise = executeWrappedRun();
+      }
+      return inFlightPromise;
     };
   }
 
@@ -1259,8 +1337,23 @@ function extractSuccessEventMessage(
   return undefined;
 }
 
+function isInternalFinalAnswerTool(
+  toolInstance: unknown,
+  enclosingAgent: ActiveAgentRun | undefined
+): boolean {
+  if (!enclosingAgent || !isRecord(toolInstance)) {
+    return false;
+  }
+  return (
+    toolInstance.name === 'final_answer' &&
+    toolInstance.description === 'Sends the final answer to the user'
+  );
+}
+
 function findEnclosingAgentRun(
-  parentId: string | undefined
+  parentId: string | undefined,
+  callerContext?: Context,
+  executionContext?: Context
 ): ActiveAgentRun | undefined {
   let currentId = parentId;
   const visited = new Set<string>();
@@ -1272,6 +1365,14 @@ function findEnclosingAgentRun(
       return record as ActiveAgentRun;
     }
     currentId = record.parentId;
+  }
+  const fromCaller = callerContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY);
+  if (fromCaller) {
+    return fromCaller as ActiveAgentRun;
+  }
+  const fromExecution = executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY);
+  if (fromExecution) {
+    return fromExecution as ActiveAgentRun;
   }
   return undefined;
 }
@@ -1285,29 +1386,31 @@ function resolveParentContext(
   const executionSpan = trace.getSpan(executionContext);
 
   if (parentRun) {
-    const parentSpan = trace.getSpan(parentRun.invocation.getContext());
-    if (
-      executionSpan &&
-      executionSpan !== parentSpan &&
-      executionSpan !== parentRun.callerSpan
-    ) {
-      return executionContext;
+    const ancestorSpans = new Set<Span>();
+    let current: ActiveRun | undefined = parentRun;
+    const visited = new Set<string>();
+    while (current && !visited.has(current.runId)) {
+      visited.add(current.runId);
+      const runSpan = trace.getSpan(current.invocation.getContext());
+      if (runSpan) ancestorSpans.add(runSpan);
+      if (current.callerSpan) ancestorSpans.add(current.callerSpan);
+      current = current.parentId ? activeRuns.get(current.parentId) : undefined;
     }
-    if (
-      callerSpan &&
-      callerSpan !== parentSpan &&
-      callerSpan !== parentRun.callerSpan
-    ) {
+
+    if (callerSpan && !ancestorSpans.has(callerSpan)) {
       return callerContext;
+    }
+    if (executionSpan && !ancestorSpans.has(executionSpan)) {
+      return executionContext;
     }
     return parentRun.invocation.getContext();
   }
 
-  if (executionSpan) {
-    return executionContext;
-  }
   if (callerSpan) {
     return callerContext;
+  }
+  if (executionSpan) {
+    return executionContext;
   }
   return executionContext;
 }
