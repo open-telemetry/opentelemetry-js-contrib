@@ -162,9 +162,28 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   declare private _explicitTracerProvider: TracerProvider | undefined;
   declare private _explicitMeterProvider: MeterProvider | undefined;
   declare private _lastCaptureEnv: string | undefined;
+  declare private _manualTargets: Set<object> | undefined;
 
   constructor(config: BeeAIInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override enable(): void {
+    super.enable();
+    if (this._manualTargets) {
+      for (const target of this._manualTargets) {
+        this._patchModule(target);
+      }
+    }
+  }
+
+  override disable(): void {
+    super.disable();
+    if (this._manualTargets) {
+      for (const target of this._manualTargets) {
+        this._unpatchModule(target);
+      }
+    }
   }
 
   override setConfig(config: BeeAIInstrumentationConfig = {}): void {
@@ -185,8 +204,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   }
 
   private _getTelemetryHandler(): TelemetryHandler {
+    const config = this.getConfig();
     const currentEnv =
-      process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
+      config.captureMessageContent === undefined
+        ? process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT
+        : undefined;
     if (!this._telemetryHandler || this._lastCaptureEnv !== currentEnv) {
       this._lastCaptureEnv = currentEnv;
       this._telemetryHandler = new TelemetryHandler({
@@ -195,7 +217,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         tracerProvider: this._explicitTracerProvider,
         meterProvider: this._explicitMeterProvider,
         diag: this._diag,
-        config: this.getConfig(),
+        config,
       });
     }
     return this._telemetryHandler;
@@ -274,7 +296,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     this._diag.debug(
       `[BeeAIInstrumentation] Manually instrumenting ${MODULE_NAME}`
     );
-    this._patchModule(target);
+    this._manualTargets ??= new Set();
+    this._manualTargets.add(target);
+    if (this.isEnabled()) {
+      this._patchModule(target);
+    }
   }
 
   private _normalizeModule(moduleExports: unknown):
@@ -308,9 +334,14 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     if (!target) {
       return;
     }
-    if (!target.BaseAgent) {
+    if (
+      !target.BaseAgent &&
+      !target.Tool &&
+      !target.ChatModel &&
+      !target.EmbeddingModel
+    ) {
       this._diag.warn(
-        '[BeeAIInstrumentation] BaseAgent not found, skipping instrumentation.'
+        '[BeeAIInstrumentation] No instrumentable BeeAI classes found, skipping instrumentation.'
       );
       return;
     }
@@ -1244,7 +1275,10 @@ function isBeeAIRun(value: unknown): value is BeeAIRunLike {
 
 function isSupportedVersion(version: unknown): boolean {
   if (typeof version !== 'string') return true;
-  const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?/.exec(version.trim());
+  const match =
+    /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/.exec(
+      version.trim()
+    );
   if (!match) return false;
   const major = Number(match[1]);
   const minor = Number(match[2]);
@@ -1291,10 +1325,17 @@ function extractAgentMetadata(agentInstance: unknown): {
   agentName?: string;
   agentDescription?: string;
 } {
-  const meta =
-    isRecord(agentInstance) && isRecord(agentInstance.meta)
-      ? agentInstance.meta
-      : undefined;
+  let meta: Record<string, unknown> | undefined;
+  if (isRecord(agentInstance)) {
+    try {
+      const rawMeta = agentInstance.meta;
+      if (isRecord(rawMeta)) {
+        meta = rawMeta;
+      }
+    } catch {
+      // Ignore getter errors on custom agent implementations
+    }
+  }
   const agentName =
     typeof meta?.name === 'string' && meta.name.trim()
       ? meta.name.trim()

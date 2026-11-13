@@ -1162,6 +1162,26 @@ describe('BeeAIInstrumentation', () => {
       }
     });
 
+    it('patches subpath modules without BaseAgent and unpatches manual targets on disable()', () => {
+      class DummySubpathTool {
+        run() {
+          return 'original';
+        }
+      }
+      const originalRun = DummySubpathTool.prototype.run;
+      const customInst = new BeeAIInstrumentation({ enabled: false });
+      customInst.manuallyInstrument({
+        Tool: DummySubpathTool as unknown as typeof bee.Tool,
+      });
+      expect(DummySubpathTool.prototype.run).toBe(originalRun);
+
+      customInst.enable();
+      expect(DummySubpathTool.prototype.run).not.toBe(originalRun);
+
+      customInst.disable();
+      expect(DummySubpathTool.prototype.run).toBe(originalRun);
+    });
+
     it('handles multimodal blob parts, reasoning tokens, and cached tokens', async () => {
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
       const llm = new MockChatModel({
