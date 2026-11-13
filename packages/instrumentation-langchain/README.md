@@ -246,7 +246,9 @@ their immediate parent. When no active span is available, inherited callback
 markers preserve graph/tool parentage without relying on unique run IDs.
 Context-only hooks around graph node execution and internal sequences
 keep nested tools and application spans under the graph across asynchronous
-work. Existing user callbacks are preserved, and in-flight runs retain their
+work. Re-entering the same graph invocation preserves any active child span,
+rather than resetting its descendants to the graph span. Existing user
+callbacks are preserved, and in-flight runs retain their
 original telemetry configuration.
 
 Completion follows SDK notifications, as in the donation. A stream that is

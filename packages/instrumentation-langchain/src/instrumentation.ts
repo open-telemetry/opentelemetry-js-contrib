@@ -5,6 +5,7 @@
 
 import {
   context,
+  createContextKey,
   diag,
   trace,
   SpanKind,
@@ -71,6 +72,9 @@ import {
 
 const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
+const ACTIVE_GRAPH_CONTEXT = createContextKey(
+  'opentelemetry.langchain.active_graph_context'
+);
 
 interface WorkflowPatch {
   owners: Set<LangChainInstrumentation>;
@@ -562,7 +566,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     } catch {
       this._diag.warn('LangChain: could not read graph execution context');
     }
-    return graph ? context.with(graph, invoke) : invoke();
+    // Descendant spans inherit this invocation marker; preserve their context.
+    return graph && parent.getValue(ACTIVE_GRAPH_CONTEXT) !== graph
+      ? context.with(graph.setValue(ACTIVE_GRAPH_CONTEXT, graph), invoke)
+      : invoke();
   }
 
   private _patchGraphs(module: typeof PregelModule) {
@@ -1010,21 +1017,23 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     )
       return invoke();
     let state: WorkflowState | undefined;
-    let graphContext: Context | undefined;
+    let isGraphAdapter = false;
     try {
       // LangGraph sets omitSequenceTags on internal node/channel-writer
       // sequences (e.g. PregelNode.getNode()) to omit seq:step:* callback tags.
       // Skip these internal adapters rather than reporting them as workflows.
-      if (!('omitSequenceTags' in target && target.omitSequenceTags === true)) {
+      isGraphAdapter =
+        'omitSequenceTags' in target && target.omitSequenceTags === true;
+      if (!isGraphAdapter) {
         state = this._startWorkflow(target, input, options, batch, parent);
-      } else {
-        graphContext = getGraphContext(ownValue(options, 'callbacks'));
       }
     } catch {
       this._diag.warn('LangChain: could not start operation telemetry');
     }
     if (!state)
-      return graphContext ? context.with(graphContext, invoke) : invoke();
+      return isGraphAdapter
+        ? this._withGraphContext(options, invoke)
+        : invoke();
     const active = state;
     let result: R;
     try {

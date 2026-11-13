@@ -42,6 +42,7 @@ import {
   type RunnableConfig,
 } from '@langchain/core/runnables';
 import { Pregel } from '@langchain/langgraph/pregel';
+import { ToolNode } from '@langchain/langgraph/prebuilt';
 import * as sinon from 'sinon';
 import { FakeChatModel } from '@langchain/core/utils/testing';
 import { createAgent } from 'langchain';
@@ -567,6 +568,88 @@ describe('LangChain donated graph callbacks', () => {
     });
   }
 
+  for (const kind of ['callable', 'sequence', 'internal-sequence'] as const) {
+    it(`preserves intermediate parents inside graph nodes (${kind})`, async () => {
+      const tracer = trace.getTracer('graph-test');
+      const tool = new DynamicTool({
+        name: 'echo',
+        description: 'Offline tool',
+        func: async value => {
+          await Promise.resolve();
+          tracer.startSpan('inside-tool').end();
+          return value;
+        },
+      });
+      const toolNode = new ToolNode([tool], { handleToolErrors: false });
+      const sequence = RunnableSequence.from([
+        RunnableLambda.from(value => value),
+        toolNode,
+      ]);
+      sequence.omitSequenceTags = kind === 'internal-sequence';
+      const operation = new StateGraph(State)
+        .addNode('step', async (state, config) =>
+          tracer.startActiveSpan('intermediate', async span => {
+            try {
+              await Promise.resolve();
+              const request = {
+                messages: [
+                  new AIMessage({
+                    content: '',
+                    tool_calls: [
+                      { name: 'echo', args: { input: 'hello' }, id: 'call-1' },
+                    ],
+                  }),
+                ],
+              };
+              await (kind === 'callable' ? toolNode : sequence).invoke(
+                request,
+                kind === 'callable' ? config : { ...config, runName: 'nested' }
+              );
+              assert.equal(trace.getSpan(context.active()), span);
+              return state;
+            } finally {
+              span.end();
+            }
+          })
+        )
+        .addEdge(START, 'step')
+        .addEdge('step', END)
+        .compile({ name: 'parent' });
+      await tracer.startActiveSpan('request', async span => {
+        try {
+          await operation.invoke(input());
+          assert.equal(trace.getSpan(context.active()), span);
+        } finally {
+          span.end();
+        }
+      });
+      const spans = getTestSpans();
+      const expected = [
+        'request',
+        'invoke_workflow parent',
+        'intermediate',
+        ...(kind === 'sequence' ? ['invoke_workflow nested'] : []),
+        'execute_tool echo',
+        'inside-tool',
+      ];
+      assert.deepEqual(
+        spans.map(span => span.name).sort(),
+        [...expected].sort()
+      );
+      for (let i = 1; i < expected.length; i++) {
+        const parent = spans.find(span => span.name === expected[i - 1]);
+        const child = spans.find(span => span.name === expected[i]);
+        assert.ok(parent && child);
+        assert.equal(
+          child.parentSpanContext?.spanId,
+          parent.spanContext().spanId,
+          `${child.name} should remain a child of ${parent.name}`
+        );
+      }
+      assert.equal(trace.getSpan(context.active()), undefined);
+    });
+  }
+
   for (const method of ['invoke', 'stream'] as const) {
     it(`records callback failures and preserves the SDK error for ${method}`, async () => {
       const failure = new TypeError('private graph failure');
@@ -778,7 +861,10 @@ describe('LangChain donated graph callbacks', () => {
     const step = async (
       state: typeof State.State
     ): Promise<typeof State.State> => {
-      if (state.privateState === 'nested') return state;
+      if (state.privateState === 'nested') {
+        trace.getTracer('graph-test').startSpan('inside-recursive-graph').end();
+        return state;
+      }
       return operation.invoke(
         { ...state, privateState: 'nested' },
         { runName: 'inner' }
@@ -809,11 +895,16 @@ describe('LangChain donated graph callbacks', () => {
     });
     assert.ok(names.includes('inner'));
     const spans = getTestSpans();
-    assert.equal(spans.length, 2);
+    assert.equal(spans.length, 3);
     const outer = spans.find(span => span.name === 'invoke_workflow outer');
     const inner = spans.find(span => span.name === 'invoke_workflow inner');
     assert.ok(outer && inner);
     assert.equal(inner.parentSpanContext?.spanId, outer.spanContext().spanId);
+    assert.equal(
+      spans.find(span => span.name === 'inside-recursive-graph')
+        ?.parentSpanContext?.spanId,
+      inner.spanContext().spanId
+    );
   });
 
   it('does not synthesize a completion when stream consumption stops early', async () => {
