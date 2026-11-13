@@ -9,8 +9,14 @@
       "matchPackageNames": ["!prettier"]
     },
     {
+      "matchUpdateTypes": ["major"],
+      "matchCategories": ["js"],
+      "dependencyDashboardCategory": "{{categories}}",
+    },
+    {
       "matchUpdateTypes": ["minor"],
       "matchCategories": ["js"],
+      "dependencyDashboardCategory": "{{categories}}",
       "dependencyDashboardApproval": true
     },
     {
@@ -20,6 +26,7 @@
     },
     {
       "matchCategories": ["ci"],
+      "dependencyDashboardCategory": "{{categories}}",
       "schedule": ["before 3am on Monday"]
     },
     {
