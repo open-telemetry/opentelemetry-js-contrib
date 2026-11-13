@@ -37,6 +37,7 @@ import {
   ExpressLayer,
   ExpressRouter,
   kLayerPatched,
+  kWrappedBy,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
 } from './internal-types';
@@ -173,7 +174,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
       // TODO: instrument error handlers
       if (original.length === 4) return original;
 
-      const patched = function (
+      const patched = function _otelPatchLayerHandle(
         this: ExpressLayer,
         req: PatchedRequest,
         res: express.Response
@@ -345,6 +346,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           },
         });
       }
+      Object.defineProperty(patched, kWrappedBy, { value: PACKAGE_NAME });
       return patched;
     });
   }
