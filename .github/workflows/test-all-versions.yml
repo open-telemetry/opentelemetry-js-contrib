@@ -56,6 +56,9 @@ jobs:
         node: ["22", "24", "26"]
     runs-on: ubuntu-latest
     steps:
+      - name: Reserve test service ports
+        # Keep outgoing connections from taking the MySQL and Postgres host ports.
+        run: sudo sysctl -w net.ipv4.ip_local_reserved_ports=33306,54320
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
