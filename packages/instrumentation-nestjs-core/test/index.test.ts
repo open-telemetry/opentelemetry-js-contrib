@@ -4,6 +4,8 @@
  */
 
 import * as semver from 'semver';
+import { readFileSync } from 'fs';
+import { dirname, join } from 'path';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
@@ -18,7 +20,12 @@ import { getRequester, setup, App } from './setup';
 
 import * as util from 'util';
 
-const LIB_VERSION = require('@nestjs/core/package.json').version;
+const LIB_VERSION = JSON.parse(
+  readFileSync(
+    join(dirname(require.resolve('@nestjs/core')), 'package.json'),
+    'utf8'
+  )
+).version;
 
 const instrumentation = new NestInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
@@ -96,6 +103,7 @@ describe('nestjs-core', () => {
         url,
         path,
         callback,
+        instance,
       },
     ]);
   });
@@ -146,6 +154,7 @@ describe('nestjs-core', () => {
         url,
         path,
         callback,
+        instance,
       },
     ]);
   });
@@ -187,6 +196,7 @@ describe('nestjs-core', () => {
         url,
         path,
         callback,
+        instance,
         status: {
           code: SpanStatusCode.ERROR,
           message: 'custom error',
@@ -230,7 +240,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
       assert.strictEqual(span.attributes['nestjs.type'], expected.type);
       assert.strictEqual(span.attributes['nestjs.callback'], expected.callback);
       assert.strictEqual(
-        span.attributes['nest.controller.instance'],
+        span.attributes['nestjs.controller'],
         expected.instance
       );
 
@@ -238,11 +248,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
         span.attributes.component,
         NestInstrumentation.COMPONENT
       );
-      assert.strictEqual(
-        typeof span.attributes['nestjs.version'],
-        'string',
-        'nestjs.version not specified'
-      );
+      assert.strictEqual(span.attributes['nestjs.version'], LIB_VERSION);
       assert.deepEqual(
         span.status,
         expected.status || { code: SpanStatusCode.UNSET }
@@ -269,7 +275,7 @@ const assertSpans = (actualSpans: any[], expectedSpans: any[]) => {
           }", but found "${
             actualSpans.find(
               s => s.spanContext().spanId === span.parentSpanContext?.spanId
-            ).name
+            )?.name
           }"`
         );
       } else if (expected.parentSpan !== null) {

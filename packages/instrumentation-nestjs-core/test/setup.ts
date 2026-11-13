@@ -5,7 +5,7 @@
 import * as http from 'http';
 import * as semver from 'semver';
 import { AddressInfo } from 'net';
-import {
+import type {
   CanActivate,
   ExecutionContext,
   NestInterceptor,

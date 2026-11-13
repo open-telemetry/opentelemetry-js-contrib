@@ -1,8 +1,19 @@
 {
   "extends": "../../tsconfig",
   "compilerOptions": {
+    // tsdown emits both CJS and ESM from sources that use Nest's ESM types.
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "rootDir": ".",
-    "outDir": "build"
+    "outDir": "build",
+    "types": ["node", "mocha"]
+  },
+  "ts-node": {
+    // Mocha runs the TypeScript tests as CommonJS.
+    "compilerOptions": {
+      "module": "node16",
+      "moduleResolution": "node16"
+    }
   },
   "include": [
     "src/**/*.ts",
