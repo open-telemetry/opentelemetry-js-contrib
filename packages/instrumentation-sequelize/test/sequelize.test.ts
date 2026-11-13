@@ -315,7 +315,8 @@ describe('instrumentation-sequelize', () => {
   });
 
   describe('sqlite', () => {
-    const instance = new sequelize.Sequelize('sqlite:memory', {
+    // https://sequelize.org/docs/v6/getting-started/#connecting-to-a-database
+    const instance = new sequelize.Sequelize('sqlite::memory:', {
       logging: false,
     });
     instance.define('User', {
@@ -330,7 +331,10 @@ describe('instrumentation-sequelize', () => {
       assert.strictEqual(spans.length, 1);
       const attributes = spans[0].attributes;
       assert.strictEqual(attributes[ATTR_DB_SYSTEM_NAME], 'sqlite');
-      assert.strictEqual(attributes[ATTR_SERVER_ADDRESS], 'memory');
+      // db.namespace: I think we'd expect ":memory:" here, with the trailing
+      // colon as at https://www.sqlite.org/inmemorydb.html. However sequelize
+      // Sequelize#config.database drops the trailing ':'.
+      assert.strictEqual(attributes[ATTR_DB_NAMESPACE], ':memory');
       assert.strictEqual(attributes[ATTR_DB_OPERATION_NAME], 'INSERT');
       assert.strictEqual(attributes[ATTR_DB_COLLECTION_NAME], 'Users');
       assert.strictEqual(
