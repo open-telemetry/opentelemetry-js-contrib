@@ -51,6 +51,28 @@ The `instrumentation-net` versions 0.64.0 and later emit the stable v1.23.0+ sem
 | `network.local.address` | Local address of the network connection - IP address or Unix domain socket name. |
 | `network.local.port`    | Local port number of the network connection.                                     |
 
+### TLS attributes
+
+For `tls.connect()`, an additional `tls.connect` span is created as the parent of the `tcp.connect` span.
+It uses the [TLS semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/tls/).
+These are still in Development status, so they can change in a future minor release of this package.
+
+| Attribute                | Description                                                                              |
+| ------------------------ | ---------------------------------------------------------------------------------------- |
+| `tls.established`        | `true` when the TLS handshake completed, `false` when the socket errored before that     |
+| `tls.protocol.name`      | Negotiated protocol name, `tls` or `ssl`                                                 |
+| `tls.protocol.version`   | Negotiated protocol version, e.g. `1.2` or `1.3`                                         |
+| `tls.cipher`             | IANA name of the negotiated cipher suite                                                 |
+| `tls.next_protocol`      | Negotiated ALPN protocol, e.g. `http/1.1`, if any                                        |
+| `tls.server.hash.sha1`   | SHA-1 fingerprint of the server certificate                                              |
+| `tls.server.hash.sha256` | SHA-256 fingerprint of the server certificate                                            |
+| `tls.server.not_before`  | Start of the server certificate validity period (ISO 8601)                               |
+| `tls.server.not_after`   | End of the server certificate validity period (ISO 8601)                                 |
+
+The `tls.server.*` attributes are omitted when the server did not send a certificate, for example for a resumed TLS 1.2 session.
+
+Earlier versions of this instrumentation emitted non-standard attributes instead: `tls.protocol`, `tls.authorized`, `tls.cipher.name`, `tls.cipher.version`, `tls.certificate.fingerprint`, `tls.certificate.serialNumber`, `tls.certificate.validFrom`, `tls.certificate.validTo` and `tls.alpnProtocol`, along with the exported `TLSAttributes` enum.
+
 
 ## Useful links
 
