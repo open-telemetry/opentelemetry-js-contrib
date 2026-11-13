@@ -11,13 +11,17 @@ import {
   GEN_AI_FINISH_REASON_VALUE_TOOL_CALL,
   GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
   GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
+  GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE,
   GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI,
   GEN_AI_PROVIDER_NAME_VALUE_COHERE,
   GEN_AI_PROVIDER_NAME_VALUE_DEEPSEEK,
+  GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
+  GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GROQ,
   GEN_AI_PROVIDER_NAME_VALUE_IBM_WATSONX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_MISTRAL,
+  GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI,
   GEN_AI_PROVIDER_NAME_VALUE_OLLAMA,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
   GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY,
@@ -83,6 +87,13 @@ export function mapProviderName(providerId: unknown): string {
     case 'google':
     case 'gcp.vertex_ai':
       return GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI;
+    case 'google-genai':
+    case 'gcp.gen_ai':
+      return GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI;
+    case 'gemini':
+    case 'google-gemini':
+    case 'gcp.gemini':
+      return GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI;
     case 'amazon-bedrock':
     case 'amazonbedrock':
     case 'bedrock':
@@ -96,6 +107,10 @@ export function mapProviderName(providerId: unknown): string {
     case 'microsoft-azure':
     case 'azure.ai.openai':
       return GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_OPENAI;
+    case 'azure-ai':
+    case 'azure-inference':
+    case 'azure.ai.inference':
+      return GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE;
     case 'groq':
       return GEN_AI_PROVIDER_NAME_VALUE_GROQ;
     case 'xai':
@@ -109,10 +124,13 @@ export function mapProviderName(providerId: unknown): string {
     case 'mistral':
     case 'mistral_ai':
       return GEN_AI_PROVIDER_NAME_VALUE_MISTRAL;
+    case 'moonshot':
+    case 'moonshot_ai':
+      return GEN_AI_PROVIDER_NAME_VALUE_MOONSHOT_AI;
     case 'perplexity':
       return GEN_AI_PROVIDER_NAME_VALUE_PERPLEXITY;
     default:
-      return trimmed;
+      return normalized;
   }
 }
 

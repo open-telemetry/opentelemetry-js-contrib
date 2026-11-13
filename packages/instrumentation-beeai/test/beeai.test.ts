@@ -17,39 +17,8 @@ import {
 } from '@opentelemetry/contrib-test-utils';
 import { suppressTracing } from '@opentelemetry/core';
 import {
-  ATTR_GEN_AI_AGENT_DESCRIPTION,
-  ATTR_GEN_AI_AGENT_NAME,
-  ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
-  ATTR_GEN_AI_INPUT_MESSAGES,
-  ATTR_GEN_AI_OPERATION_NAME,
-  ATTR_GEN_AI_OUTPUT_MESSAGES,
   ATTR_GEN_AI_OUTPUT_TYPE,
-  ATTR_GEN_AI_PROVIDER_NAME,
-  ATTR_GEN_AI_REQUEST_CHOICE_COUNT,
-  ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY,
-  ATTR_GEN_AI_REQUEST_MAX_TOKENS,
-  ATTR_GEN_AI_REQUEST_MODEL,
-  ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY,
-  ATTR_GEN_AI_REQUEST_SEED,
-  ATTR_GEN_AI_REQUEST_STOP_SEQUENCES,
-  ATTR_GEN_AI_REQUEST_STREAM,
-  ATTR_GEN_AI_REQUEST_TEMPERATURE,
-  ATTR_GEN_AI_REQUEST_TOP_K,
-  ATTR_GEN_AI_REQUEST_TOP_P,
-  ATTR_GEN_AI_RESPONSE_FINISH_REASONS,
-  ATTR_GEN_AI_RESPONSE_ID,
-  ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK,
-  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS,
-  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_ID,
-  ATTR_GEN_AI_TOOL_CALL_RESULT,
-  ATTR_GEN_AI_TOOL_DESCRIPTION,
-  ATTR_GEN_AI_TOOL_NAME,
-  ATTR_GEN_AI_TOOL_TYPE,
-  ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_INPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
-  ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
@@ -59,18 +28,63 @@ import {
   GEN_AI_PROVIDER_NAME_VALUE_OLLAMA,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
   GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
-  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
-  METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
-  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
-  METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS,
-  METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
-  METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
-  METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
-  METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
-  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
-  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
-  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
 } from '@opentelemetry/genai-util';
+
+const ATTR_GEN_AI_AGENT_DESCRIPTION = 'gen_ai.agent.description';
+const ATTR_GEN_AI_AGENT_NAME = 'gen_ai.agent.name';
+const ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT =
+  'gen_ai.embeddings.dimension.count';
+const ATTR_GEN_AI_INPUT_MESSAGES = 'gen_ai.input.messages';
+const ATTR_GEN_AI_OPERATION_NAME = 'gen_ai.operation.name';
+const ATTR_GEN_AI_OUTPUT_MESSAGES = 'gen_ai.output.messages';
+const ATTR_GEN_AI_PROVIDER_NAME = 'gen_ai.provider.name';
+const ATTR_GEN_AI_REQUEST_CHOICE_COUNT = 'gen_ai.request.choice.count';
+const ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY =
+  'gen_ai.request.frequency_penalty';
+const ATTR_GEN_AI_REQUEST_MAX_TOKENS = 'gen_ai.request.max_tokens';
+const ATTR_GEN_AI_REQUEST_MODEL = 'gen_ai.request.model';
+const ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY = 'gen_ai.request.presence_penalty';
+const ATTR_GEN_AI_REQUEST_SEED = 'gen_ai.request.seed';
+const ATTR_GEN_AI_REQUEST_STOP_SEQUENCES = 'gen_ai.request.stop_sequences';
+const ATTR_GEN_AI_REQUEST_STREAM = 'gen_ai.request.stream';
+const ATTR_GEN_AI_REQUEST_TEMPERATURE = 'gen_ai.request.temperature';
+const ATTR_GEN_AI_REQUEST_TOP_K = 'gen_ai.request.top_k';
+const ATTR_GEN_AI_REQUEST_TOP_P = 'gen_ai.request.top_p';
+const ATTR_GEN_AI_RESPONSE_FINISH_REASONS = 'gen_ai.response.finish_reasons';
+const ATTR_GEN_AI_RESPONSE_ID = 'gen_ai.response.id';
+const ATTR_GEN_AI_RESPONSE_TIME_TO_FIRST_CHUNK =
+  'gen_ai.response.time_to_first_chunk';
+const ATTR_GEN_AI_SYSTEM_INSTRUCTIONS = 'gen_ai.system_instructions';
+const ATTR_GEN_AI_TOOL_CALL_ARGUMENTS = 'gen_ai.tool.call.arguments';
+const ATTR_GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result';
+const ATTR_GEN_AI_TOOL_DESCRIPTION = 'gen_ai.tool.description';
+const ATTR_GEN_AI_TOOL_NAME = 'gen_ai.tool.name';
+const ATTR_GEN_AI_TOOL_TYPE = 'gen_ai.tool.type';
+const ATTR_GEN_AI_USAGE_CACHE_READ_INPUT_TOKENS =
+  'gen_ai.usage.cache_read.input_tokens';
+const ATTR_GEN_AI_USAGE_INPUT_TOKENS = 'gen_ai.usage.input_tokens';
+const ATTR_GEN_AI_USAGE_OUTPUT_TOKENS = 'gen_ai.usage.output_tokens';
+const ATTR_GEN_AI_USAGE_REASONING_OUTPUT_TOKENS =
+  'gen_ai.usage.reasoning.output_tokens';
+const METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS =
+  'gen_ai.client.inference.operation.input_tokens';
+const METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS =
+  'gen_ai.client.inference.operation.output_tokens';
+const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS =
+  'gen_ai.client.inference.usage.input_tokens';
+const METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_OUTPUT_TOKENS =
+  'gen_ai.client.inference.usage.output_tokens';
+const METRIC_GEN_AI_CLIENT_OPERATION_DURATION =
+  'gen_ai.client.operation.duration';
+const METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK =
+  'gen_ai.client.operation.time_per_output_chunk';
+const METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK =
+  'gen_ai.client.operation.time_to_first_chunk';
+const METRIC_GEN_AI_EXECUTE_TOOL_DURATION = 'gen_ai.execute_tool.duration';
+const METRIC_GEN_AI_INVOKE_AGENT_DURATION = 'gen_ai.invoke_agent.duration';
+const METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS =
+  'gen_ai.invoke_agent.inference_calls';
+const METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS = 'gen_ai.invoke_agent.tool_calls';
 import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
