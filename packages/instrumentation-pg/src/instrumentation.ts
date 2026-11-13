@@ -677,6 +677,9 @@ export class PgInstrumentation extends InstrumentationBase<PgInstrumentationConf
         plugin._setPoolConnectEventListeners(this);
 
         if (config.ignoreConnectSpans) {
+          if (callback && trace.getSpan(context.active())) {
+            callback = context.bind(context.active(), callback);
+          }
           return originalConnect.call(this, callback as any);
         }
 
