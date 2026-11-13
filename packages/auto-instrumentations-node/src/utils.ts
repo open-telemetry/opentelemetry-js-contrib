@@ -3,50 +3,52 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { createRequire } from 'node:module';
+
 import { diag } from '@opentelemetry/api';
 import { Instrumentation } from '@opentelemetry/instrumentation';
 
-import { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
-import { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
-import { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
-import { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
-import { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
-import { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
-import { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber';
-import { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
-import { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
-import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
-import { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
-import { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-generic-pool';
-import { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
-import { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
-import { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
-import { HostMetricsInstrumentation } from '@opentelemetry/instrumentation-host-metrics';
-import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
-import { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
-import { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
-import { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
-import { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
-import { MemcachedInstrumentation } from '@opentelemetry/instrumentation-memcached';
-import { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
-import { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
-import { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
-import { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
-import { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
-import { NetInstrumentation } from '@opentelemetry/instrumentation-net';
-import { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
-import { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
-import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
-import { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
-import { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
-import { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
-import { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
-import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
-import { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
-import { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
-import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
-import { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
+import type { AmqplibInstrumentation } from '@opentelemetry/instrumentation-amqplib';
+import type { AwsLambdaInstrumentation } from '@opentelemetry/instrumentation-aws-lambda';
+import type { AwsInstrumentation } from '@opentelemetry/instrumentation-aws-sdk';
+import type { BunyanInstrumentation } from '@opentelemetry/instrumentation-bunyan';
+import type { CassandraDriverInstrumentation } from '@opentelemetry/instrumentation-cassandra-driver';
+import type { ConnectInstrumentation } from '@opentelemetry/instrumentation-connect';
+import type { CucumberInstrumentation } from '@opentelemetry/instrumentation-cucumber';
+import type { DataloaderInstrumentation } from '@opentelemetry/instrumentation-dataloader';
+import type { DnsInstrumentation } from '@opentelemetry/instrumentation-dns';
+import type { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
+import type { FsInstrumentation } from '@opentelemetry/instrumentation-fs';
+import type { GenericPoolInstrumentation } from '@opentelemetry/instrumentation-generic-pool';
+import type { GraphQLInstrumentation } from '@opentelemetry/instrumentation-graphql';
+import type { GrpcInstrumentation } from '@opentelemetry/instrumentation-grpc';
+import type { HapiInstrumentation } from '@opentelemetry/instrumentation-hapi';
+import type { HostMetricsInstrumentation } from '@opentelemetry/instrumentation-host-metrics';
+import type { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
+import type { IORedisInstrumentation } from '@opentelemetry/instrumentation-ioredis';
+import type { KafkaJsInstrumentation } from '@opentelemetry/instrumentation-kafkajs';
+import type { KnexInstrumentation } from '@opentelemetry/instrumentation-knex';
+import type { KoaInstrumentation } from '@opentelemetry/instrumentation-koa';
+import type { LruMemoizerInstrumentation } from '@opentelemetry/instrumentation-lru-memoizer';
+import type { MemcachedInstrumentation } from '@opentelemetry/instrumentation-memcached';
+import type { MongoDBInstrumentation } from '@opentelemetry/instrumentation-mongodb';
+import type { MongooseInstrumentation } from '@opentelemetry/instrumentation-mongoose';
+import type { MySQL2Instrumentation } from '@opentelemetry/instrumentation-mysql2';
+import type { MySQLInstrumentation } from '@opentelemetry/instrumentation-mysql';
+import type { NestInstrumentation } from '@opentelemetry/instrumentation-nestjs-core';
+import type { NetInstrumentation } from '@opentelemetry/instrumentation-net';
+import type { OpenAIInstrumentation } from '@opentelemetry/instrumentation-openai';
+import type { OracleInstrumentation } from '@opentelemetry/instrumentation-oracledb';
+import type { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
+import type { PinoInstrumentation } from '@opentelemetry/instrumentation-pino';
+import type { RedisInstrumentation } from '@opentelemetry/instrumentation-redis';
+import type { RestifyInstrumentation } from '@opentelemetry/instrumentation-restify';
+import type { RouterInstrumentation } from '@opentelemetry/instrumentation-router';
+import type { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
+import type { SocketIoInstrumentation } from '@opentelemetry/instrumentation-socket.io';
+import type { TediousInstrumentation } from '@opentelemetry/instrumentation-tedious';
+import type { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
+import type { WinstonInstrumentation } from '@opentelemetry/instrumentation-winston';
 
 import { alibabaCloudEcsDetector } from '@opentelemetry/resource-detector-alibaba-cloud';
 import {
@@ -83,49 +85,155 @@ const RESOURCE_DETECTOR_AWS = 'aws';
 const RESOURCE_DETECTOR_AZURE = 'azure';
 const RESOURCE_DETECTOR_GCP = 'gcp';
 
+// Resolved against this module's own location, so that instrumentations are
+// loaded from this package's dependencies rather than from wherever the
+// application happens to resolve bare specifiers.
+const requireInstrumentationModule = createRequire(__filename);
+
+// Instrumentations are loaded on demand, and only when enabled, so that a module
+// that cannot be loaded at all costs only its own instrumentation instead of
+// preventing the SDK — and with it the application — from starting.
 const InstrumentationMap = {
-  '@opentelemetry/instrumentation-amqplib': AmqplibInstrumentation,
-  '@opentelemetry/instrumentation-aws-lambda': AwsLambdaInstrumentation,
-  '@opentelemetry/instrumentation-aws-sdk': AwsInstrumentation,
-  '@opentelemetry/instrumentation-bunyan': BunyanInstrumentation,
+  '@opentelemetry/instrumentation-amqplib': (): typeof AmqplibInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-amqplib')
+      .AmqplibInstrumentation,
+  '@opentelemetry/instrumentation-aws-lambda':
+    (): typeof AwsLambdaInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-aws-lambda')
+        .AwsLambdaInstrumentation,
+  '@opentelemetry/instrumentation-aws-sdk': (): typeof AwsInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-aws-sdk')
+      .AwsInstrumentation,
+  '@opentelemetry/instrumentation-bunyan': (): typeof BunyanInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-bunyan')
+      .BunyanInstrumentation,
   '@opentelemetry/instrumentation-cassandra-driver':
-    CassandraDriverInstrumentation,
-  '@opentelemetry/instrumentation-connect': ConnectInstrumentation,
-  '@opentelemetry/instrumentation-cucumber': CucumberInstrumentation,
-  '@opentelemetry/instrumentation-dataloader': DataloaderInstrumentation,
-  '@opentelemetry/instrumentation-dns': DnsInstrumentation,
-  '@opentelemetry/instrumentation-express': ExpressInstrumentation,
-  '@opentelemetry/instrumentation-fs': FsInstrumentation,
-  '@opentelemetry/instrumentation-generic-pool': GenericPoolInstrumentation,
-  '@opentelemetry/instrumentation-graphql': GraphQLInstrumentation,
-  '@opentelemetry/instrumentation-grpc': GrpcInstrumentation,
-  '@opentelemetry/instrumentation-hapi': HapiInstrumentation,
-  '@opentelemetry/instrumentation-host-metrics': HostMetricsInstrumentation,
-  '@opentelemetry/instrumentation-http': HttpInstrumentation,
-  '@opentelemetry/instrumentation-ioredis': IORedisInstrumentation,
-  '@opentelemetry/instrumentation-kafkajs': KafkaJsInstrumentation,
-  '@opentelemetry/instrumentation-knex': KnexInstrumentation,
-  '@opentelemetry/instrumentation-koa': KoaInstrumentation,
-  '@opentelemetry/instrumentation-lru-memoizer': LruMemoizerInstrumentation,
-  '@opentelemetry/instrumentation-memcached': MemcachedInstrumentation,
-  '@opentelemetry/instrumentation-mongodb': MongoDBInstrumentation,
-  '@opentelemetry/instrumentation-mongoose': MongooseInstrumentation,
-  '@opentelemetry/instrumentation-mysql2': MySQL2Instrumentation,
-  '@opentelemetry/instrumentation-mysql': MySQLInstrumentation,
-  '@opentelemetry/instrumentation-nestjs-core': NestInstrumentation,
-  '@opentelemetry/instrumentation-net': NetInstrumentation,
-  '@opentelemetry/instrumentation-openai': OpenAIInstrumentation,
-  '@opentelemetry/instrumentation-oracledb': OracleInstrumentation,
-  '@opentelemetry/instrumentation-pg': PgInstrumentation,
-  '@opentelemetry/instrumentation-pino': PinoInstrumentation,
-  '@opentelemetry/instrumentation-redis': RedisInstrumentation,
-  '@opentelemetry/instrumentation-restify': RestifyInstrumentation,
-  '@opentelemetry/instrumentation-router': RouterInstrumentation,
-  '@opentelemetry/instrumentation-runtime-node': RuntimeNodeInstrumentation,
-  '@opentelemetry/instrumentation-socket.io': SocketIoInstrumentation,
-  '@opentelemetry/instrumentation-tedious': TediousInstrumentation,
-  '@opentelemetry/instrumentation-undici': UndiciInstrumentation,
-  '@opentelemetry/instrumentation-winston': WinstonInstrumentation,
+    (): typeof CassandraDriverInstrumentation =>
+      requireInstrumentationModule(
+        '@opentelemetry/instrumentation-cassandra-driver'
+      ).CassandraDriverInstrumentation,
+  '@opentelemetry/instrumentation-connect': (): typeof ConnectInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-connect')
+      .ConnectInstrumentation,
+  '@opentelemetry/instrumentation-cucumber':
+    (): typeof CucumberInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-cucumber')
+        .CucumberInstrumentation,
+  '@opentelemetry/instrumentation-dataloader':
+    (): typeof DataloaderInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-dataloader')
+        .DataloaderInstrumentation,
+  '@opentelemetry/instrumentation-dns': (): typeof DnsInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-dns')
+      .DnsInstrumentation,
+  '@opentelemetry/instrumentation-express': (): typeof ExpressInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-express')
+      .ExpressInstrumentation,
+  '@opentelemetry/instrumentation-fs': (): typeof FsInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-fs')
+      .FsInstrumentation,
+  '@opentelemetry/instrumentation-generic-pool':
+    (): typeof GenericPoolInstrumentation =>
+      requireInstrumentationModule(
+        '@opentelemetry/instrumentation-generic-pool'
+      ).GenericPoolInstrumentation,
+  '@opentelemetry/instrumentation-graphql': (): typeof GraphQLInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-graphql')
+      .GraphQLInstrumentation,
+  '@opentelemetry/instrumentation-grpc': (): typeof GrpcInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-grpc')
+      .GrpcInstrumentation,
+  '@opentelemetry/instrumentation-hapi': (): typeof HapiInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-hapi')
+      .HapiInstrumentation,
+  '@opentelemetry/instrumentation-host-metrics':
+    (): typeof HostMetricsInstrumentation =>
+      requireInstrumentationModule(
+        '@opentelemetry/instrumentation-host-metrics'
+      ).HostMetricsInstrumentation,
+  '@opentelemetry/instrumentation-http': (): typeof HttpInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-http')
+      .HttpInstrumentation,
+  '@opentelemetry/instrumentation-ioredis': (): typeof IORedisInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-ioredis')
+      .IORedisInstrumentation,
+  '@opentelemetry/instrumentation-kafkajs': (): typeof KafkaJsInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-kafkajs')
+      .KafkaJsInstrumentation,
+  '@opentelemetry/instrumentation-knex': (): typeof KnexInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-knex')
+      .KnexInstrumentation,
+  '@opentelemetry/instrumentation-koa': (): typeof KoaInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-koa')
+      .KoaInstrumentation,
+  '@opentelemetry/instrumentation-lru-memoizer':
+    (): typeof LruMemoizerInstrumentation =>
+      requireInstrumentationModule(
+        '@opentelemetry/instrumentation-lru-memoizer'
+      ).LruMemoizerInstrumentation,
+  '@opentelemetry/instrumentation-memcached':
+    (): typeof MemcachedInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-memcached')
+        .MemcachedInstrumentation,
+  '@opentelemetry/instrumentation-mongodb': (): typeof MongoDBInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-mongodb')
+      .MongoDBInstrumentation,
+  '@opentelemetry/instrumentation-mongoose':
+    (): typeof MongooseInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-mongoose')
+        .MongooseInstrumentation,
+  '@opentelemetry/instrumentation-mysql2': (): typeof MySQL2Instrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-mysql2')
+      .MySQL2Instrumentation,
+  '@opentelemetry/instrumentation-mysql': (): typeof MySQLInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-mysql')
+      .MySQLInstrumentation,
+  '@opentelemetry/instrumentation-nestjs-core':
+    (): typeof NestInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-nestjs-core')
+        .NestInstrumentation,
+  '@opentelemetry/instrumentation-net': (): typeof NetInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-net')
+      .NetInstrumentation,
+  '@opentelemetry/instrumentation-openai': (): typeof OpenAIInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-openai')
+      .OpenAIInstrumentation,
+  '@opentelemetry/instrumentation-oracledb': (): typeof OracleInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-oracledb')
+      .OracleInstrumentation,
+  '@opentelemetry/instrumentation-pg': (): typeof PgInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-pg')
+      .PgInstrumentation,
+  '@opentelemetry/instrumentation-pino': (): typeof PinoInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-pino')
+      .PinoInstrumentation,
+  '@opentelemetry/instrumentation-redis': (): typeof RedisInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-redis')
+      .RedisInstrumentation,
+  '@opentelemetry/instrumentation-restify': (): typeof RestifyInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-restify')
+      .RestifyInstrumentation,
+  '@opentelemetry/instrumentation-router': (): typeof RouterInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-router')
+      .RouterInstrumentation,
+  '@opentelemetry/instrumentation-runtime-node':
+    (): typeof RuntimeNodeInstrumentation =>
+      requireInstrumentationModule(
+        '@opentelemetry/instrumentation-runtime-node'
+      ).RuntimeNodeInstrumentation,
+  '@opentelemetry/instrumentation-socket.io':
+    (): typeof SocketIoInstrumentation =>
+      requireInstrumentationModule('@opentelemetry/instrumentation-socket.io')
+        .SocketIoInstrumentation,
+  '@opentelemetry/instrumentation-tedious': (): typeof TediousInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-tedious')
+      .TediousInstrumentation,
+  '@opentelemetry/instrumentation-undici': (): typeof UndiciInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-undici')
+      .UndiciInstrumentation,
+  '@opentelemetry/instrumentation-winston': (): typeof WinstonInstrumentation =>
+    requireInstrumentationModule('@opentelemetry/instrumentation-winston')
+      .WinstonInstrumentation,
 };
 
 const defaultExcludedInstrumentations = [
@@ -137,7 +245,7 @@ const defaultExcludedInstrumentations = [
 type ConfigArg<T> = T extends new (...args: infer U) => unknown ? U[0] : never;
 export type InstrumentationConfigMap = {
   [Name in keyof typeof InstrumentationMap]?: ConfigArg<
-    (typeof InstrumentationMap)[Name]
+    ReturnType<(typeof InstrumentationMap)[Name]>
   >;
 };
 
@@ -197,7 +305,6 @@ export function getNodeAutoInstrumentations(
   for (const name of Object.keys(InstrumentationMap) as Array<
     keyof typeof InstrumentationMap
   >) {
-    const Instance = InstrumentationMap[name];
     // Defaults are defined by the instrumentation itself
     const userConfig: any = inputConfigs[name] ?? {};
 
@@ -214,9 +321,10 @@ export function getNodeAutoInstrumentations(
 
     try {
       diag.debug(`Loading instrumentation for ${name}`);
+      const Instance = InstrumentationMap[name]();
       instrumentations.push(new Instance(userConfig));
     } catch (e: any) {
-      diag.error(e);
+      diag.error(`Skipping instrumentation for ${name}`, e);
     }
   }
 
