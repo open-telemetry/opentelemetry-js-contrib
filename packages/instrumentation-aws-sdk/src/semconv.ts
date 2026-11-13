@@ -226,6 +226,14 @@ export const ATTR_AWS_SECRETSMANAGER_SECRET_ARN =
   'aws.secretsmanager.secret.arn' as const;
 
 /**
+ * The phone number supplied as the destination of an AWS SNS `Publish` request.
+ *
+ * @example +15555550100
+ */
+export const ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER =
+  'aws.sns.destination.phone_number' as const;
+
+/**
  * The ARN of the AWS SNS Topic. An Amazon SNS [topic](https://docs.aws.amazon.com/sns/latest/dg/sns-create-topic.html) is a logical access point that acts as a communication channel.
  *
  * @example arn:aws:sns:us-east-1:123456789012:mystack-mytopic-NZJ5JSMVGFIE
