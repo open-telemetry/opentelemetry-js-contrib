@@ -65,7 +65,7 @@ The instrumentation accepts the following configuration options:
 | ------ | ---- | ------- | ----------- |
 | `enabled` | `boolean` | `true` | Enable/disable the instrumentation |
 | `useNavigationApiIfAvailable` | `boolean` | `true` | Use the Navigation API when available for better accuracy |
-| `sanitizeUrl` | `function` | `undefined` | Callback to sanitize URLs before adding to log records |
+| `sanitizeUrl` | `function` | `undefined` | Callback to sanitize URLs before adding to log records. **Replaces the default redaction** of credentials and sensitive query parameters, see [URL Sanitization](#url-sanitization) |
 | `applyCustomLogRecordData` | `function` | `undefined` | Callback to add custom attributes to log records |
 
 ## Navigation API vs Traditional APIs
@@ -78,11 +78,21 @@ When `useNavigationApiIfAvailable` is `true` (default), the instrumentation will
 
 ## URL Sanitization
 
-**Important**: By default, URLs are **not sanitized** and will be recorded as-is. For security and privacy, you should provide a `sanitizeUrl` function to redact sensitive information.
+By default, credentials and the sensitive query string values listed in the [URL semantic conventions](https://opentelemetry.io/docs/specs/semconv/registry/attributes/url/) are always redacted from `url.full`:
+
+- **Credentials**: `https://user:pass@example.com` → `https://REDACTED:REDACTED@example.com`
+- **Query string values** of `sig`, `Signature`, `AWSAccessKeyId`, `X-Goog-Signature`, `X-Amz-Signature`, `X-Amz-Credential` and `X-Amz-Security-Token` (keys are matched case-sensitively): `?sig=abc` → `?sig=REDACTED`
+
+URLs often carry other application-specific secrets (session ids, tokens, OAuth codes, ...). To control redaction yourself, provide a `sanitizeUrl` function.
+
+> [!WARNING]
+> Providing `sanitizeUrl` **fully replaces** the default redaction described above. Your function is called with the **raw, unredacted URL**, and whatever it returns is recorded as-is. Credentials and signatures are **not** redacted unless your function does it.
+>
+> To keep the default redaction and only redact more, build on `defaultSanitizeUrl`, for example `url => defaultSanitizeUrl(url).replace(...)`.
 
 ### Using the Default Sanitizer
 
-The package exports a `defaultSanitizeUrl` function that removes credentials and common sensitive query parameters:
+The package exports a `defaultSanitizeUrl` function that redacts credentials, the keys from the semantic conventions, and a list of other common sensitive query parameters:
 
 ```ts
 import { BrowserNavigationInstrumentation, defaultSanitizeUrl } from '@opentelemetry/instrumentation-browser-navigation';
@@ -99,41 +109,34 @@ registerInstrumentations({
 The default sanitizer redacts:
 
 - **Credentials**: `https://user:pass@example.com` → `https://REDACTED:REDACTED@example.com`
-- **Sensitive parameters**: `password`, `token`, `api_key`, `secret`, `auth`, etc.
+- **Sensitive parameters**: `password`, `token`, `api_key`, `secret`, `auth`, etc., plus the keys from the semantic conventions listed above
 
 ### Custom URL Sanitization
 
-You can provide your own sanitization logic:
+You can provide your own sanitization logic. Keep in mind that it replaces the default redaction, so these examples handle credentials and signatures themselves or on top of `defaultSanitizeUrl`:
 
 ```ts
 const customSanitizer = (url: string) => {
-  // Remove all query parameters
-  return url.split('?')[0];
+  // Remove all query parameters (and credentials)
+  const parsed = new URL(url);
+  parsed.username = '';
+  parsed.password = '';
+  parsed.search = '';
+  return parsed.href;
 };
 
-// Or more targeted sanitization
+// Or more targeted sanitization, on top of the default
 const targetedSanitizer = (url: string) => {
-  return url.replace(/sessionId=[^&]*/gi, 'sessionId=REDACTED');
+  return defaultSanitizeUrl(url).replace(
+    /sessionId=[^&#]*/g,
+    'sessionId=REDACTED'
+  );
 };
 
 registerInstrumentations({
   instrumentations: [
     new BrowserNavigationInstrumentation({
       sanitizeUrl: customSanitizer,
-    }),
-  ],
-});
-```
-
-### No Sanitization
-
-If you want to record URLs without any sanitization (not recommended for production):
-
-```ts
-registerInstrumentations({
-  instrumentations: [
-    new BrowserNavigationInstrumentation({
-      // No sanitizeUrl provided - URLs recorded as-is
     }),
   ],
 });

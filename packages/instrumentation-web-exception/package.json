@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-web-exception",
-  "version": "0.17.0",
+  "version": "0.18.0",
   "description": "OpenTelemetry instrumentation for web exceptions",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
@@ -66,7 +66,7 @@
   },
   "dependencies": {
     "@opentelemetry/core": "^3.0.0",
-    "@opentelemetry/instrumentation": "^0.300.0",
+    "@opentelemetry/instrumentation": "^0.301.0",
     "@opentelemetry/semantic-conventions": "^1.27.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/plugins/web/opentelemetry-instrumentation-web-exception#readme"

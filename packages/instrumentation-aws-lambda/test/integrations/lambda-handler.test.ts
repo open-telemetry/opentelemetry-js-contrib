@@ -817,6 +817,28 @@ describe('lambda handler', () => {
         'http://www.example.com:1234/lambda/test/path?key=value'
       );
     });
+    it('redacts sensitive query string values', async () => {
+      initializeHandler('lambda-test/sync.handler');
+      const event = {
+        rawPath: '/lambda/test/path',
+        headers: {
+          host: 'www.example.com',
+          'x-forwarded-proto': 'https',
+        },
+        queryStringParameters: {
+          sig: 'secret',
+          'X-Amz-Signature': 'secret',
+          key: 'value',
+        },
+      };
+
+      await lambdaRequire('lambda-test/sync').handler(event, ctx);
+      const [span] = memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        span.attributes[ATTR_URL_FULL],
+        'https://www.example.com/lambda/test/path?sig=REDACTED&X-Amz-Signature=REDACTED&key=value'
+      );
+    });
   });
 
   describe('streaming handlers', () => {

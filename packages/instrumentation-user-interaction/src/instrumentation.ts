@@ -25,6 +25,7 @@ import {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { redactQueryString, redactUrl } from './redact-url';
 
 const ZONE_CONTEXT_KEY = 'OT_ZONE_CONTEXT';
 const EVENT_NAVIGATION_NAME = 'Navigation:';
@@ -156,7 +157,7 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
             [AttributeNames.EVENT_TYPE]: eventName,
             [AttributeNames.TARGET_ELEMENT]: element.tagName,
             [AttributeNames.TARGET_XPATH]: xpath,
-            [AttributeNames.URL_FULL]: window.location.href,
+            [AttributeNames.URL_FULL]: redactUrl(window.location.href),
           },
         },
         parentSpan
@@ -410,7 +411,9 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
         const result = original.apply(this, args);
         const urlAfter = `${location.pathname}${location.hash}${location.search}`;
         if (url !== urlAfter) {
-          plugin._updateInteractionName(urlAfter);
+          plugin._updateInteractionName(
+            `${location.pathname}${location.hash}${redactQueryString(location.search)}`
+          );
         }
         return result;
       };

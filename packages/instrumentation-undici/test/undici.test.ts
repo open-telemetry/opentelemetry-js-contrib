@@ -962,6 +962,29 @@ describe('UndiciInstrumentation `undici` tests', function () {
       assert.strictEqual(span.attributes['url.full'], fullUrl);
     });
 
+    it('should redact sensitive query string values in url.full and url.query', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const origin = `${protocol}://${hostname}:${mockServer.port}`;
+      const res = await undici.request(
+        `${origin}/presigned?X-Amz-Credential=AKIA&X-Amz-Signature=secret&foo=bar`
+      );
+      await consumeResponseBody(res.body);
+
+      spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+      assert.strictEqual(
+        span.attributes['url.full'],
+        `${origin}/presigned?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar`
+      );
+      assert.strictEqual(
+        span.attributes['url.query'],
+        '?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar'
+      );
+    });
+
     it('should set network.protocol.version to 2 when ALPN is h2', function () {
       const request: any = {
         method: 'GET',
