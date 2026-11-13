@@ -91,7 +91,7 @@ describe('LangChain non-streaming workflows', () => {
     expect(spans[0].status.code).toBe(SpanStatusCode.UNSET);
     expect(spans[0].attributes).toEqual({
       'gen_ai.operation.name': 'invoke_workflow',
-      'gen_ai.workflow.name': 'greeting',
+      'gen_ai.agent.name': 'greeting',
     });
   });
 
@@ -139,7 +139,7 @@ describe('LangChain non-streaming workflows', () => {
     expect(
       getTestSpans().map(span => [
         span.name,
-        span.attributes['gen_ai.workflow.name'],
+        span.attributes['gen_ai.agent.name'],
       ])
     ).toEqual([
       ['invoke_workflow application-sequence', 'application-sequence'],
@@ -160,21 +160,19 @@ describe('LangChain non-streaming workflows', () => {
       sequence.name = 'application-name';
       expect(await sequence.invoke('input', options)).toBe('input');
       expect(getTestSpans()[0].name).toBe('invoke_workflow application-name');
-      expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
+      expect(getTestSpans()[0].attributes['gen_ai.agent.name']).toBe(
         'application-name'
       );
       Object.defineProperty(sequence, 'name', { value });
       expect(await sequence.invoke('input', options)).toBe('input');
       expect(getTestSpans()[1].name).toBe('invoke_workflow');
-      expect(
-        getTestSpans()[1].attributes['gen_ai.workflow.name']
-      ).toBeUndefined();
+      expect(getTestSpans()[1].attributes['gen_ai.agent.name']).toBeUndefined();
     });
   }
 
   it('preserves the spelling of an explicit non-blank workflow name', async () => {
     await identity().invoke('input', { runName: '  application name  ' });
-    expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
+    expect(getTestSpans()[0].attributes['gen_ai.agent.name']).toBe(
       '  application name  '
     );
     expect(getTestSpans()[0].name).toBe('invoke_workflow   application name  ');
@@ -200,9 +198,7 @@ describe('LangChain non-streaming workflows', () => {
       const baseline = await run(false);
       expect(await run(true)).toEqual(baseline);
       expect(getTestSpans()).toHaveLength(1);
-      expect(getTestSpans()[0].attributes['gen_ai.workflow.name']).toBe(
-        runName
-      );
+      expect(getTestSpans()[0].attributes['gen_ai.agent.name']).toBe(runName);
       expect(getTestSpans()[0].name).toBe(
         runName ? `invoke_workflow ${runName}` : 'invoke_workflow'
       );
@@ -519,7 +515,7 @@ describe('LangChain non-streaming workflows', () => {
     const spans = getTestSpans();
     expect(spans).toHaveLength(3);
     const parent = spans.find(s => s.name === 'invoke_workflow')!;
-    expect(parent.attributes['gen_ai.workflow.name']).toBeUndefined();
+    expect(parent.attributes['gen_ai.agent.name']).toBeUndefined();
     for (const child of spans.filter(s => s !== parent))
       expect(child.parentSpanContext?.spanId).toBe(parent.spanContext().spanId);
   });
@@ -660,7 +656,7 @@ describe('LangChain non-streaming workflows', () => {
         expect(original.lastCall.args[index]).toBe(value)
       );
       const span = getTestSpans().at(-1)!;
-      expect(span.attributes['gen_ai.workflow.name']).toBe(
+      expect(span.attributes['gen_ai.agent.name']).toBe(
         args[1] === options ? 'batch-name' : undefined
       );
       expect(span.attributes['gen_ai.conversation.id']).toBe(
@@ -1229,7 +1225,7 @@ describe('LangChain non-streaming workflows', () => {
         ]);
         await expect(broken.invoke('input')).rejects.toBe(failure);
         expect(create.args.map(args => args[0])).toEqual([
-          'gen_ai.invoke_workflow.duration',
+          'gen_ai.invoke_agent.duration',
         ]);
         expect(getMeter.calledOnce).toBe(true);
         expect(record.callCount).toBe(3);
@@ -1262,7 +1258,7 @@ describe('LangChain non-streaming workflows', () => {
       expect(kind).toBe(SpanKind.INTERNAL);
       expect(attributes).toMatchObject({
         'gen_ai.operation.name': 'invoke_workflow',
-        'gen_ai.workflow.name': 'greeting',
+        'gen_ai.agent.name': 'greeting',
         'gen_ai.conversation.id': 'thread',
         'gen_ai.input.messages': JSON.stringify([
           { role: 'user', parts: [{ type: 'text', content: 'hello' }] },

@@ -3,7 +3,7 @@ instrumented_library: '@langchain/core'
 instrumentation_library: '@opentelemetry/instrumentation-langchain'
 
 weaver:
-  registry: https://github.com/open-telemetry/semantic-conventions-genai.git@4e8a2812139b2a999d959e3650e24dfc64e21943[model]
+  registry: https://github.com/open-telemetry/semantic-conventions-genai.git@aa3b7f4394245fec260013898049780975a407a4[model]
 
 env:
   LANGSMITH_TRACING: 'false'
@@ -11,6 +11,124 @@ env:
   LANGCHAIN_TRACING: 'false'
 
 scenarios:
+  graph_content_disabled:
+    run: node graph.cjs
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL. Tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+      - id: genai_span_name_format
+        context:
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys workflow span names on gen_ai.workflow.name rather than gen_ai.agent.name after https://github.com/open-telemetry/semantic-conventions-genai/pull/571.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+    spans:
+      - match:
+          type: gen_ai.invoke_agent.internal
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test_graph
+            gen_ai.workflow.name: {present: false}
+            gen_ai.input.messages: {present: false}
+            gen_ai.output.messages: {present: false}
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_agent.duration]
+    events: []
+
+  graph_content_enabled:
+    run: node graph.cjs
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL. Tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+      - id: genai_span_name_format
+        context:
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys workflow span names on gen_ai.workflow.name rather than gen_ai.agent.name after https://github.com/open-telemetry/semantic-conventions-genai/pull/571.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          type: gen_ai.invoke_agent.internal
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test_graph
+            gen_ai.workflow.name: {present: false}
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"graph result"}]}]'
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_agent.duration]
+    events: []
+
+  graph_stream:
+    run: node graph.cjs stream
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL. Tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+      - id: genai_span_name_format
+        context:
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys workflow span names on gen_ai.workflow.name rather than gen_ai.agent.name after https://github.com/open-telemetry/semantic-conventions-genai/pull/571.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          type: gen_ai.invoke_agent.internal
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test_graph
+            gen_ai.workflow.name: {present: false}
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"graph result"}]}]'
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_agent.duration]
+    events: []
+
+  graph_error:
+    run: node graph.cjs error
+    expected_violations:
+      - id: instrumentation_scope_schema_url_missing
+        reason: Graphs reuse the existing workflow tracer and meter without a schema URL. Tracked in https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668.
+      - id: genai_span_name_format
+        context:
+          expected_form: invoke_workflow
+          keyed_attr: gen_ai.workflow.name
+          operation: invoke_workflow
+        reason: The runner still keys workflow span names on gen_ai.workflow.name rather than gen_ai.agent.name after https://github.com/open-telemetry/semantic-conventions-genai/pull/571.
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          type: gen_ai.invoke_agent.internal
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_workflow
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test_graph
+            gen_ai.workflow.name: {present: false}
+            gen_ai.output.messages: {present: false}
+            error.type: TypeError
+    metrics: [gen_ai.invoke_agent.duration]
+    events: []
+
   tool_content_disabled:
     run: node tool.cjs
     env:

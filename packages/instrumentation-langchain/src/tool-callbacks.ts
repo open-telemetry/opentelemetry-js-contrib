@@ -42,7 +42,7 @@ const handlers = new WeakSet<object>();
 const parentInvocations = new WeakMap<object, CallbackInvocation>();
 
 export function getToolContext(
-  manager: CallbackManagerForToolRun | undefined
+  manager: Pick<CallbackManagerForToolRun, 'runId' | 'handlers'> | undefined
 ): Context | undefined {
   for (const handler of manager?.handlers ?? []) {
     const invocation = parentInvocations.get(handler);
@@ -59,12 +59,14 @@ export function getToolContext(
  * @param manager CallbackManager constructor from the same loaded SDK module copy.
  * @param telemetry Resolves the enabled instrumentation's handler at tool start.
  * @param getDiag Resolves the logger retained for the lifetime of the tool run.
+ * @param getParentContext Resolves an explicit framework parent when no active context exists.
  */
 export function addToolCallbacks(
   configured: CallbackManager,
   manager: typeof CallbackManager,
   telemetry: () => TelemetryHandler | undefined,
-  getDiag: () => DiagLogger
+  getDiag: () => DiagLogger,
+  getParentContext?: () => Context | undefined
 ): CallbackManager {
   let parentInvocation: CallbackInvocation | undefined;
   for (const callback of configured.handlers) {
@@ -73,7 +75,13 @@ export function addToolCallbacks(
   }
   const invocation: CallbackInvocation = {};
   const handler = manager.fromHandlers(
-    createToolCallbacks(telemetry, getDiag, invocation, parentInvocation)
+    createToolCallbacks(
+      telemetry,
+      getDiag,
+      invocation,
+      parentInvocation,
+      getParentContext
+    )
   ).handlers[0];
   handler.name = 'opentelemetry_langchain_tools';
   handler.awaitHandlers = true;
@@ -120,7 +128,8 @@ function createToolCallbacks(
   telemetry: () => TelemetryHandler | undefined,
   getDiag: () => DiagLogger,
   invocation: CallbackInvocation,
-  parentInvocation: CallbackInvocation | undefined
+  parentInvocation: CallbackInvocation | undefined,
+  getParentContext?: () => Context | undefined
 ): CallbackHandlerMethods {
   let activeRun: ToolRun | undefined;
   const end = (output?: unknown, failure?: { error: unknown }) => {
@@ -222,7 +231,7 @@ function createToolCallbacks(
           toolArguments: current.shouldCaptureContent()
             ? content(input, 'input')
             : undefined,
-          parentContext: parent?.context ?? active,
+          parentContext: parent?.context ?? getParentContext?.() ?? active,
         });
         invocation.context = tool.getContext();
         activeRun = {
