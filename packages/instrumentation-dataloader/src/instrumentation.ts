@@ -12,6 +12,7 @@ import {
   trace,
   context,
   Link,
+  Span,
   SpanStatusCode,
   SpanKind,
 } from '@opentelemetry/api';
@@ -90,6 +91,15 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
     return `${MODULE_NAME}.${operation} ${dataloaderName}`;
   }
 
+  private _handleError(span: Span, err: any) {
+    span.recordException(err);
+    span.setStatus({
+      code: SpanStatusCode.ERROR,
+      message: err?.message,
+    });
+    span.end();
+  }
+
   private _wrapBatchLoadFn(
     batchLoadFn: Dataloader.BatchLoadFn<unknown, unknown>
   ): Dataloader.BatchLoadFn<unknown, unknown> {
@@ -114,18 +124,21 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       );
 
       return context.with(trace.setSpan(parent, span), () => {
-        return (batchLoadFn.apply(this, args) as Promise<unknown[]>)
+        let promise: Promise<unknown[]>;
+        try {
+          promise = batchLoadFn.apply(this, args) as Promise<unknown[]>;
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
+
+        return promise
           .then(value => {
             span.end();
             return value;
           })
           .catch(err => {
-            span.recordException(err);
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: err.message,
-            });
-            span.end();
+            instrumentation._handleError(span, err);
             throw err;
           });
       });
@@ -192,19 +205,21 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       );
 
       return context.with(trace.setSpan(parent, span), () => {
-        const result = original
-          .call(this, ...args)
+        let promise: Promise<unknown>;
+        try {
+          promise = original.call(this, ...args);
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
+
+        const result = promise
           .then(value => {
             span.end();
             return value;
           })
           .catch(err => {
-            span.recordException(err);
-            span.setStatus({
-              code: SpanStatusCode.ERROR,
-              message: err.message,
-            });
-            span.end();
+            instrumentation._handleError(span, err);
             throw err;
           });
 
@@ -250,12 +265,25 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
       );
 
       return context.with(trace.setSpan(parent, span), () => {
+        let promise: Promise<unknown[]>;
+        try {
+          promise = original.call(this, ...args);
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
+
         // .loadMany never rejects, as errors from internal .load
         // calls are caught by dataloader lib
-        return original.call(this, ...args).then(value => {
-          span.end();
-          return value;
-        });
+        return promise
+          .then(value => {
+            span.end();
+            return value;
+          })
+          .catch(err => {
+            instrumentation._handleError(span, err);
+            throw err;
+          });
       });
     };
   }
@@ -286,13 +314,16 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         parent
       );
 
-      const ret = context.with(trace.setSpan(parent, span), () => {
-        return original.call(this, ...args);
+      return context.with(trace.setSpan(parent, span), () => {
+        try {
+          const ret = original.call(this, ...args);
+          span.end();
+          return ret;
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
       });
-
-      span.end();
-
-      return ret;
     };
   }
 
@@ -322,13 +353,16 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         parent
       );
 
-      const ret = context.with(trace.setSpan(parent, span), () => {
-        return original.call(this, ...args);
+      return context.with(trace.setSpan(parent, span), () => {
+        try {
+          const ret = original.call(this, ...args);
+          span.end();
+          return ret;
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
       });
-
-      span.end();
-
-      return ret;
     };
   }
 
@@ -358,13 +392,16 @@ export class DataloaderInstrumentation extends InstrumentationBase<DataloaderIns
         parent
       );
 
-      const ret = context.with(trace.setSpan(parent, span), () => {
-        return original.call(this, ...args);
+      return context.with(trace.setSpan(parent, span), () => {
+        try {
+          const ret = original.call(this, ...args);
+          span.end();
+          return ret;
+        } catch (err: any) {
+          instrumentation._handleError(span, err);
+          throw err;
+        }
       });
-
-      span.end();
-
-      return ret;
     };
   }
 }
