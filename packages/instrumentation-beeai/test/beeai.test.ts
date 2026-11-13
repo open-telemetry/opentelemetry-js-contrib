@@ -450,7 +450,8 @@ describe('BeeAIInstrumentation', () => {
       ]);
     });
 
-    it('records streaming TTFT and time per output chunk metrics when stream is true', async () => {
+    it('records streaming TTFT, time per output chunk metrics, and coalesced output messages when stream is true', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
       const chunk1 = new ChatModelOutput([new AssistantMessage('Hello ')]);
       const chunk2 = new ChatModelOutput(
         [new AssistantMessage('world!')],
@@ -492,6 +493,14 @@ describe('BeeAIInstrumentation', () => {
       ).toBe('number');
       expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
         'stop',
+      ]);
+      expect(
+        JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string)
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Hello world!' }],
+        },
       ]);
 
       const { resourceMetrics } = await metricReader.collect();

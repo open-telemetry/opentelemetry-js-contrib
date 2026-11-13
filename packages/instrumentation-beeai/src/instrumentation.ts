@@ -82,9 +82,8 @@ interface ActiveAgentRun extends BaseActiveRun {
   kind: 'agent';
   invocation: LocalAgentInvocation;
   agentName?: string;
-  inputTokens: number;
-  outputTokens: number;
-  hasRecordedTokens: boolean;
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 type ActiveRun = BaseActiveRun | ActiveAgentRun;
@@ -417,9 +416,6 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
               invocation,
               agentName,
               callerSpan: trace.getSpan(callerContext),
-              inputTokens: 0,
-              outputTokens: 0,
-              hasRecordedTokens: false,
             }
           : undefined;
 
@@ -443,7 +439,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
             );
           },
           onFailure: () => {
-            if (activeRecord?.hasRecordedTokens) {
+            if (
+              activeRecord &&
+              (activeRecord.inputTokens !== undefined ||
+                activeRecord.outputTokens !== undefined)
+            ) {
               invocation.setUsage({
                 inputTokenCount: activeRecord.inputTokens,
                 outputTokenCount: activeRecord.outputTokens,
@@ -504,26 +504,32 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     activeRecord: ActiveAgentRun | undefined,
     eventMessage: { role: string; text: string } | undefined
   ): void {
-    if (activeRecord?.hasRecordedTokens) {
+    if (
+      activeRecord &&
+      (activeRecord.inputTokens !== undefined ||
+        activeRecord.outputTokens !== undefined)
+    ) {
       invocation.setUsage({
         inputTokenCount: activeRecord.inputTokens,
         outputTokenCount: activeRecord.outputTokens,
       });
     } else if (isRecord(result) && Array.isArray(result.iterations)) {
-      let inputTokens = 0;
-      let outputTokens = 0;
-      let foundUsage = false;
+      let inputTokens: number | undefined;
+      let outputTokens: number | undefined;
       for (const iter of result.iterations) {
         if (isRecord(iter) && isRecord(iter.raw)) {
           const usage = extractTokenUsage(iter.raw.usage);
           if (usage) {
-            inputTokens += usage.inputTokenCount ?? 0;
-            outputTokens += usage.outputTokenCount ?? 0;
-            foundUsage = true;
+            if (usage.inputTokenCount !== undefined) {
+              inputTokens = (inputTokens ?? 0) + usage.inputTokenCount;
+            }
+            if (usage.outputTokenCount !== undefined) {
+              outputTokens = (outputTokens ?? 0) + usage.outputTokenCount;
+            }
           }
         }
       }
-      if (foundUsage) {
+      if (inputTokens !== undefined || outputTokens !== undefined) {
         invocation.setUsage({
           inputTokenCount: inputTokens,
           outputTokenCount: outputTokens,
@@ -793,12 +799,18 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       const messages = chatOutput.messages;
       if (Array.isArray(messages) && messages.length > 0) {
         const firstMsg = messages[0];
-        if (
-          isRecord(firstMsg) &&
-          typeof firstMsg.id === 'string' &&
-          firstMsg.id.trim()
-        ) {
-          invocation.setResponseId(firstMsg.id.trim());
+        if (isRecord(firstMsg)) {
+          const responseId =
+            typeof firstMsg.id === 'string' && firstMsg.id.trim()
+              ? firstMsg.id.trim()
+              : isRecord(firstMsg.meta) &&
+                  typeof firstMsg.meta.id === 'string' &&
+                  firstMsg.meta.id.trim()
+                ? firstMsg.meta.id.trim()
+                : undefined;
+          if (responseId) {
+            invocation.setResponseId(responseId);
+          }
         }
       }
 
@@ -806,9 +818,14 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       if (usage) {
         invocation.setUsage(usage);
         if (enclosingAgent) {
-          enclosingAgent.inputTokens += usage.inputTokenCount ?? 0;
-          enclosingAgent.outputTokens += usage.outputTokenCount ?? 0;
-          enclosingAgent.hasRecordedTokens = true;
+          if (usage.inputTokenCount !== undefined) {
+            enclosingAgent.inputTokens =
+              (enclosingAgent.inputTokens ?? 0) + usage.inputTokenCount;
+          }
+          if (usage.outputTokenCount !== undefined) {
+            enclosingAgent.outputTokens =
+              (enclosingAgent.outputTokens ?? 0) + usage.outputTokenCount;
+          }
         }
       }
 
@@ -836,14 +853,6 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         if (outputMessages.length > 0) {
           invocation.addOutputMessages(outputMessages);
         }
-      }
-    } else if (
-      invocation.shouldCaptureContent() &&
-      structuredObject !== undefined
-    ) {
-      const outputMessages = extractOutputMessages(undefined, structuredObject);
-      if (outputMessages.length > 0) {
-        invocation.addOutputMessages(outputMessages);
       }
     }
   }

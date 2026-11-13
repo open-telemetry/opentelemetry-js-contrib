@@ -316,7 +316,11 @@ function convertBinaryOrUriPart(
   }
   if (typeof rawData === 'string') {
     const trimmed = rawData.trim();
-    const dataUrlMatch = /^data:([^;,]+)?;base64,(.+)$/is.exec(trimmed);
+    if (!trimmed) {
+      return undefined;
+    }
+    const dataUrlMatch =
+      /^data:([^;,]+)?(?:;[^;,=]+=[^;,]+)*;base64,(.+)$/is.exec(trimmed);
     if (dataUrlMatch) {
       const detectedMime = dataUrlMatch[1] || mimeType;
       return {
@@ -325,6 +329,9 @@ function convertBinaryOrUriPart(
         content: new Uint8Array(Buffer.from(dataUrlMatch[2], 'base64')),
         ...(detectedMime ? { mime_type: detectedMime } : {}),
       };
+    }
+    if (trimmed.toLowerCase().startsWith('data:')) {
+      return undefined;
     }
     if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) {
       return {
@@ -455,17 +462,20 @@ function convertBeeAIPart(part: unknown): MessagePart | undefined {
   }
 }
 
-export function convertBeeAIMessage(message: unknown): ChatMessage | undefined {
+export function convertBeeAIMessage(
+  message: unknown,
+  defaultRole = 'user'
+): ChatMessage | undefined {
   if (!isRecord(message)) return undefined;
   const role =
     typeof message.role === 'string' && message.role.trim()
       ? message.role.trim()
-      : 'user';
+      : defaultRole;
 
   const parts: MessagePart[] = [];
   if (Array.isArray(message.content)) {
     for (const rawPart of message.content) {
-      const converted = convertBeeAIMartSafe(rawPart);
+      const converted = convertBeeAIPartSafe(rawPart);
       if (converted) parts.push(converted);
     }
   } else if (typeof message.content === 'string') {
@@ -481,12 +491,31 @@ export function convertBeeAIMessage(message: unknown): ChatMessage | undefined {
   return { role, parts };
 }
 
-function convertBeeAIMartSafe(rawPart: unknown): MessagePart | undefined {
+function convertBeeAIPartSafe(rawPart: unknown): MessagePart | undefined {
   try {
     return convertBeeAIPart(rawPart);
   } catch {
     return undefined;
   }
+}
+
+function mergeMessageParts(parts: MessagePart[]): MessagePart[] {
+  const merged: MessagePart[] = [];
+  for (const part of parts) {
+    const prev = merged[merged.length - 1];
+    if (
+      prev &&
+      (part.type === 'text' || part.type === 'reasoning') &&
+      prev.type === part.type &&
+      typeof prev.content === 'string' &&
+      typeof part.content === 'string'
+    ) {
+      prev.content += part.content;
+    } else {
+      merged.push({ ...part });
+    }
+  }
+  return merged;
 }
 
 export function extractMessagesAndSystemInstructions(messages: unknown): {
@@ -501,7 +530,7 @@ export function extractMessagesAndSystemInstructions(messages: unknown): {
   }
 
   for (const rawMessage of messages) {
-    const converted = convertBeeAIMessage(rawMessage);
+    const converted = convertBeeAIMessage(rawMessage, 'user');
     if (!converted) continue;
 
     if (converted.role === 'system') {
@@ -527,9 +556,17 @@ export function extractOutputMessages(
   const outputMessages: OutputMessages = [];
   if (Array.isArray(messages)) {
     for (const rawMessage of messages) {
-      const converted = convertBeeAIMessage(rawMessage);
+      const converted = convertBeeAIMessage(rawMessage, 'assistant');
       if (converted) {
-        outputMessages.push(converted as OutputMessage);
+        const prev = outputMessages[outputMessages.length - 1];
+        if (prev && prev.role === converted.role) {
+          prev.parts = mergeMessageParts([...prev.parts, ...converted.parts]);
+        } else {
+          outputMessages.push({
+            ...converted,
+            parts: mergeMessageParts(converted.parts),
+          } as OutputMessage);
+        }
       }
     }
   }
@@ -566,6 +603,10 @@ export function extractAgentInput(
   let promptText: string | undefined;
   if (typeof inputArg === 'string') {
     promptText = inputArg;
+  } else if (Array.isArray(inputArg)) {
+    const extra = extractMessagesAndSystemInstructions(inputArg);
+    systemInstructions.push(...extra.systemInstructions);
+    inputMessages.push(...extra.inputMessages);
   } else if (isRecord(inputArg)) {
     if (typeof inputArg.prompt === 'string') {
       promptText = inputArg.prompt;
@@ -580,6 +621,10 @@ export function extractAgentInput(
         ? inputArg.input
         : [inputArg.input];
       const extra = extractMessagesAndSystemInstructions(rawList);
+      systemInstructions.push(...extra.systemInstructions);
+      inputMessages.push(...extra.inputMessages);
+    } else if ('role' in inputArg || 'content' in inputArg) {
+      const extra = extractMessagesAndSystemInstructions([inputArg]);
       systemInstructions.push(...extra.systemInstructions);
       inputMessages.push(...extra.inputMessages);
     }
@@ -611,14 +656,20 @@ export function extractAgentOutputMessages(
   if (isRecord(result)) {
     const innerResult = result.result;
     if (innerResult !== undefined) {
-      const converted = convertBeeAIMessage(innerResult);
+      const converted = convertBeeAIMessage(innerResult, 'assistant');
       if (converted) {
-        return [converted];
+        return [converted as OutputMessage];
       }
     }
-    const direct = convertBeeAIMessage(result);
+    if (result.message !== undefined) {
+      const convertedMsg = convertBeeAIMessage(result.message, 'assistant');
+      if (convertedMsg) {
+        return [convertedMsg as OutputMessage];
+      }
+    }
+    const direct = convertBeeAIMessage(result, 'assistant');
     if (direct) {
-      return [direct];
+      return [direct as OutputMessage];
     }
   }
 
