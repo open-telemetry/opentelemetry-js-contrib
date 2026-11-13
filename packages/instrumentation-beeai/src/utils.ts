@@ -39,14 +39,6 @@ import {
   type TokenUsageDetails,
 } from '@opentelemetry/genai-util';
 
-const DEFAULT_IGNORE_KEYS = [
-  'emitter',
-  'logger',
-  'tokens',
-  'createdBy',
-  'client',
-];
-
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -642,40 +634,7 @@ export function extractAgentOutputMessages(
   return [];
 }
 
-/**
- * Serializer that strips internal BeeAI framework references (`emitter`, `logger`,
- * `tokens`, `createdBy`, `client`, and `_`-prefixed private properties) as well as
- * any caller-configured keys.
- */
-export function traceSerializer({
-  ignored_keys = [],
-}: {
-  ignored_keys?: string[];
-} = {}): (body: unknown) => string {
-  const envKeys = process.env.BEE_FRAMEWORK_INSTRUMENTATION_IGNORED_KEYS
-    ? process.env.BEE_FRAMEWORK_INSTRUMENTATION_IGNORED_KEYS.split(',').filter(
-        Boolean
-      )
-    : [];
-  const mergedIgnoreKeys = new Set([
-    ...DEFAULT_IGNORE_KEYS,
-    ...envKeys,
-    ...ignored_keys,
-  ]);
-
-  return (body: unknown) =>
-    JSON.stringify(body, (key, value) => {
-      if (key && (mergedIgnoreKeys.has(key) || key.startsWith('_'))) {
-        return undefined;
-      }
-      return value;
-    });
-}
-
-export function sanitizeToolValue(
-  value: unknown,
-  ignoredKeys?: string[]
-): unknown {
+export function extractToolResult(value: unknown): unknown {
   if (value === null || value === undefined) {
     return undefined;
   }
@@ -684,32 +643,16 @@ export function sanitizeToolValue(
   }
   if (isRecord(value)) {
     if ('result' in value && value.result !== undefined) {
-      const inner = value.result;
-      if (typeof inner === 'string') {
-        return inner;
-      }
-      return sanitizeObject(inner, ignoredKeys);
+      return value.result;
     }
     if (typeof value.getTextContent === 'function') {
       try {
         const text = (value.getTextContent as () => unknown)();
         if (typeof text === 'string') return text;
       } catch {
-        // Fall through to object sanitization
+        // Fall through to returning raw value
       }
     }
   }
-  return sanitizeObject(value, ignoredKeys);
-}
-
-function sanitizeObject(value: unknown, ignoredKeys?: string[]): unknown {
-  if (value === null || value === undefined || typeof value !== 'object') {
-    return value;
-  }
-  try {
-    const serialized = traceSerializer({ ignored_keys: ignoredKeys })(value);
-    return serialized !== undefined ? JSON.parse(serialized) : value;
-  } catch {
-    return value;
-  }
+  return value;
 }

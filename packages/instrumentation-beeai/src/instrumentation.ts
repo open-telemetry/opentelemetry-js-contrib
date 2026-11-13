@@ -47,11 +47,11 @@ import {
   extractMessagesAndSystemInstructions,
   extractOutputMessages,
   extractTokenUsage,
+  extractToolResult,
   isRecord,
   mapFinishReason,
   mapProviderName,
   ownDataValue,
-  sanitizeToolValue,
 } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -597,9 +597,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
             : undefined,
           onSuccess: result => {
             if (invocation.shouldCaptureContent() && result !== undefined) {
-              const sanitized = sanitizeToolValue(result);
-              if (sanitized !== undefined) {
-                invocation.setResult(sanitized);
+              const extracted = extractToolResult(result);
+              if (extracted !== undefined) {
+                invocation.setResult(extracted);
               }
             }
           },
@@ -637,9 +637,12 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       toolType: GEN_AI_TOOL_TYPE_VALUE_FUNCTION,
       toolCallId,
       agentName,
-      toolArguments: handler.shouldCaptureContent()
-        ? sanitizeToolValue(inputArg)
-        : undefined,
+      toolArguments:
+        handler.shouldCaptureContent() &&
+        inputArg !== null &&
+        inputArg !== undefined
+          ? inputArg
+          : undefined,
       parentContext,
     });
   }

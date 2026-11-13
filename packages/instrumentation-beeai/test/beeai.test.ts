@@ -680,7 +680,7 @@ describe('BeeAIInstrumentation', () => {
       expect(toolDuration?.dataPoints.length).toBe(1);
     });
 
-    it('captures sanitized tool arguments and results when content capture is enabled', async () => {
+    it('captures tool arguments and results without stripping user domain keys when content capture is enabled', async () => {
       process.env[captureEnvKey] = 'span_only';
 
       const jsonTool = new DynamicTool({
@@ -688,20 +688,24 @@ describe('BeeAIInstrumentation', () => {
         description: 'Fetches weather data',
         inputSchema: z.object({
           city: z.string(),
-          _secretInternal: z.string().optional(),
+          result: z.string().optional(),
+          _id: z.string().optional(),
         }),
         handler: async input =>
           new JSONToolOutput({
+            _id: input._id ?? 'doc_1',
             city: input.city,
             tempC: 22,
-            tokens: ['should-be-stripped'],
-            _internalFlag: true,
+            tokens: ['user-domain-token'],
+            client: { name: 'weather-api' },
+            createdBy: { id: 5 },
           }),
       });
 
       const output = await jsonTool.run({
         city: 'Berlin',
-        _secretInternal: 'hidden',
+        result: 'expected-input-field',
+        _id: 'req_42',
       });
       expect(output.result.city).toBe('Berlin');
 
@@ -713,12 +717,18 @@ describe('BeeAIInstrumentation', () => {
         JSON.parse(span.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] as string)
       ).toEqual({
         city: 'Berlin',
+        result: 'expected-input-field',
+        _id: 'req_42',
       });
       expect(
         JSON.parse(span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT] as string)
       ).toEqual({
+        _id: 'req_42',
         city: 'Berlin',
         tempC: 22,
+        tokens: ['user-domain-token'],
+        client: { name: 'weather-api' },
+        createdBy: { id: 5 },
       });
     });
 
