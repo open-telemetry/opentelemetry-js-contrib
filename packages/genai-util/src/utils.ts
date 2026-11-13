@@ -4,7 +4,8 @@
  */
 
 /**
- * Functions declared in this file are only meant to be used within the genai-util package.
+ * Shared GenAI helpers. Only symbols re-exported from `src/index.ts` are part of
+ * the public package API; other functions remain package-internal.
  */
 import type { Attributes } from '@opentelemetry/api';
 import {

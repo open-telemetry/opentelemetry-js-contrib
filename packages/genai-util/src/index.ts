@@ -27,6 +27,51 @@
  * export * from './semconv';
  * ```
  */
-export { TelemetryHandler } from './handler';
+export { TelemetryHandler, type TelemetryHandlerOptions } from './handler';
+export {
+  ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  getContentCaptureMode,
+} from './environment-variables';
+export type { EmbeddingInvocation } from './invocations/embedding';
+export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';
-export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
+export type { AsyncStream, AsyncStreamWrapperOptions } from './stream';
+export type {
+  BlobPart,
+  ChatMessage,
+  CompactionPart,
+  ContentCaptureMode,
+  EmbeddingInvocationOptions,
+  FilePart,
+  FinishReason,
+  GenAIInstrumentationConfig,
+  GenericPart,
+  GenericServerToolCall,
+  GenericServerToolCallResponse,
+  InferenceInvocationOptions,
+  InferenceRequestOptions,
+  InputMessages,
+  InvocationError,
+  MessagePart,
+  Modality,
+  OutputMessage,
+  OutputMessages,
+  ReasoningPart,
+  ResponseStatus,
+  Role,
+  ServerToolCallPart,
+  ServerToolCallResponsePart,
+  SystemInstructionPart,
+  SystemInstructions,
+  TextPart,
+  TokenCountsByModality,
+  TokenModality,
+  TokenUsageByModality,
+  TokenUsageDetails,
+  ToolCallRequestPart,
+  ToolCallResponsePart,
+  ToolInvocationOptions,
+  ToolType,
+  UriPart,
+} from './types';
+export * from './semconv';

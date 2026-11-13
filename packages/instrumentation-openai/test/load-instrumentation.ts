@@ -12,11 +12,6 @@
  */
 import { registerInstrumentationTesting } from '@opentelemetry/contrib-test-utils';
 import {
-  InMemoryLogRecordExporter,
-  LoggerProvider,
-  SimpleLogRecordProcessor,
-} from '@opentelemetry/sdk-logs';
-import {
   AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
@@ -37,18 +32,11 @@ export const meterProvider = new MeterProvider({
 });
 instrumentation.setMeterProvider(meterProvider);
 
-export const logsExporter = new InMemoryLogRecordExporter();
-export const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor({ exporter: logsExporter })],
-});
-instrumentation.setLoggerProvider(loggerProvider);
-
 registerInstrumentationTesting(instrumentation);
 instrumentation.disable();
 
 export const contentCaptureInstrumentation = new OpenAIInstrumentation({
-  captureMessageContent: true,
+  captureMessageContent: 'span_only',
 });
 contentCaptureInstrumentation.setMeterProvider(meterProvider);
-contentCaptureInstrumentation.setLoggerProvider(loggerProvider);
 contentCaptureInstrumentation.disable();
