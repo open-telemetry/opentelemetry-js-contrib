@@ -18,10 +18,15 @@ import {
 // Keep construction ownership separate from tracing, including while disabled.
 const modelConstruction = new AsyncLocalStorage<boolean>();
 
+/** Identifies callable SDK values before installing tracking wrappers. */
 function isCallable(value: unknown): value is (...args: never[]) => unknown {
   return typeof value === 'function';
 }
 
+/**
+ * Suspends SDK construction tracking while application code runs, so its
+ * workflows are not mistaken for internal agent pipelines.
+ */
 function outsideConstruction<F extends (...args: never[]) => unknown>(
   original: F
 ): F {
@@ -33,6 +38,10 @@ function outsideConstruction<F extends (...args: never[]) => unknown>(
   });
 }
 
+/**
+ * Wraps an application-owned model method outside construction tracking,
+ * optionally observing its result without replacing the returned value or Promise.
+ */
 function applicationMethod(
   target: object,
   key: string,
@@ -79,6 +88,10 @@ function applicationMethod(
   });
 }
 
+/**
+ * Finds model hooks through bindings and sequences, avoiding cycles and keeping
+ * application-created compositions out of internal workflow tracking.
+ */
 function trackModel(
   value: unknown,
   diag: DiagLogger,
@@ -97,6 +110,10 @@ function trackModel(
   }
 }
 
+/**
+ * Marks the prebuilt agent graph as internal and tracks its lazy model-node
+ * construction, excluding application model factories and hooks from that scope.
+ */
 export function trackReactAgentFactory(diag: DiagLogger) {
   return <F extends (...args: never[]) => unknown>(original: F): F =>
     trackingProxy(original, (receiver, args) => {
@@ -149,6 +166,10 @@ export function trackReactAgentFactory(diag: DiagLogger) {
     });
 }
 
+/**
+ * Marks pipelines composed during SDK model-node construction as internal,
+ * then suspends construction tracking when those pipelines execute.
+ */
 export function trackAgentComposition(diag: DiagLogger) {
   return <F extends (...args: never[]) => unknown>(original: F): F => {
     const application = outsideConstruction(original);
