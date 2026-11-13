@@ -132,6 +132,8 @@ Attributes collected (this list is currently not exhaustive):
 | `aws.dynamodb.table_count`           | The number of items in the `TableNames` response parameter.                                    | dynamodb |
 | `aws.dynamodb.table_names`           | The keys in the `RequestItems` object field.                                                   | dynamodb |
 | `aws.dynamodb.total_segments`        | The value of the `TotalSegments` request parameter.                                            | dynamodb |
+| `aws.s3.bucket`                      | The S3 bucket name the request refers to.                                                      | s3       |
+| `aws.s3.key`                         | The S3 object key the request refers to.                                                       | s3       |
 | `db.namespace`                       | The name of the database (TableName).                                                          | dynamodb |
 | `db.operation.name`                  | The name of the operation.                                                                     | dynamodb |
 | `db.query.text`                      | The database statement (if serializer configured).                                             | dynamodb |
