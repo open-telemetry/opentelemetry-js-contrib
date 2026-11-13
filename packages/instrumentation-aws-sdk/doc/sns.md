@@ -8,6 +8,8 @@ The following methods are automatically enhanced:
 
 ### Publish messages
 
+`Publish` and `PublishBatch` create producer spans. For `PublishBatch`, trace context is injected into each entry's `MessageAttributes`. Existing application attributes are preserved. If an entry has insufficient room for the configured propagation fields, context injection is skipped for that entry.
+
 - [Messaging Attributes](https://github.com/open-telemetry/opentelemetry-specification/blob/master/specification/trace/semantic_conventions/messaging.md#messaging-attributes) are added by this instrumentation according to the spec.
 - OpenTelemetry trace context is injected as SNS MessageAttributes, so the service receiving the message can link cascading spans to the trace which created the message.
 
