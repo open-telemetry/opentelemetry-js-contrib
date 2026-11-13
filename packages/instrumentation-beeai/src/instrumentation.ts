@@ -59,23 +59,22 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const MODULE_NAME = 'beeai-framework';
 const SUPPORTED_VERSIONS = ['>=0.1.9 <0.1.14'];
 
+type AnyInvocation =
+  | LocalAgentInvocation
+  | ToolInvocation
+  | InferenceInvocation
+  | EmbeddingInvocation;
+
 interface MethodPatch {
   owners: Set<BeeAIInstrumentation>;
   restore: () => void;
 }
 
-const methodPatches = new WeakMap<object, Map<PropertyKey, MethodPatch>>();
-const wrappedRuns = new WeakSet<object>();
-
 interface BaseActiveRun {
   kind: 'agent' | 'tool' | 'inference' | 'embedding';
   runId: string;
   parentId?: string;
-  invocation:
-    | LocalAgentInvocation
-    | ToolInvocation
-    | InferenceInvocation
-    | EmbeddingInvocation;
+  invocation: AnyInvocation;
   callerSpan?: Span;
 }
 
@@ -89,8 +88,6 @@ interface ActiveAgentRun extends BaseActiveRun {
 }
 
 type ActiveRun = BaseActiveRun | ActiveAgentRun;
-
-const activeRuns = new Map<string, ActiveRun>();
 
 interface BeeAIRunLike<R = unknown> extends Promise<R> {
   handler: () => Promise<R>;
@@ -114,108 +111,45 @@ interface BeeAIRunLike<R = unknown> extends Promise<R> {
   };
 }
 
-function isBeeAIRun(value: unknown): value is BeeAIRunLike {
-  return isRecord(value) && typeof value.handler === 'function';
+interface RunStartParams {
+  owner: BeeAIInstrumentation;
+  handler: TelemetryHandler;
+  instance: unknown;
+  effectiveInput: unknown;
+  parentContext: Context;
+  callerContext: Context;
+  runId: string | undefined;
+  parentId: string | undefined;
+  runContext: BeeAIRunLike['runContext'];
+  enclosingAgent: ActiveAgentRun | undefined;
 }
 
-function isSupportedVersion(version: unknown): boolean {
-  if (typeof version !== 'string') return true;
-  const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?/.exec(version.trim());
-  if (!match) return false;
-  const major = Number(match[1]);
-  const minor = Number(match[2]);
-  const patch = Number(match[3]);
-  return major === 0 && minor === 1 && patch >= 9 && patch < 14;
+interface StartedRunOperation<TInvocation extends AnyInvocation> {
+  invocation: TInvocation;
+  activeRun?: ActiveRun;
+  onSuccess?: (result: unknown) => void;
+  onFailure?: () => void;
 }
 
-function createTrackedModuleFile<T extends object>(
-  name: string,
-  patch: (module: T) => void,
-  unpatch: (module: T) => void
-): InstrumentationNodeModuleFile {
-  const instances = new Set<T>();
-  const file = new InstrumentationNodeModuleFile(
-    name,
-    SUPPORTED_VERSIONS,
-    (module: T) => {
-      instances.add(module);
-      for (const instance of instances) {
-        patch(instance);
-      }
-      return module;
-    },
-    () => {
-      for (const instance of instances) {
-        unpatch(instance);
-      }
-    }
-  );
-  let exports: T | undefined;
-  Object.defineProperty(file, 'moduleExports', {
-    get: () => exports,
-    set: (module: T) => {
-      exports = module;
-      if (module && typeof module === 'object') {
-        instances.add(module);
-      }
-    },
-  });
-  return file;
+interface RunOperationSpec<TInvocation extends AnyInvocation> {
+  label: string;
+  startSyncInvocation: (
+    owner: BeeAIInstrumentation,
+    handler: TelemetryHandler,
+    instance: unknown,
+    inputArg: unknown,
+    callerContext: Context
+  ) => TInvocation;
+  startRun: (params: RunStartParams) => StartedRunOperation<TInvocation>;
 }
 
-function findEnclosingAgentRun(
-  parentId: string | undefined
-): ActiveAgentRun | undefined {
-  let currentId = parentId;
-  const visited = new Set<string>();
-  while (currentId && !visited.has(currentId)) {
-    visited.add(currentId);
-    const record = activeRuns.get(currentId);
-    if (!record) break;
-    if (record.kind === 'agent') {
-      return record as ActiveAgentRun;
-    }
-    currentId = record.parentId;
-  }
-  return undefined;
-}
+const methodPatches = new WeakMap<object, Map<PropertyKey, MethodPatch>>();
+const wrappedRuns = new WeakSet<object>();
+const activeRuns = new Map<string, ActiveRun>();
 
-function resolveParentContext(
-  callerContext: Context,
-  executionContext: Context,
-  parentRun: ActiveRun | undefined
-): Context {
-  const callerSpan = trace.getSpan(callerContext);
-  const executionSpan = trace.getSpan(executionContext);
-
-  if (parentRun) {
-    const parentSpan = trace.getSpan(parentRun.invocation.getContext());
-    if (
-      executionSpan &&
-      executionSpan !== parentSpan &&
-      executionSpan !== parentRun.callerSpan
-    ) {
-      return executionContext;
-    }
-    if (
-      callerSpan &&
-      callerSpan !== parentSpan &&
-      callerSpan !== parentRun.callerSpan
-    ) {
-      return callerContext;
-    }
-    return parentRun.invocation.getContext();
-  }
-
-  if (executionSpan) {
-    return executionContext;
-  }
-  if (callerSpan) {
-    return callerContext;
-  }
-  return executionContext;
-}
-
+/**
+ * OpenTelemetry instrumentation for `beeai-framework`.
+ */
 export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentationConfig> {
   declare private _telemetryHandler: TelemetryHandler | undefined;
   declare private _explicitTracerProvider: TracerProvider | undefined;
@@ -392,8 +326,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
   private _patchBaseAgent(baseAgent: typeof BaseAgent | undefined): void {
     if (!baseAgent?.prototype) return;
-    this._patchMethod(baseAgent.prototype, 'run', (owners, restore) =>
-      this._createAgentRunWrapper(owners, restore)
+    this._patchRunMethod(
+      baseAgent.prototype,
+      'run',
+      this._getAgentOperationSpec()
     );
   }
 
@@ -404,9 +340,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
   private _patchTool(tool: typeof Tool | undefined): void {
     if (!tool?.prototype) return;
-    this._patchMethod(tool.prototype, 'run', (owners, restore) =>
-      this._createToolRunWrapper(owners, restore)
-    );
+    this._patchRunMethod(tool.prototype, 'run', this._getToolOperationSpec());
   }
 
   private _unpatchTool(tool: typeof Tool | undefined): void {
@@ -416,13 +350,15 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
   private _patchChatModel(chatModel: typeof ChatModel | undefined): void {
     if (!chatModel?.prototype) return;
-    this._patchMethod(chatModel.prototype, 'create', (owners, restore) =>
-      this._createChatModelWrapper(owners, restore, false)
+    this._patchRunMethod(
+      chatModel.prototype,
+      'create',
+      this._getChatOperationSpec(false)
     );
-    this._patchMethod(
+    this._patchRunMethod(
       chatModel.prototype,
       'createStructure',
-      (owners, restore) => this._createChatModelWrapper(owners, restore, true)
+      this._getChatOperationSpec(true)
     );
   }
 
@@ -436,8 +372,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     embeddingModel: typeof EmbeddingModel | undefined
   ): void {
     if (!embeddingModel?.prototype) return;
-    this._patchMethod(embeddingModel.prototype, 'create', (owners, restore) =>
-      this._createEmbeddingModelWrapper(owners, restore)
+    this._patchRunMethod(
+      embeddingModel.prototype,
+      'create',
+      this._getEmbeddingOperationSpec()
     );
   }
 
@@ -448,119 +386,73 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     this._unpatchMethod(embeddingModel.prototype, 'create');
   }
 
-  private _patchMethod<T extends object, K extends keyof T>(
-    target: T,
-    method: K,
-    factory: (
-      owners: Set<BeeAIInstrumentation>,
-      restore: () => void
-    ) => (original: T[K]) => T[K]
-  ): void {
-    if (typeof target[method] !== 'function') return;
-    const patches =
-      methodPatches.get(target) ?? new Map<PropertyKey, MethodPatch>();
-    methodPatches.set(target, patches);
-    const existing = patches.get(method);
-    if (existing) {
-      existing.owners.add(this);
-      return;
-    }
-    const owners = new Set([this]);
-    const original = target[method];
-    const patch: MethodPatch = {
-      owners,
-      restore: () => {
-        if (owners.size !== 0 || target[method] !== wrapped) return;
-        target[method] = original;
-        if (patches.get(method) === patch) patches.delete(method);
+  private _getAgentOperationSpec(): RunOperationSpec<LocalAgentInvocation> {
+    return {
+      label: 'agent',
+      startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
+        owner._startAgentInvocation(handler, instance, inputArg, callerCtx),
+      startRun: ({
+        owner,
+        handler,
+        instance,
+        effectiveInput,
+        parentContext,
+        callerContext,
+        runId,
+        parentId,
+        runContext,
+      }) => {
+        const invocation = owner._startAgentInvocation(
+          handler,
+          instance,
+          effectiveInput,
+          parentContext
+        );
+        const { agentName } = extractAgentMetadata(instance);
+        const activeRecord: ActiveAgentRun | undefined = runId
+          ? {
+              kind: 'agent',
+              runId,
+              parentId,
+              invocation,
+              agentName,
+              callerSpan: trace.getSpan(callerContext),
+              inputTokens: 0,
+              outputTokens: 0,
+              hasRecordedTokens: false,
+            }
+          : undefined;
+
+        let eventMessage: { role: string; text: string } | undefined;
+        runContext?.emitter?.match?.(
+          event => event?.name === 'success',
+          (data: unknown) => {
+            eventMessage = extractSuccessEventMessage(data) ?? eventMessage;
+          }
+        );
+
+        return {
+          invocation,
+          activeRun: activeRecord,
+          onSuccess: result => {
+            owner._finalizeAgentInvocation(
+              invocation,
+              result,
+              activeRecord,
+              eventMessage
+            );
+          },
+          onFailure: () => {
+            if (activeRecord?.hasRecordedTokens) {
+              invocation.setUsage({
+                inputTokenCount: activeRecord.inputTokens,
+                outputTokenCount: activeRecord.outputTokens,
+              });
+            }
+          },
+        };
       },
     };
-    const wrapped = factory(owners, patch.restore)(original);
-    target[method] = wrapped;
-    patches.set(method, patch);
-  }
-
-  private _unpatchMethod(
-    target: object,
-    method: 'run' | 'create' | 'createStructure'
-  ): void {
-    const patches = methodPatches.get(target);
-    if (!patches) return;
-    const patch = patches.get(method);
-    if (!patch?.owners.delete(this)) return;
-    patch.restore();
-  }
-
-  private _resolveActiveOwner(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ): BeeAIInstrumentation | undefined {
-    const owner = Array.from(owners)
-      .reverse()
-      .find(instance => instance.isEnabled());
-    if (!owner && owners.size === 0) {
-      restore();
-    }
-    return owner;
-  }
-
-  private _createAgentRunWrapper(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ) {
-    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
-      const instrumentation = this;
-      return function patchedAgentRun(this: unknown, ...args: unknown[]) {
-        const owner = instrumentation._resolveActiveOwner(owners, restore);
-        const callerContext = context.active();
-        if (!owner || isTracingSuppressed(callerContext)) {
-          return original.apply(this, args);
-        }
-
-        let returned: unknown;
-        try {
-          returned = original.apply(this, args);
-        } catch (error) {
-          owner._recordSyncAgentFailure(this, args[0], callerContext, error);
-          throw error;
-        }
-
-        if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
-          wrappedRuns.add(returned);
-          owner._wrapAgentRunInstance(
-            returned,
-            this,
-            args[0],
-            callerContext,
-            owners,
-            restore
-          );
-        }
-        return returned;
-      } as F;
-    };
-  }
-
-  private _recordSyncAgentFailure(
-    agentInstance: unknown,
-    inputArg: unknown,
-    callerContext: Context,
-    error: unknown
-  ): void {
-    try {
-      const handler = this._getTelemetryHandler();
-      const invocation = this._startAgentInvocation(
-        handler,
-        agentInstance,
-        inputArg,
-        callerContext
-      );
-      invocation.fail({
-        exception: error instanceof Error ? error : undefined,
-      });
-    } catch (err) {
-      this._diag.warn('BeeAI: could not record synchronous agent error', err);
-    }
   }
 
   private _startAgentInvocation(
@@ -569,23 +461,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     inputArg: unknown,
     parentContext: Context
   ): LocalAgentInvocation {
-    const meta =
-      isRecord(agentInstance) && isRecord(agentInstance.meta)
-        ? agentInstance.meta
-        : undefined;
-    const rawName =
-      typeof meta?.name === 'string' && meta.name.trim()
-        ? meta.name.trim()
-        : isRecord(agentInstance) &&
-            typeof agentInstance.name === 'string' &&
-            agentInstance.name.trim()
-          ? agentInstance.name.trim()
-          : (agentInstance as { constructor?: { name?: string } })?.constructor
-              ?.name;
-    const rawDescription =
-      typeof meta?.description === 'string' && meta.description.trim()
-        ? meta.description.trim()
-        : undefined;
+    const { agentName, agentDescription } = extractAgentMetadata(agentInstance);
 
     const agentInput = isRecord(agentInstance)
       ? ownDataValue(agentInstance, 'input')
@@ -606,8 +482,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
     return handler.startLocalAgent({
       operationName: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
-      agentName: rawName,
-      agentDescription: rawDescription,
+      agentName,
+      agentDescription,
       requestModel,
       requestOptions,
       inputMessages:
@@ -622,239 +498,114 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
-  private _wrapAgentRunInstance(
-    run: BeeAIRunLike,
-    agentInstance: unknown,
-    inputArg: unknown,
-    callerContext: Context,
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
+  private _finalizeAgentInvocation(
+    invocation: LocalAgentInvocation,
+    result: unknown,
+    activeRecord: ActiveAgentRun | undefined,
+    eventMessage: { role: string; text: string } | undefined
   ): void {
-    const originalHandler = run.handler;
-    run.handler = async () => {
-      const owner = this._resolveActiveOwner(owners, restore);
-      const executionContext = context.active();
-      if (
-        !owner ||
-        isTracingSuppressed(callerContext) ||
-        isTracingSuppressed(executionContext)
-      ) {
-        return originalHandler.call(run);
+    if (activeRecord?.hasRecordedTokens) {
+      invocation.setUsage({
+        inputTokenCount: activeRecord.inputTokens,
+        outputTokenCount: activeRecord.outputTokens,
+      });
+    } else if (isRecord(result) && Array.isArray(result.iterations)) {
+      let inputTokens = 0;
+      let outputTokens = 0;
+      let foundUsage = false;
+      for (const iter of result.iterations) {
+        if (isRecord(iter) && isRecord(iter.raw)) {
+          const usage = extractTokenUsage(iter.raw.usage);
+          if (usage) {
+            inputTokens += usage.inputTokenCount ?? 0;
+            outputTokens += usage.outputTokenCount ?? 0;
+            foundUsage = true;
+          }
+        }
       }
+      if (foundUsage) {
+        invocation.setUsage({
+          inputTokenCount: inputTokens,
+          outputTokenCount: outputTokens,
+        });
+      }
+    }
 
-      const runContext = run.runContext;
-      const runId = runContext?.runId;
-      const parentId = runContext?.parentId;
-      const parentRun = parentId ? activeRuns.get(parentId) : undefined;
-      const parentContext = resolveParentContext(
-        callerContext,
-        executionContext,
-        parentRun
-      );
+    if (invocation.shouldCaptureContent()) {
+      const outputMessages = extractAgentOutputMessages(result, eventMessage);
+      if (outputMessages.length > 0) {
+        invocation.addOutputMessages(outputMessages);
+      }
+    }
+  }
 
-      let invocation: LocalAgentInvocation | undefined;
-      let activeRecord: ActiveAgentRun | undefined;
-      let eventMessage: { role: string; text: string } | undefined;
-
-      try {
-        const handler = owner._getTelemetryHandler();
-        const effectiveInput =
-          Array.isArray(runContext?.runParams) &&
-          runContext.runParams.length > 0
-            ? runContext.runParams[0]
-            : inputArg;
-        invocation = owner._startAgentInvocation(
+  private _getToolOperationSpec(): RunOperationSpec<ToolInvocation> {
+    return {
+      label: 'tool',
+      startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
+        owner._startToolInvocation(
           handler,
-          agentInstance,
+          instance,
+          inputArg,
+          undefined,
+          undefined,
+          callerCtx
+        ),
+      startRun: ({
+        owner,
+        handler,
+        instance,
+        effectiveInput,
+        parentContext,
+        callerContext,
+        runId,
+        parentId,
+        runContext,
+        enclosingAgent,
+      }) => {
+        const toolCallMsg = isRecord(runContext?.context)
+          ? runContext.context.toolCallMsg
+          : undefined;
+        const toolCallId =
+          isRecord(toolCallMsg) &&
+          typeof toolCallMsg.toolCallId === 'string' &&
+          toolCallMsg.toolCallId.trim()
+            ? toolCallMsg.toolCallId.trim()
+            : undefined;
+
+        const invocation = owner._startToolInvocation(
+          handler,
+          instance,
           effectiveInput,
+          toolCallId,
+          enclosingAgent?.agentName,
           parentContext
         );
 
-        const meta =
-          isRecord(agentInstance) && isRecord(agentInstance.meta)
-            ? agentInstance.meta
-            : undefined;
-        const agentName =
-          typeof meta?.name === 'string' && meta.name.trim()
-            ? meta.name.trim()
-            : (agentInstance as { constructor?: { name?: string } })
-                ?.constructor?.name;
+        enclosingAgent?.invocation.recordToolCall();
 
-        if (runId) {
-          activeRecord = {
-            kind: 'agent',
-            runId,
-            parentId,
-            invocation,
-            agentName,
-            callerSpan: trace.getSpan(callerContext),
-            inputTokens: 0,
-            outputTokens: 0,
-            hasRecordedTokens: false,
-          };
-          activeRuns.set(runId, activeRecord);
-        }
-
-        runContext?.emitter?.match?.(
-          event => event?.name === 'success',
-          (data: unknown) => {
-            if (!isRecord(data)) return;
-            if (isRecord(data.data) && typeof data.data.text === 'string') {
-              eventMessage = {
-                role:
-                  typeof data.data.role === 'string'
-                    ? data.data.role
-                    : 'assistant',
-                text: data.data.text,
-              };
-            } else if (
-              isRecord(data.state) &&
-              isRecord(data.state.result) &&
-              typeof data.state.result.text === 'string'
-            ) {
-              eventMessage = {
-                role:
-                  typeof data.state.result.role === 'string'
-                    ? data.state.result.role
-                    : 'assistant',
-                text: data.state.result.text,
-              };
-            }
-          }
-        );
-      } catch (err) {
-        owner._diag.warn('BeeAI: could not start agent telemetry', err);
-      }
-
-      if (!invocation) {
-        return originalHandler.call(run);
-      }
-
-      const activeInvocation = invocation;
-      try {
-        const result = await activeInvocation.withContext(() =>
-          originalHandler.call(run)
-        );
-        try {
-          if (activeRecord?.hasRecordedTokens) {
-            activeInvocation.setUsage({
-              inputTokenCount: activeRecord.inputTokens,
-              outputTokenCount: activeRecord.outputTokens,
-            });
-          } else if (isRecord(result) && Array.isArray(result.iterations)) {
-            let inputTokens = 0;
-            let outputTokens = 0;
-            let foundUsage = false;
-            for (const iter of result.iterations) {
-              if (isRecord(iter) && isRecord(iter.raw)) {
-                const usage = extractTokenUsage(iter.raw.usage);
-                if (usage) {
-                  inputTokens += usage.inputTokenCount ?? 0;
-                  outputTokens += usage.outputTokenCount ?? 0;
-                  foundUsage = true;
-                }
+        return {
+          invocation,
+          activeRun: runId
+            ? {
+                kind: 'tool',
+                runId,
+                parentId,
+                invocation,
+                callerSpan: trace.getSpan(callerContext),
+              }
+            : undefined,
+          onSuccess: result => {
+            if (invocation.shouldCaptureContent() && result !== undefined) {
+              const sanitized = sanitizeToolValue(result);
+              if (sanitized !== undefined) {
+                invocation.setResult(sanitized);
               }
             }
-            if (foundUsage) {
-              activeInvocation.setUsage({
-                inputTokenCount: inputTokens,
-                outputTokenCount: outputTokens,
-              });
-            }
-          }
-
-          if (activeInvocation.shouldCaptureContent()) {
-            const outputMessages = extractAgentOutputMessages(
-              result,
-              eventMessage
-            );
-            if (outputMessages.length > 0) {
-              activeInvocation.addOutputMessages(outputMessages);
-            }
-          }
-        } catch (err) {
-          owner._diag.warn('BeeAI: could not finalize agent telemetry', err);
-        }
-        activeInvocation.stop();
-        return result;
-      } catch (error) {
-        if (activeRecord?.hasRecordedTokens) {
-          activeInvocation.setUsage({
-            inputTokenCount: activeRecord.inputTokens,
-            outputTokenCount: activeRecord.outputTokens,
-          });
-        }
-        activeInvocation.fail({
-          exception: error instanceof Error ? error : undefined,
-        });
-        throw error;
-      } finally {
-        if (runId) {
-          activeRuns.delete(runId);
-        }
-      }
+          },
+        };
+      },
     };
-  }
-
-  private _createToolRunWrapper(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ) {
-    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
-      const instrumentation = this;
-      return function patchedToolRun(this: unknown, ...args: unknown[]) {
-        const owner = instrumentation._resolveActiveOwner(owners, restore);
-        const callerContext = context.active();
-        if (!owner || isTracingSuppressed(callerContext)) {
-          return original.apply(this, args);
-        }
-
-        let returned: unknown;
-        try {
-          returned = original.apply(this, args);
-        } catch (error) {
-          owner._recordSyncToolFailure(this, args[0], callerContext, error);
-          throw error;
-        }
-
-        if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
-          wrappedRuns.add(returned);
-          owner._wrapToolRunInstance(
-            returned,
-            this,
-            args[0],
-            callerContext,
-            owners,
-            restore
-          );
-        }
-        return returned;
-      } as F;
-    };
-  }
-
-  private _recordSyncToolFailure(
-    toolInstance: unknown,
-    inputArg: unknown,
-    callerContext: Context,
-    error: unknown
-  ): void {
-    try {
-      const handler = this._getTelemetryHandler();
-      const invocation = this._startToolInvocation(
-        handler,
-        toolInstance,
-        inputArg,
-        undefined,
-        undefined,
-        callerContext
-      );
-      invocation.fail({
-        exception: error instanceof Error ? error : undefined,
-      });
-    } catch (err) {
-      this._diag.warn('BeeAI: could not record synchronous tool error', err);
-    }
   }
 
   private _startToolInvocation(
@@ -893,183 +644,70 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
-  private _wrapToolRunInstance(
-    run: BeeAIRunLike,
-    toolInstance: unknown,
-    inputArg: unknown,
-    callerContext: Context,
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ): void {
-    const originalHandler = run.handler;
-    run.handler = async () => {
-      const owner = this._resolveActiveOwner(owners, restore);
-      const executionContext = context.active();
-      if (
-        !owner ||
-        isTracingSuppressed(callerContext) ||
-        isTracingSuppressed(executionContext)
-      ) {
-        return originalHandler.call(run);
-      }
-
-      const runContext = run.runContext;
-      const runId = runContext?.runId;
-      const parentId = runContext?.parentId;
-      const parentRun = parentId ? activeRuns.get(parentId) : undefined;
-      const enclosingAgent = findEnclosingAgentRun(parentId);
-      const parentContext = resolveParentContext(
-        callerContext,
-        executionContext,
-        parentRun
-      );
-
-      let invocation: ToolInvocation | undefined;
-      try {
-        const handler = owner._getTelemetryHandler();
-        const effectiveInput =
-          Array.isArray(runContext?.runParams) &&
-          runContext.runParams.length > 0
-            ? runContext.runParams[0]
-            : inputArg;
-        const toolCallMsg = isRecord(runContext?.context)
-          ? runContext.context.toolCallMsg
-          : undefined;
-        const toolCallId =
-          isRecord(toolCallMsg) &&
-          typeof toolCallMsg.toolCallId === 'string' &&
-          toolCallMsg.toolCallId.trim()
-            ? toolCallMsg.toolCallId.trim()
-            : undefined;
-
-        invocation = owner._startToolInvocation(
+  private _getChatOperationSpec(
+    isStructured: boolean
+  ): RunOperationSpec<InferenceInvocation> {
+    return {
+      label: 'chat model',
+      startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
+        owner._startChatInvocation(
           handler,
-          toolInstance,
+          instance,
+          inputArg,
+          isStructured,
+          callerCtx
+        ).invocation,
+      startRun: ({
+        owner,
+        handler,
+        instance,
+        effectiveInput,
+        parentContext,
+        callerContext,
+        runId,
+        parentId,
+        runContext,
+        enclosingAgent,
+      }) => {
+        const { invocation, isStreaming } = owner._startChatInvocation(
+          handler,
+          instance,
           effectiveInput,
-          toolCallId,
-          enclosingAgent?.agentName,
+          isStructured,
           parentContext
         );
 
-        enclosingAgent?.invocation.recordToolCall();
+        enclosingAgent?.invocation.recordInferenceCall();
 
-        if (runId) {
-          activeRuns.set(runId, {
-            kind: 'tool',
-            runId,
-            parentId,
-            invocation,
-            callerSpan: trace.getSpan(callerContext),
+        if (isStreaming) {
+          runContext?.emitter?.on?.('newToken', () => {
+            invocation.recordStreamChunk();
           });
         }
-      } catch (err) {
-        owner._diag.warn('BeeAI: could not start tool telemetry', err);
-      }
 
-      if (!invocation) {
-        return originalHandler.call(run);
-      }
-
-      const activeInvocation = invocation;
-      try {
-        const result = await activeInvocation.withContext(() =>
-          originalHandler.call(run)
-        );
-        try {
-          if (activeInvocation.shouldCaptureContent() && result !== undefined) {
-            const sanitized = sanitizeToolValue(result);
-            if (sanitized !== undefined) {
-              activeInvocation.setResult(sanitized);
-            }
-          }
-        } catch (err) {
-          owner._diag.warn('BeeAI: could not extract tool result', err);
-        }
-        activeInvocation.stop();
-        return result;
-      } catch (error) {
-        activeInvocation.fail({
-          exception: error instanceof Error ? error : undefined,
-        });
-        throw error;
-      } finally {
-        if (runId) {
-          activeRuns.delete(runId);
-        }
-      }
+        return {
+          invocation,
+          activeRun: runId
+            ? {
+                kind: 'inference',
+                runId,
+                parentId,
+                invocation,
+                callerSpan: trace.getSpan(callerContext),
+              }
+            : undefined,
+          onSuccess: result => {
+            owner._finalizeChatInvocation(
+              invocation,
+              result,
+              isStructured,
+              isStreaming,
+              enclosingAgent
+            );
+          },
+        };
+      },
     };
-  }
-
-  private _createChatModelWrapper(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void,
-    isStructured: boolean
-  ) {
-    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
-      const instrumentation = this;
-      return function patchedChatModelCreate(
-        this: unknown,
-        ...args: unknown[]
-      ) {
-        const owner = instrumentation._resolveActiveOwner(owners, restore);
-        const callerContext = context.active();
-        if (!owner || isTracingSuppressed(callerContext)) {
-          return original.apply(this, args);
-        }
-
-        let returned: unknown;
-        try {
-          returned = original.apply(this, args);
-        } catch (error) {
-          owner._recordSyncChatFailure(
-            this,
-            args[0],
-            isStructured,
-            callerContext,
-            error
-          );
-          throw error;
-        }
-
-        if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
-          wrappedRuns.add(returned);
-          owner._wrapChatModelRunInstance(
-            returned,
-            this,
-            args[0],
-            isStructured,
-            callerContext,
-            owners,
-            restore
-          );
-        }
-        return returned;
-      } as F;
-    };
-  }
-
-  private _recordSyncChatFailure(
-    chatModelInstance: unknown,
-    inputArg: unknown,
-    isStructured: boolean,
-    callerContext: Context,
-    error: unknown
-  ): void {
-    try {
-      const handler = this._getTelemetryHandler();
-      const { invocation } = this._startChatInvocation(
-        handler,
-        chatModelInstance,
-        inputArg,
-        isStructured,
-        callerContext
-      );
-      invocation.fail({
-        exception: error instanceof Error ? error : undefined,
-      });
-    } catch (err) {
-      this._diag.warn('BeeAI: could not record synchronous chat error', err);
-    }
   }
 
   private _startChatInvocation(
@@ -1132,117 +770,6 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
 
     return { invocation, isStreaming };
-  }
-
-  private _wrapChatModelRunInstance(
-    run: BeeAIRunLike,
-    chatModelInstance: unknown,
-    inputArg: unknown,
-    isStructured: boolean,
-    callerContext: Context,
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ): void {
-    const originalHandler = run.handler;
-    run.handler = async () => {
-      const owner = this._resolveActiveOwner(owners, restore);
-      const executionContext = context.active();
-      if (
-        !owner ||
-        isTracingSuppressed(callerContext) ||
-        isTracingSuppressed(executionContext)
-      ) {
-        return originalHandler.call(run);
-      }
-
-      const runContext = run.runContext;
-      const runId = runContext?.runId;
-      const parentId = runContext?.parentId;
-      const parentRun = parentId ? activeRuns.get(parentId) : undefined;
-      const enclosingAgent = findEnclosingAgentRun(parentId);
-      const parentContext = resolveParentContext(
-        callerContext,
-        executionContext,
-        parentRun
-      );
-
-      let invocation: InferenceInvocation | undefined;
-      let isStreaming = false;
-      try {
-        const handler = owner._getTelemetryHandler();
-        const effectiveInput =
-          Array.isArray(runContext?.runParams) &&
-          runContext.runParams.length > 0
-            ? runContext.runParams[0]
-            : inputArg;
-        const started = owner._startChatInvocation(
-          handler,
-          chatModelInstance,
-          effectiveInput,
-          isStructured,
-          parentContext
-        );
-        invocation = started.invocation;
-        isStreaming = started.isStreaming;
-
-        enclosingAgent?.invocation.recordInferenceCall();
-
-        if (isStreaming && invocation) {
-          const streamInvocation = invocation;
-          runContext?.emitter?.on?.('newToken', () => {
-            streamInvocation.recordStreamChunk();
-          });
-        }
-
-        if (runId) {
-          activeRuns.set(runId, {
-            kind: 'inference',
-            runId,
-            parentId,
-            invocation,
-            callerSpan: trace.getSpan(callerContext),
-          });
-        }
-      } catch (err) {
-        owner._diag.warn('BeeAI: could not start chat model telemetry', err);
-      }
-
-      if (!invocation) {
-        return originalHandler.call(run);
-      }
-
-      const activeInvocation = invocation;
-      try {
-        const result = await activeInvocation.withContext(() =>
-          originalHandler.call(run)
-        );
-        try {
-          owner._finalizeChatInvocation(
-            activeInvocation,
-            result,
-            isStructured,
-            isStreaming,
-            enclosingAgent
-          );
-        } catch (err) {
-          owner._diag.warn(
-            'BeeAI: could not finalize chat model telemetry',
-            err
-          );
-        }
-        activeInvocation.stop();
-        return result;
-      } catch (error) {
-        activeInvocation.fail({
-          exception: error instanceof Error ? error : undefined,
-        });
-        throw error;
-      } finally {
-        if (runId) {
-          activeRuns.delete(runId);
-        }
-      }
-    };
   }
 
   private _finalizeChatInvocation(
@@ -1318,66 +845,58 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
-  private _createEmbeddingModelWrapper(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ) {
-    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
-      const instrumentation = this;
-      return function patchedEmbeddingModelCreate(
-        this: unknown,
-        ...args: unknown[]
-      ) {
-        const owner = instrumentation._resolveActiveOwner(owners, restore);
-        const callerContext = context.active();
-        if (!owner || isTracingSuppressed(callerContext)) {
-          return original.apply(this, args);
-        }
-
-        let returned: unknown;
-        try {
-          returned = original.apply(this, args);
-        } catch (error) {
-          owner._recordSyncEmbeddingFailure(this, callerContext, error);
-          throw error;
-        }
-
-        if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
-          wrappedRuns.add(returned);
-          owner._wrapEmbeddingModelRunInstance(
-            returned,
-            this,
-            callerContext,
-            owners,
-            restore
-          );
-        }
-        return returned;
-      } as F;
-    };
-  }
-
-  private _recordSyncEmbeddingFailure(
-    embeddingModelInstance: unknown,
-    callerContext: Context,
-    error: unknown
-  ): void {
-    try {
-      const handler = this._getTelemetryHandler();
-      const invocation = this._startEmbeddingInvocation(
+  private _getEmbeddingOperationSpec(): RunOperationSpec<EmbeddingInvocation> {
+    return {
+      label: 'embedding',
+      startSyncInvocation: (owner, handler, instance, _inputArg, callerCtx) =>
+        owner._startEmbeddingInvocation(handler, instance, callerCtx),
+      startRun: ({
+        owner,
         handler,
-        embeddingModelInstance,
-        callerContext
-      );
-      invocation.fail({
-        exception: error instanceof Error ? error : undefined,
-      });
-    } catch (err) {
-      this._diag.warn(
-        'BeeAI: could not record synchronous embedding error',
-        err
-      );
-    }
+        instance,
+        parentContext,
+        callerContext,
+        runId,
+        parentId,
+      }) => {
+        const invocation = owner._startEmbeddingInvocation(
+          handler,
+          instance,
+          parentContext
+        );
+
+        return {
+          invocation,
+          activeRun: runId
+            ? {
+                kind: 'embedding',
+                runId,
+                parentId,
+                invocation,
+                callerSpan: trace.getSpan(callerContext),
+              }
+            : undefined,
+          onSuccess: result => {
+            if (!isRecord(result)) return;
+            if (
+              Array.isArray(result.embeddings) &&
+              result.embeddings.length > 0 &&
+              Array.isArray(result.embeddings[0]) &&
+              result.embeddings[0].length > 0
+            ) {
+              invocation.setDimensionCount(result.embeddings[0].length);
+            }
+            if (
+              isRecord(result.usage) &&
+              typeof result.usage.tokens === 'number' &&
+              Number.isFinite(result.usage.tokens)
+            ) {
+              invocation.setUsage(result.usage.tokens);
+            }
+          },
+        };
+      },
+    };
   }
 
   private _startEmbeddingInvocation(
@@ -1405,12 +924,90 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
-  private _wrapEmbeddingModelRunInstance(
+  private _patchRunMethod<
+    T extends object,
+    K extends keyof T,
+    TInvocation extends AnyInvocation,
+  >(target: T, method: K, spec: RunOperationSpec<TInvocation>): void {
+    this._patchMethod(target, method, (owners, restore) =>
+      this._createRunMethodWrapper(owners, restore, spec)
+    );
+  }
+
+  private _createRunMethodWrapper<TInvocation extends AnyInvocation>(
+    owners: Set<BeeAIInstrumentation>,
+    restore: () => void,
+    spec: RunOperationSpec<TInvocation>
+  ) {
+    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
+      const instrumentation = this;
+      return function patchedBeeAIMethod(this: unknown, ...args: unknown[]) {
+        const owner = instrumentation._resolveActiveOwner(owners, restore);
+        const callerContext = context.active();
+        if (!owner || isTracingSuppressed(callerContext)) {
+          return original.apply(this, args);
+        }
+
+        let returned: unknown;
+        try {
+          returned = original.apply(this, args);
+        } catch (error) {
+          owner._recordSyncFailure(this, args[0], callerContext, error, spec);
+          throw error;
+        }
+
+        if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
+          wrappedRuns.add(returned);
+          owner._wrapRunInstance(
+            returned,
+            this,
+            args[0],
+            callerContext,
+            owners,
+            restore,
+            spec
+          );
+        }
+        return returned;
+      } as F;
+    };
+  }
+
+  private _recordSyncFailure<TInvocation extends AnyInvocation>(
+    instance: unknown,
+    inputArg: unknown,
+    callerContext: Context,
+    error: unknown,
+    spec: RunOperationSpec<TInvocation>
+  ): void {
+    try {
+      const handler = this._getTelemetryHandler();
+      const invocation = spec.startSyncInvocation(
+        this,
+        handler,
+        instance,
+        inputArg,
+        callerContext
+      );
+      invocation.fail({
+        exception: error instanceof Error ? error : undefined,
+      });
+    } catch (err) {
+      this._diag.warn(
+        `BeeAI: could not record synchronous ${spec.label} error`,
+        err
+      );
+    }
+  }
+
+  private _wrapRunInstance<TInvocation extends AnyInvocation>(
     run: BeeAIRunLike,
-    embeddingModelInstance: unknown,
+    instance: unknown,
+    inputArg: unknown,
     callerContext: Context,
     owners: Set<BeeAIInstrumentation>,
-    restore: () => void
+    restore: () => void,
+    spec: RunOperationSpec<TInvocation>
   ): void {
     const originalHandler = run.handler;
     run.handler = async () => {
@@ -1428,71 +1025,61 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       const runId = runContext?.runId;
       const parentId = runContext?.parentId;
       const parentRun = parentId ? activeRuns.get(parentId) : undefined;
+      const enclosingAgent = findEnclosingAgentRun(parentId);
       const parentContext = resolveParentContext(
         callerContext,
         executionContext,
         parentRun
       );
+      const effectiveInput =
+        Array.isArray(runContext?.runParams) && runContext.runParams.length > 0
+          ? runContext.runParams[0]
+          : inputArg;
 
-      let invocation: EmbeddingInvocation | undefined;
+      let started: StartedRunOperation<TInvocation> | undefined;
       try {
         const handler = owner._getTelemetryHandler();
-        invocation = owner._startEmbeddingInvocation(
+        started = spec.startRun({
+          owner,
           handler,
-          embeddingModelInstance,
-          parentContext
-        );
-
-        if (runId) {
-          activeRuns.set(runId, {
-            kind: 'embedding',
-            runId,
-            parentId,
-            invocation,
-            callerSpan: trace.getSpan(callerContext),
-          });
+          instance,
+          effectiveInput,
+          parentContext,
+          callerContext,
+          runId,
+          parentId,
+          runContext,
+          enclosingAgent,
+        });
+        if (runId && started.activeRun) {
+          activeRuns.set(runId, started.activeRun);
         }
       } catch (err) {
-        owner._diag.warn('BeeAI: could not start embedding telemetry', err);
+        owner._diag.warn(`BeeAI: could not start ${spec.label} telemetry`, err);
       }
 
-      if (!invocation) {
+      if (!started) {
         return originalHandler.call(run);
       }
 
-      const activeInvocation = invocation;
+      const { invocation, onSuccess, onFailure } = started;
       try {
-        const result = await activeInvocation.withContext(() =>
+        const result = await invocation.withContext(() =>
           originalHandler.call(run)
         );
         try {
-          if (isRecord(result)) {
-            if (
-              Array.isArray(result.embeddings) &&
-              result.embeddings.length > 0 &&
-              Array.isArray(result.embeddings[0]) &&
-              result.embeddings[0].length > 0
-            ) {
-              activeInvocation.setDimensionCount(result.embeddings[0].length);
-            }
-            if (
-              isRecord(result.usage) &&
-              typeof result.usage.tokens === 'number' &&
-              Number.isFinite(result.usage.tokens)
-            ) {
-              activeInvocation.setUsage(result.usage.tokens);
-            }
-          }
+          onSuccess?.(result);
         } catch (err) {
           owner._diag.warn(
-            'BeeAI: could not finalize embedding telemetry',
+            `BeeAI: could not finalize ${spec.label} telemetry`,
             err
           );
         }
-        activeInvocation.stop();
+        invocation.stop();
         return result;
       } catch (error) {
-        activeInvocation.fail({
+        onFailure?.();
+        invocation.fail({
           exception: error instanceof Error ? error : undefined,
         });
         throw error;
@@ -1503,4 +1090,212 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       }
     };
   }
+
+  private _patchMethod<T extends object, K extends keyof T>(
+    target: T,
+    method: K,
+    factory: (
+      owners: Set<BeeAIInstrumentation>,
+      restore: () => void
+    ) => (original: T[K]) => T[K]
+  ): void {
+    if (typeof target[method] !== 'function') return;
+    const patches =
+      methodPatches.get(target) ?? new Map<PropertyKey, MethodPatch>();
+    methodPatches.set(target, patches);
+    const existing = patches.get(method);
+    if (existing) {
+      existing.owners.add(this);
+      return;
+    }
+    const owners = new Set([this]);
+    const original = target[method];
+    const patch: MethodPatch = {
+      owners,
+      restore: () => {
+        if (owners.size !== 0 || target[method] !== wrapped) return;
+        target[method] = original;
+        if (patches.get(method) === patch) patches.delete(method);
+      },
+    };
+    const wrapped = factory(owners, patch.restore)(original);
+    target[method] = wrapped;
+    patches.set(method, patch);
+  }
+
+  private _unpatchMethod(
+    target: object,
+    method: 'run' | 'create' | 'createStructure'
+  ): void {
+    const patches = methodPatches.get(target);
+    if (!patches) return;
+    const patch = patches.get(method);
+    if (!patch?.owners.delete(this)) return;
+    patch.restore();
+  }
+
+  private _resolveActiveOwner(
+    owners: Set<BeeAIInstrumentation>,
+    restore: () => void
+  ): BeeAIInstrumentation | undefined {
+    const owner = Array.from(owners)
+      .reverse()
+      .find(instance => instance.isEnabled());
+    if (!owner && owners.size === 0) {
+      restore();
+    }
+    return owner;
+  }
+}
+
+function isBeeAIRun(value: unknown): value is BeeAIRunLike {
+  return isRecord(value) && typeof value.handler === 'function';
+}
+
+function isSupportedVersion(version: unknown): boolean {
+  if (typeof version !== 'string') return true;
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:-[0-9A-Za-z.-]+)?/.exec(version.trim());
+  if (!match) return false;
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  const patch = Number(match[3]);
+  return major === 0 && minor === 1 && patch >= 9 && patch < 14;
+}
+
+function createTrackedModuleFile<T extends object>(
+  name: string,
+  patch: (module: T) => void,
+  unpatch: (module: T) => void
+): InstrumentationNodeModuleFile {
+  const instances = new Set<T>();
+  const file = new InstrumentationNodeModuleFile(
+    name,
+    SUPPORTED_VERSIONS,
+    (module: T) => {
+      instances.add(module);
+      for (const instance of instances) {
+        patch(instance);
+      }
+      return module;
+    },
+    () => {
+      for (const instance of instances) {
+        unpatch(instance);
+      }
+    }
+  );
+  let exports: T | undefined;
+  Object.defineProperty(file, 'moduleExports', {
+    get: () => exports,
+    set: (module: T) => {
+      exports = module;
+      if (module && typeof module === 'object') {
+        instances.add(module);
+      }
+    },
+  });
+  return file;
+}
+
+function extractAgentMetadata(agentInstance: unknown): {
+  agentName?: string;
+  agentDescription?: string;
+} {
+  const meta =
+    isRecord(agentInstance) && isRecord(agentInstance.meta)
+      ? agentInstance.meta
+      : undefined;
+  const agentName =
+    typeof meta?.name === 'string' && meta.name.trim()
+      ? meta.name.trim()
+      : isRecord(agentInstance) &&
+          typeof agentInstance.name === 'string' &&
+          agentInstance.name.trim()
+        ? agentInstance.name.trim()
+        : (agentInstance as { constructor?: { name?: string } })?.constructor
+            ?.name;
+  const agentDescription =
+    typeof meta?.description === 'string' && meta.description.trim()
+      ? meta.description.trim()
+      : undefined;
+  return { agentName, agentDescription };
+}
+
+function extractSuccessEventMessage(
+  data: unknown
+): { role: string; text: string } | undefined {
+  if (!isRecord(data)) return undefined;
+  if (isRecord(data.data) && typeof data.data.text === 'string') {
+    return {
+      role: typeof data.data.role === 'string' ? data.data.role : 'assistant',
+      text: data.data.text,
+    };
+  }
+  if (
+    isRecord(data.state) &&
+    isRecord(data.state.result) &&
+    typeof data.state.result.text === 'string'
+  ) {
+    return {
+      role:
+        typeof data.state.result.role === 'string'
+          ? data.state.result.role
+          : 'assistant',
+      text: data.state.result.text,
+    };
+  }
+  return undefined;
+}
+
+function findEnclosingAgentRun(
+  parentId: string | undefined
+): ActiveAgentRun | undefined {
+  let currentId = parentId;
+  const visited = new Set<string>();
+  while (currentId && !visited.has(currentId)) {
+    visited.add(currentId);
+    const record = activeRuns.get(currentId);
+    if (!record) break;
+    if (record.kind === 'agent') {
+      return record as ActiveAgentRun;
+    }
+    currentId = record.parentId;
+  }
+  return undefined;
+}
+
+function resolveParentContext(
+  callerContext: Context,
+  executionContext: Context,
+  parentRun: ActiveRun | undefined
+): Context {
+  const callerSpan = trace.getSpan(callerContext);
+  const executionSpan = trace.getSpan(executionContext);
+
+  if (parentRun) {
+    const parentSpan = trace.getSpan(parentRun.invocation.getContext());
+    if (
+      executionSpan &&
+      executionSpan !== parentSpan &&
+      executionSpan !== parentRun.callerSpan
+    ) {
+      return executionContext;
+    }
+    if (
+      callerSpan &&
+      callerSpan !== parentSpan &&
+      callerSpan !== parentRun.callerSpan
+    ) {
+      return callerContext;
+    }
+    return parentRun.invocation.getContext();
+  }
+
+  if (executionSpan) {
+    return executionContext;
+  }
+  if (callerSpan) {
+    return callerContext;
+  }
+  return executionContext;
 }

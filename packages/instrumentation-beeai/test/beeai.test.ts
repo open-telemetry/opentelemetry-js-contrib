@@ -96,7 +96,6 @@ import type {
 import {
   AssistantMessage,
   SystemMessage,
-  ToolMessage,
   UserMessage,
 } from 'beeai-framework/backend/message';
 import { Emitter } from 'beeai-framework/emitter/emitter';
