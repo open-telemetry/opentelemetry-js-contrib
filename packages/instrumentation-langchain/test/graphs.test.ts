@@ -25,7 +25,15 @@ import {
   SimpleSpanProcessor,
   TracerProvider,
 } from '@opentelemetry/sdk-trace';
-import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
+import {
+  Annotation,
+  Command,
+  interrupt,
+  MemorySaver,
+  StateGraph,
+  START,
+  END,
+} from '@langchain/langgraph';
 import { createReactAgent } from '@langchain/langgraph/prebuilt';
 import {
   AIMessage,
@@ -651,6 +659,107 @@ describe('LangChain donated graph callbacks', () => {
   }
 
   for (const method of ['invoke', 'stream'] as const) {
+    for (const signal of ['interrupt', 'parent command'] as const) {
+      it(`completes nested graph ${signal} callbacks without failures for ${method}`, async () => {
+        instrumentation.setConfig({ captureMessageContent: 'span_only' });
+        const onError = sinon.spy();
+        const child = new StateGraph(State)
+          .addNode('signal', () => {
+            if (signal === 'parent command')
+              return new Command({
+                graph: Command.PARENT,
+                goto: 'done',
+                update: { messages: [new AIMessage('redirected')] },
+              });
+            return {
+              messages: [new AIMessage(interrupt<string>('approval needed'))],
+            };
+          })
+          .addEdge(START, 'signal')
+          .addEdge('signal', END)
+          .compile({ name: 'child' });
+        const operation = new StateGraph(State)
+          .addNode('child', child, { ends: ['done'] })
+          .addNode('done', state => state)
+          .addEdge(START, 'child')
+          .addEdge('child', 'done')
+          .addEdge('done', END)
+          .compile({ name: 'parent', checkpointer: new MemorySaver() });
+        const config = {
+          configurable: { thread_id: 'control-flow' },
+          callbacks: [{ handleChainError: onError }],
+        };
+        const run = async (value: Parameters<typeof operation.invoke>[0]) => {
+          if (method === 'invoke') return operation.invoke(value, config);
+          let output;
+          for await (const chunk of await operation.stream(value, {
+            ...config,
+            streamMode: 'values',
+          }))
+            output = chunk;
+          return output;
+        };
+        let output = await run(input());
+        assert.ok(
+          onError.getCalls().some(call => {
+            const error = call.args[0];
+            return (
+              error.name ===
+                (signal === 'interrupt' ? 'GraphInterrupt' : 'ParentCommand') &&
+              error.is_bubble_up === true
+            );
+          }),
+          'the SDK must deliver the control-flow signal to user callbacks'
+        );
+        assert.equal(getTestSpans().length, 2);
+        const childSpan = getTestSpans().find(
+          span => span.name === 'invoke_workflow child'
+        );
+        assert.ok(childSpan);
+        assert.equal(childSpan.attributes['gen_ai.output.messages'], undefined);
+        if (signal === 'interrupt')
+          output = await run(new Command({ resume: 'approved' }));
+        assert.deepEqual(output, {
+          messages: [
+            new AIMessage(signal === 'interrupt' ? 'approved' : 'redirected'),
+          ],
+          privateState: 'not message content',
+        });
+        const count = signal === 'interrupt' ? 2 : 1;
+        const spans = getTestSpans();
+        assert.equal(spans.length, 2 * count);
+        for (const span of spans) {
+          assert.deepEqual(span.status, { code: SpanStatusCode.UNSET });
+          assert.equal(span.attributes['error.type'], undefined);
+          assert.deepEqual(span.events, []);
+        }
+        const result = await reader.collect();
+        const recorded = result.resourceMetrics.scopeMetrics.flatMap(
+          scope => scope.metrics
+        );
+        assert.equal(recorded.length, 1);
+        assert.equal(
+          recorded[0].descriptor.name,
+          'gen_ai.invoke_agent.duration'
+        );
+        const histogram = recorded[0];
+        assert.ok(histogram.dataPointType === DataPointType.HISTOGRAM);
+        assert.deepEqual(
+          histogram.dataPoints
+            .map(point => point.attributes['gen_ai.agent.name'])
+            .sort(),
+          ['child', 'parent']
+        );
+        for (const point of histogram.dataPoints) {
+          assert.equal(point.value.count, count);
+          assert.deepEqual(point.attributes, {
+            'gen_ai.operation.name': 'invoke_workflow',
+            'gen_ai.agent.name': point.attributes['gen_ai.agent.name'],
+          });
+        }
+      });
+    }
+
     it(`records callback failures and preserves the SDK error for ${method}`, async () => {
       const failure = new TypeError('private graph failure');
       const operation = new StateGraph(State)
@@ -676,6 +785,19 @@ describe('LangChain donated graph callbacks', () => {
       assert.equal(spans[0].attributes['error.type'], 'TypeError');
       assert.deepEqual(spans[0].events, []);
       assert.ok(!JSON.stringify(spans[0].attributes).includes(failure.message));
+      const result = await reader.collect();
+      const recorded = result.resourceMetrics.scopeMetrics.flatMap(
+        scope => scope.metrics
+      );
+      assert.equal(recorded.length, 1);
+      assert.ok(recorded[0].dataPointType === DataPointType.HISTOGRAM);
+      assert.equal(recorded[0].dataPoints.length, 1);
+      assert.equal(recorded[0].dataPoints[0].value.count, 1);
+      assert.deepEqual(recorded[0].dataPoints[0].attributes, {
+        'gen_ai.operation.name': 'invoke_workflow',
+        'gen_ai.agent.name': 'failure',
+        'error.type': 'TypeError',
+      });
     });
   }
 

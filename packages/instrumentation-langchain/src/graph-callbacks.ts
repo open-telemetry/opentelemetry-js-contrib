@@ -69,7 +69,10 @@ export function addGraphCallbacks(
       finish(output);
     },
     handleChainError(error) {
-      finish(undefined, { error });
+      // LangGraph uses bubble-up errors for interrupts and parent commands.
+      const failure =
+        isRecord(error) && error.is_bubble_up === true ? undefined : { error };
+      finish(undefined, failure);
     },
   };
   const handler = manager.fromHandlers(callbacks).handlers[0];
