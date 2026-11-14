@@ -55,7 +55,7 @@ export const getEndpointUrl = (executionContext: {
   return executionContext?.endpointV2?.url?.href;
 };
 
-export const bindPromise =<T = unknown>(
+export const bindPromise = <T = unknown>(
   target: Promise<T>,
   contextForCallbacks: Context,
   rebindCount = 1

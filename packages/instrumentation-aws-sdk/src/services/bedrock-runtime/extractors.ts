@@ -14,7 +14,10 @@ import type {
   SystemInstructionPart,
   TokenUsageDetails,
 } from '@opentelemetry/genai-util';
-import { ATTR_AWS_BEDROCK_GUARDRAIL_ID, ATTR_GEN_AI_OUTPUT_TYPE } from '../../semconv';
+import {
+  ATTR_AWS_BEDROCK_GUARDRAIL_ID,
+  ATTR_GEN_AI_OUTPUT_TYPE,
+} from '../../semconv';
 
 type AnyRecord = Record<string, any>;
 
@@ -73,9 +76,7 @@ const DOC_MIME_TYPES: Record<string, string> = {
 /**
  * Map a Bedrock stop reason to a GenAI semantic convention finish reason.
  */
-export function mapFinishReason(
-  stopReason: unknown
-): FinishReason | undefined {
+export function mapFinishReason(stopReason: unknown): FinishReason | undefined {
   if (typeof stopReason !== 'string' || stopReason === '') return undefined;
   const lower = stopReason.toLowerCase();
   return FINISH_REASON_MAP[lower] ?? lower;
@@ -122,7 +123,10 @@ export function extractContentBlock(block: AnyRecord): MessagePart | undefined {
   const blockType = block.type;
 
   // Text block (Converse or Anthropic)
-  if (typeof block.text === 'string' && (blockType === 'text' || blockType === undefined)) {
+  if (
+    typeof block.text === 'string' &&
+    (blockType === 'text' || blockType === undefined)
+  ) {
     return { type: 'text', content: block.text };
   }
 
@@ -661,7 +665,10 @@ export function extractInvokeModelResponse(
   });
   if (Array.isArray(body.content)) {
     // Anthropic Messages format
-    output = { role: body.role ?? 'assistant', parts: extractParts(body.content) };
+    output = {
+      role: body.role ?? 'assistant',
+      parts: extractParts(body.content),
+    };
   } else if (isRecord(body.output) && isRecord(body.output.message)) {
     // Amazon Nova format
     const message = body.output.message;

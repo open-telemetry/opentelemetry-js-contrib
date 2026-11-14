@@ -16,7 +16,8 @@
  *
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const ATTR_AWS_BEDROCK_GUARDRAIL_ID = 'aws.bedrock.guardrail.id' as const;
+export const ATTR_AWS_BEDROCK_GUARDRAIL_ID =
+  'aws.bedrock.guardrail.id' as const;
 
 /**
  * The JSON-serialized value of each item in the `AttributeDefinitions` request field.
