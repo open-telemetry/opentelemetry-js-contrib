@@ -4,15 +4,22 @@
  */
 
 import type Anthropic from '@anthropic-ai/sdk';
-import { context, SpanKind, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { Span } from '@opentelemetry/api';
+import { context } from '@opentelemetry/api';
+import type { MeterProvider, TracerProvider } from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
   InstrumentationNodeModuleFile,
 } from '@opentelemetry/instrumentation';
 import { isTracingSuppressed } from '@opentelemetry/core';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import type { AnthropicInstrumentationConfig } from './types';
+import {
+  getProviderName,
+  getRequestOptions,
+  ResponseRecorder,
+  type InferenceInvocation,
+} from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -30,10 +37,10 @@ const SUPPORTED_VERSIONS = ['>=0.65.0 <0.134.0'];
 let inMessagesStreamHelper = 0;
 
 /** The state of the span the helper just started, handed to `patchedStream`. */
-let pendingHelperState: SpanState | undefined;
+let pendingHelperState: CallState | undefined;
 
 /** Read and clear it. A function, so its declared return type survives. */
-function takePendingHelperState(): SpanState | undefined {
+function takePendingHelperState(): CallState | undefined {
   const state = pendingHelperState;
   pendingHelperState = undefined;
   return state;
@@ -68,9 +75,11 @@ interface MessagesModule {
   Messages: { prototype: Record<string, unknown> };
 }
 
-interface SpanState {
-  span: Span;
-  ended: boolean;
+interface CallState {
+  /** Owns the span and metrics of the call; completes at most once. */
+  invocation: InferenceInvocation;
+  /** Records response metadata and usage onto `invocation`. */
+  response: ResponseRecorder;
   /**
    * Set only while an `iterator.next()` call is outstanding. The SDK aborts
    * its own controller from inside that call when an SSE `error` event ends
@@ -84,6 +93,12 @@ interface SpanState {
    * the controller as ordinary cleanup, which must not read as a cancellation.
    */
   closing: boolean;
+  /**
+   * Set when the iteration ended because the caller aborted: the SDK swallows
+   * abort errors and simply stops yielding, so this is read when the stream
+   * wrapper finishes to record the abort instead of a success.
+   */
+  aborted: boolean;
   /**
    * Set when the call was made by `messages.stream()`. The helper keeps
    * consuming after the raw stream ends — accumulating events into a final
@@ -114,37 +129,6 @@ function isMessageCreateParams(
   return typeof value === 'object' && value !== null;
 }
 
-/**
- * `AnthropicBedrock` and `AnthropicVertex` extend `BaseAnthropic` and reuse the
- * core `Messages` resource, so the same patch serves all three. Derive the
- * provider from the client's base URL rather than assuming the first-party API.
- */
-function getProviderName(client: unknown): string {
-  const baseURL = (client as { baseURL?: unknown })?.baseURL;
-  if (typeof baseURL === 'string') {
-    let host: string;
-    try {
-      host = new URL(baseURL).host;
-    } catch {
-      return 'anthropic';
-    }
-    if (/\.amazonaws\.com$/.test(host) && host.includes('bedrock')) {
-      return 'aws.bedrock';
-    }
-    // `AnthropicBedrockMantle` uses `bedrock-mantle.<region>.api.aws`.
-    if (/^bedrock-mantle\.[a-z0-9-]+\.api\.aws$/.test(host)) {
-      return 'aws.bedrock';
-    }
-    // Regional endpoints are `<region>-aiplatform.googleapis.com`, the global
-    // endpoint has no region prefix, and the `us` and `eu` multi-region
-    // endpoints are `aiplatform.<name>.rep.googleapis.com`.
-    if (/(^|[.-])aiplatform\.([a-z0-9-]+\.rep\.)?googleapis\.com$/.test(host)) {
-      return 'gcp.vertex_ai';
-    }
-  }
-  return 'anthropic';
-}
-
 function isAPIPromise<T>(value: Promise<T>): value is AnthropicAPIPromise<T> {
   const candidate = value as AnthropicAPIPromise<T>;
   return (
@@ -165,8 +149,43 @@ function isAnthropicStream(value: unknown): value is AnthropicStream {
 }
 
 export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstrumentationConfig> {
+  // Declared rather than initialized: the base constructor may call the
+  // provider setters below before subclass field initializers would run.
+  declare private _telemetry: TelemetryHandler | undefined;
+  declare private _telemetryTracerProvider: TracerProvider | undefined;
+  declare private _telemetryMeterProvider: MeterProvider | undefined;
+
   constructor(config: AnthropicInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
+  }
+
+  override setTracerProvider(provider: TracerProvider) {
+    super.setTracerProvider(provider);
+    this._telemetryTracerProvider = provider;
+    this._telemetry = undefined;
+  }
+
+  override setMeterProvider(provider: MeterProvider) {
+    super.setMeterProvider(provider);
+    this._telemetryMeterProvider = provider;
+    this._telemetry = undefined;
+  }
+
+  /**
+   * The handler that owns each call's span and metrics. It is rebuilt when a
+   * provider changes so that new calls report through the current providers.
+   */
+  private _getTelemetry(): TelemetryHandler {
+    return (this._telemetry ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider: this._telemetryTracerProvider,
+      meterProvider: this._telemetryMeterProvider,
+      diag: this._diag,
+      // Message content is not recorded by this instrumentation, so the
+      // capture environment variable must not change what is emitted.
+      contentCaptureMode: 'none',
+    }));
   }
 
   protected init() {
@@ -239,53 +258,40 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         }
 
         const params = args[0];
-        const model =
-          typeof params.model === 'string' ? params.model : undefined;
-        const span = instrumentation.tracer.startSpan(
-          model ? `chat ${model}` : 'chat',
-          {
-            kind: SpanKind.CLIENT,
-            attributes: {
-              'gen_ai.operation.name': 'chat',
-              'gen_ai.provider.name': getProviderName(this?._client),
-              ...(model ? { 'gen_ai.request.model': model } : {}),
-            },
-          }
-        );
-        const state: SpanState = {
-          span,
-          ended: false,
+        const invocation = instrumentation._getTelemetry().startInference({
+          providerName: getProviderName(this?._client),
+          requestModel:
+            typeof params.model === 'string' ? params.model : undefined,
+          requestOptions: getRequestOptions(params),
+        });
+        const state: CallState = {
+          invocation,
+          response: new ResponseRecorder(invocation),
           awaitingNext: false,
           closing: false,
+          aborted: false,
           helperOwned: inMessagesStreamHelper > 0,
         };
         if (state.helperOwned) {
           pendingHelperState = state;
         }
-        const ctx = trace.setSpan(context.active(), span);
 
         let result: Promise<unknown>;
         try {
-          result = context.with(ctx, () => original.apply(this, args));
+          result = invocation.withContext(() => original.apply(this, args));
         } catch (error) {
-          instrumentation._endSpanWithError(state, error);
+          instrumentation._fail(state, error);
           throw error;
         }
-
-        const onError = (error: unknown) =>
-          instrumentation._endSpanWithError(state, error);
 
         if (isAPIPromise(result)) {
           instrumentation._observeAPIPromise(result, state);
         } else {
           // Not an `APIPromise`: fall back to observing the plain promise.
-          result.then(value => {
-            if (isAnthropicStream(value)) {
-              instrumentation._wrapStream(value, state);
-            } else {
-              instrumentation._endSpan(state);
-            }
-          }, onError);
+          result.then(
+            value => instrumentation._onParsed(value, state),
+            error => instrumentation._fail(state, error)
+          );
         }
 
         // Preserve the Anthropic SDK's customized APIPromise instance.
@@ -355,11 +361,12 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
    */
   private _observeMessageStream(
     messageStream: AnthropicMessageStream,
-    state: SpanState
+    state: CallState
   ): void {
     const instrumentation = this;
     let failure: unknown;
     let failed = false;
+    let aborted = false;
 
     this._wrap(messageStream, '_emit', original => {
       return function patchedEmit(
@@ -368,31 +375,38 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ...args: any[]
       ) {
-        // The SDK emits `abort` instead of `error` when the caller cancels.
-        // That is recorded as an error with `error.type` `APIUserAbortError`,
-        // consistent with an aborted raw stream, since the call did not
-        // produce a response.
-        if (event === 'error' || event === 'abort') {
+        if (event === 'streamEvent') {
+          // The helper consumes the raw stream itself, so its events stand in
+          // for the stream chunks the wrapper would otherwise observe.
+          state.response.recordStreamEvent(args[0]);
+          state.invocation.recordStreamChunk();
+        } else if (event === 'error') {
           failure = args[0];
           failed = true;
+        } else if (event === 'abort') {
+          // The SDK emits `abort` instead of `error` when the caller cancels.
+          // That is recorded as an error with `error.type`
+          // `APIUserAbortError`, consistent with an aborted raw stream, since
+          // the call did not produce a response.
+          aborted = true;
         }
         const result = original.call(this, event, ...args);
         if (event === 'end') {
-          if (failed) {
-            instrumentation._endSpanWithError(state, failure);
+          if (aborted) {
+            instrumentation._failWithAbort(state);
+          } else if (failed) {
+            instrumentation._fail(state, failure);
           } else if (messageStream.receivedMessages.length === 0) {
             // The stream ended before `message_stop`, so the helper cannot
             // produce a final message and `finalMessage()` will reject with
             // an `AnthropicError`.
-            instrumentation._endSpanWithError(
-              state,
-              new Error(
-                'stream ended without producing a Message with role=assistant'
-              ),
-              'AnthropicError'
-            );
+            state.invocation.fail({
+              errorType: 'AnthropicError',
+              statusDescription:
+                'stream ended without producing a Message with role=assistant',
+            });
           } else {
-            instrumentation._endSpan(state);
+            state.invocation.stop();
           }
         }
         return result;
@@ -426,9 +440,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
    */
   private _observeAPIPromise(
     apiPromise: AnthropicAPIPromise<unknown>,
-    state: SpanState
+    state: CallState
   ): void {
-    const onError = (error: unknown) => this._endSpanWithError(state, error);
+    const onError = (error: unknown) => this._fail(state, error);
     let parsed = false;
 
     this._wrap(apiPromise, 'parse', originalParse => {
@@ -441,14 +455,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           return parsePromise;
         }
         parsed = true;
-        parsePromise.then(value => {
-          if (isAnthropicStream(value)) {
-            // The span now belongs to the stream's lifetime.
-            this._wrapStream(value, state);
-          } else {
-            this._endSpan(state);
-          }
-        }, onError);
+        parsePromise.then(value => this._onParsed(value, state), onError);
         return parsePromise;
       };
     });
@@ -460,7 +467,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // `withResponse()` calls `parse()` and `asResponse()` together; let
           // the parse result end the span so the body read is included.
           if (!parsed) {
-            this._endSpan(state);
+            state.invocation.stop();
           }
         }, onError);
         return responsePromise;
@@ -468,19 +475,46 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     });
   }
 
-  private _wrapStream(stream: AnthropicStream, state: SpanState): void {
+  /** Handle the parsed body: a `Stream` keeps the span open, a `Message` ends it. */
+  private _onParsed(value: unknown, state: CallState): void {
+    if (isAnthropicStream(value)) {
+      // The span now belongs to the stream's lifetime.
+      this._wrapStream(value, state);
+    } else {
+      state.response.recordMessage(value);
+      state.invocation.stop();
+    }
+  }
+
+  private _wrapStream(stream: AnthropicStream, state: CallState): void {
+    const signal = stream.controller?.signal;
+
     // `Stream.tee()` calls `iterator()` directly, bypassing
     // `Symbol.asyncIterator`, so wrap the internal iterator method.
     this._wrap(stream, 'iterator', originalIterator => {
       // Call with the stream as receiver: `iterator` is an own-property closure
       // in current SDK versions, but the supported range is `>=0.65.0 <0.134.0`.
-      return () =>
-        this._streamIterator(originalIterator.call(stream), state, stream);
+      const observed: AsyncIterable<unknown> = {
+        [Symbol.asyncIterator]: () =>
+          this._observeIterator(originalIterator.call(stream), state, signal),
+      };
+      // A helper stream is not finished when its events run out: the helper
+      // still has to turn them into a final message, and reports its events
+      // and outcome through `_emit` instead.
+      const iterable = state.helperOwned
+        ? observed
+        : this._getTelemetry().wrapAsyncStream(observed, {
+            invocation: state.invocation,
+            onChunk: event => state.response.recordStreamEvent(event),
+            onEnd: () => {
+              if (state.aborted) this._failWithAbort(state);
+            },
+          });
+      return () => iterable[Symbol.asyncIterator]();
     });
 
     // A stream that is abandoned without ever being iterated would otherwise
     // leave the span open forever, since it is only ended from the iterator.
-    const signal = stream.controller?.signal;
     if (signal) {
       if (
         signal.aborted &&
@@ -488,7 +522,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         !state.closing &&
         !state.helperOwned
       ) {
-        this._endSpanWithAbort(state);
+        this._failWithAbort(state);
         return;
       }
       signal.addEventListener(
@@ -501,7 +535,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // while the iterator is suspended is the caller cancelling, and may
           // be the last thing that ever happens to this stream.
           if (!state.awaitingNext && !state.closing && !state.helperOwned) {
-            this._endSpanWithAbort(state);
+            this._failWithAbort(state);
           }
         },
         { once: true }
@@ -509,112 +543,78 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     }
   }
 
-  private async *_streamIterator(
+  /**
+   * Track the abort-related state of the SDK iterator. Completing the
+   * invocation, chunk metrics and response data are left to the genai-util
+   * stream wrapper that sits on top of this iterator.
+   */
+  private _observeIterator(
     iterator: AsyncIterator<unknown>,
-    state: SpanState,
-    stream?: AnthropicStream
-  ): AsyncGenerator<unknown> {
-    const signal = stream?.controller?.signal;
+    state: CallState,
+    signal: AbortSignal | undefined
+  ): AsyncIterator<unknown> {
     let exhausted = false;
-    try {
-      while (true) {
+    return {
+      next: async () => {
         state.awaitingNext = true;
-        let next;
+        let result: IteratorResult<unknown>;
         try {
-          next = await iterator.next();
+          result = await iterator.next();
+        } catch (error) {
+          this._fail(state, error);
+          throw error;
         } finally {
           state.awaitingNext = false;
         }
-        if (next.done) {
+        if (result.done) {
           exhausted = true;
-          break;
+          // `Stream.fromSSEResponse` swallows abort errors and simply stops
+          // yielding, so an aborted generation is indistinguishable from a
+          // completed one without checking the signal.
+          if (signal?.aborted) state.aborted = true;
+        } else if (signal?.aborted && !state.helperOwned) {
+          // An abort raised while `next()` was outstanding is deferred to
+          // here, and that call can still deliver a buffered event. The abort
+          // listener has already fired by now, so nothing else would ever end
+          // the span if the caller stops reading after this event.
+          this._failWithAbort(state);
         }
-        // An abort raised while `next()` was outstanding is deferred to here,
-        // and that call can still deliver a buffered event. The abort listener
-        // has already fired by now, so nothing else would ever end the span if
-        // the caller stops reading after this event.
-        if (signal?.aborted && !state.helperOwned) {
-          this._endSpanWithAbort(state);
-        }
-        yield next.value;
-      }
-      // `Stream.fromSSEResponse` swallows abort errors and simply stops
-      // yielding, so an aborted generation is indistinguishable from a
-      // completed one without checking the signal.
-      // A helper stream is not finished when its events run out: the helper
-      // still has to turn them into a final message, and can fail doing so.
-      if (state.helperOwned) {
-        // `MessageStream.done()` reports the outcome.
-      } else if (signal?.aborted) {
-        this._endSpanWithAbort(state);
-      } else {
-        this._endSpan(state);
-      }
-    } catch (error) {
-      this._endSpanWithError(state, error);
-      throw error;
-    } finally {
-      // Whether the span has already ended is irrelevant to SDK cleanup: the
-      // response body still has to be released and cancelled, exactly as it
-      // would be without instrumentation.
-      if (!exhausted) {
+        return result;
+      },
+      return: async (value?: unknown) => {
         // Sampled before `return()`, which aborts the controller itself when
         // the caller breaks out of the loop.
-        const abortedByCaller = signal?.aborted ?? false;
+        if (!exhausted && signal?.aborted) state.aborted = true;
+        // Whether the span has already ended is irrelevant to SDK cleanup: the
+        // response body still has to be released and cancelled, exactly as it
+        // would be without instrumentation.
         state.closing = true;
         try {
-          await iterator.return?.();
+          await iterator.return?.(value);
         } catch (error) {
           this._diag.debug('error closing Anthropic stream iterator:', error);
         } finally {
           state.closing = false;
         }
-        if (state.helperOwned) {
-          // `MessageStream.done()` reports the outcome.
-        } else if (abortedByCaller) {
-          this._endSpanWithAbort(state);
-        } else {
-          this._endSpan(state);
-        }
-      }
-    }
+        return { done: true, value };
+      },
+    };
   }
 
-  private _endSpanWithAbort(state: SpanState): void {
-    if (state.ended) return;
-    state.span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: 'stream aborted',
+  private _failWithAbort(state: CallState): void {
+    state.invocation.fail({
+      errorType: 'APIUserAbortError',
+      statusDescription: 'stream aborted',
     });
-    state.span.setAttribute('error.type', 'APIUserAbortError');
-    this._endSpan(state);
   }
 
-  private _endSpan(state: SpanState): void {
-    if (state.ended) return;
-    state.ended = true;
-    state.span.end();
-  }
-
-  private _endSpanWithError(
-    state: SpanState,
-    error: unknown,
-    errorType?: string
-  ): void {
-    if (state.ended) return;
+  private _fail(state: CallState, error: unknown): void {
     // The SDK's error classes (`RateLimitError`, `APIConnectionError`, ...)
-    // are the most reliable low-cardinality identifier, as in the OpenAI
-    // instrumentation. A thrown non-`Error` has no such name, so it falls back
-    // to `_OTHER` per semantic conventions rather than a misleading `Error`.
-    const isError = error instanceof Error;
-    state.span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: isError ? error.message : String(error),
+    // are the most reliable low-cardinality identifier, and are what
+    // genai-util derives `error.type` from. A thrown non-`Error` has no such
+    // name, so it falls back to `_OTHER` per semantic conventions.
+    state.invocation.fail({
+      exception: error instanceof Error ? error : undefined,
     });
-    state.span.setAttribute(
-      'error.type',
-      errorType ?? (isError ? error.constructor.name : '_OTHER')
-    );
-    this._endSpan(state);
   }
 }
