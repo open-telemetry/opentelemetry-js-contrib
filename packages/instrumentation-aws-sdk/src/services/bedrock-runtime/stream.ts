@@ -284,6 +284,11 @@ export function wrapInvokeModelStream(
             state.inputTokens =
               toInt(firstDefined(usage.input_tokens, usage.inputTokens)) ??
               state.inputTokens;
+            // Initial count, replaced by the cumulative count in message_delta.
+            // Kept if the stream stops before that.
+            state.outputTokens =
+              toInt(firstDefined(usage.output_tokens, usage.outputTokens)) ??
+              state.outputTokens;
             state.cacheReadTokens =
               toInt(
                 firstDefined(

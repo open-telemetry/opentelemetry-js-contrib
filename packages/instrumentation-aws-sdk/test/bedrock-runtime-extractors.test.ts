@@ -17,6 +17,7 @@ import { expect } from 'expect';
 import {
   extractContentBlock,
   extractInvokeModelRequest,
+  isEmbeddingInvocation,
   extractInvokeModelResponse,
 } from '../src/services/bedrock-runtime/extractors';
 import {
@@ -268,7 +269,10 @@ describe('Bedrock Runtime extractors', () => {
           invokeModelChunks(
             {
               type: 'message_start',
-              message: { role: 'assistant', usage: { input_tokens: 22 } },
+              message: {
+                role: 'assistant',
+                usage: { input_tokens: 22, output_tokens: 1 },
+              },
             },
             {
               type: 'content_block_delta',
@@ -286,6 +290,8 @@ describe('Bedrock Runtime extractors', () => {
       const failed = span();
       expect(failed.status.code).toBe(SpanStatusCode.ERROR);
       expect(failed.attributes[INPUT_TOKENS]).toBe(22);
+      // The initial count from message_start, as no message_delta arrived.
+      expect(failed.attributes[OUTPUT_TOKENS]).toBe(1);
       expect(outputMessages(failed)).toEqual([
         {
           role: 'assistant',
@@ -375,6 +381,23 @@ describe('Bedrock Runtime extractors', () => {
       });
     });
 
+    it('decodes base64 sources from InvokeModel request bodies', () => {
+      const image = extractContentBlock({
+        image: { format: 'png', source: { bytes: 'AQID' } },
+      });
+      expect(image).toMatchObject({
+        type: 'blob',
+        modality: 'image',
+        mime_type: 'image/png',
+      });
+      expect(Array.from(image!.content as Uint8Array)).toEqual([1, 2, 3]);
+
+      const document = extractContentBlock({
+        document: { format: 'pdf', name: 'doc', source: { bytes: 'AQID' } },
+      });
+      expect(Array.from(document!.content as Uint8Array)).toEqual([1, 2, 3]);
+    });
+
     it('keeps inline image bytes as blob parts', () => {
       const bytes = new Uint8Array([1, 2, 3]);
       expect(
@@ -385,6 +408,70 @@ describe('Bedrock Runtime extractors', () => {
         mime_type: 'image/jpeg',
         content: bytes,
       });
+    });
+  });
+
+  describe('embedding detection', () => {
+    const profileArn =
+      'arn:aws:bedrock:us-east-1:123456789012:application-inference-profile/abc123';
+    const body = (payload: object) => JSON.stringify(payload);
+
+    it('detects embedding models by model ID', () => {
+      expect(isEmbeddingInvocation('amazon.titan-embed-text-v2:0', '{}')).toBe(
+        true
+      );
+      expect(
+        isEmbeddingInvocation(
+          'arn:aws:bedrock:us-east-1::foundation-model/cohere.embed-english-v3',
+          undefined
+        )
+      ).toBe(true);
+      expect(isEmbeddingInvocation('amazon.titan-text-express-v1', '{}')).toBe(
+        false
+      );
+    });
+
+    it('inspects the body of ARNs that do not name the model', () => {
+      expect(
+        isEmbeddingInvocation(
+          profileArn,
+          body({ inputText: 'hi', dimensions: 256, normalize: true })
+        )
+      ).toBe(true);
+      expect(
+        isEmbeddingInvocation(
+          profileArn,
+          body({ texts: ['hi'], input_type: 'search_document' })
+        )
+      ).toBe(true);
+      expect(
+        isEmbeddingInvocation(
+          profileArn,
+          body({ inputImage: 'AQID', embeddingConfig: {} })
+        )
+      ).toBe(true);
+    });
+
+    it('treats ambiguous and chat bodies as chat', () => {
+      expect(isEmbeddingInvocation(profileArn, body({ inputText: 'hi' }))).toBe(
+        false
+      );
+      expect(
+        isEmbeddingInvocation(
+          profileArn,
+          body({ inputText: 'hi', textGenerationConfig: { maxTokenCount: 10 } })
+        )
+      ).toBe(false);
+      expect(
+        isEmbeddingInvocation(
+          profileArn,
+          body({ messages: [{ role: 'user', content: 'hi' }] })
+        )
+      ).toBe(false);
+      // Only ARNs are inspected: a plain model ID keeps the model ID check.
+      expect(
+        isEmbeddingInvocation('custom-model', body({ texts: ['hi'] }))
+      ).toBe(false);
     });
   });
 });

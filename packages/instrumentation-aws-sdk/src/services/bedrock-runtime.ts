@@ -45,7 +45,7 @@ import {
   extractInvokeModelRequest,
   extractInvokeModelResponse,
   extractServerAddressAndPort,
-  isEmbeddingModel,
+  isEmbeddingInvocation,
   parseBody,
 } from './bedrock-runtime/extractors';
 import {
@@ -85,7 +85,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     request: NormalizedRequest,
     config: AwsSdkInstrumentationConfig,
-    diag: DiagLogger
+    _diagLogger: DiagLogger
   ): RequestMetadata {
     switch (request.commandName) {
       case 'Converse':
@@ -172,7 +172,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     span: Span,
     tracer: Tracer,
     config: AwsSdkInstrumentationConfig,
-    startTime: HrTime
+    _startTime: HrTime
   ) {
     const request = response.request;
     const invocation = this._invocations.get(request);
@@ -284,15 +284,17 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       invocation.stop();
       return;
     }
-    // Replace the original response body with our instrumented stream, which
-    // completes the invocation (ending its span) once the stream is consumed.
-    response.data.body = wrapInvokeModelStream(
-      handler,
-      stream,
-      invocation,
-      invocation.shouldCaptureContent()
-    );
-    return response.data;
+    return {
+      ...response.data,
+      // Replace the original response body with our instrumented stream, which
+      // completes the invocation (ending its span) once the stream is consumed.
+      body: wrapInvokeModelStream(
+        handler,
+        stream,
+        invocation,
+        invocation.shouldCaptureContent()
+      ),
+    };
   }
 
   // Starts the invocation, and with it the span, before the request is sent.
@@ -425,6 +427,9 @@ function recordServerAddress(
 function isEmbeddingRequest(request: NormalizedRequest): boolean {
   return (
     request.commandName === 'InvokeModel' &&
-    isEmbeddingModel(request.commandInput?.modelId)
+    isEmbeddingInvocation(
+      request.commandInput?.modelId,
+      request.commandInput?.body
+    )
   );
 }

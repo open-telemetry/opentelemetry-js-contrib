@@ -43,6 +43,7 @@ import {
   SpanStatusCode,
   diag,
 } from '@opentelemetry/api';
+import { DataPointType } from '@opentelemetry/sdk-metrics';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -544,7 +545,9 @@ describe('Bedrock', () => {
           .flatMap(rm => rm.scopeMetrics)
           .flatMap(sm => sm.metrics)
           .filter(m => m.descriptor.name === 'gen_ai.client.operation.duration')
-          .flatMap(m => m.dataPoints);
+          .flatMap(m =>
+            m.dataPointType === DataPointType.HISTOGRAM ? m.dataPoints : []
+          );
         expect(durations.length).toBe(1);
         expect(durations[0].attributes['error.type']).toBe(
           'ValidationException'

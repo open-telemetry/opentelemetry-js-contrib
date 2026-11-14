@@ -112,8 +112,11 @@ function decodeBase64(data: unknown): Uint8Array | undefined {
   }
 }
 
+// Converse sources carry raw bytes; InvokeModel request bodies are JSON, so
+// e.g. Amazon Nova image and document sources carry base64 strings.
 function toBytes(val: unknown): Uint8Array {
-  return val instanceof Uint8Array ? val : new Uint8Array();
+  if (val instanceof Uint8Array) return val;
+  return decodeBase64(val) ?? new Uint8Array();
 }
 
 // Converse image and document sources reference S3 objects instead of
@@ -744,6 +747,39 @@ export function extractInvokeModelResponse(
  */
 export function isEmbeddingModel(modelId: unknown): boolean {
   return typeof modelId === 'string' && modelId.toLowerCase().includes('embed');
+}
+
+/**
+ * Whether an `InvokeModel` request is an embedding request. Model IDs of
+ * embedding models contain `embed`, but application inference profile and
+ * provisioned model ARNs don't name the model, so for those the request body
+ * is inspected for fields only embedding models accept. A bare `{ inputText }`
+ * body is ambiguous (Titan text generation accepts it too) and is treated as
+ * a chat request.
+ */
+export function isEmbeddingInvocation(
+  modelId: unknown,
+  requestBody: unknown
+): boolean {
+  if (isEmbeddingModel(modelId)) return true;
+  if (typeof modelId !== 'string' || !modelId.startsWith('arn:')) return false;
+  const body = parseBody(requestBody);
+  if (!body) return false;
+  return (
+    // Cohere Embed
+    Array.isArray(body.texts) ||
+    body.input_type !== undefined ||
+    // Titan Multimodal Embeddings
+    body.inputImage !== undefined ||
+    isRecord(body.embeddingConfig) ||
+    // Titan Text Embeddings V2
+    (typeof body.inputText === 'string' &&
+      (body.dimensions !== undefined ||
+        body.normalize !== undefined ||
+        body.embeddingTypes !== undefined)) ||
+    // Amazon Nova Multimodal Embeddings
+    isRecord(body.singleEmbeddingParams)
+  );
 }
 
 /**
