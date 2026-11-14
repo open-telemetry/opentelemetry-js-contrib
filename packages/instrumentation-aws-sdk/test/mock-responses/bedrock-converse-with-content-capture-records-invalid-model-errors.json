@@ -1,0 +1,30 @@
+[
+  {
+    "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+    "method": "POST",
+    "path": "/model/does-not-exist/converse",
+    "body": {
+      "messages": [
+        {
+          "role": "user",
+          "content": [
+            {
+              "text": "Say this is a test"
+            }
+          ]
+        }
+      ]
+    },
+    "status": 400,
+    "response": {
+      "message": "The provided model identifier is invalid."
+    },
+    "rawHeaders": [
+      "Content-Type",
+      "application/json",
+      "x-amzn-ErrorType",
+      "ValidationException:http://internal.amazon.com/coral/com.amazon.bedrock/"
+    ],
+    "responseIsBinary": false
+  }
+]

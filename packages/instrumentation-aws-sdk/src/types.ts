@@ -17,11 +17,18 @@ export interface NormalizedRequest {
   commandName: string;
   commandInput: CommandInput;
   region?: string;
+  /**
+   * URL of the resolved service endpoint, once known (it is resolved while the
+   * request is being sent, so it is not yet set in the pre-request hooks).
+   */
+  endpoint?: string;
 }
 export interface NormalizedResponse {
   data: any;
   request: NormalizedRequest;
   requestId: string;
+  /** Raw HTTP response headers, when available. */
+  headers?: Record<string, string>;
 }
 
 export interface AwsSdkRequestHookInformation {
@@ -95,4 +102,15 @@ export interface AwsSdkInstrumentationConfig extends InstrumentationConfig {
    * By default it is off.
    */
   sqsExtractContextPropagationFromPayload?: boolean;
+
+  /**
+   * Controls capturing of GenAI message content (prompts, completions, tool
+   * calls and system instructions) for Bedrock Runtime operations.
+   * - `'none'`: no content is captured (default).
+   * - `'span_only'`: content is captured on span attributes.
+   *
+   * The `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment
+   * variable takes precedence over this option when set.
+   */
+  captureMessageContent?: 'none' | 'span_only';
 }
