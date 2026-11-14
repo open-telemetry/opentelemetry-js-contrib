@@ -42,7 +42,7 @@
   },
   "scripts": {
     "clean": "rimraf dist build",
-    "compile": "tsdown",
+    "compile": "tsdown && node ../../scripts/legacy-entrypoints.mjs",
     "compile:with-dependencies": "nx run-many -t compile -p @opentelemetry/auto-instrumentations-node",
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
@@ -114,6 +114,7 @@
   "files": [
     "README.md",
     "LICENSE",
-    "dist"
+    "dist",
+    "build"
   ]
 }
