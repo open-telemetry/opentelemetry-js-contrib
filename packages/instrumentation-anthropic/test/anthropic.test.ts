@@ -129,6 +129,24 @@ async function withCassette<T>(
   }
 }
 
+/**
+ * Run `fn` and resolve with the next unhandled rejection, which mocha would
+ * otherwise report as a test failure.
+ */
+async function captureUnhandledRejection(fn: () => void): Promise<unknown> {
+  const listeners = process.listeners('unhandledRejection');
+  process.removeAllListeners('unhandledRejection');
+  try {
+    return await new Promise(resolve => {
+      process.once('unhandledRejection', resolve);
+      fn();
+    });
+  } finally {
+    process.removeAllListeners('unhandledRejection');
+    listeners.forEach(listener => process.on('unhandledRejection', listener));
+  }
+}
+
 describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
@@ -779,6 +797,27 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
     expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
   });
+
+  for (const event of ['end', 'finalMessage'] as const) {
+    it(`ends the messages.stream span when a '${event}' listener throws`, async () => {
+      // The listener's error escapes `_emit` inside the helper's own promise
+      // chain, so the SDK surfaces it as an unhandled rejection.
+      const rejection = await withCassette(
+        'anthropic-messages-stream-complete.json',
+        () =>
+          captureUnhandledRejection(() => {
+            mockClient.messages.stream(requestBody).on(event, () => {
+              throw new Error('listener failed');
+            });
+          })
+      );
+      expect(rejection).toEqual(new Error('listener failed'));
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    });
+  }
 
   it('creates no telemetry for a suppressed messages.stream', async () => {
     await withCassette('anthropic-messages-stream.json', async () => {

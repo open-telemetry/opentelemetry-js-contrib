@@ -32,7 +32,7 @@ const USAGE_KEYS = [
   'cache_read_input_tokens',
 ] as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 

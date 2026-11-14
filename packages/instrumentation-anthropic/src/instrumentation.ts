@@ -17,6 +17,7 @@ import type { AnthropicInstrumentationConfig } from './types';
 import {
   getProviderName,
   getRequestOptions,
+  isRecord,
   ResponseRecorder,
   type InferenceInvocation,
 } from './utils';
@@ -61,6 +62,9 @@ interface AnthropicMessageStream {
   _emit(event: string, ...args: any[]): void;
   receivedMessages: unknown[];
 }
+
+/** `MessageStream` events after which the helper emits `end` and nothing else. */
+const TERMINAL_HELPER_EVENTS = new Set(['finalMessage', 'error', 'abort']);
 
 function isMessageStream(value: unknown): value is AnthropicMessageStream {
   const candidate = value as AnthropicMessageStream;
@@ -126,7 +130,7 @@ interface AnthropicAPIPromise<T> extends Promise<T> {
 function isMessageCreateParams(
   value: unknown
 ): value is Anthropic.Messages.MessageCreateParams {
-  return typeof value === 'object' && value !== null;
+  return isRecord(value);
 }
 
 function isAPIPromise<T>(value: Promise<T>): value is AnthropicAPIPromise<T> {
@@ -368,6 +372,25 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     let failed = false;
     let aborted = false;
 
+    const complete = () => {
+      if (aborted) {
+        instrumentation._failWithAbort(state);
+      } else if (failed) {
+        instrumentation._fail(state, failure);
+      } else if (messageStream.receivedMessages.length === 0) {
+        // The stream ended before `message_stop`, so the helper cannot
+        // produce a final message and `finalMessage()` will reject with
+        // an `AnthropicError`.
+        state.invocation.fail({
+          errorType: 'AnthropicError',
+          statusDescription:
+            'stream ended without producing a Message with role=assistant',
+        });
+      } else {
+        state.invocation.stop();
+      }
+    };
+
     this._wrap(messageStream, '_emit', original => {
       return function patchedEmit(
         this: unknown,
@@ -390,26 +413,23 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // the call did not produce a response.
           aborted = true;
         }
-        const result = original.call(this, event, ...args);
-        if (event === 'end') {
-          if (aborted) {
-            instrumentation._failWithAbort(state);
-          } else if (failed) {
-            instrumentation._fail(state, failure);
-          } else if (messageStream.receivedMessages.length === 0) {
-            // The stream ended before `message_stop`, so the helper cannot
-            // produce a final message and `finalMessage()` will reject with
-            // an `AnthropicError`.
-            state.invocation.fail({
-              errorType: 'AnthropicError',
-              statusDescription:
-                'stream ended without producing a Message with role=assistant',
-            });
-          } else {
-            state.invocation.stop();
+        let listenerThrew = true;
+        try {
+          const result = original.call(this, event, ...args);
+          listenerThrew = false;
+          return result;
+        } finally {
+          // Listeners run synchronously inside `_emit`. One that throws for
+          // `end` would skip completion here; one that throws for
+          // `finalMessage`, `error` or `abort` escapes before the SDK emits
+          // `end` at all. Either way `end` never reaches this point.
+          if (
+            event === 'end' ||
+            (listenerThrew && TERMINAL_HELPER_EVENTS.has(event))
+          ) {
+            complete();
           }
         }
-        return result;
       };
     });
   }
@@ -561,7 +581,9 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         try {
           result = await iterator.next();
         } catch (error) {
-          this._fail(state, error);
+          // A raw stream's failure is recorded by the genai-util stream
+          // wrapper this iterator sits under; a helper stream has no wrapper.
+          if (state.helperOwned) this._fail(state, error);
           throw error;
         } finally {
           state.awaitingNext = false;
