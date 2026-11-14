@@ -307,6 +307,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
     // in case of multiple enable calling.
     window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
+    this._enabled = true;
   }
 
   /**
@@ -314,5 +315,6 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    */
   override disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
+    this._enabled = false;
   }
 }
