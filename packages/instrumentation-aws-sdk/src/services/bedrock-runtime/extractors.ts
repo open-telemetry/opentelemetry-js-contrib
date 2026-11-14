@@ -116,6 +116,14 @@ function toBytes(val: unknown): Uint8Array {
   return val instanceof Uint8Array ? val : new Uint8Array();
 }
 
+// Converse image and document sources reference S3 objects instead of
+// carrying the bytes inline.
+function s3Uri(source: unknown): string | undefined {
+  if (!isRecord(source) || !isRecord(source.s3Location)) return undefined;
+  const uri = source.s3Location.uri;
+  return typeof uri === 'string' && uri ? uri : undefined;
+}
+
 /**
  * Map a single Converse or Anthropic-style content block to a message part.
  */
@@ -147,10 +155,14 @@ export function extractContentBlock(block: AnyRecord): MessagePart | undefined {
   // Image block
   if (isRecord(block.image)) {
     const source = block.image.source;
+    const mimeType = `image/${block.image.format ?? 'jpeg'}`;
+    const uri = s3Uri(source);
+    if (uri)
+      return { type: 'uri', modality: 'image', mime_type: mimeType, uri };
     return {
       type: 'blob',
       modality: 'image',
-      mime_type: `image/${block.image.format ?? 'jpeg'}`,
+      mime_type: mimeType,
       content: toBytes(isRecord(source) ? source.bytes : undefined),
     };
   }
@@ -163,13 +175,18 @@ export function extractContentBlock(block: AnyRecord): MessagePart | undefined {
   if (isRecord(block.document)) {
     const format = block.document.format ?? 'pdf';
     const source = block.document.source;
+    const mimeType =
+      typeof format === 'string'
+        ? (DOC_MIME_TYPES[format] ?? `application/${format}`)
+        : undefined;
+    const uri = s3Uri(source);
+    if (uri) {
+      return { type: 'uri', modality: 'document', mime_type: mimeType, uri };
+    }
     return {
       type: 'blob',
       modality: 'document',
-      mime_type:
-        typeof format === 'string'
-          ? (DOC_MIME_TYPES[format] ?? `application/${format}`)
-          : undefined,
+      mime_type: mimeType,
       content: toBytes(isRecord(source) ? source.bytes : undefined),
     };
   }
@@ -335,10 +352,11 @@ export function parseBody(body: unknown): AnyRecord | undefined {
 }
 
 /**
- * Input tokens reported by Converse exclude cached tokens, while the semantic
- * conventions want `gen_ai.usage.input_tokens` to include them.
+ * Input tokens reported by Bedrock (Converse usage, InvokeModel usage bodies,
+ * token count headers and invocation metrics) exclude cached tokens, while the
+ * semantic conventions want `gen_ai.usage.input_tokens` to include them.
  */
-export function totalInputTokens(
+function totalInputTokens(
   inputTokens: number | undefined,
   cacheReadTokens: number | undefined,
   cacheWriteTokens: number | undefined
@@ -456,7 +474,7 @@ export function extractConverseResponse(
   const usage = output.usage;
   if (isRecord(usage)) {
     invocation.setUsage(
-      converseUsage(
+      tokenUsage(
         toInt(usage.inputTokens),
         toInt(usage.outputTokens),
         toInt(usage.cacheReadInputTokens),
@@ -466,7 +484,11 @@ export function extractConverseResponse(
   }
 }
 
-export function converseUsage(
+/**
+ * Build the invocation token usage from Bedrock's uncached input count and its
+ * cache read/write counts.
+ */
+export function tokenUsage(
   inputTokens: number | undefined,
   outputTokens: number | undefined,
   cacheReadTokens: number | undefined,
@@ -577,14 +599,17 @@ export function extractInvokeModelResponse(
   let outputTokens = toInt(
     headerValue(headers, 'x-amzn-bedrock-output-token-count')
   );
-  let cacheReadTokens: number | undefined;
-  let cacheWriteTokens: number | undefined;
+  let cacheReadTokens = toInt(
+    headerValue(headers, 'x-amzn-bedrock-cache-read-input-token-count')
+  );
+  let cacheWriteTokens = toInt(
+    headerValue(headers, 'x-amzn-bedrock-cache-write-input-token-count')
+  );
 
   if (!body) {
-    invocation.setUsage({
-      inputTokenCount: inputTokens,
-      outputTokenCount: outputTokens,
-    });
+    invocation.setUsage(
+      tokenUsage(inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens)
+    );
     return;
   }
 
@@ -594,13 +619,18 @@ export function extractInvokeModelResponse(
     outputTokens ??= toInt(
       firstDefined(usage.output_tokens, usage.outputTokens)
     );
-    cacheReadTokens = toInt(
-      firstDefined(usage.cache_read_input_tokens, usage.cacheReadInputTokens)
+    cacheReadTokens ??= toInt(
+      firstDefined(
+        usage.cache_read_input_tokens,
+        usage.cacheReadInputTokens,
+        usage.cacheReadInputTokenCount
+      )
     );
-    cacheWriteTokens = toInt(
+    cacheWriteTokens ??= toInt(
       firstDefined(
         usage.cache_creation_input_tokens,
-        usage.cacheWriteInputTokens
+        usage.cacheWriteInputTokens,
+        usage.cacheWriteInputTokenCount
       )
     );
   }
@@ -627,12 +657,9 @@ export function extractInvokeModelResponse(
   inputTokens ??= toInt(body.prompt_token_count);
   outputTokens ??= toInt(body.generation_token_count);
 
-  invocation.setUsage({
-    inputTokenCount: inputTokens,
-    outputTokenCount: outputTokens,
-    cacheReadTokenCount: cacheReadTokens,
-    cacheWriteTokenCount: cacheWriteTokens,
-  });
+  invocation.setUsage(
+    tokenUsage(inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens)
+  );
 
   // Finish reasons
   let rawFinishReason: unknown;

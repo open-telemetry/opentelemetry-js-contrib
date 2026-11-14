@@ -176,7 +176,14 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ) {
     const request = response.request;
     const invocation = this._invocations.get(request);
-    if (!invocation) return;
+    if (!invocation) {
+      // The invocation could not be started, so the middleware owns the span.
+      // It leaves ending the span of a successful stream request to the stream.
+      if (isStreamCommand(request.commandName)) {
+        return endSpanWhenConsumed(response, span);
+      }
+      return;
+    }
     recordServerAddress(invocation, request.endpoint);
 
     const handler = this.getHandler(tracer, config);
@@ -329,7 +336,12 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         ...common,
         operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
         attributes: { ...attributes, ...data.attributes },
-        requestOptions: data.requestOptions,
+        // Set up front so `gen_ai.request.stream` is also recorded when the
+        // request fails or the response has no stream.
+        requestOptions: {
+          ...data.requestOptions,
+          stream: isStreamCommand(request.commandName) || undefined,
+        },
         inputMessages: data.inputMessages,
         systemInstructions: data.systemInstructions,
       });
@@ -372,6 +384,27 @@ function isStreamCommand(commandName: string): boolean {
     commandName === 'ConverseStream' ||
     commandName === 'InvokeModelWithResponseStream'
   );
+}
+
+// Ends the middleware's span of a stream response once the stream is consumed
+// (or fails, or the caller stops reading). Only used when the GenAI invocation
+// could not be started.
+function endSpanWhenConsumed(response: NormalizedResponse, span: Span) {
+  const key =
+    response.request.commandName === 'ConverseStream' ? 'stream' : 'body';
+  const stream: AsyncIterable<unknown> | undefined = response.data?.[key];
+  if (!stream || typeof stream[Symbol.asyncIterator] !== 'function') {
+    span.end();
+    return;
+  }
+  const wrapped = (async function* () {
+    try {
+      yield* stream;
+    } finally {
+      span.end();
+    }
+  })();
+  return { ...response.data, [key]: wrapped };
 }
 
 // `server.address` / `server.port` are both span attributes and metric

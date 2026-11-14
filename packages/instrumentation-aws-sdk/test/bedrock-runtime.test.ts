@@ -59,6 +59,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from '../src/semconv';
 import { expect } from 'expect';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
 import { HTTP_SPAN_NAME, TracedHttpHandler } from './traced-http-handler';
 
 const region = 'us-east-1';
@@ -69,6 +70,8 @@ const SHARED_RECORDINGS: Record<string, string> = {
     'bedrock-converse-adds-genai-conventions',
   'bedrock-conversestream-with-content-capture-ends-a-failed-request-span-once-with-error-status':
     'bedrock-conversestream-with-content-capture-records-invalid-model-errors',
+  'bedrock-conversestream-ends-the-span-when-the-invocation-cannot-be-started':
+    'bedrock-conversestream-adds-genai-conventions',
 };
 
 // Remove any data from recorded responses that could have sensitive data
@@ -399,6 +402,44 @@ describe('Bedrock', () => {
       await expectConverseMetrics('amazon.titan-text-lite-v1', 8, 10);
     });
 
+    // If the GenAI invocation fails to start, the middleware falls back to its
+    // own span, which must still be ended once the stream is consumed.
+    it('ends the span when the invocation cannot be started', async () => {
+      const startInference = TelemetryHandler.prototype.startInference;
+      TelemetryHandler.prototype.startInference = () => {
+        throw new Error('invocation failed to start');
+      };
+      try {
+        const response = await client.send(
+          new ConverseStreamCommand({
+            modelId: 'amazon.titan-text-lite-v1',
+            messages: [
+              {
+                role: ConversationRole.USER,
+                content: [{ text: 'Say this is a test' }],
+              },
+            ],
+            inferenceConfig: {
+              maxTokens: 10,
+              temperature: 0.8,
+              topP: 1,
+              stopSequences: ['|'],
+            },
+          })
+        );
+        const isConverseSpan = (s: ReadableSpan) =>
+          s.name === 'chat amazon.titan-text-lite-v1';
+        expect(getTestSpans().filter(isConverseSpan).length).toBe(0);
+
+        for await (const _event of response.stream!) {
+          // drain
+        }
+        expect(getTestSpans().filter(isConverseSpan).length).toBe(1);
+      } finally {
+        TelemetryHandler.prototype.startInference = startInference;
+      }
+    });
+
     describe('with content capture', () => {
       withContentCapture('span_only');
 
@@ -448,6 +489,8 @@ describe('Bedrock', () => {
         const span = getSpan('chat does-not-exist');
         expect(span.status.code).toBe(SpanStatusCode.ERROR);
         expect(span.attributes['error.type']).toBe('ValidationException');
+        // Known from the operation, even though no stream was returned.
+        expect(span.attributes['gen_ai.request.stream']).toBe(true);
       });
 
       it('ends a failed request span once with error status', async () => {

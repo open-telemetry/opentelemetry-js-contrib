@@ -8,12 +8,12 @@ import type {
   TelemetryHandler,
 } from '@opentelemetry/genai-util';
 import {
-  converseUsage,
   firstDefined,
   isRecord,
   mapFinishReason,
   parseBody,
   toInt,
+  tokenUsage,
 } from './extractors';
 
 interface ToolBlock {
@@ -27,17 +27,17 @@ interface ToolBlock {
  * by content block index, so that the final output message can be rebuilt.
  */
 class ContentBlocks {
-  private readonly indices: number[] = [];
+  private readonly indices = new Set<number>();
   readonly text = new Map<number, string>();
   readonly reasoning = new Map<number, string>();
   readonly tools = new Map<number, ToolBlock>();
 
   touch(index: number): void {
-    if (!this.indices.includes(index)) this.indices.push(index);
+    this.indices.add(index);
   }
 
   get isEmpty(): boolean {
-    return this.indices.length === 0;
+    return this.indices.size === 0;
   }
 
   appendText(index: number, text: string): void {
@@ -95,17 +95,134 @@ class ContentBlocks {
 }
 
 /**
+ * Telemetry accumulated while a stream is consumed. It is flushed onto the
+ * invocation when the stream ends and also when it fails, so that usage and
+ * partial output received before an error are not lost.
+ */
+class StreamState {
+  readonly blocks = new ContentBlocks();
+  /** Text from models that stream plain text chunks instead of content blocks. */
+  readonly text: string[] = [];
+  role = 'assistant';
+  stopReason: unknown;
+  inputTokens: number | undefined;
+  outputTokens: number | undefined;
+  cacheReadTokens: number | undefined;
+  cacheWriteTokens: number | undefined;
+
+  constructor(readonly captureContent: boolean) {}
+
+  /**
+   * Process a Converse stream event. `ConverseStream` and Amazon Nova models
+   * invoked through `InvokeModelWithResponseStream` use the same event schema.
+   */
+  processConverseEvent(event: Record<string, any>): void {
+    if (isRecord(event.messageStart) && event.messageStart.role) {
+      this.role = event.messageStart.role;
+    }
+
+    if (this.captureContent && isRecord(event.contentBlockStart)) {
+      const index = event.contentBlockStart.contentBlockIndex ?? 0;
+      this.blocks.touch(index);
+      const toolUse = event.contentBlockStart.start?.toolUse;
+      if (isRecord(toolUse)) {
+        this.blocks.tools.set(index, {
+          id: toolUse.toolUseId,
+          name: String(toolUse.name ?? ''),
+          inputChunks: [],
+        });
+      }
+    }
+
+    if (this.captureContent && isRecord(event.contentBlockDelta)) {
+      const index = event.contentBlockDelta.contentBlockIndex ?? 0;
+      this.blocks.touch(index);
+      const delta = event.contentBlockDelta.delta;
+      if (isRecord(delta)) {
+        if (typeof delta.text === 'string') {
+          this.blocks.appendText(index, delta.text);
+        } else if (isRecord(delta.reasoningContent)) {
+          if (typeof delta.reasoningContent.text === 'string') {
+            this.blocks.appendReasoning(index, delta.reasoningContent.text);
+          }
+        } else if (isRecord(delta.toolUse)) {
+          this.blocks.appendToolInput(index, String(delta.toolUse.input ?? ''));
+        }
+      }
+    }
+
+    if (isRecord(event.messageStop) && event.messageStop.stopReason) {
+      this.stopReason = event.messageStop.stopReason;
+    }
+
+    const usage = event.metadata?.usage;
+    if (isRecord(usage)) {
+      this.inputTokens = toInt(usage.inputTokens) ?? this.inputTokens;
+      this.outputTokens = toInt(usage.outputTokens) ?? this.outputTokens;
+      this.cacheReadTokens =
+        toInt(
+          firstDefined(
+            usage.cacheReadInputTokens,
+            usage.cacheReadInputTokenCount
+          )
+        ) ?? this.cacheReadTokens;
+      this.cacheWriteTokens =
+        toInt(
+          firstDefined(
+            usage.cacheWriteInputTokens,
+            usage.cacheWriteInputTokenCount
+          )
+        ) ?? this.cacheWriteTokens;
+    }
+  }
+
+  flush(invocation: InferenceInvocation): void {
+    const finishReason = mapFinishReason(this.stopReason);
+    if (finishReason) invocation.setFinishReasons([finishReason]);
+    invocation.setUsage(
+      tokenUsage(
+        this.inputTokens,
+        this.outputTokens,
+        this.cacheReadTokens,
+        this.cacheWriteTokens
+      )
+    );
+
+    if (this.captureContent) {
+      let parts: MessagePart[] = [];
+      if (!this.blocks.isEmpty) {
+        parts = this.blocks.toParts();
+      } else if (this.text.length > 0) {
+        parts = [{ type: 'text', content: this.text.join('') }];
+      }
+      if (parts.length > 0 || finishReason) {
+        invocation.addOutputMessages([
+          { role: this.role, parts, finish_reason: finishReason ?? 'error' },
+        ]);
+      }
+    }
+  }
+}
+
+/**
  * Wrap a stream so that the invocation (and with it, its span) is completed when
- * the stream ends, fails, or the caller stops reading it.
+ * the stream ends, fails, or the caller stops reading it. The accumulated state
+ * is flushed onto the invocation in every case.
  */
 function wrapStream<TChunk>(
   handler: TelemetryHandler,
   stream: AsyncIterable<TChunk>,
   invocation: InferenceInvocation,
-  onChunk: (chunk: TChunk) => void,
-  onEnd: () => void
+  state: StreamState,
+  onChunk: (chunk: TChunk) => void
 ): AsyncIterable<TChunk> {
-  return handler.wrapAsyncStream(stream, { invocation, onChunk, onEnd });
+  const flush = () => state.flush(invocation);
+  return handler.wrapAsyncStream(stream, {
+    invocation,
+    onChunk,
+    onEnd: flush,
+    onError: flush,
+  });
 }
 
 /**
@@ -118,85 +235,10 @@ export function wrapConverseStream(
   invocation: InferenceInvocation,
   captureContent: boolean
 ): AsyncIterable<any> {
-  const blocks = new ContentBlocks();
-  let role = 'assistant';
-  let stopReason: unknown;
-  let inputTokens: number | undefined;
-  let outputTokens: number | undefined;
-  let cacheReadTokens: number | undefined;
-  let cacheWriteTokens: number | undefined;
-
-  const onChunk = (chunk: any) => {
-    if (!isRecord(chunk)) return;
-    if (isRecord(chunk.messageStart) && chunk.messageStart.role) {
-      role = chunk.messageStart.role;
-    }
-
-    if (captureContent && isRecord(chunk.contentBlockStart)) {
-      const index = chunk.contentBlockStart.contentBlockIndex ?? 0;
-      blocks.touch(index);
-      const toolUse = chunk.contentBlockStart.start?.toolUse;
-      if (isRecord(toolUse)) {
-        blocks.tools.set(index, {
-          id: toolUse.toolUseId,
-          name: String(toolUse.name ?? ''),
-          inputChunks: [],
-        });
-      }
-    }
-
-    if (captureContent && isRecord(chunk.contentBlockDelta)) {
-      const index = chunk.contentBlockDelta.contentBlockIndex ?? 0;
-      blocks.touch(index);
-      const delta = chunk.contentBlockDelta.delta;
-      if (isRecord(delta)) {
-        if (typeof delta.text === 'string') {
-          blocks.appendText(index, delta.text);
-        } else if (isRecord(delta.reasoningContent)) {
-          if (typeof delta.reasoningContent.text === 'string') {
-            blocks.appendReasoning(index, delta.reasoningContent.text);
-          }
-        } else if (isRecord(delta.toolUse)) {
-          blocks.appendToolInput(index, String(delta.toolUse.input ?? ''));
-        }
-      }
-    }
-
-    if (isRecord(chunk.messageStop) && chunk.messageStop.stopReason) {
-      stopReason = chunk.messageStop.stopReason;
-    }
-
-    const usage = chunk.metadata?.usage;
-    if (isRecord(usage)) {
-      inputTokens = toInt(usage.inputTokens) ?? inputTokens;
-      outputTokens = toInt(usage.outputTokens) ?? outputTokens;
-      cacheReadTokens = toInt(usage.cacheReadInputTokens) ?? cacheReadTokens;
-      cacheWriteTokens = toInt(usage.cacheWriteInputTokens) ?? cacheWriteTokens;
-    }
-  };
-
-  const onEnd = () => {
-    const finishReason = mapFinishReason(stopReason);
-    if (finishReason) invocation.setFinishReasons([finishReason]);
-    if (captureContent) {
-      const parts = blocks.toParts();
-      if (parts.length > 0 || finishReason) {
-        invocation.addOutputMessages([
-          { role, parts, finish_reason: finishReason ?? 'error' },
-        ]);
-      }
-    }
-    invocation.setUsage(
-      converseUsage(
-        inputTokens,
-        outputTokens,
-        cacheReadTokens,
-        cacheWriteTokens
-      )
-    );
-  };
-
-  return wrapStream(handler, stream, invocation, onChunk, onEnd);
+  const state = new StreamState(captureContent);
+  return wrapStream(handler, stream, invocation, state, chunk => {
+    if (isRecord(chunk)) state.processConverseEvent(chunk);
+  });
 }
 
 /**
@@ -210,14 +252,8 @@ export function wrapInvokeModelStream(
   invocation: InferenceInvocation,
   captureContent: boolean
 ): AsyncIterable<any> {
-  const blocks = new ContentBlocks();
-  const accumulatedText: string[] = [];
-  let role = 'assistant';
-  let stopReason: unknown;
-  let inputTokens: number | undefined;
-  let outputTokens: number | undefined;
-  let cacheReadTokens: number | undefined;
-  let cacheWriteTokens: number | undefined;
+  const state = new StreamState(captureContent);
+  const { blocks } = state;
 
   const onChunk = (event: any) => {
     const bytes = event?.chunk?.bytes;
@@ -228,8 +264,13 @@ export function wrapInvokeModelStream(
     // Invocation metrics appended by Bedrock to the last chunk of every model.
     const metrics = data['amazon-bedrock-invocationMetrics'];
     if (isRecord(metrics)) {
-      inputTokens = toInt(metrics.inputTokenCount) ?? inputTokens;
-      outputTokens = toInt(metrics.outputTokenCount) ?? outputTokens;
+      state.inputTokens = toInt(metrics.inputTokenCount) ?? state.inputTokens;
+      state.outputTokens =
+        toInt(metrics.outputTokenCount) ?? state.outputTokens;
+      state.cacheReadTokens =
+        toInt(metrics.cacheReadInputTokenCount) ?? state.cacheReadTokens;
+      state.cacheWriteTokens =
+        toInt(metrics.cacheWriteInputTokenCount) ?? state.cacheWriteTokens;
     }
 
     // Anthropic Messages format
@@ -237,26 +278,26 @@ export function wrapInvokeModelStream(
       case 'message_start': {
         const message = data.message;
         if (isRecord(message)) {
-          if (message.role) role = message.role;
+          if (message.role) state.role = message.role;
           const usage = message.usage;
           if (isRecord(usage)) {
-            inputTokens =
+            state.inputTokens =
               toInt(firstDefined(usage.input_tokens, usage.inputTokens)) ??
-              inputTokens;
-            cacheReadTokens =
+              state.inputTokens;
+            state.cacheReadTokens =
               toInt(
                 firstDefined(
                   usage.cache_read_input_tokens,
                   usage.cacheReadInputTokens
                 )
-              ) ?? cacheReadTokens;
-            cacheWriteTokens =
+              ) ?? state.cacheReadTokens;
+            state.cacheWriteTokens =
               toInt(
                 firstDefined(
                   usage.cache_creation_input_tokens,
                   usage.cacheWriteInputTokens
                 )
-              ) ?? cacheWriteTokens;
+              ) ?? state.cacheWriteTokens;
           }
         }
         break;
@@ -309,36 +350,18 @@ export function wrapInvokeModelStream(
       }
       case 'message_delta': {
         if (isRecord(data.delta) && data.delta.stop_reason) {
-          stopReason = data.delta.stop_reason;
+          state.stopReason = data.delta.stop_reason;
         }
         if (isRecord(data.usage)) {
-          outputTokens = toInt(data.usage.output_tokens) ?? outputTokens;
+          state.outputTokens =
+            toInt(data.usage.output_tokens) ?? state.outputTokens;
         }
         break;
       }
     }
 
-    // Amazon Nova format
-    if (isRecord(data.messageStart) && data.messageStart.role) {
-      role = data.messageStart.role;
-    }
-    if (captureContent && isRecord(data.contentBlockDelta)) {
-      const delta = data.contentBlockDelta.delta;
-      if (isRecord(delta) && typeof delta.text === 'string') {
-        blocks.appendText(
-          data.contentBlockDelta.contentBlockIndex ?? 0,
-          delta.text
-        );
-      }
-    }
-    if (isRecord(data.messageStop) && data.messageStop.stopReason) {
-      stopReason = data.messageStop.stopReason;
-    }
-    const novaUsage = data.metadata?.usage;
-    if (isRecord(novaUsage)) {
-      inputTokens = toInt(novaUsage.inputTokens) ?? inputTokens;
-      outputTokens = toInt(novaUsage.outputTokens) ?? outputTokens;
-    }
+    // Amazon Nova format (the Converse event schema)
+    state.processConverseEvent(data);
 
     // Legacy Claude / Titan / Llama / Mistral / Cohere chunks
     const firstOutput =
@@ -352,56 +375,31 @@ export function wrapInvokeModelStream(
     let text: unknown;
     if (typeof data.completion === 'string') {
       text = data.completion;
-      stopReason = data.stop_reason ?? stopReason;
+      state.stopReason = data.stop_reason ?? state.stopReason;
     } else if (typeof data.outputText === 'string') {
       text = data.outputText;
-      stopReason = data.completionReason ?? stopReason;
+      state.stopReason = data.completionReason ?? state.stopReason;
     } else if (typeof data.generation === 'string') {
       text = data.generation;
-      stopReason = data.stop_reason ?? stopReason;
+      state.stopReason = data.stop_reason ?? state.stopReason;
     } else if (firstOutput) {
       text = firstOutput.text;
-      stopReason = firstOutput.stop_reason ?? stopReason;
+      state.stopReason = firstOutput.stop_reason ?? state.stopReason;
     } else if (firstGeneration) {
       text = firstGeneration.text;
-      stopReason = firstGeneration.finish_reason ?? stopReason;
+      state.stopReason = firstGeneration.finish_reason ?? state.stopReason;
     } else if (typeof data.text === 'string' && data.type === undefined) {
       text = data.text;
-      if (data.is_finished) stopReason = 'COMPLETE';
+      if (data.is_finished) state.stopReason = 'COMPLETE';
     }
     if (typeof data.finish_reason === 'string') {
       // Cohere Command R `stream-end` event
-      stopReason = data.finish_reason;
+      state.stopReason = data.finish_reason;
     }
     if (captureContent && typeof text === 'string') {
-      accumulatedText.push(text);
+      state.text.push(text);
     }
   };
 
-  const onEnd = () => {
-    const finishReason = mapFinishReason(stopReason);
-    if (finishReason) invocation.setFinishReasons([finishReason]);
-    invocation.setUsage({
-      inputTokenCount: inputTokens,
-      outputTokenCount: outputTokens,
-      cacheReadTokenCount: cacheReadTokens,
-      cacheWriteTokenCount: cacheWriteTokens,
-    });
-
-    if (captureContent) {
-      let parts: MessagePart[] = [];
-      if (!blocks.isEmpty) {
-        parts = blocks.toParts();
-      } else if (accumulatedText.length > 0) {
-        parts = [{ type: 'text', content: accumulatedText.join('') }];
-      }
-      if (parts.length > 0 || finishReason) {
-        invocation.addOutputMessages([
-          { role, parts, finish_reason: finishReason ?? 'error' },
-        ]);
-      }
-    }
-  };
-
-  return wrapStream(handler, stream, invocation, onChunk, onEnd);
+  return wrapStream(handler, stream, invocation, state, onChunk);
 }
