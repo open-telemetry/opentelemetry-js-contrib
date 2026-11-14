@@ -114,7 +114,6 @@ export class ToolInvocation extends BaseInvocation {
       metricAttributes: options.metricAttributes,
       context: options.parentContext,
       startTime: options.startTime,
-      span: options.span,
     });
 
     this._contentCaptureMode = contentCaptureMode;

@@ -10,7 +10,7 @@
  * @experimental
  */
 
-import type { Attributes, Context, Span, TimeInput } from '@opentelemetry/api';
+import type { Attributes, Context, TimeInput } from '@opentelemetry/api';
 
 /**
  * Mode of capturing message content (prompts, completions, tool calls).
@@ -429,17 +429,6 @@ interface CommonInvocationOptions {
   metricAttributes?: Attributes;
   /** Start time of the invocation. Defaults to the time the invocation is created. */
   startTime?: TimeInput;
-  /**
-   * An already started span to record this invocation on, instead of starting a new one.
-   *
-   * Intended for instrumentations whose span lifecycle is owned by another layer (e.g. a
-   * generic SDK middleware that already traces the call). The caller keeps ownership of
-   * the span: its name and kind are left unchanged, initial attributes are applied with
-   * `setAttributes`, and `stop()` / `fail()` record the invocation's attributes, status
-   * and metrics on it but do NOT end it. The caller must end the span after the
-   * invocation has completed.
-   */
-  span?: Span;
 }
 
 /**

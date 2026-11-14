@@ -33,7 +33,6 @@ export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';
 export type {
   ChatMessage,
-  ContentCaptureMode,
   FinishReason,
   InferenceRequestOptions,
   MessagePart,
