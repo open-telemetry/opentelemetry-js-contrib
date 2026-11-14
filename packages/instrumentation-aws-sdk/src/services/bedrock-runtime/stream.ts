@@ -2,7 +2,6 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { Span } from '@opentelemetry/api';
 import type {
   InferenceInvocation,
   MessagePart,
@@ -96,30 +95,17 @@ class ContentBlocks {
 }
 
 /**
- * Wrap a stream so that the invocation is completed when the stream ends, and
- * the span (owned by the aws-sdk middleware, not by the invocation) is ended
- * right after.
+ * Wrap a stream so that the invocation (and with it, its span) is completed when
+ * the stream ends, fails, or the caller stops reading it.
  */
 function wrapStream<TChunk>(
   handler: TelemetryHandler,
   stream: AsyncIterable<TChunk>,
-  span: Span,
   invocation: InferenceInvocation,
   onChunk: (chunk: TChunk) => void,
   onEnd: () => void
 ): AsyncIterable<TChunk> {
-  const instrumented = handler.wrapAsyncStream(stream, {
-    invocation,
-    onChunk,
-    onEnd,
-  });
-  return (async function* () {
-    try {
-      yield* instrumented;
-    } finally {
-      span.end();
-    }
-  })();
+  return handler.wrapAsyncStream(stream, { invocation, onChunk, onEnd });
 }
 
 /**
@@ -129,7 +115,6 @@ function wrapStream<TChunk>(
 export function wrapConverseStream(
   handler: TelemetryHandler,
   stream: AsyncIterable<any>,
-  span: Span,
   invocation: InferenceInvocation,
   captureContent: boolean
 ): AsyncIterable<any> {
@@ -202,11 +187,16 @@ export function wrapConverseStream(
       }
     }
     invocation.setUsage(
-      converseUsage(inputTokens, outputTokens, cacheReadTokens, cacheWriteTokens)
+      converseUsage(
+        inputTokens,
+        outputTokens,
+        cacheReadTokens,
+        cacheWriteTokens
+      )
     );
   };
 
-  return wrapStream(handler, stream, span, invocation, onChunk, onEnd);
+  return wrapStream(handler, stream, invocation, onChunk, onEnd);
 }
 
 /**
@@ -217,7 +207,6 @@ export function wrapConverseStream(
 export function wrapInvokeModelStream(
   handler: TelemetryHandler,
   stream: AsyncIterable<any>,
-  span: Span,
   invocation: InferenceInvocation,
   captureContent: boolean
 ): AsyncIterable<any> {
@@ -290,7 +279,10 @@ export function wrapInvokeModelStream(
           block.type === 'thinking' ||
           block.type === 'redacted_thinking'
         ) {
-          blocks.reasoning.set(index, String(block.thinking || block.data || ''));
+          blocks.reasoning.set(
+            index,
+            String(block.thinking || block.data || '')
+          );
         }
         break;
       }
@@ -298,7 +290,10 @@ export function wrapInvokeModelStream(
         const delta = data.delta;
         if (!captureContent || !isRecord(delta)) break;
         const index = data.index ?? 0;
-        if (delta.type === 'thinking_delta' && typeof delta.thinking === 'string') {
+        if (
+          delta.type === 'thinking_delta' &&
+          typeof delta.thinking === 'string'
+        ) {
           blocks.appendReasoning(index, delta.thinking);
         } else if (
           delta.type === 'input_json_delta' &&
@@ -330,7 +325,10 @@ export function wrapInvokeModelStream(
     if (captureContent && isRecord(data.contentBlockDelta)) {
       const delta = data.contentBlockDelta.delta;
       if (isRecord(delta) && typeof delta.text === 'string') {
-        blocks.appendText(data.contentBlockDelta.contentBlockIndex ?? 0, delta.text);
+        blocks.appendText(
+          data.contentBlockDelta.contentBlockIndex ?? 0,
+          delta.text
+        );
       }
     }
     if (isRecord(data.messageStop) && data.messageStop.stopReason) {
@@ -405,5 +403,5 @@ export function wrapInvokeModelStream(
     }
   };
 
-  return wrapStream(handler, stream, span, invocation, onChunk, onEnd);
+  return wrapStream(handler, stream, invocation, onChunk, onEnd);
 }

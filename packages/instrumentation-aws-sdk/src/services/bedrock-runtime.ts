@@ -4,6 +4,7 @@
  */
 import {
   Attributes,
+  Context,
   DiagLogger,
   diag,
   HrTime,
@@ -16,7 +17,11 @@ import {
   type EmbeddingInvocation,
   type InferenceInvocation,
 } from '@opentelemetry/genai-util';
-import { RequestMetadata, ServiceExtension } from './ServiceExtension';
+import {
+  ExtensionSpan,
+  RequestMetadata,
+  ServiceExtension,
+} from './ServiceExtension';
 import {
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -47,16 +52,22 @@ import {
   wrapConverseStream,
   wrapInvokeModelStream,
 } from './bedrock-runtime/stream';
+import {
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 type Invocation = InferenceInvocation | EmbeddingInvocation;
 
 /**
  * Bedrock Runtime GenAI instrumentation, built on `@opentelemetry/genai-util`.
  *
- * The aws-sdk middleware owns the span: each GenAI invocation adopts it (via the
- * genai-util `span` option) to record GenAI attributes, status and metrics, and
- * never ends it. For streaming operations the middleware leaves the span open
- * and the stream wrapper ends it once the invocation has completed.
+ * The extension owns the span (see `RequestMetadata.startSpan`): the GenAI
+ * invocation is started before the request is sent, the request runs in the
+ * invocation's context, and the invocation's `stop()` / `fail()` end the span.
+ * The aws-sdk middleware only records its AWS attributes on it. For streaming
+ * operations the stream wrapper completes the invocation once the stream is
+ * consumed.
  */
 export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private _meter?: Meter;
@@ -64,6 +75,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   private _handlerTracer?: Tracer;
   private _handlerCaptureMode?: string;
   private _diag: DiagLogger = diag;
+  private readonly _invocations = new WeakMap<NormalizedRequest, Invocation>();
 
   updateMetricInstruments(meter: Meter) {
     this._meter = meter;
@@ -77,13 +89,13 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   ): RequestMetadata {
     switch (request.commandName) {
       case 'Converse':
-        return this.requestPreSpanHookGenAI(request, false);
+        return this.requestPreSpanHookGenAI(request, config, false);
       case 'ConverseStream':
-        return this.requestPreSpanHookGenAI(request, true);
+        return this.requestPreSpanHookGenAI(request, config, true);
       case 'InvokeModel':
-        return this.requestPreSpanHookGenAI(request, false);
+        return this.requestPreSpanHookGenAI(request, config, false);
       case 'InvokeModelWithResponseStream':
-        return this.requestPreSpanHookGenAI(request, true);
+        return this.requestPreSpanHookGenAI(request, config, true);
     }
 
     return {
@@ -91,10 +103,12 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     };
   }
 
-  // Sets the span name and the attributes that should be visible to samplers.
-  // The remaining GenAI attributes are recorded by the invocation.
+  // The span is started by the GenAI invocation (`startSpan`). The span name and
+  // attributes below are only used by the middleware if the invocation cannot
+  // be started.
   private requestPreSpanHookGenAI(
     request: NormalizedRequest,
+    config: AwsSdkInstrumentationConfig,
     isStream: boolean
   ): RequestMetadata {
     const modelId = request.commandInput?.modelId;
@@ -114,6 +128,42 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       isIncoming: false,
       isStream,
       spanAttributes,
+      startSpan: (tracer, parentContext, attributes) =>
+        this.startSpan(
+          this.getHandler(tracer, config),
+          request,
+          parentContext,
+          attributes
+        ),
+    };
+  }
+
+  private startSpan(
+    handler: TelemetryHandler,
+    request: NormalizedRequest,
+    parentContext: Context,
+    attributes: Attributes
+  ): ExtensionSpan | undefined {
+    const invocation = this.startInvocation(
+      handler,
+      request,
+      parentContext,
+      attributes
+    );
+    if (!invocation) return undefined;
+    this._invocations.set(request, invocation);
+    return {
+      context: invocation.getContext(),
+      end: () => invocation.stop(),
+      fail: (error: unknown) => {
+        // The endpoint has been resolved by the time the request fails.
+        recordServerAddress(invocation, request.endpoint);
+        const exception = error instanceof Error ? error : undefined;
+        invocation.fail({
+          exception,
+          statusDescription: exception?.message,
+        });
+      },
     };
   }
 
@@ -125,21 +175,22 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
     startTime: HrTime
   ) {
     const request = response.request;
-    if (!isBedrockGenAICommand(request.commandName)) return;
+    const invocation = this._invocations.get(request);
+    if (!invocation) return;
+    recordServerAddress(invocation, request.endpoint);
 
     const handler = this.getHandler(tracer, config);
-    const invocation = this.startInvocation(handler, request, span, startTime);
-    if (!invocation) return;
-
     try {
       switch (request.commandName) {
         case 'Converse':
-          return this.responseHookConverse(response, invocation as InferenceInvocation);
+          return this.responseHookConverse(
+            response,
+            invocation as InferenceInvocation
+          );
         case 'ConverseStream':
           return this.responseHookConverseStream(
             handler,
             response,
-            span,
             invocation as InferenceInvocation
           );
         case 'InvokeModel':
@@ -148,33 +199,18 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
           return this.responseHookInvokeModelWithResponseStream(
             handler,
             response,
-            span,
             invocation as InferenceInvocation
           );
       }
     } catch (err) {
       this._diag.error('Failed to record Bedrock response telemetry', err);
-      invocation.stop();
+      // The middleware does not end the span of a successful stream request.
+      if (isStreamCommand(request.commandName)) invocation.stop();
     }
   }
 
-  exceptionHook(
-    request: NormalizedRequest,
-    error: unknown,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig,
-    startTime: HrTime
-  ) {
-    if (!isBedrockGenAICommand(request.commandName)) return;
-
-    const handler = this.getHandler(tracer, config);
-    const invocation = this.startInvocation(handler, request, span, startTime);
-    invocation?.fail({
-      exception: error instanceof Error ? error : undefined,
-    });
-  }
-
+  // For non-streaming operations, the middleware completes the invocation
+  // (`ExtensionSpan.end`) once the response hooks have run.
   private responseHookConverse(
     response: NormalizedResponse,
     invocation: InferenceInvocation
@@ -184,19 +220,16 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       invocation,
       invocation.shouldCaptureContent()
     );
-    invocation.stop();
   }
 
   private responseHookConverseStream(
     handler: TelemetryHandler,
     response: NormalizedResponse,
-    span: Span,
     invocation: InferenceInvocation
   ) {
     const stream = response.data?.stream;
     if (!stream) {
       invocation.stop();
-      span.end();
       return;
     }
     return {
@@ -206,7 +239,6 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       stream: wrapConverseStream(
         handler,
         stream,
-        span,
         invocation,
         invocation.shouldCaptureContent()
       ),
@@ -233,57 +265,47 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         inference.shouldCaptureContent()
       );
     }
-    invocation.stop();
   }
 
   private responseHookInvokeModelWithResponseStream(
     handler: TelemetryHandler,
     response: NormalizedResponse,
-    span: Span,
     invocation: InferenceInvocation
   ) {
     const stream = response.data?.body;
     if (!stream) {
       invocation.stop();
-      span.end();
       return;
     }
     // Replace the original response body with our instrumented stream, which
-    // completes the invocation and ends the span once the stream is consumed.
+    // completes the invocation (ending its span) once the stream is consumed.
     response.data.body = wrapInvokeModelStream(
       handler,
       stream,
-      span,
       invocation,
       invocation.shouldCaptureContent()
     );
     return response.data;
   }
 
-  // Starts the invocation on the middleware's span once the call has settled:
-  // request data is available from the normalized request, and the start time
-  // is the one the middleware recorded when starting the span.
+  // Starts the invocation, and with it the span, before the request is sent.
+  // `attributes` are the middleware's start attributes (rpc.*); the server
+  // address and port are recorded once the endpoint has been resolved.
   private startInvocation(
     handler: TelemetryHandler,
     request: NormalizedRequest,
-    span: Span,
-    startTime: HrTime
+    parentContext: Context,
+    attributes: Attributes
   ): Invocation | undefined {
     const input = request.commandInput ?? {};
     const modelId =
       typeof input.modelId === 'string' && input.modelId
         ? input.modelId
         : undefined;
-    const { serverAddress, serverPort } = extractServerAddressAndPort(
-      request.endpoint
-    );
     const common = {
       providerName: GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
       requestModel: modelId,
-      serverAddress,
-      serverPort,
-      startTime,
-      span,
+      parentContext,
     };
 
     try {
@@ -291,7 +313,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         const data = extractEmbeddingRequest(input);
         return handler.startEmbedding({
           ...common,
-          attributes: data.attributes,
+          attributes: { ...attributes, ...data.attributes },
           dimensionCount: data.dimensionCount,
           encodingFormats: data.encodingFormats,
         });
@@ -306,7 +328,7 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
       return handler.startInference({
         ...common,
         operationName: GEN_AI_OPERATION_NAME_VALUE_CHAT,
-        attributes: data.attributes,
+        attributes: { ...attributes, ...data.attributes },
         requestOptions: data.requestOptions,
         inputMessages: data.inputMessages,
         systemInstructions: data.systemInstructions,
@@ -345,13 +367,25 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
   }
 }
 
-function isBedrockGenAICommand(commandName: string): boolean {
+function isStreamCommand(commandName: string): boolean {
   return (
-    commandName === 'Converse' ||
     commandName === 'ConverseStream' ||
-    commandName === 'InvokeModel' ||
     commandName === 'InvokeModelWithResponseStream'
   );
+}
+
+// `server.address` / `server.port` are both span attributes and metric
+// dimensions, and only known once the request endpoint has been resolved.
+function recordServerAddress(
+  invocation: Invocation,
+  endpoint: string | undefined
+): void {
+  const { serverAddress, serverPort } = extractServerAddressAndPort(endpoint);
+  if (!serverAddress) return;
+  const attributes: Attributes = { [ATTR_SERVER_ADDRESS]: serverAddress };
+  if (serverPort !== undefined) attributes[ATTR_SERVER_PORT] = serverPort;
+  invocation.setAttributes(attributes);
+  invocation.setMetricAttributes(attributes);
 }
 
 // Embedding models are only invoked through the non-streaming InvokeModel API.

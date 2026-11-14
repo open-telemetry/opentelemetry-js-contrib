@@ -75,25 +75,6 @@ export class ServicesExtensions implements ServiceExtension {
     );
   }
 
-  exceptionHook(
-    request: NormalizedRequest,
-    error: unknown,
-    span: Span,
-    tracer: Tracer,
-    config: AwsSdkInstrumentationConfig,
-    startTime: HrTime
-  ) {
-    const serviceExtension = this.services.get(request.serviceName);
-    serviceExtension?.exceptionHook?.(
-      request,
-      error,
-      span,
-      tracer,
-      config,
-      startTime
-    );
-  }
-
   updateMetricInstruments(meter: Meter) {
     for (const serviceExtension of this.services.values()) {
       serviceExtension.updateMetricInstruments?.(meter);

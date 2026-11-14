@@ -45,7 +45,7 @@ import {
   removeSuffixFromStringIfExists,
 } from './utils';
 import { propwrap } from './propwrap';
-import { RequestMetadata } from './services/ServiceExtension';
+import { ExtensionSpan, RequestMetadata } from './services/ServiceExtension';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
 
 const V3_CLIENT_CONFIG_KEY = Symbol(
@@ -193,6 +193,46 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
     });
 
     return newSpan;
+  }
+
+  private _endExtensionSpan(end: () => void) {
+    safeExecuteInTheMiddle(
+      end,
+      e => {
+        if (e)
+          diag.error(
+            `${AwsInstrumentation.component} instrumentation: service extension span end error`,
+            e
+          );
+      },
+      true
+    );
+  }
+
+  // Let the service extension start (and own) the span, if it asks to.
+  private _startExtensionSpan(
+    normalizedRequest: NormalizedRequest,
+    metadata: RequestMetadata
+  ): (ExtensionSpan & { span: Span }) | undefined {
+    const startSpan = metadata.startSpan;
+    if (!startSpan) return undefined;
+    const extensionSpan = safeExecuteInTheMiddle(
+      () =>
+        startSpan(this.tracer, context.active(), {
+          ...extractAttributesFromNormalizedRequest(normalizedRequest),
+          ...metadata.spanAttributes,
+        }),
+      e => {
+        if (e)
+          diag.error(
+            `${AwsInstrumentation.component} instrumentation: service extension startSpan error`,
+            e
+          );
+      },
+      true
+    );
+    const span = extensionSpan && trace.getSpan(extensionSpan.context);
+    return span ? { ...extensionSpan, span } : undefined;
   }
 
   private _callUserPreRequestHook(
@@ -381,8 +421,17 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
           self._diag
         );
         const startTime = hrTime();
-        const span = self._startAwsV3Span(normalizedRequest, requestMetadata);
-        const activeContextWithSpan = trace.setSpan(context.active(), span);
+        // The extension's span (if it starts one) is completed through `extensionSpan`:
+        // the middleware never sets its status or ends it.
+        const extensionSpan = self._startExtensionSpan(
+          normalizedRequest,
+          requestMetadata
+        );
+        const span =
+          extensionSpan?.span ??
+          self._startAwsV3Span(normalizedRequest, requestMetadata);
+        const activeContextWithSpan =
+          extensionSpan?.context ?? trace.setSpan(context.active(), span);
 
         const handlerPromise = new Promise((resolve, reject) => {
           Promise.resolve(regionPromise)
@@ -487,42 +536,31 @@ export class AwsInstrumentation extends InstrumentationBase<AwsSdkInstrumentatio
                     );
                   }
 
-                  safeExecuteInTheMiddle(
-                    () =>
-                      self.servicesExtensions.exceptionHook(
-                        normalizedRequest,
-                        err,
-                        span,
-                        self.tracer,
-                        self.getConfig(),
-                        startTime
-                      ),
-                    (e: Error | undefined) => {
-                      if (e)
-                        diag.error(
-                          `${AwsInstrumentation.component} instrumentation: service extension exceptionHook error`,
-                          e
-                        );
-                    },
-                    true
-                  );
-
-                  span.setStatus({
-                    code: SpanStatusCode.ERROR,
-                    message: err.message,
-                  });
+                  if (!extensionSpan) {
+                    span.setStatus({
+                      code: SpanStatusCode.ERROR,
+                      message: err.message,
+                    });
+                  }
                   span.recordException(err);
                   self._callUserExceptionResponseHook(
                     span,
                     normalizedRequest,
                     err
                   );
+                  if (extensionSpan) {
+                    // The extension sets the error status and ends its span.
+                    self._endExtensionSpan(() => extensionSpan.fail(err));
+                  }
                   throw err;
                 })
                 .finally(() => {
                   // A failed streaming request has no stream left to end the span.
-                  if (!requestMetadata.isStream || failed) {
+                  if (requestMetadata.isStream && !failed) return;
+                  if (!extensionSpan) {
                     span.end();
+                  } else if (!failed) {
+                    self._endExtensionSpan(() => extensionSpan.end());
                   }
                 });
               promiseWithResponseLogic
