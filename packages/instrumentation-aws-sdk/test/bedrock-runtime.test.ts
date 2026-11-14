@@ -36,7 +36,13 @@ import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
 
-import { SpanStatusCode } from '@opentelemetry/api';
+import {
+  DiagLogLevel,
+  DiagLogger,
+  SpanKind,
+  SpanStatusCode,
+  diag,
+} from '@opentelemetry/api';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import {
   ATTR_GEN_AI_PROVIDER_NAME,
@@ -53,8 +59,17 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from '../src/semconv';
 import { expect } from 'expect';
+import { HTTP_SPAN_NAME, TracedHttpHandler } from './traced-http-handler';
 
 const region = 'us-east-1';
+
+// Tests that send exactly the same request as another test replay its recording.
+const SHARED_RECORDINGS: Record<string, string> = {
+  'bedrock-converse-parents-http-spans-under-the-genai-span':
+    'bedrock-converse-adds-genai-conventions',
+  'bedrock-conversestream-with-content-capture-ends-a-failed-request-span-once-with-error-status':
+    'bedrock-conversestream-with-content-capture-records-invalid-model-errors',
+};
 
 // Remove any data from recorded responses that could have sensitive data
 // and that we don't need for testing.
@@ -91,10 +106,11 @@ describe('Bedrock', () => {
 
   let nockDone: () => void;
   beforeEach(async function () {
-    const filename = `${this.currentTest
+    const testName = `${this.currentTest
       ?.fullTitle()
       .toLowerCase()
-      .replace(/\s/g, '-')}.json`;
+      .replace(/\s/g, '-')}`;
+    const filename = `${SHARED_RECORDINGS[testName] ?? testName}.json`;
     const { nockDone: nd } = await nockBack(filename, {
       afterRecord: sanitizeRecordings,
     });
@@ -207,6 +223,55 @@ describe('Bedrock', () => {
       });
 
       await expectConverseMetrics('amazon.titan-text-lite-v1', 8, 10);
+    });
+
+    it('parents HTTP spans under the GenAI span', async () => {
+      const tracedClient = new BedrockRuntimeClient({
+        region,
+        credentials,
+        requestHandler: new TracedHttpHandler(),
+      });
+      await tracedClient.send(
+        new ConverseCommand({
+          modelId: 'amazon.titan-text-lite-v1',
+          messages: [
+            {
+              role: ConversationRole.USER,
+              content: [{ text: 'Say this is a test' }],
+            },
+          ],
+          inferenceConfig: {
+            maxTokens: 10,
+            temperature: 0.8,
+            topP: 1,
+            stopSequences: ['|'],
+          },
+        })
+      );
+
+      // A single span is recorded for the call: the GenAI span, which the
+      // middleware also records its AWS attributes on.
+      const spans = getTestSpans();
+      expect(spans.length).toBe(2);
+      const genAISpan = getSpan('chat amazon.titan-text-lite-v1');
+      const httpSpan = getSpan(HTTP_SPAN_NAME);
+      expect(httpSpan.spanContext().traceId).toBe(
+        genAISpan.spanContext().traceId
+      );
+      expect(httpSpan.parentSpanContext?.spanId).toBe(
+        genAISpan.spanContext().spanId
+      );
+      expect(genAISpan.kind).toBe(SpanKind.CLIENT);
+      expect(genAISpan.attributes).toMatchObject({
+        'rpc.system': 'aws-api',
+        'rpc.service': 'BedrockRuntime',
+        'rpc.method': 'Converse',
+        'cloud.region': region,
+        'http.response.status_code': 200,
+        'server.address': `bedrock-runtime.${region}.amazonaws.com`,
+        'server.port': 443,
+      });
+      expect(genAISpan.attributes['aws.request.id']).toBeDefined();
     });
 
     describe('with content capture', () => {
@@ -383,6 +448,65 @@ describe('Bedrock', () => {
         const span = getSpan('chat does-not-exist');
         expect(span.status.code).toBe(SpanStatusCode.ERROR);
         expect(span.attributes['error.type']).toBe('ValidationException');
+      });
+
+      it('ends a failed request span once with error status', async () => {
+        // Any operation on an ended span (including a second `end()`) is
+        // reported as a diagnostic warning by the SDK.
+        const warnings: string[] = [];
+        const noop = () => {};
+        const logger: DiagLogger = {
+          error: noop,
+          warn: (message: string) => warnings.push(message),
+          info: noop,
+          debug: noop,
+          verbose: noop,
+        };
+        diag.setLogger(logger, DiagLogLevel.WARN);
+        try {
+          await expect(
+            client.send(
+              new ConverseStreamCommand({
+                modelId: 'does-not-exist',
+                messages: [
+                  {
+                    role: ConversationRole.USER,
+                    content: [{ text: 'Say this is a test' }],
+                  },
+                ],
+              })
+            )
+          ).rejects.toMatchObject({ name: 'ValidationException' });
+        } finally {
+          diag.disable();
+        }
+
+        const span = getSpan('chat does-not-exist');
+        expect(span.ended).toBe(true);
+        expect(span.status).toEqual({
+          code: SpanStatusCode.ERROR,
+          message: 'The provided model identifier is invalid.',
+        });
+        expect(span.attributes['error.type']).toBe('ValidationException');
+        expect(span.attributes['http.response.status_code']).toBe(400);
+        expect(span.events.map(e => e.name)).toEqual(['exception']);
+        expect(
+          warnings.filter(w => w.includes(span.spanContext().spanId))
+        ).toEqual([]);
+
+        // The operation duration is recorded exactly once, with the error.
+        await meterProvider.forceFlush();
+        const durations = metricExporter
+          .getMetrics()
+          .flatMap(rm => rm.scopeMetrics)
+          .flatMap(sm => sm.metrics)
+          .filter(m => m.descriptor.name === 'gen_ai.client.operation.duration')
+          .flatMap(m => m.dataPoints);
+        expect(durations.length).toBe(1);
+        expect(durations[0].attributes['error.type']).toBe(
+          'ValidationException'
+        );
+        expect((durations[0].value as { count: number }).count).toBe(1);
       });
 
       // TODO: recording generated by AI, re-record. The recorded frames come from
