@@ -312,6 +312,57 @@ describe('SocketIoInstrumentation', () => {
       });
     });
 
+    it('removeListener removes a listener registered with once', done => {
+      const config: SocketIoInstrumentationConfig = {
+        // only for v2: v2 emits connection events which later versions do not
+        emitIgnoreEventList: ['connection'],
+      };
+      instrumentation.setConfig(config);
+      createServer((sio, port) => {
+        const client = io(`http://localhost:${port}`);
+        sio.on('connection', (socket: Socket) => {
+          const listener = () => {};
+          socket.once('test_reply', listener);
+          socket.removeListener('test_reply', listener);
+          client.close();
+          sio.close();
+          try {
+            expect(socket.listenerCount('test_reply')).toEqual(0);
+            done();
+          } catch (e) {
+            done(e);
+          }
+        });
+      });
+    });
+
+    it('a listener registered with once is removed after it fires', done => {
+      const config: SocketIoInstrumentationConfig = {
+        // only for v2: v2 emits connection events which later versions do not
+        emitIgnoreEventList: ['connection'],
+      };
+      instrumentation.setConfig(config);
+      createServer((sio, port) => {
+        const client = io(`http://localhost:${port}`);
+        client.on('test', () => client.emit('test_reply'));
+        sio.on('connection', (socket: Socket) => {
+          socket.once('test_reply', () => {
+            setImmediate(() => {
+              client.close();
+              sio.close();
+              try {
+                expect(socket.listenerCount('test_reply')).toEqual(0);
+                done();
+              } catch (e) {
+                done(e);
+              }
+            });
+          });
+          socket.emit('test');
+        });
+      });
+    });
+
     it('onIgnoreEventList events are ignored', done => {
       const config: SocketIoInstrumentationConfig = {
         onIgnoreEventList: ['test_reply'],

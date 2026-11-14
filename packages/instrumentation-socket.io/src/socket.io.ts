@@ -272,7 +272,9 @@ export class SocketIoInstrumentation extends InstrumentationBase<SocketIoInstrum
     return (original: Function) => {
       return function (this: any, ev: any, listener: Function) {
         const wrappedListener = this.listeners?.(ev)?.find(
-          (registered: any) => registered?.[ORIGINAL_LISTENER] === listener
+          (registered: any) =>
+            registered?.[ORIGINAL_LISTENER] === listener ||
+            registered?.[ORIGINAL_LISTENER]?.listener === listener
         );
         if (wrappedListener) {
           return original.call(this, ev, wrappedListener);
