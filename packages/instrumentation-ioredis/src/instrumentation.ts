@@ -155,14 +155,31 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
 
       const { host, port } = this.options;
 
-      let dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
+      let dbQueryText: string | undefined = dbStatementSerializer(
+        cmd.name,
+        cmd.args
+      );
       if (config.serializeKeys) {
-        dbQueryText = (
-          config.maskStatementHook || defaultDbStatementMaskingHook
-        )(dbQueryText);
+        try {
+          dbQueryText = (
+            config.maskStatementHook || defaultDbStatementMaskingHook
+          )(dbQueryText);
+        } catch (e) {
+          // do not export the unmasked statement
+          dbQueryText = undefined;
+          instrumentation._diag.error(
+            'maskStatementHook threw an exception',
+            e,
+            {
+              commandName: cmd.name,
+            }
+          );
+        }
       }
       attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
-      attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      if (dbQueryText != null) {
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      }
       attributes[ATTR_SERVER_ADDRESS] = host;
       attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan(cmd.name, {
