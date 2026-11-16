@@ -3,12 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import type {
-  AnyValueMap,
-  LogRecord,
-  LoggerProvider,
-} from '@opentelemetry/api-logs';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  SeverityNumber,
+  type Attributes,
+  type LogRecord,
+  type LoggerProvider,
+} from '@opentelemetry/api';
 import { hrTime } from '@opentelemetry/core';
 
 import { RuntimeNodeInstrumentationConfig } from './types';
@@ -129,7 +129,7 @@ export class RuntimeNodeInstrumentation extends InstrumentationBase<RuntimeNodeI
     }
 
     const config = this.getConfig();
-    let customAttributes: AnyValueMap = {};
+    let customAttributes: Attributes = {};
     if (config.applyCustomExceptionAttributes) {
       try {
         customAttributes =

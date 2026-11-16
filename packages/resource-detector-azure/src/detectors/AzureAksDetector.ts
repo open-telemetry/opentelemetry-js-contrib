@@ -12,6 +12,8 @@ import {
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_K8S_CLUSTER_NAME,
+  ATTR_K8S_POD_NAME,
+  ATTR_K8S_POD_UID,
   CLOUD_PLATFORM_VALUE_AZURE_AKS,
   CLOUD_PROVIDER_VALUE_AZURE,
 } from '../semconv';
@@ -22,6 +24,8 @@ import {
   AksClusterMetadata,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
   extractClusterNameFromResourceId,
+  K8S_POD_NAME,
+  K8S_POD_UID,
 } from '../types';
 
 /**
@@ -31,6 +35,8 @@ import {
  *
  * The ConfigMap contains a single key 'clusterResourceId' with the full ARM resource ID.
  * The cluster name is extracted from this resource ID.
+ * Pod identity is read from K8S_POD_NAME and K8S_POD_UID environment variables
+ * populated through the Kubernetes Downward API.
  *
  * @returns a {@link Resource} populated with data about the AKS environment or an empty Resource if detection fails.
  */
@@ -56,6 +62,22 @@ class AzureAksDetector implements ResourceDetector {
         attributes = {
           ...attributes,
           [CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE]: metadata.resourceId,
+        };
+      }
+
+      const podName = process.env[K8S_POD_NAME];
+      if (podName) {
+        attributes = {
+          ...attributes,
+          [ATTR_K8S_POD_NAME]: podName,
+        };
+      }
+
+      const podUid = process.env[K8S_POD_UID];
+      if (podUid) {
+        attributes = {
+          ...attributes,
+          [ATTR_K8S_POD_UID]: podUid,
         };
       }
 

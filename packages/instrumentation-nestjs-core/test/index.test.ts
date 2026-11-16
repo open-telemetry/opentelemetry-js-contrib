@@ -3,8 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import * as fs from 'fs';
-import * as path from 'path';
 import * as semver from 'semver';
 
 import { context, SpanStatusCode } from '@opentelemetry/api';
@@ -20,14 +18,7 @@ import { getRequester, setup, App } from './setup';
 
 import * as util from 'util';
 
-// Read package.json through the file system: the "exports" map of
-// `@nestjs/core` 12+ does not expose it to `require()`.
-const LIB_VERSION: string = JSON.parse(
-  fs.readFileSync(
-    path.join(path.dirname(require.resolve('@nestjs/core')), 'package.json'),
-    'utf8'
-  )
-).version;
+const LIB_VERSION = require('@nestjs/core/package.json').version;
 
 const instrumentation = new NestInstrumentation();
 const memoryExporter = new InMemorySpanExporter();
@@ -107,6 +98,22 @@ describe('nestjs-core', () => {
         callback,
       },
     ]);
+  });
+
+  it('should redact sensitive query string values in url.full', async () => {
+    assert.strictEqual(
+      await request('/users?sig=secret&X-Amz-Signature=secret&page=2'),
+      'Hello, world!\n'
+    );
+
+    const requestSpan = memoryExporter
+      .getFinishedSpans()
+      .find(span => span.attributes['nestjs.type'] === 'request_context');
+    assert.ok(requestSpan, 'request_context span is present');
+    assert.strictEqual(
+      requestSpan.attributes['url.full'],
+      '/users?sig=REDACTED&X-Amz-Signature=REDACTED&page=2'
+    );
   });
 
   it('should not overwrite metadata set on the request handler', async () => {

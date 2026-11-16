@@ -29,7 +29,7 @@ export class OracleInstrumentation extends InstrumentationBase {
   protected init() {
     const moduleOracleDB = new InstrumentationNodeModuleDefinition(
       'oracledb',
-      ['>= 6.7 < 8'],
+      ['>= 6.7 < 27'],
       (moduleExports: typeof oracleDBTypes) => {
         if (!moduleExports) {
           return;

@@ -6,7 +6,9 @@
 export { PgInstrumentation } from './instrumentation';
 export { AttributeNames } from './enums/AttributeNames';
 export type {
+  PgConnectionHookInformation,
   PgInstrumentationConfig,
+  PgInstrumentationConnectionHook,
   PgInstrumentationExecutionRequestHook,
   PgInstrumentationExecutionResponseHook,
   PgRequestHookInformation,

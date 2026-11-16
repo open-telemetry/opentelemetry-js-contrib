@@ -198,7 +198,7 @@ When two or more approaches must be compared, please write a benchmark in the be
 ## Skills
 
 This repository ships repeatable AI-assisted contribution workflows under
-[`.github/skills`](.github/skills). Trigger them deliberately when starting a
+[`.agents/skills`](.agents/skills). Trigger them deliberately when starting a
 matching task:
 
 - **`migrate-from-openinference`** - migrate a donated JavaScript or TypeScript

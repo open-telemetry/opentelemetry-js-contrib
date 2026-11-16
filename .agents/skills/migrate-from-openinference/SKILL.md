@@ -343,6 +343,7 @@ packages/<target>/
   package.json
   README.md
   tsconfig.json
+  tsdown.config.ts
 ```
 
 Only create files the package needs. Middleware-based integrations may not
@@ -361,11 +362,17 @@ For a new package:
   dependencies, and scripts consistently;
 - include `compile:with-dependencies`, `lint:readme`, and `version:update`
   scripts following a current package;
+- build with tsdown like a current package: `compile` is `tsdown`, `clean`
+  removes `dist`, `main`/`types`/`exports` point at the dual CJS/ESM files in
+  `dist`, and `files` lists `README.md`, `LICENSE`, and `dist`;
+- add a `tsdown.config.ts` that spreads the root `tsdown.config.ts` and sets
+  `entry: ['src/index.ts']`;
+- import the built package from `../../dist/index.mjs` in ESM test fixtures;
 - depend on `@opentelemetry/api` as a peer dependency;
 - keep the vendor SDK in `devDependencies` unless runtime code truly imports a
   required runtime type or value;
 - use workspace dependency versions already present in the root lockfile;
-- extend `../../tsconfig.base` and include both `src/**/*.ts` and `test/**/*.ts`;
+- extend `../../tsconfig` and include both `src/**/*.ts` and `test/**/*.ts`;
 - add the standard OpenTelemetry copyright and Apache-2.0 SPDX header to every
   JavaScript and TypeScript source and test file.
 
@@ -657,6 +664,8 @@ npm run lint:readme -w @opentelemetry/<target>
 Also run:
 
 - the package's conformance command;
+- `npm run verify-pack` after a root `npm run compile`, which loads every
+  published entry point from the packed tarball;
 - auto-instrumentations-node tests when registration changed;
 - formatting and ESLint for changed files;
 - affected compile and tests when available;

@@ -1,7 +1,10 @@
 oracledb:
-    # lower-bound sample from the supported range
-  - versions: "6.7.0"
+    # v6 series
+  - versions: ">=6.7.0 <7"
     commands: npm run test
-    # a sample from the remainder of the supported range
-  - versions: ">=6.10.0 <8"
+    # v7 series
+  - versions: ">=7 <8"
+    commands: npm run test
+    # v26 series (major version jump in alignment with Oracle DB year versioning)
+  - versions: ">=26 <27"
     commands: npm run test

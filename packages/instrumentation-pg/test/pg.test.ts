@@ -321,6 +321,161 @@ describe('pg', () => {
       const spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
     });
+
+    describe('when specifying a connectionHook configuration', () => {
+      const dataAttributeName = 'pg_connection_data';
+
+      // The hook adds a stringified version of the args it receives to the
+      // span, which asserts both that it was called and what it was given.
+      const attributesAfterHook = {
+        ...DEFAULT_ATTRIBUTES,
+        [dataAttributeName]: stringify({
+          connection: {
+            database: CONFIG.database,
+            port: CONFIG.port,
+            host: CONFIG.host,
+            user: CONFIG.user,
+          },
+        }),
+      };
+
+      afterEach(() => {
+        // Reset config for subsequent tests
+        create({});
+      });
+
+      describe('AND valid connectionHook', () => {
+        beforeEach(() => {
+          create({
+            connectionHook: (span, connectionInfo) => {
+              span.setAttribute(dataAttributeName, stringify(connectionInfo));
+            },
+          });
+          memoryExporter.reset();
+        });
+
+        it('should attach connection hook data to the span for connect returning a Promise', async () => {
+          await connClient.connect();
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assert.strictEqual(spans[0].name, 'pg.connect');
+          testUtils.assertSpan(
+            spans[0],
+            SpanKind.CLIENT,
+            attributesAfterHook,
+            [],
+            unsetStatus
+          );
+        });
+
+        it('should attach connection hook data to the span for connect with callback', done => {
+          const res = connClient.connect(err => {
+            assert.strictEqual(err, null);
+            const spans = memoryExporter.getFinishedSpans();
+            assert.strictEqual(spans.length, 1);
+            testUtils.assertSpan(
+              spans[0],
+              SpanKind.CLIENT,
+              attributesAfterHook,
+              [],
+              unsetStatus
+            );
+            done();
+          });
+          assert.strictEqual(res, undefined, 'No promise is returned');
+        });
+
+        it('should attach connection hook data to the span when connect fails', done => {
+          connClient = new postgres.Client({ ...CONFIG, port: 59999 });
+          connClient.connect(err => {
+            // The connection is already closed here, so `end()` on this
+            // client would never resolve in afterEach.
+            connClient = new postgres.Client(CONFIG);
+            try {
+              assert(err instanceof Error);
+              const spans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(spans.length, 1);
+              assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+              assert.strictEqual(
+                spans[0].attributes[dataAttributeName],
+                stringify({
+                  connection: {
+                    database: CONFIG.database,
+                    port: 59999,
+                    host: CONFIG.host,
+                    user: CONFIG.user,
+                  },
+                })
+              );
+              done();
+            } catch (e) {
+              done(e);
+            }
+          });
+        });
+
+        it('should not call the connection hook for queries', async () => {
+          await client.query('SELECT 0::text');
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          assert.strictEqual(spans[0].attributes[dataAttributeName], undefined);
+        });
+      });
+
+      describe('AND invalid connectionHook', () => {
+        beforeEach(() => {
+          create({
+            connectionHook: (_span, _connectionInfo) => {
+              throw 'some kind of failure!';
+            },
+          });
+          memoryExporter.reset();
+        });
+
+        it('should not do any harm when throwing an exception', async () => {
+          const diagError = sinon.spy((instrumentation as any)._diag, 'error');
+          await connClient.connect();
+          const spans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(spans.length, 1);
+          testUtils.assertSpan(
+            spans[0],
+            SpanKind.CLIENT,
+            DEFAULT_ATTRIBUTES,
+            [],
+            unsetStatus
+          );
+          sinon.assert.calledOnce(diagError);
+        });
+      });
+
+      describe('AND ignoreConnectSpans=true', () => {
+        it('should not call the connection hook', async () => {
+          const connectionHook = sinon.spy();
+          create({
+            ignoreConnectSpans: true,
+            connectionHook,
+          });
+          memoryExporter.reset();
+          await connClient.connect();
+          assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+          sinon.assert.notCalled(connectionHook);
+        });
+      });
+
+      describe('AND a requestHook', () => {
+        it('should not call the request hook for connect', async () => {
+          const requestHook = sinon.spy();
+          const connectionHook = sinon.spy();
+          create({
+            requestHook,
+            connectionHook,
+          });
+          await connClient.connect();
+          sinon.assert.calledOnce(connectionHook);
+          sinon.assert.notCalled(requestHook);
+        });
+      });
+    });
   });
 
   describe('#client.query(...)', () => {
@@ -1393,96 +1548,108 @@ describe('pg', () => {
 
     it('should generate db.client.operation.duration metric', done => {
       client.query('SELECT NOW()', async (_, ret) => {
-        assert.ok(ret, 'query should be executed');
+        try {
+          assert.ok(ret, 'query should be executed');
 
-        const { resourceMetrics, errors } = await metricReader.collect();
-        assert.deepEqual(
-          errors,
-          [],
-          'expected no errors from the callback during metric collection'
-        );
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
 
-        const metrics = resourceMetrics.scopeMetrics[0].metrics;
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          METRIC_DB_CLIENT_OPERATION_DURATION
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'Duration of database client operations.'
-        );
-        const dataPoint = metrics[0].dataPoints[0];
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
-          DB_SYSTEM_NAME_VALUE_POSTGRESQL
-        );
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-          'SELECT'
-        );
-        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+            DB_SYSTEM_NAME_VALUE_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+            'SELECT'
+          );
+          assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], undefined);
 
-        const v = (dataPoint as DataPoint<Histogram>).value;
-        v.min = v.min ? v.min : 0;
-        v.max = v.max ? v.max : 0;
-        assert.equal(
-          v.min > 0,
-          true,
-          'expect min value for Histogram to be greater than 0'
-        );
-        assert.equal(
-          v.max > 0,
-          true,
-          'expect max value for Histogram to be greater than 0'
-        );
-        done();
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
+          );
+          done();
+        } catch (e) {
+          // An assertion failing inside this async callback would otherwise
+          // surface as a timeout instead of the actual error.
+          done(e);
+        }
       });
     });
 
     it('should generate db.client.operation.duration metric with error attribute', done => {
       client.query('SELECT foo from bar', async (err, ret) => {
-        assert.notEqual(err, null);
-        const { resourceMetrics, errors } = await metricReader.collect();
-        assert.deepEqual(
-          errors,
-          [],
-          'expected no errors from the callback during metric collection'
-        );
+        try {
+          assert.notEqual(err, null);
+          const { resourceMetrics, errors } = await metricReader.collect();
+          assert.deepEqual(
+            errors,
+            [],
+            'expected no errors from the callback during metric collection'
+          );
 
-        const metrics = resourceMetrics.scopeMetrics[0].metrics;
-        assert.strictEqual(
-          metrics[0].descriptor.name,
-          METRIC_DB_CLIENT_OPERATION_DURATION
-        );
-        assert.strictEqual(
-          metrics[0].descriptor.description,
-          'Duration of database client operations.'
-        );
-        const dataPoint = metrics[0].dataPoints[0];
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
-          DB_SYSTEM_NAME_VALUE_POSTGRESQL
-        );
-        assert.strictEqual(
-          dataPoint.attributes[ATTR_DB_OPERATION_NAME],
-          'SELECT'
-        );
-        assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '42P01');
+          const metrics = resourceMetrics.scopeMetrics[0].metrics;
+          assert.strictEqual(
+            metrics[0].descriptor.name,
+            METRIC_DB_CLIENT_OPERATION_DURATION
+          );
+          assert.strictEqual(
+            metrics[0].descriptor.description,
+            'Duration of database client operations.'
+          );
+          const dataPoint = metrics[0].dataPoints[0];
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_SYSTEM_NAME],
+            DB_SYSTEM_NAME_VALUE_POSTGRESQL
+          );
+          assert.strictEqual(
+            dataPoint.attributes[ATTR_DB_OPERATION_NAME],
+            'SELECT'
+          );
+          assert.strictEqual(dataPoint.attributes[ATTR_ERROR_TYPE], '42P01');
 
-        const v = (dataPoint as DataPoint<Histogram>).value;
-        v.min = v.min ? v.min : 0;
-        v.max = v.max ? v.max : 0;
-        assert.equal(
-          v.min > 0,
-          true,
-          'expect min value for Histogram to be greater than 0'
-        );
-        assert.equal(
-          v.max > 0,
-          true,
-          'expect max value for Histogram to be greater than 0'
-        );
-        done();
+          const v = (dataPoint as DataPoint<Histogram>).value;
+          v.min = v.min ? v.min : 0;
+          v.max = v.max ? v.max : 0;
+          assert.equal(
+            v.min > 0,
+            true,
+            'expect min value for Histogram to be greater than 0'
+          );
+          assert.equal(
+            v.max > 0,
+            true,
+            'expect max value for Histogram to be greater than 0'
+          );
+          done();
+        } catch (e) {
+          // An assertion failing inside this async callback would otherwise
+          // surface as a timeout instead of the actual error.
+          done(e);
+        }
       });
     });
   });

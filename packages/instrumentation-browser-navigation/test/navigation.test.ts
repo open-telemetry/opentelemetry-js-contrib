@@ -20,7 +20,7 @@ import {
   ATTR_BROWSER_NAVIGATION_TYPE,
 } from '../src/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 // @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 // registerInstrumentations removed - using plugin.enable() directly
@@ -636,6 +636,71 @@ describe('Browser Navigation Instrumentation', () => {
           done();
         }, 10);
       }, 10); // Close the setTimeout for readyState wait
+    });
+
+    it('should redact sensitive query params by default without sanitizeUrl', done => {
+      instrumentation = new BrowserNavigationInstrumentation({
+        enabled: true,
+        useNavigationApiIfAvailable: false, // Test history API path
+      });
+
+      // Wait for any readyState-triggered events, then clear records
+      setTimeout(() => {
+        exporter.reset();
+
+        history.pushState(
+          {},
+          '',
+          '/path?sig=secret&X-Amz-Signature=secret&normal=value'
+        );
+
+        setTimeout(() => {
+          const records = exporter.getFinishedLogRecords();
+          assert.ok(records.length >= 1, 'Should have at least one record');
+
+          const navLogRecord = records.slice(-1)[0] as ReadableLogRecord;
+          assert.strictEqual(
+            (navLogRecord.attributes as any)[ATTR_URL_FULL],
+            `${location.origin}/path?sig=REDACTED&X-Amz-Signature=REDACTED&normal=value`
+          );
+          done();
+        }, 10);
+      }, 10);
+    });
+
+    it('should let sanitizeUrl fully replace the default redaction', done => {
+      const seen: string[] = [];
+      instrumentation = new BrowserNavigationInstrumentation({
+        enabled: true,
+        useNavigationApiIfAvailable: false, // Test history API path
+        sanitizeUrl: (url: string) => {
+          seen.push(url);
+          return url.replace('normal=value', 'normal=CUSTOM');
+        },
+      });
+
+      setTimeout(() => {
+        exporter.reset();
+        seen.length = 0;
+
+        history.pushState({}, '', '/path?Signature=raw&normal=value');
+
+        setTimeout(() => {
+          assert.include(
+            seen,
+            `${location.origin}/path?Signature=raw&normal=value`,
+            'sanitizeUrl should receive the raw URL'
+          );
+          const navLogRecord = exporter
+            .getFinishedLogRecords()
+            .slice(-1)[0] as ReadableLogRecord;
+          assert.strictEqual(
+            (navLogRecord.attributes as any)[ATTR_URL_FULL],
+            `${location.origin}/path?Signature=raw&normal=CUSTOM`
+          );
+          done();
+        }, 10);
+      }, 10);
     });
 
     it('should use custom sanitizeUrl callback when provided', done => {

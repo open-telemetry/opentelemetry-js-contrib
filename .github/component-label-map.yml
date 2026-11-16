@@ -37,6 +37,11 @@ pkg:instrumentation-amqplib:
       - any-glob-to-any-file:
           - packages/instrumentation-amqplib/**
           - packages/contrib-test-utils/**
+pkg:instrumentation-anthropic:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-anthropic/**
+          - packages/contrib-test-utils/**
 pkg:instrumentation-aws-lambda:
   - changed-files:
       - any-glob-to-any-file:
@@ -183,6 +188,11 @@ pkg:instrumentation-openai:
   - changed-files:
       - any-glob-to-any-file:
           - packages/instrumentation-openai/**
+          - packages/contrib-test-utils/**
+pkg:instrumentation-openai-agents:
+  - changed-files:
+      - any-glob-to-any-file:
+          - packages/instrumentation-openai-agents/**
           - packages/contrib-test-utils/**
 pkg:instrumentation-oracledb:
   - changed-files:

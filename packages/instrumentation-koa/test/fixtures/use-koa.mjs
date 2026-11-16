@@ -10,7 +10,7 @@ import { promisify } from 'util';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { KoaInstrumentation } from '../../build/src/index.js';
+import { KoaInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-koa',

@@ -56,6 +56,7 @@ import {
   ResponseHeadersMessage,
 } from './internal-types';
 import { UndiciInstrumentationConfig, UndiciRequest } from './types';
+import { redactQueryString, redactUrl } from './redact-url';
 
 interface InstrumentationRecord {
   span: Span;
@@ -146,23 +147,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     diagnosticChannel: string,
     onMessage: (message: any, name: string | symbol) => void
   ) {
-    // `diagnostics_channel` had a ref counting bug until v18.19.0.
-    // https://github.com/nodejs/node/pull/47520
-    const [major, minor] = process.version
-      .replace('v', '')
-      .split('.')
-      .map(n => Number(n));
-    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
-
-    let unsubscribe: () => void;
-    if (useNewSubscribe) {
-      diagch.subscribe?.(diagnosticChannel, onMessage);
-      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
-    } else {
-      const channel = diagch.channel(diagnosticChannel);
-      channel.subscribe(onMessage);
-      unsubscribe = () => channel.unsubscribe(onMessage);
-    }
+    diagch.subscribe(diagnosticChannel, onMessage);
+    const unsubscribe = () => diagch.unsubscribe(diagnosticChannel, onMessage);
 
     this._channelSubs.push({
       name: diagnosticChannel,
@@ -251,14 +237,16 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const attributes: Attributes = {
       [ATTR_HTTP_REQUEST_METHOD]: requestMethod,
       [ATTR_HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
-      [ATTR_URL_FULL]: requestUrl.toString(),
+      [ATTR_URL_FULL]: redactUrl(requestUrl.toString()),
       [ATTR_URL_PATH]: requestUrl.pathname,
       [ATTR_URL_SCHEME]: urlScheme,
     };
 
     if (requestUrl.search) {
       // `url.query` is the query component without the leading '?'
-      attributes[ATTR_URL_QUERY] = requestUrl.search.slice(1);
+      attributes[ATTR_URL_QUERY] = redactQueryString(
+        requestUrl.search.slice(1)
+      );
     }
 
     const schemePorts: Record<string, string> = { https: '443', http: '80' };

@@ -38,8 +38,7 @@ const sdk = new opentelemetry.NodeSDK({
             suppressInternalInstrumentation: true
         }),
     ],
-    spanProcessor: _spanProcessor,
-    traceExporter: _traceExporter,
+    spanProcessors: [_spanProcessor],
 });
 
 sdk.configureTracerProvider(_tracerConfig, _spanProcessor);

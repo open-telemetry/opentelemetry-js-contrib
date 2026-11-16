@@ -19,11 +19,9 @@ import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace';
-import {
-  PerformanceTimingNames as PTN,
   StackContextManager,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
+import { PerformanceTimingNames as PTN } from '@opentelemetry/web-common';
 
 // @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
@@ -453,6 +451,54 @@ describe('DocumentLoad Instrumentation', () => {
         ensureNetworkEventsExists(srEvents2);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('when urls contain sensitive information', () => {
+    let spyEntries: any;
+    let originalUrl: string;
+    beforeEach(() => {
+      originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}${location.search}&sig=secret`
+      );
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          name: 'https://user:pass@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=AKIA&X-Amz-Signature=secret&v=1',
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+      history.replaceState(history.state, '', originalUrl);
+    });
+
+    it('should redact url.full on document and resource spans', done => {
+      plugin.enable();
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans() as ReadableSpan[];
+        const fetchSpan = spans.find(s => s.name === 'documentFetch');
+        const rootSpan = spans.find(s => s.name === 'documentLoad');
+        const resourceSpan = spans.find(s => s.name === 'resourceFetch');
+        assert.ok(fetchSpan && rootSpan && resourceSpan);
+
+        for (const span of [fetchSpan, rootSpan]) {
+          const url = span.attributes[ATTR_URL_FULL] as string;
+          assert.isOk(url.endsWith('&sig=REDACTED'), url);
+          assert.notInclude(url, 'secret');
+        }
+        assert.strictEqual(
+          resourceSpan.attributes[ATTR_URL_FULL],
+          'https://REDACTED:REDACTED@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&v=1'
+        );
         done();
       });
     });

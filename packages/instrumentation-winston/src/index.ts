@@ -5,3 +5,4 @@
 
 export { WinstonInstrumentation } from './instrumentation';
 export type { LogHookFunction, WinstonInstrumentationConfig } from './types';
+export { otelLogLevels, otelSeverityMapping } from './otel-levels';

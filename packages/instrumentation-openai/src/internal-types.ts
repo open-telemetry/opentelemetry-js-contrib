@@ -2,7 +2,7 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import type { AnyValue } from '@opentelemetry/api-logs';
+import type { AnyValue } from '@opentelemetry/api';
 
 // This mimicks `APIPromise` from `openai` sufficiently for usage in this
 // instrumentation. OpenAI's APIPromise adds some methods, but we don't use

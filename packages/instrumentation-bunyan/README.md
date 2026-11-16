@@ -30,7 +30,7 @@ const { BunyanInstrumentation } = require('@opentelemetry/instrumentation-bunyan
 
 const sdk = new NodeSDK({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
   logRecordProcessors: [
     new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
