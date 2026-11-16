@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## Unreleased
+
+### Features
+
+* **instrumentation-openai:** `captureMessageContent` uses genai-util `ContentCaptureMode` only (`'none'` | `'span_only'`); legacy boolean config and `true`/`false` env strings are no longer supported ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872)) (**breaking change**)
+* **instrumentation-openai:** adopt `@opentelemetry/genai-util` `TelemetryHandler` and `InferenceInvocation` / `EmbeddingInvocation` for span lifecycle, metrics, and async stream instrumentation (including `wrapAsyncStream` from [#3831](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3831)) ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** set `gen_ai.provider.name` to `openai` per OpenAI semantic conventions for this instrumentation (OpenAI-compatible clients are still traced as the OpenAI conventions document) ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872))
+* **instrumentation-openai:** record `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.reasoning.output_tokens` when the API returns usage details ([#3668](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3668))
+* **instrumentation-openai:** under opt-in `span_only` capture, map multimodal parts to genai-util `UriPart` / `BlobPart` / `FilePart` with redacted HTTP(S) URIs (no query/fragment), empty blob payloads for `data:` / audio bytes, and `file_id` when available ([#3872](https://github.com/open-telemetry/opentelemetry-js-contrib/pull/3872))
+
 ## [0.23.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-openai-v0.22.0...instrumentation-openai-v0.23.0) (2026-11-05)
 
 
