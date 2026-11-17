@@ -74,6 +74,7 @@ describe('LangChainInstrumentation', () => {
     expect(instance.definitions.map(definition => definition.name)).toEqual([
       '@langchain/core',
       'langchain',
+      '@langchain/langgraph',
     ]);
     expect(instance.definitions[0].files.map(file => file.name)).toEqual([
       normalize('@langchain/core/dist/runnables/base.cjs'),

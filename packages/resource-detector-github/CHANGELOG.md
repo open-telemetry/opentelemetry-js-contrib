@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.34.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.34.0...resource-detector-github-v0.34.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/resource-detector-github-v0.33.0...resource-detector-github-v0.34.0) (2026-10-20)
 
 

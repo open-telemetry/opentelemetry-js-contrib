@@ -15,6 +15,7 @@ import {
   SanitizeUrlFunction,
 } from './types';
 import { isHashChange } from './utils';
+import { redactUrl } from './redact-url';
 
 /**
  * This class represents a browser navigation instrumentation plugin
@@ -55,15 +56,22 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   init() {}
 
   /**
+   * Returns the value to record as `url.full`. A configured `sanitizeUrl`
+   * callback fully replaces the default redaction of credentials and
+   * sensitive query string values.
+   */
+  private _getUrlFull(url: string): string {
+    return this.sanitizeUrl ? this.sanitizeUrl(url) : redactUrl(url);
+  }
+
+  /**
    * callback to be executed when using hard navigation
    */
   private _onHardNavigation() {
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this.sanitizeUrl
-          ? this.sanitizeUrl(document.documentURI)
-          : document.documentURI,
+        [ATTR_URL_FULL]: this._getUrlFull(document.documentURI),
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: false,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: false,
       },
@@ -106,9 +114,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this.sanitizeUrl
-          ? this.sanitizeUrl(currentUrl)
-          : currentUrl,
+        [ATTR_URL_FULL]: this._getUrlFull(currentUrl),
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: sameDocument,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: hashChange,
         ...(navType ? { [ATTR_BROWSER_NAVIGATION_TYPE]: navType } : {}),

@@ -72,7 +72,7 @@ describe('LangChain workflow regressions', () => {
         assert.equal(getTestSpans().length, 1);
         assert.equal(getTestSpans()[0].name, 'invoke_workflow');
         assert.equal(
-          getTestSpans()[0].attributes['gen_ai.workflow.name'],
+          getTestSpans()[0].attributes['gen_ai.agent.name'],
           undefined
         );
         assert.equal(

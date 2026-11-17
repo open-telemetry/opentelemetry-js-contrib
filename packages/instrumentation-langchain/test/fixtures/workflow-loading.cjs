@@ -313,7 +313,7 @@ async function main() {
       const metric = collected.resourceMetrics.scopeMetrics.flatMap(
         scope => scope.metrics
       )[0];
-      assert.equal(metric.descriptor.name, 'gen_ai.invoke_workflow.duration');
+      assert.equal(metric.descriptor.name, 'gen_ai.invoke_agent.duration');
       assert.equal(metric.dataPointType, DataPointType.HISTOGRAM);
       assert.equal(
         metric.dataPoints.reduce(

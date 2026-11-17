@@ -1,6 +1,26 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.77.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.77.0...instrumentation-aws-lambda-v0.77.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-aws-lambda:** force flush logger provider on invocation completion ([#3714](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3714)) ([c9ddfed](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c9ddfed6ee4cd1ca0e9430485b5b73289400f436))
+* **instrumentation-aws-lambda:** redact sensitive URL query parameters ([#3904](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3904)) ([0ec846f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/0ec846f2e44f258e8a7b2d5a1b9e845b4832651f))
+
+## [0.77.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.76.0...instrumentation-aws-lambda-v0.77.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.76.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-aws-lambda-v0.75.0...instrumentation-aws-lambda-v0.76.0) (2026-10-20)
 
 

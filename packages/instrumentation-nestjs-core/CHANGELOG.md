@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.72.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.72.0...instrumentation-nestjs-core-v0.72.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-nestjs-core:** redact sensitive URL query parameters ([#3907](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3907)) ([2f7190a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2f7190a9f553c411c8fd81b3552c4cc9a8d367cf))
+
+## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.71.0...instrumentation-nestjs-core-v0.72.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.70.0...instrumentation-nestjs-core-v0.71.0) (2026-10-20)
 
 

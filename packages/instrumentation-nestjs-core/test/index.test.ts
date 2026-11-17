@@ -100,6 +100,22 @@ describe('nestjs-core', () => {
     ]);
   });
 
+  it('should redact sensitive query string values in url.full', async () => {
+    assert.strictEqual(
+      await request('/users?sig=secret&X-Amz-Signature=secret&page=2'),
+      'Hello, world!\n'
+    );
+
+    const requestSpan = memoryExporter
+      .getFinishedSpans()
+      .find(span => span.attributes['nestjs.type'] === 'request_context');
+    assert.ok(requestSpan, 'request_context span is present');
+    assert.strictEqual(
+      requestSpan.attributes['url.full'],
+      '/users?sig=REDACTED&X-Amz-Signature=REDACTED&page=2'
+    );
+  });
+
   it('should not overwrite metadata set on the request handler', async () => {
     const path = semver.intersects(LIB_VERSION, '<5.0.0') ? '/' : '/metadata';
     const url = '/metadata';

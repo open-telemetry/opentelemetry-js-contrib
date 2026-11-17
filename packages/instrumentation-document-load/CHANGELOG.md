@@ -1,6 +1,25 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.70.0...instrumentation-document-load-v0.70.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-document-load:** redact sensitive URL query parameters ([#3906](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3906)) ([7819a53](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7819a53e588577c3f8ed5aaae544fbd9b7cb5e66))
+
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.69.0...instrumentation-document-load-v0.70.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-document-load-v0.68.0...instrumentation-document-load-v0.69.0) (2026-10-20)
 
 

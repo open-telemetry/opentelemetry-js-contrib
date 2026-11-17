@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [3.0.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v3.0.0...id-generator-aws-xray-v3.0.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [3.0.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/id-generator-aws-xray-v2.1.0...id-generator-aws-xray-v3.0.0) (2026-10-20)
 
 

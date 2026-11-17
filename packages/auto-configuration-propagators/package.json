@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/auto-configuration-propagators",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Metapackage which bundles known propagators for configuration via an env variable.",
   "author": "OpenTelemetry Authors",
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/auto-configuration-propagators#readme",
@@ -43,7 +43,7 @@
     "url": "https://github.com/open-telemetry/opentelemetry-js-contrib/issues"
   },
   "peerDependencies": {
-    "@opentelemetry/api": "^1.4.1"
+    "@opentelemetry/api": "^1.10.0"
   },
   "devDependencies": {
     "@opentelemetry/api": "^1.10.0"

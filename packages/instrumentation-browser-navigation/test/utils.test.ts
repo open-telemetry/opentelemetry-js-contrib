@@ -152,6 +152,26 @@ describe('utils', () => {
       assert.ok(sanitized.includes('api_key=REDACTED'));
     });
 
+    it('should redact the keys from the URL semantic conventions', () => {
+      const keys = [
+        'sig',
+        'Signature',
+        'AWSAccessKeyId',
+        'X-Goog-Signature',
+        'X-Amz-Signature',
+        'X-Amz-Credential',
+        'X-Amz-Security-Token',
+      ];
+      for (const key of keys) {
+        const sanitized = defaultSanitizeUrl(
+          `https://example.com/path?${key}=secret&normal=value`
+        );
+        assert.ok(sanitized.includes(`${key}=REDACTED`), key);
+        assert.ok(sanitized.includes('normal=value'), key);
+        assert.notInclude(sanitized, 'secret', key);
+      }
+    });
+
     it('should handle invalid URLs with fallback logic', () => {
       const url = 'invalid://user:pass@example.com/path?api_key=secret123';
       const sanitized = defaultSanitizeUrl(url);

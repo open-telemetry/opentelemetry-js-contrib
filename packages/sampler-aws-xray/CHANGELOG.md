@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sampler-aws-xray-v0.4.0...sampler-aws-xray-v0.4.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
 ## [0.4.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/sampler-aws-xray-v0.3.0...sampler-aws-xray-v0.4.0) (2026-10-20)
 
 
