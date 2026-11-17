@@ -35,6 +35,7 @@ export type FinishReason =
   | 'content_filter'
   | 'tool_call'
   | 'compaction'
+  | 'interrupted'
   | 'error'
   | (string & {});
 
@@ -66,6 +67,33 @@ export type TokenCountsByModality = Partial<Record<TokenModality, number>>;
  * Corresponds to `gen_ai.tool.type`.
  */
 export type ToolType = 'function' | 'extension' | 'datastore' | (string & {});
+
+/**
+ * Represents the content type requested by the client or produced by the operation.
+ *
+ * Corresponds to `gen_ai.output.type`.
+ */
+export type OutputType = 'text' | 'json' | 'image' | 'speech' | (string & {});
+
+/**
+ * Definition of a tool available to a model or agent (`gen_ai.tool.definitions`).
+ */
+export interface ToolDefinition {
+  /** Type of the tool (e.g. 'function'). */
+  type: string;
+  /** Name of the tool. */
+  name: string;
+  /** Description of the tool. */
+  description?: string | null;
+  /** Tool parameters schema (typically a JSON Schema object). */
+  parameters?: unknown | null;
+  [key: string]: unknown;
+}
+
+/**
+ * List of tool definitions available to a model or agent (`gen_ai.tool.definitions`).
+ */
+export type ToolDefinitions = ToolDefinition[];
 
 /**
  * Lifecycle status of a generated response, as reported by the provider.
@@ -404,6 +432,36 @@ export interface InferenceRequestOptions {
   reasoningLevel?: string;
 }
 
+/**
+ * Standard request parameters for an in-process GenAI agent invocation (`gen_ai.invoke_agent.internal`).
+ */
+export interface LocalAgentRequestOptions {
+  /** Sampling temperature (`gen_ai.request.temperature`). */
+  temperature?: number;
+  /** Top-p nucleus sampling parameter (`gen_ai.request.top_p`). */
+  topP?: number;
+  /** Maximum number of tokens to generate (`gen_ai.request.max_tokens`). */
+  maxTokens?: number;
+  /** Stop sequences (`gen_ai.request.stop_sequences`). */
+  stopSequences?: string[];
+  /** Frequency penalty parameter (`gen_ai.request.frequency_penalty`). */
+  frequencyPenalty?: number;
+  /** Presence penalty parameter (`gen_ai.request.presence_penalty`). */
+  presencePenalty?: number;
+  /** Number of choices/completions requested (`gen_ai.request.choice.count`). */
+  choiceCount?: number;
+  /** Random seed for deterministic generation (`gen_ai.request.seed`). */
+  seed?: number;
+}
+
+/**
+ * Standard request parameters for a remote client GenAI agent invocation (`gen_ai.client.invoke_agent`).
+ */
+export interface RemoteAgentRequestOptions extends LocalAgentRequestOptions {
+  /** Whether the request was streamed (`gen_ai.request.stream`). */
+  stream?: boolean;
+}
+
 // ============================================================================
 // Invocation Options
 // ============================================================================
@@ -497,6 +555,88 @@ export interface ToolInvocationOptions extends CommonInvocationOptions {
   conversationId?: string;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
   agentName?: string;
+}
+
+/**
+ * Shared options for starting an agent invocation.
+ */
+interface CommonAgentInvocationOptions extends CommonInvocationOptions {
+  /**
+   * Operation name (`gen_ai.operation.name`).
+   * Defaults to `'invoke_agent'`.
+   */
+  operationName?: string;
+  /** Human-readable name of the GenAI agent (`gen_ai.agent.name`). */
+  agentName?: string;
+  /** Free-form description of the GenAI agent (`gen_ai.agent.description`). */
+  agentDescription?: string;
+  /** Conversation / session / thread ID (`gen_ai.conversation.id`). */
+  conversationId?: string;
+  /** Data source identifier (`gen_ai.data_source.id`). */
+  dataSourceId?: string;
+  /** Represents the content type requested by the client (`gen_ai.output.type`). */
+  outputType?: OutputType;
+  /** Model name requested (`gen_ai.request.model`). */
+  requestModel?: string;
+  /** Request parameters/settings. */
+  requestOptions?: LocalAgentRequestOptions;
+  /** Input messages provided to the agent (`gen_ai.input.messages`). */
+  inputMessages?: InputMessages;
+  /** System instructions provided to the agent (`gen_ai.system_instructions`). */
+  systemInstructions?: SystemInstructions;
+  /**
+   * Tool definitions available to the agent (`gen_ai.tool.definitions`).
+   *
+   * Per GenAI semantic conventions, schema attributes are opt-in and are not
+   * governed by `contentCaptureMode`; supply them only when tool definition
+   * capture is enabled.
+   */
+  toolDefinitions?: ToolDefinitions;
+}
+
+/**
+ * Options for starting an in-process agent, workflow, or framework entrypoint invocation (`gen_ai.invoke_agent.internal`).
+ */
+export interface LocalAgentInvocationOptions
+  extends CommonAgentInvocationOptions {
+  /**
+   * Operation name (`gen_ai.operation.name`).
+   * Defaults to `'invoke_agent'`. May also be set to `'invoke_workflow'`, `'invoke_runner'`, or a custom value.
+   */
+  operationName?: string;
+  /**
+   * Initialize inference call tracking at `0` so `gen_ai.invoke_agent.inference_calls`
+   * records `0` even when `recordInferenceCall()` is never invoked during the run.
+   * Leave unset for delegating entrypoints or workflows that never issue model calls directly.
+   */
+  trackInferenceCalls?: boolean;
+  /**
+   * Initialize tool call tracking at `0` so `gen_ai.invoke_agent.tool_calls`
+   * records `0` even when `recordToolCall()` is never invoked during the run.
+   * Leave unset for delegating entrypoints, workflows, or toolless agents that cannot issue tool calls.
+   */
+  trackToolCalls?: boolean;
+}
+
+/**
+ * Options for starting a remote client agent invocation (`gen_ai.client.invoke_agent`).
+ */
+export interface RemoteAgentInvocationOptions
+  extends CommonAgentInvocationOptions {
+  /** Name of the provider hosting the remote agent (`gen_ai.provider.name`). */
+  providerName: string;
+  /** Unique identifier of the GenAI agent (`gen_ai.agent.id`). */
+  agentId?: string;
+  /** Version of the GenAI agent (`gen_ai.agent.version`). */
+  agentVersion?: string;
+  /** Unique identifier of the previous response when chaining stateful interactions (`gen_ai.request.previous_response.id`). */
+  previousResponseId?: string;
+  /** Request parameters/settings for remote agent invocation. */
+  requestOptions?: RemoteAgentRequestOptions;
+  /** Server address (e.g. hostname) (`server.address`). */
+  serverAddress?: string;
+  /** Server port (`server.port`). */
+  serverPort?: number;
 }
 
 /**

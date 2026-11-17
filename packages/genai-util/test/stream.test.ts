@@ -4,7 +4,8 @@
  */
 
 import * as assert from 'assert';
-import { SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   ATTR_ERROR_TYPE,
   ATTR_SERVER_ADDRESS,
@@ -26,8 +27,12 @@ import {
   GEN_AI_FINISH_REASON_VALUE_ERROR,
   GEN_AI_FINISH_REASON_VALUE_STOP,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
+  METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
 } from '../src/semconv';
 import {
   createTestTelemetryContext,
@@ -1155,5 +1160,523 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     const spans = ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(spans.length, 1);
     assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+  });
+
+  it('should support LocalAgentInvocation streams, preserve parent span context across yield points, and omit inference chunk metrics', async () => {
+    const contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    try {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test',
+        instrumentationVersion: '1.2.3',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      const agent = handler.startLocalAgent({
+        agentName: 'StreamingAgent',
+        trackInferenceCalls: true,
+        trackToolCalls: true,
+      });
+
+      async function* runAgentStream() {
+        await Promise.resolve();
+        const inf = handler.startInference({
+          providerName: 'openai',
+          requestModel: 'gpt-4o',
+        });
+        inf.stop();
+        agent.recordInferenceCall();
+        yield 'step-1';
+
+        await Promise.resolve();
+        const tool = handler.startTool({ toolName: 'search_docs' });
+        tool.stop();
+        agent.recordToolCall();
+        yield 'step-2';
+      }
+
+      const wrapped = handler.wrapAsyncStream(runAgentStream(), {
+        invocation: agent,
+      });
+
+      const consumerActiveSpans: Array<unknown> = [];
+      const events: string[] = [];
+      for await (const ev of wrapped) {
+        events.push(ev);
+        // Consumer loop body must remain in the caller's outer context, not the agent span context
+        consumerActiveSpans.push(trace.getSpan(context.active()));
+      }
+
+      assert.deepStrictEqual(events, ['step-1', 'step-2']);
+      assert.deepStrictEqual(consumerActiveSpans, [undefined, undefined]);
+      assert.strictEqual(agent.isEnded(), true);
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      const agentSpan = spans.find(
+        s => s.name === 'invoke_agent StreamingAgent'
+      );
+      const infSpan = spans.find(s => s.name === 'chat gpt-4o');
+      const toolSpan = spans.find(s => s.name === 'execute_tool search_docs');
+
+      assert.ok(agentSpan);
+      assert.ok(infSpan);
+      assert.ok(toolSpan);
+
+      const agentSpanId = agentSpan.spanContext().spanId;
+      assert.strictEqual(infSpan.parentSpanContext?.spanId, agentSpanId);
+      assert.strictEqual(toolSpan.parentSpanContext?.spanId, agentSpanId);
+      assert.strictEqual(
+        agentSpan.attributes[ATTR_GEN_AI_REQUEST_STREAM],
+        undefined
+      );
+
+      const { resourceMetrics } = await ctx.metricReader.collect();
+      const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_DURATION
+        )
+      );
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS
+        )
+      );
+      assert.ok(
+        metrics.find(
+          m => m.descriptor.name === METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS
+        )
+      );
+      // TTFT and TPOC must NOT be recorded for LocalAgentInvocation chunks (only if a child InferenceInvocation streamed, which it didn't here)
+      assert.strictEqual(
+        metrics.find(
+          m =>
+            m.descriptor.name ===
+            METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+        ),
+        undefined
+      );
+      assert.strictEqual(
+        metrics.find(
+          m =>
+            m.descriptor.name ===
+            METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+        ),
+        undefined
+      );
+    } finally {
+      context.disable();
+    }
+  });
+
+  it('should support RemoteAgentInvocation streams, mark request.stream, omit synthetic error finish_reasons on completion, and omit inference chunk metrics', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    // 1. Clean completion when remote agent protocol does not emit finish_reasons -> omitted (not ['error'])
+    const completedRemote = handler.startRemoteAgent({
+      providerName: 'aws.bedrock',
+      agentName: 'RemoteStreamAgent',
+    });
+
+    const wrappedCompleted = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['delta-1', 'delta-2']),
+      {
+        invocation: completedRemote,
+      }
+    );
+
+    const allChunks: string[] = [];
+    for await (const chunk of wrappedCompleted) {
+      allChunks.push(chunk);
+    }
+
+    assert.deepStrictEqual(allChunks, ['delta-1', 'delta-2']);
+    assert.strictEqual(completedRemote.isEnded(), true);
+
+    // 2. Early break when finish reasons were expected (`setFinishReasons([])`) -> ['error']
+    const interruptedRemote = handler.startRemoteAgent({
+      providerName: 'openai',
+      agentName: 'InterruptedRemoteStreamAgent',
+    });
+    interruptedRemote.setFinishReasons([]);
+
+    const wrappedInterrupted = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['delta-1', 'delta-2']),
+      {
+        invocation: interruptedRemote,
+      }
+    );
+
+    const received: string[] = [];
+    for await (const chunk of wrappedInterrupted) {
+      received.push(chunk);
+      break;
+    }
+
+    assert.deepStrictEqual(received, ['delta-1']);
+    assert.strictEqual(interruptedRemote.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.UNSET);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      undefined
+    );
+
+    assert.strictEqual(spans[1].attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.deepStrictEqual(
+      spans[1].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      [GEN_AI_FINISH_REASON_VALUE_ERROR]
+    );
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    assert.ok(
+      metrics.find(
+        m => m.descriptor.name === METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION
+      )
+    );
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK
+      ),
+      undefined
+    );
+    assert.strictEqual(
+      metrics.find(
+        m =>
+          m.descriptor.name ===
+          METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK
+      ),
+      undefined
+    );
+  });
+
+  it('should activate invocation context inside onChunk, onEnd, and onError hooks while keeping consumer loop in outer context', async () => {
+    const contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    try {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test',
+        instrumentationVersion: '1.2.3',
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const agent = handler.startLocalAgent({ agentName: 'EventStreamAgent' });
+      let onEndSpan: unknown;
+      const consumerSpans: Array<unknown> = [];
+
+      const wrapped = handler.wrapAsyncStream(
+        createAsyncChunkGenerator(['tool_event']),
+        {
+          invocation: agent,
+          onChunk: () => {
+            const tool = handler.startTool({ toolName: 'event_tool' });
+            tool.stop();
+          },
+          onEnd: () => {
+            onEndSpan = trace.getSpan(context.active());
+          },
+        }
+      );
+
+      for await (const _chunk of wrapped) {
+        consumerSpans.push(trace.getSpan(context.active()));
+      }
+
+      const failingAgent = handler.startLocalAgent({
+        agentName: 'FailingEventStreamAgent',
+      });
+      let onErrorSpan: unknown;
+      const wrappedFail = handler.wrapAsyncStream(
+        createAsyncChunkGenerator([], new Error('stream boom')),
+        {
+          invocation: failingAgent,
+          onError: () => {
+            onErrorSpan = trace.getSpan(context.active());
+          },
+        }
+      );
+
+      await assert.rejects(async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedFail) {
+          // iterate
+        }
+      });
+
+      assert.deepStrictEqual(consumerSpans, [undefined]);
+
+      const spans = ctx.memoryExporter.getFinishedSpans();
+      const agentSpan = spans.find(
+        s => s.name === 'invoke_agent EventStreamAgent'
+      );
+      const toolSpan = spans.find(s => s.name === 'execute_tool event_tool');
+      const failAgentSpan = spans.find(
+        s => s.name === 'invoke_agent FailingEventStreamAgent'
+      );
+
+      assert.ok(agentSpan);
+      assert.ok(toolSpan);
+      assert.ok(failAgentSpan);
+      assert.strictEqual(
+        toolSpan.parentSpanContext?.spanId,
+        agentSpan.spanContext().spanId
+      );
+      assert.strictEqual(
+        (onEndSpan as { spanContext: () => { spanId: string } })?.spanContext()
+          .spanId,
+        agentSpan.spanContext().spanId
+      );
+      assert.strictEqual(
+        (
+          onErrorSpan as { spanContext: () => { spanId: string } }
+        )?.spanContext().spanId,
+        failAgentSpan.spanContext().spanId
+      );
+    } finally {
+      context.disable();
+    }
+  });
+
+  it('should not re-enter ended span context or re-run hooks when a replayable stream is iterated a second time', async () => {
+    const contextManager = new AsyncLocalStorageContextManager();
+    context.setGlobalContextManager(contextManager.enable());
+
+    try {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test',
+        instrumentationVersion: '1.2.3',
+        tracerProvider: ctx.tracerProvider,
+        meterProvider: ctx.meterProvider,
+      });
+
+      const invocation = handler.startInference({
+        providerName: 'openai',
+        requestModel: 'gpt-4o',
+      });
+
+      const iteratorActiveSpanIds: Array<string | undefined> = [];
+      let onChunkCalls = 0;
+      let onEndCalls = 0;
+
+      const replayableStream: AsyncIterable<string> = {
+        [Symbol.asyncIterator]() {
+          iteratorActiveSpanIds.push(
+            trace.getSpan(context.active())?.spanContext().spanId
+          );
+          let idx = 0;
+          const items = ['a', 'b'];
+          return {
+            async next() {
+              iteratorActiveSpanIds.push(
+                trace.getSpan(context.active())?.spanContext().spanId
+              );
+              if (idx < items.length) {
+                return { done: false, value: items[idx++] };
+              }
+              return { done: true, value: undefined };
+            },
+          };
+        },
+      };
+
+      const wrapped = handler.wrapAsyncStream(replayableStream, {
+        invocation,
+        onChunk: () => {
+          onChunkCalls++;
+          invocation.setResponseModel('gpt-4o-2024-08-06');
+        },
+        onEnd: () => {
+          onEndCalls++;
+          invocation.setFinishReasons([GEN_AI_FINISH_REASON_VALUE_STOP]);
+        },
+      });
+
+      const pass1: string[] = [];
+      for await (const chunk of wrapped) {
+        pass1.push(chunk);
+      }
+      assert.deepStrictEqual(pass1, ['a', 'b']);
+      assert.strictEqual(invocation.isEnded(), true);
+
+      const pass2: string[] = [];
+      for await (const chunk of wrapped) {
+        pass2.push(chunk);
+      }
+      assert.deepStrictEqual(pass2, ['a', 'b']);
+
+      assert.strictEqual(onChunkCalls, 2);
+      assert.strictEqual(onEndCalls, 1);
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      const spanId = span.spanContext().spanId;
+      // Pass 1 ([Symbol.asyncIterator] + 3 next() calls) ran inside spanId;
+      // Pass 2 ([Symbol.asyncIterator] + 3 next() calls) ran in outer undefined context.
+      assert.deepStrictEqual(iteratorActiveSpanIds, [
+        spanId,
+        spanId,
+        spanId,
+        spanId,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+      ]);
+    } finally {
+      context.disable();
+    }
+  });
+
+  it('should fail the invocation if [Symbol.asyncIterator]() throws synchronously on first pass, and ignore second-pass throws', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // 1. Synchronous throw on first pass -> fails invocation instead of leaking open span
+    const inv1 = handler.startRemoteAgent({
+      providerName: 'openai',
+      agentName: 'SyncThrowAgent',
+    });
+    const throwingIterable: AsyncIterable<string> = {
+      [Symbol.asyncIterator]() {
+        throw new Error('Stream already aborted');
+      },
+    };
+    const wrappedThrowing = handler.wrapAsyncStream(throwingIterable, {
+      invocation: inv1,
+    });
+
+    await assert.rejects(
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedThrowing) {
+          // iterate
+        }
+      },
+      (err: Error) => err.message === 'Stream already aborted'
+    );
+    assert.strictEqual(inv1.isEnded(), true);
+
+    // 2. Single-use stream that succeeds on pass 1 and throws synchronously on pass 2
+    const inv2 = handler.startRemoteAgent({
+      providerName: 'openai',
+      agentName: 'SingleUseAgent',
+    });
+    let consumed = false;
+    const singleUseIterable: AsyncIterable<string> = {
+      [Symbol.asyncIterator]() {
+        if (consumed) {
+          throw new Error('Stream already consumed');
+        }
+        consumed = true;
+        return createAsyncChunkGenerator(['ok']);
+      },
+    };
+    const wrappedSingleUse = handler.wrapAsyncStream(singleUseIterable, {
+      invocation: inv2,
+    });
+
+    const firstPass: string[] = [];
+    for await (const chunk of wrappedSingleUse) {
+      firstPass.push(chunk);
+    }
+    assert.deepStrictEqual(firstPass, ['ok']);
+
+    await assert.rejects(
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedSingleUse) {
+          // iterate
+        }
+      },
+      (err: Error) => err.message === 'Stream already consumed'
+    );
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.UNSET);
+  });
+
+  it('should not execute onEnd or onError hooks if invocation was already ended in onChunk or externally', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    // 1. Invocation ended inside onChunk before generator completes cleanly
+    const inv1 = handler.startLocalAgent({ agentName: 'ResultEndingAgent' });
+    let onEndCalled = false;
+    const wrappedSuccess = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['step', 'result_error']),
+      {
+        invocation: inv1,
+        onChunk: chunk => {
+          if (chunk === 'result_error') {
+            inv1.fail({ errorType: 'error_max_turns' });
+          }
+        },
+        onEnd: () => {
+          onEndCalled = true;
+        },
+      }
+    );
+
+    const chunks1: string[] = [];
+    for await (const chunk of wrappedSuccess) {
+      chunks1.push(chunk);
+    }
+    assert.deepStrictEqual(chunks1, ['step', 'result_error']);
+    assert.strictEqual(onEndCalled, false);
+    assert.strictEqual(inv1.isEnded(), true);
+
+    // 2. Invocation ended externally before stream throws
+    const inv2 = handler.startLocalAgent({ agentName: 'ClosedBeforeError' });
+    let onErrorCalled = false;
+    async function* errorAfterStopGen() {
+      yield 'first';
+      inv2.stop();
+      throw new Error('Abort after external close');
+    }
+    const wrappedFail = handler.wrapAsyncStream(errorAfterStopGen(), {
+      invocation: inv2,
+      onError: () => {
+        onErrorCalled = true;
+      },
+    });
+
+    await assert.rejects(
+      async () => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for await (const _chunk of wrappedFail) {
+          // iterate
+        }
+      },
+      (err: Error) => err.message === 'Abort after external close'
+    );
+    assert.strictEqual(onErrorCalled, false);
+    assert.strictEqual(inv2.isEnded(), true);
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 2);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[0].attributes[ATTR_ERROR_TYPE], 'error_max_turns');
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.UNSET);
   });
 });
