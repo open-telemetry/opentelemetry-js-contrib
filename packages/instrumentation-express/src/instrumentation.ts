@@ -174,7 +174,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
       // TODO: instrument error handlers
       if (original.length === 4) return original;
 
-      const patched = function _otelPatchLayerHandle(
+      const patched = function (
         this: ExpressLayer,
         req: PatchedRequest,
         res: express.Response
