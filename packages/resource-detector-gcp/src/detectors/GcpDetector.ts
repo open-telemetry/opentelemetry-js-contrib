@@ -18,9 +18,12 @@ import {
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_CLOUD_REGION,
+  ATTR_CLOUD_RESOURCE_ID,
   ATTR_FAAS_INSTANCE,
   ATTR_FAAS_NAME,
   ATTR_FAAS_VERSION,
+  ATTR_GCP_CLOUD_RUN_JOB_EXECUTION,
+  ATTR_GCP_CLOUD_RUN_JOB_TASK_INDEX,
   ATTR_HOST_ID,
   ATTR_HOST_NAME,
   ATTR_HOST_TYPE,
@@ -46,6 +49,7 @@ const ATTRIBUTE_NAMES = [
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_AVAILABILITY_ZONE,
   ATTR_CLOUD_REGION,
+  ATTR_CLOUD_RESOURCE_ID,
   ATTR_K8S_CLUSTER_NAME,
   ATTR_HOST_TYPE,
   ATTR_HOST_ID,
@@ -55,6 +59,8 @@ const ATTRIBUTE_NAMES = [
   ATTR_FAAS_NAME,
   ATTR_FAAS_VERSION,
   ATTR_FAAS_INSTANCE,
+  ATTR_GCP_CLOUD_RUN_JOB_EXECUTION,
+  ATTR_GCP_CLOUD_RUN_JOB_TASK_INDEX,
 ] as const;
 
 // Ensure that all resource keys are accounted for in ATTRIBUTE_NAMES
@@ -76,6 +82,8 @@ async function detect(): Promise<Resource> {
     return await cloudFunctionsResource();
   } else if (await faas.onCloudRun()) {
     return await cloudRunResource();
+  } else if (await faas.onCloudRunJob()) {
+    return await cloudRunJobResource();
   } else if (await gae.onAppEngine()) {
     return await gaeResource();
   } else if (await gce.onGce()) {
@@ -103,39 +111,86 @@ async function gkeResource(): Promise<Resource> {
 }
 
 async function cloudRunResource(): Promise<Resource> {
-  const [faasName, faasVersion, faasInstance, faasCloudRegion] =
-    await Promise.all([
-      faas.faasName(),
-      faas.faasVersion(),
-      faas.faasInstance(),
-      faas.faasCloudRegion(),
-    ]);
+  const [faasName, faasVersion] = await Promise.all([
+    faas.faasName(),
+    faas.faasVersion(),
+  ]);
 
-  return await makeResource({
-    [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_GCP_CLOUD_RUN,
-    [ATTR_FAAS_NAME]: faasName,
-    [ATTR_FAAS_VERSION]: faasVersion,
-    [ATTR_FAAS_INSTANCE]: faasInstance,
-    [ATTR_CLOUD_REGION]: faasCloudRegion,
-  });
+  return await faasResource(
+    CLOUD_PLATFORM_VALUE_GCP_CLOUD_RUN,
+    faasName,
+    'run.googleapis.com',
+    'services',
+    { [ATTR_FAAS_VERSION]: faasVersion }
+  );
+}
+
+async function cloudRunJobResource(): Promise<Resource> {
+  const [faasName, jobExecution, jobTaskIndex] = await Promise.all([
+    faas.cloudRunJobName(),
+    faas.cloudRunJobExecution(),
+    faas.cloudRunJobTaskIndex(),
+  ]);
+
+  const extraAttrs: GcpResourceAttributes = {};
+  if (jobExecution !== undefined) {
+    extraAttrs[ATTR_GCP_CLOUD_RUN_JOB_EXECUTION] = jobExecution;
+  }
+  if (jobTaskIndex !== undefined) {
+    extraAttrs[ATTR_GCP_CLOUD_RUN_JOB_TASK_INDEX] = jobTaskIndex;
+  }
+
+  return await faasResource(
+    CLOUD_PLATFORM_VALUE_GCP_CLOUD_RUN,
+    faasName,
+    'run.googleapis.com',
+    'jobs',
+    extraAttrs
+  );
 }
 
 async function cloudFunctionsResource(): Promise<Resource> {
-  const [faasName, faasVersion, faasInstance, faasCloudRegion] =
-    await Promise.all([
-      faas.faasName(),
-      faas.faasVersion(),
-      faas.faasInstance(),
-      faas.faasCloudRegion(),
-    ]);
+  const [faasName, faasVersion] = await Promise.all([
+    faas.faasName(),
+    faas.faasVersion(),
+  ]);
 
-  return await makeResource({
-    [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_GCP_CLOUD_FUNCTIONS,
+  return await faasResource(
+    CLOUD_PLATFORM_VALUE_GCP_CLOUD_FUNCTIONS,
+    faasName,
+    'cloudfunctions.googleapis.com',
+    'functions',
+    { [ATTR_FAAS_VERSION]: faasVersion }
+  );
+}
+
+async function faasResource(
+  cloudPlatform: string,
+  faasName: string,
+  serviceHost: string,
+  resourceCollection: string,
+  extraAttrs: GcpResourceAttributes
+): Promise<Resource> {
+  const [faasInstance, faasCloudRegion, projectId] = await Promise.all([
+    faas.faasInstance(),
+    faas.faasCloudRegion(),
+    metadata.project<string>('project-id'),
+  ]);
+
+  const attrs: GcpResourceAttributes = {
+    [ATTR_CLOUD_PLATFORM]: cloudPlatform,
     [ATTR_FAAS_NAME]: faasName,
-    [ATTR_FAAS_VERSION]: faasVersion,
     [ATTR_FAAS_INSTANCE]: faasInstance,
     [ATTR_CLOUD_REGION]: faasCloudRegion,
-  });
+    ...extraAttrs,
+  };
+
+  if (projectId && faasCloudRegion && faasName) {
+    attrs[ATTR_CLOUD_RESOURCE_ID] =
+      `//${serviceHost}/projects/${projectId}/locations/${faasCloudRegion}/${resourceCollection}/${faasName}`;
+  }
+
+  return await makeResource(attrs, projectId);
 }
 
 async function gaeResource(): Promise<Resource> {
@@ -182,8 +237,11 @@ async function gceResource(): Promise<Resource> {
   });
 }
 
-async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
-  const project = await metadata.project<string>('project-id');
+async function makeResource(
+  attrs: GcpResourceAttributes,
+  projectId?: string
+): Promise<Resource> {
+  const project = projectId ?? (await metadata.project<string>('project-id'));
 
   return resourceFromAttributes({
     [ATTR_CLOUD_PROVIDER]: CLOUD_PROVIDER_VALUE_GCP,

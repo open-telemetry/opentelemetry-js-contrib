@@ -38,10 +38,13 @@ This package implements Semantic Convention [Version 1.39.0](https://github.com/
 | cloud.availability_zone | Value of `zone` from GCP Metadata instance (parsed from full path).   |
 | cloud.platform          | The GCP platform where the application is running.                    |
 | cloud.provider          | The cloud provider. In this context, it's always `gcp`                |
-| cloud.region            | Value of `region` from GCP Metadata instance (parsed from full path). |
-| faas.instance           | Value of `id` from GCP Metadata instance.                             |
-| faas.name               | Value of Environment Variable `K_SERVICE`.                            |
-| faas.version            | Value of Environment Variable `K_REVISION`.                           |
+| cloud.region                  | Value of `region` from GCP Metadata instance (parsed from full path).                       |
+| cloud.resource_id             | Full resource name URI on Cloud Run (services and jobs) and Cloud Functions.                |
+| faas.instance                 | Value of `id` from GCP Metadata instance.                                                   |
+| faas.name                     | Value of Environment Variable `K_SERVICE` (or `CLOUD_RUN_JOB` for Cloud Run jobs).          |
+| faas.version                  | Value of Environment Variable `K_REVISION` (Cloud Run services and Cloud Functions).        |
+| gcp.cloud_run.job.execution   | Value of Environment Variable `CLOUD_RUN_EXECUTION` (Cloud Run jobs).                       |
+| gcp.cloud_run.job.task_index  | Value of Environment Variable `CLOUD_RUN_TASK_INDEX` as an integer (Cloud Run jobs).        |
 | host.id                 | Value of `id` from GCP Metadata instance.                             |
 | host.name               | Value of `name` from GCP Metadata instance.                           |
 | host.type               | Value of `machine-type` from GCP Metadata instance.                   |
