@@ -104,6 +104,14 @@ describe('UserInteractionInstrumentation', () => {
       userInteractionInstrumentation.disable();
     });
 
+    it('should report isEnabled() following enable() and disable()', () => {
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
+      userInteractionInstrumentation.disable();
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), false);
+      userInteractionInstrumentation.enable();
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
+    });
+
     it('should not break removeEventListener', () => {
       let called = false;
       const listener = function () {

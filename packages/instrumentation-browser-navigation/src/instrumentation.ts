@@ -37,10 +37,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   private _lastUrl: string = location.href;
   private _hasProcessedInitialLoad: boolean = false;
 
-  // Note: Intentionally *not* using `_enabled` as the field name to avoid
-  // any possible confusion with the `_enabled` field used on the *Node.js*
-  // InstrumentationBase class.
-  declare private _isEnabled: boolean;
   declare private _isHistoryPatched: boolean;
 
   /**
@@ -155,10 +151,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements enable function
    */
   override enable() {
-    if (this._isEnabled) {
+    if (this._enabled) {
       return;
     }
-    this._isEnabled = true;
+    this._enabled = true;
 
     const cfg = this.getConfig() as BrowserNavigationInstrumentationConfig;
     const useNavigationApiIfAvailable = !!cfg.useNavigationApiIfAvailable;
@@ -206,10 +202,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    * implements disable function
    */
   override disable() {
-    if (!this._isEnabled) {
+    if (!this._enabled) {
       return;
     }
-    this._isEnabled = false;
+    this._enabled = false;
 
     if (this._onLoadHandler) {
       document.removeEventListener('DOMContentLoaded', this._onLoadHandler);
@@ -242,7 +238,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     const plugin = this;
     return (original: any) => {
       return function patchHistoryMethod(this: History, ...args: unknown[]) {
-        if (!plugin._isEnabled) {
+        if (!plugin._enabled) {
           return original.apply(this, args);
         }
         const result = original.apply(this, args);
