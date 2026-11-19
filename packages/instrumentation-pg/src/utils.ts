@@ -339,6 +339,14 @@ export function patchCallback(
   };
 }
 
+/**
+ * Builds the pool name used for instrumentation attributes.
+ *
+ * Precedence matches pg-pool (`Object.assign(parsed, options)`): discrete
+ * options win over connectionString components. Fallback is per-field, so a
+ * mix is possible (e.g. host from pool.host + port from the URL when the URL
+ * supplies a port but pool.port is unset). Missing fields become unknown_*.
+ */
 export function getPoolName(pool: PgPoolOptionsParams): string {
   let url: URL | undefined;
   try {
