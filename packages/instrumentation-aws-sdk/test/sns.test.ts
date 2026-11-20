@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
+import { instrumentation } from './load-instrumentation';
 import { SNS as SNSv3 } from '@aws-sdk/client-sns';
 import * as fs from 'fs';
 import * as nock from 'nock';
@@ -90,6 +91,122 @@ describe('SNS - v3', () => {
       expect(publishSpan.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBeUndefined();
     });
   });
+
+  for (const command of ['publish', 'publishBatch'] as const) {
+    describe(`${command} propagation`, () => {
+      const topicName = 'batch-propagation-topic';
+      const topicArn = `arn:aws:sns:us-east-1:123456789012:${topicName}`;
+
+      afterEach(() => {
+        nock.cleanAll();
+        sns.destroy();
+      });
+
+      for (const attributeCount of [0, 1, 10]) {
+        it(`preserves ${attributeCount} attributes and propagates when there is room`, async () => {
+          let transformedInput: Record<string, any> = {};
+          instrumentation.disable();
+          instrumentation.setConfig({
+            preRequestHook: (_span, requestInfo) => {
+              transformedInput = requestInfo.request.commandInput;
+            },
+          });
+          instrumentation.enable();
+
+          sns = new SNSv3({
+            region: 'us-east-1',
+            credentials: {
+              accessKeyId: 'abcde',
+              secretAccessKey: 'abcde',
+            },
+          });
+          const attributes = Object.fromEntries(
+            Array.from({ length: attributeCount }, (_, i) => [
+              `custom${i}`,
+              { DataType: 'String', StringValue: `value${i}` },
+            ])
+          );
+          const scope = nock('https://sns.us-east-1.amazonaws.com/')
+            .post('/')
+            .reply(
+              200,
+              fs.readFileSync(
+                command === 'publish'
+                  ? './test/mock-responses/sns-publish.xml'
+                  : './test/mock-responses/sns-publish-batch.xml',
+                'utf8'
+              )
+            );
+          const message = {
+            Message: 'first message',
+            ...(attributeCount ? { MessageAttributes: attributes } : {}),
+          };
+          if (command === 'publish') {
+            await sns.publish({ TopicArn: topicArn, ...message });
+          } else {
+            await sns.publishBatch({
+              TopicArn: topicArn,
+              PublishBatchRequestEntries: [
+                { Id: 'first', ...message },
+                { Id: 'second', Message: 'second message' },
+              ],
+            });
+          }
+          expect(scope.isDone()).toBe(true);
+          const spans = getTestSpans();
+          expect(spans.length).toBe(1);
+          const [span] = spans;
+          const { traceId, spanId } = span.spanContext();
+          const traceparent = `00-${traceId}-${spanId}-01`;
+          const propagatedContext =
+            attributeCount === 10
+              ? {}
+              : {
+                  traceparent: {
+                    DataType: 'String',
+                    StringValue: traceparent,
+                  },
+                };
+          if (command === 'publish') {
+            expect(transformedInput).toEqual({
+              TopicArn: topicArn,
+              ...message,
+              MessageAttributes: { ...attributes, ...propagatedContext },
+            });
+          } else {
+            expect(transformedInput).toEqual({
+              TopicArn: topicArn,
+              PublishBatchRequestEntries: [
+                {
+                  Id: 'first',
+                  ...message,
+                  MessageAttributes: { ...attributes, ...propagatedContext },
+                },
+                {
+                  Id: 'second',
+                  Message: 'second message',
+                  MessageAttributes: {
+                    traceparent: {
+                      DataType: 'String',
+                      StringValue: traceparent,
+                    },
+                  },
+                },
+              ],
+            });
+          }
+          expect(span.kind).toBe(SpanKind.PRODUCER);
+          expect(span.name).toBe(`${topicName} send`);
+          expect(span.attributes[ATTR_RPC_METHOD]).toBe(
+            command === 'publish' ? 'Publish' : 'PublishBatch'
+          );
+          expect(span.attributes[ATTR_MESSAGING_SYSTEM]).toBe('aws.sns');
+          expect(span.attributes[ATTR_MESSAGING_DESTINATION]).toBe(topicName);
+          expect(span.attributes[ATTR_AWS_SNS_TOPIC_ARN]).toBe(topicArn);
+        });
+      }
+    });
+  }
 
   describe('Create Topic', () => {
     beforeEach(() => {
