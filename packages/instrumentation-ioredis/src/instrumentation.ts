@@ -156,6 +156,12 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         kind: SpanKind.CLIENT,
         attributes,
       });
+      let spanCompletionStarted = false;
+      const startSpanCompletion = (): boolean => {
+        if (spanCompletionStarted) return false;
+        spanCompletionStarted = true;
+        return true;
+      };
 
       const { requestHook } = config;
       if (requestHook) {
@@ -181,29 +187,38 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         const origResolve = cmd.resolve;
         /* eslint-disable @typescript-eslint/no-explicit-any */
         cmd.resolve = function (result: any) {
-          safeExecuteInTheMiddle(
-            () => config.responseHook?.(span, cmd.name, cmd.args, result),
-            e => {
-              if (e) {
-                diag.error('ioredis instrumentation: response hook failed', e);
-              }
-            },
-            true
-          );
+          if (startSpanCompletion()) {
+            safeExecuteInTheMiddle(
+              () => config.responseHook?.(span, cmd.name, cmd.args, result),
+              e => {
+                if (e) {
+                  diag.error(
+                    'ioredis instrumentation: response hook failed',
+                    e
+                  );
+                }
+              },
+              true
+            );
 
-          endSpan(span, null);
+            endSpan(span, null);
+          }
           origResolve(result);
         };
 
         const origReject = cmd.reject;
         cmd.reject = function (err: Error) {
-          endSpan(span, err);
+          if (startSpanCompletion()) {
+            endSpan(span, err);
+          }
           origReject(err);
         };
 
         return result;
       } catch (error: any) {
-        endSpan(span, error);
+        if (startSpanCompletion()) {
+          endSpan(span, error);
+        }
         throw error;
       }
     };
