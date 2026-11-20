@@ -30,12 +30,22 @@ instead; see its `openTelemetry` client option.
 - `anthropic.messages.create({ stream: true })`
 - `anthropic.messages.stream()`
 
-The current scaffold creates a client span for each call, records the GenAI
-provider, operation, and requested model, and marks failed calls as errors. The
+Telemetry is produced through the `TelemetryHandler` of
+[`@opentelemetry/genai-util`](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/genai-util), which owns each call's span and
+metrics. Each call creates a client span that records the GenAI provider,
+operation, requested model and request parameters (`max_tokens`,
+`temperature`, `top_p`, `top_k`, `stop_sequences`, `stream`), the response id,
+model, finish reason and token usage, and marks failed calls as errors. The
 provider is derived from the client's base URL, so `AnthropicBedrock` and
 `AnthropicVertex` calls are reported as `aws.bedrock` and `gcp.vertex_ai`.
-Response attributes, tools, metrics, logs, and content capture are intentionally
-out of scope.
+
+The GenAI client metrics are recorded for each call: operation duration, input
+and output token usage (including prompt cache reads and writes), and, for
+streams, time to first chunk and time per output chunk. As with
+`gen_ai.usage.input_tokens`, input token counts include prompt cache reads and
+writes, which Anthropic reports separately from `input_tokens`.
+
+Tools, logs, and message content capture are out of scope.
 
 The patch is registered on the shared `Messages` resource module rather than on
 the package root, in both its CommonJS and ESM builds, so it applies however the
