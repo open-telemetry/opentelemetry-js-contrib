@@ -65,7 +65,7 @@ services:
       MYSQL_DATABASE: "otel_mysql_database"
       MYSQL_ROOT_PASSWORD: "rootpw"
     ports:
-      - "33306:3306"
+      - "13306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin" ,"ping"]
       interval: 1s
@@ -90,7 +90,7 @@ services:
     # https://github.com/docker-library/docs/blob/master/postgres/README.md#how-to-extend-this-image
     image: postgres:16-alpine
     ports:
-      - "54320:5432"
+      - "15432:5432"
     environment:
       POSTGRES_HOST_AUTH_METHOD: "trust"
       POSTGRES_USER: "postgres"

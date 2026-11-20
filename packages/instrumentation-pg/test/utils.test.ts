@@ -27,7 +27,7 @@ const CONFIG = {
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT
     ? parseInt(process.env.POSTGRES_PORT, 10)
-    : 54320,
+    : 15432,
 };
 
 const getLatestSpan = () => {
