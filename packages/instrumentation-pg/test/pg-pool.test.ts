@@ -762,6 +762,76 @@ describe('pg-pool', () => {
     });
   });
 
+  describe('with ignoreConnectSpans=true and a full pool', () => {
+    let newPool: pgPool<pg.Client>;
+    let spanA: Span;
+    let spanB: Span;
+
+    beforeEach(() => {
+      create({ ignoreConnectSpans: true });
+      newPool = new pgPool({ ...CONFIG, max: 1 });
+      const tracer = provider.getTracer('test-pg-pool');
+      spanA = tracer.startSpan('request A');
+      spanB = tracer.startSpan('request B');
+    });
+
+    afterEach(async () => {
+      spanA.end();
+      spanB.end();
+      await newPool.end();
+      create({});
+    });
+
+    it('should run a queued pool.connect() callback in its caller context', async () => {
+      const clientA = await context.with(
+        trace.setSpan(context.active(), spanA),
+        () => newPool.connect()
+      );
+
+      const activeInCallback = new Promise<Span | undefined>(
+        (resolve, reject) => {
+          context.with(trace.setSpan(context.active(), spanB), () => {
+            newPool.connect((err, _client, release) => {
+              if (err) return reject(err);
+              release();
+              resolve(trace.getSpan(context.active()));
+            });
+          });
+        }
+      );
+
+      context.with(trace.setSpan(context.active(), spanA), () =>
+        clientA.release()
+      );
+
+      assert.strictEqual(await activeInCallback, spanB);
+    });
+
+    it('should parent a queued pool.query() span to its caller', async () => {
+      const clientA = await context.with(
+        trace.setSpan(context.active(), spanA),
+        () => newPool.connect()
+      );
+
+      const queryB = new Promise<void>((resolve, reject) => {
+        context.with(trace.setSpan(context.active(), spanB), () => {
+          newPool.query('SELECT NOW()', err => (err ? reject(err) : resolve()));
+        });
+      });
+
+      context.with(trace.setSpan(context.active(), spanA), () =>
+        clientA.release()
+      );
+      await queryB;
+
+      const querySpans = memoryExporter
+        .getFinishedSpans()
+        .filter(s => s.name.startsWith('pg.query'));
+      assert.strictEqual(querySpans.length, 1);
+      testUtils.assertPropagation(querySpans[0], spanB);
+    });
+  });
+
   describe('exception event recording', () => {
     const queryText = 'SELECT foo FROM nonexistent_table';
 
