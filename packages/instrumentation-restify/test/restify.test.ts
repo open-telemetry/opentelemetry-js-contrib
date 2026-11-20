@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace, Span } from '@opentelemetry/api';
+import { context, diag, trace, DiagLogLevel, Span } from '@opentelemetry/api';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
@@ -470,6 +470,66 @@ describe('Restify Instrumentation', () => {
           assertIsVersion(span.attributes['restify.version']);
         }
       } finally {
+        testLocalServer.close();
+      }
+    });
+
+    it('should not emit diag errors about ended spans', async () => {
+      const diagMessages: any[][] = [];
+      diag.setLogger(
+        {
+          verbose() {},
+          debug() {},
+          info() {},
+          warn(...args: any[]) {
+            diagMessages.push(args);
+          },
+          error(...args: any[]) {
+            diagMessages.push(args);
+          },
+        },
+        DiagLogLevel.WARN
+      );
+
+      const supportsAsyncHandlers = semver.satisfies(LIB_VERSION, '>=9');
+      const asyncHandler: restify.RequestHandler = async (req, res) => {
+        res.send({ route: req?.params?.param });
+      };
+      const asyncThrower: restify.RequestHandler = async () => {
+        throw new AppError('NOK');
+      };
+      const testLocalServer = await createServer((server: restify.Server) => {
+        server.use(useHandler);
+        server.get('/route/:param', getHandler);
+        server.get('/erroring', returnError);
+        server.get('/async', asyncHandler);
+        if (supportsAsyncHandlers) {
+          server.get('/async-error', asyncThrower);
+        }
+      });
+      const testLocalPort = testLocalServer.address().port;
+
+      try {
+        await httpRequest.get(`http://localhost:${testLocalPort}/route/foo`);
+        await httpRequest.get(`http://localhost:${testLocalPort}/erroring`);
+        await httpRequest.get(`http://localhost:${testLocalPort}/async`);
+        if (supportsAsyncHandlers) {
+          await httpRequest.get(
+            `http://localhost:${testLocalPort}/async-error`
+          );
+        }
+        assert.strictEqual(
+          diagMessages.length,
+          0,
+          `unexpected diag messages: ${JSON.stringify(diagMessages)}`
+        );
+        // 2 spans per request: middleware 'use' + request handler
+        assert.strictEqual(
+          memoryExporter.getFinishedSpans().length,
+          supportsAsyncHandlers ? 8 : 6
+        );
+      } finally {
+        diag.disable();
         testLocalServer.close();
       }
     });
