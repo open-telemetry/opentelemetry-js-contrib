@@ -13,6 +13,16 @@ import { Attributes } from '@opentelemetry/api';
 export const kLayerPatched: unique symbol = Symbol('express-layer-patched');
 
 /**
+ * Set on the wrapped `layer.handle` to the name of this package, so other
+ * instrumentations (e.g. instrumentation-router) can tell the layer is
+ * already instrumented and skip it. `Symbol.for` lets them read it without
+ * depending on this package.
+ */
+export const kWrappedBy: unique symbol = Symbol.for(
+  'opentelemetry.instrumentation.wrapped-by'
+);
+
+/**
  * This const define where on the `request` object the Instrumentation will mount the
  * current stack of express layer.
  *
