@@ -7,6 +7,7 @@
 import * as sinon from 'sinon';
 import * as metadata from 'gcp-metadata';
 
+import { diag } from '@opentelemetry/api';
 import { gcpDetector } from '../../src/';
 import { detectResources, Resource } from '@opentelemetry/resources';
 import * as assert from 'assert';
@@ -124,9 +125,85 @@ describe('gcpDetector', () => {
       'cloud.platform': 'gcp_cloud_run',
       'cloud.provider': 'gcp',
       'cloud.region': 'us-east4',
+      'cloud.resource_id':
+        '//run.googleapis.com/projects/fake-project-id/locations/us-east4/services/fake-service',
       'faas.instance': '12345',
       'faas.name': 'fake-service',
       'faas.version': 'fake-revision',
+    });
+  });
+
+  it('detects a Cloud Run Job resource', async () => {
+    envStub.CLOUD_RUN_JOB = 'fake-job';
+    envStub.CLOUD_RUN_EXECUTION = 'fake-execution';
+    envStub.CLOUD_RUN_TASK_INDEX = '0';
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.platform': 'gcp_cloud_run',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'cloud.resource_id':
+        '//run.googleapis.com/projects/fake-project-id/locations/us-east4/jobs/fake-job',
+      'faas.instance': '12345',
+      'faas.name': 'fake-job',
+      'gcp.cloud_run.job.execution': 'fake-execution',
+      'gcp.cloud_run.job.task_index': 0,
+    });
+  });
+
+  it('detects a Cloud Run Job resource with missing optional attributes without detector warnings', async () => {
+    const warnSpy = sinon.spy(diag, 'warn');
+    envStub.CLOUD_RUN_JOB = 'fake-job';
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = detectResources({ detectors: [gcpDetector] });
+    await resource.waitForAsyncAttributes?.();
+    assert.strictEqual(warnSpy.callCount, 0);
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.platform': 'gcp_cloud_run',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'cloud.resource_id':
+        '//run.googleapis.com/projects/fake-project-id/locations/us-east4/jobs/fake-job',
+      'faas.instance': '12345',
+      'faas.name': 'fake-job',
+    });
+  });
+
+  it('detects a Cloud Run Job resource and omits invalid task index', async () => {
+    envStub.CLOUD_RUN_JOB = 'fake-job';
+    envStub.CLOUD_RUN_TASK_INDEX = 'invalid';
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    const resource = await detectAndWait();
+    assert.deepStrictEqual(resource.attributes, {
+      'cloud.account.id': 'fake-project-id',
+      'cloud.platform': 'gcp_cloud_run',
+      'cloud.provider': 'gcp',
+      'cloud.region': 'us-east4',
+      'cloud.resource_id':
+        '//run.googleapis.com/projects/fake-project-id/locations/us-east4/jobs/fake-job',
+      'faas.instance': '12345',
+      'faas.name': 'fake-job',
     });
   });
 
@@ -147,10 +224,47 @@ describe('gcpDetector', () => {
       'cloud.platform': 'gcp_cloud_functions',
       'cloud.provider': 'gcp',
       'cloud.region': 'us-east4',
+      'cloud.resource_id':
+        '//cloudfunctions.googleapis.com/projects/fake-project-id/locations/us-east4/functions/fake-service',
       'faas.instance': '12345',
       'faas.name': 'fake-service',
       'faas.version': 'fake-revision',
     });
+  });
+
+  it('omits cloud.resource_id when project ID, region, or name is empty', async () => {
+    envStub.K_CONFIGURATION = 'fake-configuration';
+    envStub.K_SERVICE = 'fake-service';
+    envStub.K_REVISION = 'fake-revision';
+    metadataStub.project.withArgs('project-id').resolves('');
+    metadataStub.instance
+      .withArgs('id')
+      .resolves(12345)
+
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    let resource = await detectAndWait();
+    assert.strictEqual(resource.attributes['cloud.resource_id'], undefined);
+
+    metadataStub.project.withArgs('project-id').resolves('fake-project-id');
+    metadataStub.instance
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/');
+
+    resource = await detectAndWait();
+    assert.strictEqual(resource.attributes['cloud.resource_id'], undefined);
+
+    delete envStub.K_CONFIGURATION;
+    delete envStub.K_SERVICE;
+    delete envStub.K_REVISION;
+    envStub.CLOUD_RUN_JOB = '';
+    metadataStub.instance
+      .withArgs('region')
+      .resolves('projects/233510669999/regions/us-east4');
+
+    resource = await detectAndWait();
+    assert.strictEqual(resource.attributes['cloud.resource_id'], undefined);
   });
 
   it('detects a App Engine Standard resource', async () => {
