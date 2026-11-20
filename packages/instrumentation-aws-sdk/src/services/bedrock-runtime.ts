@@ -698,6 +698,12 @@ export class BedrockRuntimeServiceExtension implements ServiceExtension {
         parsedChunk.message.usage.output_tokens
       );
     }
+    if (parsedChunk.usage?.output_tokens !== undefined) {
+      span.setAttribute(
+        ATTR_GEN_AI_USAGE_OUTPUT_TOKENS,
+        parsedChunk.usage.output_tokens
+      );
+    }
     if (parsedChunk.delta?.stop_reason !== undefined) {
       span.setAttribute(ATTR_GEN_AI_RESPONSE_FINISH_REASONS, [
         parsedChunk.delta.stop_reason,
