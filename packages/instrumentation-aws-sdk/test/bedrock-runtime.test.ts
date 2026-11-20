@@ -48,6 +48,7 @@ import {
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
 } from '../src/semconv';
 import { expect } from 'expect';
+import { BedrockRuntimeServiceExtension } from '../src/services/bedrock-runtime';
 
 const region = 'us-east-1';
 
@@ -846,7 +847,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 8,
-        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 20,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['length'],
       });
     });
@@ -893,7 +894,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_TOP_P]: 0.99,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 3,
-        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['MAX_TOKENS'],
       });
     });
@@ -942,10 +943,46 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 3,
-        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 9,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 10,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['MAX_TOKENS'],
       });
     });
+  });
+
+  describe('streamed output token estimate', () => {
+    // Without invocation metrics the count is estimated as chars / 6, over the
+    // text of the whole stream and not only the last chunk.
+    const recorders = [
+      ['recordMistralAttributes', (text: string) => ({ outputs: [{ text }] })],
+      ['recordCohereRAttributes', (text: string) => ({ text })],
+      [
+        'recordCohereAttributes',
+        (text: string) => ({ generations: [{ text }] }),
+      ],
+    ] as const;
+
+    for (const [recorder, makeChunk] of recorders) {
+      it(`${recorder} accumulates the text of every chunk`, () => {
+        const attributes: Record<string, unknown> = {};
+        const span: any = {
+          setAttribute: (key: string, value: unknown) => {
+            attributes[key] = value;
+          },
+        };
+        const streamedText = { length: 0 };
+
+        for (const text of ['Hello, ', 'how are ', 'you today?', '']) {
+          (BedrockRuntimeServiceExtension as any)[recorder](
+            makeChunk(text),
+            span,
+            streamedText
+          );
+        }
+
+        // 'Hello, how are you today?' is 25 characters
+        expect(attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]).toBe(5);
+      });
+    }
   });
 
   function getInvokeModelWithResponseStreamSpans(): ReadableSpan[] {
