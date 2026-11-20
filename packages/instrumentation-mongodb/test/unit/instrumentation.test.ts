@@ -426,3 +426,133 @@ describe('_patchEnd', () => {
     });
   });
 });
+
+describe('Collection name resolution for $cmd operations (#3825)', () => {
+  let instrumentation: MongoDBInstrumentation;
+
+  beforeEach(() => {
+    instrumentation = new MongoDBInstrumentation();
+  });
+
+  afterEach(() => {
+    instrumentation.disable();
+  });
+
+  it('should extract actual collection name for findAndModify on $cmd namespace in v4', () => {
+    const connectionCtx = { address: '127.0.0.1:27017' };
+    const ns = { db: 'app', collection: '$cmd' };
+    const cmd = {
+      findAndModify: 'users',
+      query: { userId: '123' },
+      update: { $set: { name: 'Alice' } },
+    };
+    const attrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      cmd,
+      'findAndModify'
+    );
+    const spanName = (instrumentation as any)._spanNameFromAttrs(attrs);
+
+    assert.strictEqual(attrs['db.collection.name'], 'users');
+    assert.strictEqual(attrs['db.operation.name'], 'findAndModify');
+    assert.strictEqual(attrs['db.namespace'], 'app');
+    assert.strictEqual(spanName, 'findAndModify users');
+  });
+
+  it('should extract actual collection name for aggregate on $cmd namespace in v4', () => {
+    const connectionCtx = { address: '127.0.0.1:27017' };
+    const ns = { db: 'app', collection: '$cmd' };
+    const cmd = { aggregate: 'orders', pipeline: [] };
+    const attrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      cmd,
+      'aggregate'
+    );
+    const spanName = (instrumentation as any)._spanNameFromAttrs(attrs);
+
+    assert.strictEqual(attrs['db.collection.name'], 'orders');
+    assert.strictEqual(spanName, 'aggregate orders');
+  });
+
+  it('should extract actual collection name for distinct, count, and collection fallback in v4', () => {
+    const connectionCtx = { address: '127.0.0.1:27017' };
+    const ns = { db: 'app', collection: '$cmd' };
+
+    const distinctCmd = { distinct: 'products', key: 'sku' };
+    const distinctAttrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      distinctCmd,
+      'distinct'
+    );
+    assert.strictEqual(distinctAttrs['db.collection.name'], 'products');
+
+    const countCmd = { count: 'logs', query: {} };
+    const countAttrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      countCmd,
+      'count'
+    );
+    assert.strictEqual(countAttrs['db.collection.name'], 'logs');
+
+    const fallbackCmd = { customCommand: 1, collection: 'items' };
+    const fallbackAttrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      fallbackCmd,
+      'customCommand'
+    );
+    assert.strictEqual(fallbackAttrs['db.collection.name'], 'items');
+  });
+
+  it('should omit db.collection.name for database-level operations on $cmd in v4', () => {
+    const connectionCtx = { address: '127.0.0.1:27017' };
+    const ns = { db: 'app', collection: '$cmd' };
+    const cmd = { dropDatabase: 1 };
+    const attrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      cmd,
+      'dropDatabase'
+    );
+    const spanName = (instrumentation as any)._spanNameFromAttrs(attrs);
+
+    assert.strictEqual(attrs['db.collection.name'], undefined);
+    assert.strictEqual(spanName, 'dropDatabase');
+  });
+
+  it('should resolve collection name for findAndModify in v3 attributes', () => {
+    const topology = { s: { host: 'localhost', port: 27017 } };
+    const cmd = { findAndModify: 'users', query: {} };
+    const attrs = (instrumentation as any)._getV3SpanAttributes(
+      'app.$cmd',
+      topology,
+      cmd,
+      'findAndModify'
+    );
+    const spanName = (instrumentation as any)._spanNameFromAttrs(attrs);
+
+    assert.strictEqual(attrs['db.collection.name'], 'users');
+    assert.strictEqual(spanName, 'findAndModify users');
+  });
+
+  it('should preserve regular collection names when not $cmd', () => {
+    const connectionCtx = { address: '127.0.0.1:27017' };
+    const ns = { db: 'app', collection: 'users' };
+    const cmd = { insert: 'users', documents: [{ a: 1 }] };
+    const attrs = (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      cmd,
+      'insert'
+    );
+    assert.strictEqual(attrs['db.collection.name'], 'users');
+    assert.strictEqual(
+      (instrumentation as any)._spanNameFromAttrs(attrs),
+      'insert users'
+    );
+  });
+});
