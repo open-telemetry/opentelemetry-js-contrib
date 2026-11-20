@@ -124,6 +124,20 @@ Notes:
 - Logs are always sent to console, no matter the environment, or debug level.
 - Debug logs are extremely verbose. Enable debug logging only when needed. Debug logging negatively impacts the performance of your application.
 
+### Flush telemetry on crash
+
+By default, the SDK is shut down when the process receives `SIGTERM` or exits normally (`beforeExit`). An uncaught exception terminates the process without either, so telemetry still buffered in a batch processor is dropped. This includes the exception log emitted by `@opentelemetry/instrumentation-runtime-node` when `captureUncaughtException` is enabled.
+
+Set `OTEL_NODE_FLUSH_ON_CRASH=true` to shut down the SDK before the process exits on an uncaught exception. Shutdown waits at most `OTEL_NODE_FLUSH_ON_CRASH_TIMEOUT_MS` (default `5000`). The error is printed to `stderr` and the process exits with status `1`, as it would without the register script. With Node's default `--unhandled-rejections=throw` mode, unhandled promise rejections are raised as uncaught exceptions and are covered too.
+
+```shell
+export OTEL_NODE_FLUSH_ON_CRASH=true
+# Optional, defaults to 5000ms:
+export OTEL_NODE_FLUSH_ON_CRASH_TIMEOUT_MS=3000
+```
+
+If the application registers its own `uncaughtException` listener, the register script does nothing on an uncaught exception and leaves the application in control.
+
 ## Usage: Instrumentation Initialization
 
 OpenTelemetry Meta Packages for Node automatically loads instrumentations for Node builtin modules and common packages.
