@@ -107,6 +107,10 @@ Log injection can be disabled with the `disableLogCorrelation: true` option.
 | `logKeys`               | record            | A record with keys `traceId`, `spanId`, and `traceFlags` string fields giving the field names to use for log-correlation span data.                |
 | `logHook`               | `LogHookFunction` | An option hook to inject additional context to a log record after trace-context has been added. This requires `disableLogCorrelation` to be false. |
 
+## Declarative Config
+
+XXX fill this out
+
 ## Semantic Conventions
 
 This package does not currently generate any attributes from semantic conventions.

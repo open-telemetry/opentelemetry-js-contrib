@@ -10,6 +10,8 @@ import {
   isSpanContextValid,
   Span,
 } from '@opentelemetry/api';
+// XXX
+// import type { ConfigProvider } from '@opentelemetry/api-config';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -19,6 +21,7 @@ import { PinoInstrumentationConfig } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { getTimeConverter, OTelPinoStream } from './log-sending-utils';
+import { readDeclarativeConfig } from '@opentelemetry/instrumentation';
 
 const pinoVersions = ['>=5.14.0 <11'];
 
@@ -42,6 +45,7 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
 
         const patchedPino = Object.assign((...args: unknown[]) => {
           const config = instrumentation.getConfig();
+          console.log('XXX instr-pino config:', config)
           const isEnabled = instrumentation.isEnabled();
 
           const logger = moduleExports(...args);
@@ -186,5 +190,23 @@ export class PinoInstrumentation extends InstrumentationBase<PinoInstrumentation
 
       return record;
     };
+  }
+
+  setConfigProvider(configProvider: unknown): void {
+    const config = readDeclarativeConfig({
+      // XXX Hack using `unknown` for param type, because cannot use `ConfigProvider`
+      //     until have a real `api-config` release. tsdown complains.
+      configProvider,
+      instrumentationName: this.instrumentationName,
+      currentConfig: this.getConfig() as Record<string, unknown>,
+      diag: this._diag,
+      reader: (own): Partial<PinoInstrumentationConfig> => ({
+        disableLogSending: own.getBoolean('disable_log_sending'),
+        disableLogCorrelation: own.getBoolean('disable_log_correlation')
+      }),
+    });
+    if (Object.keys(config).length > 0) {
+      this.setConfig({ ...this.getConfig(), ...config });
+    }
   }
 }
