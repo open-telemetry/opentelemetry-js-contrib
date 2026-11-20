@@ -28,6 +28,7 @@ import {
   InvokeModelWithResponseStreamCommand,
 } from '@aws-sdk/client-bedrock-runtime';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
+import * as assert from 'assert';
 import * as path from 'path';
 import { Definition, back as nockBack } from 'nock';
 import { NodeHttpHandler } from '@smithy/node-http-handler';
@@ -658,7 +659,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -717,7 +718,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -770,7 +771,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -820,7 +821,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -870,7 +871,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
@@ -917,7 +918,7 @@ describe('Bedrock', () => {
       const response = await client.send(command);
 
       let collectedText = '';
-      if (!response.body) return;
+      assert.ok(response.body);
       for await (const chunk of response.body) {
         if (chunk?.chunk?.bytes instanceof Uint8Array) {
           const parsed = JSON.parse(decodeChunk(chunk));
