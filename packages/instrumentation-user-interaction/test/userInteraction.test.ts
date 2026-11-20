@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
-import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
+import { context, diag, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -27,6 +27,43 @@ const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 describe('UserInteractionInstrumentation', () => {
+  describe('deprecation', () => {
+    let warn: sinon.SinonStub;
+    let instrumentation: UserInteractionInstrumentation | undefined;
+
+    beforeEach(() => {
+      warn = sinon.stub();
+      diag.setLogger({
+        debug: () => {},
+        error: () => {},
+        info: () => {},
+        verbose: () => {},
+        warn,
+      });
+    });
+
+    afterEach(() => {
+      instrumentation?.disable();
+      diag.disable();
+    });
+
+    for (const enabled of [true, false]) {
+      it(`warns once on construction when enabled is ${enabled}`, () => {
+        instrumentation = new UserInteractionInstrumentation({ enabled });
+
+        sinon.assert.calledOnce(warn);
+        sinon.assert.calledWith(
+          warn,
+          '@opentelemetry/instrumentation-user-interaction',
+          'UserInteractionInstrumentation is deprecated. Use UserActionInstrumentation from @opentelemetry/browser-instrumentation/experimental/user-action instead.'
+        );
+        instrumentation.disable();
+        instrumentation.enable();
+        sinon.assert.calledOnce(warn);
+      });
+    }
+  });
+
   afterEach(() => {
     // clear body from elements created by some tests to make sure they are independent
     while (document.body.lastChild) {
