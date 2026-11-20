@@ -156,6 +156,31 @@ describe('ExceptionInstrumentation', () => {
     });
   });
 
+  describe('handling an event without an error', () => {
+    afterEach(() => {
+      exporter.reset();
+    });
+
+    it('should ignore an error event whose error is null', () => {
+      const instrumentation = new ExceptionInstrumentation({ enabled: false });
+      instrumentation.onError(
+        new ErrorEvent('error', { message: 'Script error.', error: null })
+      );
+      assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
+    });
+
+    it('should ignore an unhandled rejection whose reason is null', () => {
+      const instrumentation = new ExceptionInstrumentation({ enabled: false });
+      instrumentation.onError(
+        new PromiseRejectionEvent('unhandledrejection', {
+          promise: Promise.resolve(),
+          reason: null,
+        })
+      );
+      assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
+    });
+  });
+
   describe('adding custom attributes', () => {
     const applyCustomAttrs = (error: Error | string) => {
       if (typeof error === 'string') {

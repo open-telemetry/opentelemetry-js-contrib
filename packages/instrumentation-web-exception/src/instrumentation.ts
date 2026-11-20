@@ -47,10 +47,12 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
 
   onError(event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
-    const error: Error | string | undefined =
+    const error: Error | string | null | undefined =
       'reason' in event ? event.reason : event.error;
 
-    if (error === undefined) {
+    // Browsers set `error` to null for cross-origin script errors and some
+    // built-in errors such as the ResizeObserver loop error.
+    if (error === undefined || error === null) {
       return;
     }
 
