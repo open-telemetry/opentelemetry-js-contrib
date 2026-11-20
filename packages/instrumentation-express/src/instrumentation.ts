@@ -192,7 +192,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         ] as ExpressLayerType;
 
         const rpcMetadata = getRPCMetadata(context.active());
-        if (rpcMetadata?.type === RPCType.HTTP) {
+        if (
+          rpcMetadata?.type === RPCType.HTTP &&
+          (type === ExpressLayerType.REQUEST_HANDLER || req.route === undefined)
+        ) {
           rpcMetadata.route = actualMatchedRoute;
         }
 
