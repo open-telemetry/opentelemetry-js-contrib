@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-nestjs-core
 
 ### Supported Versions
 
-- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <12`
+- [`@nestjs/core`](https://www.npmjs.com/package/@nestjs/core) versions `>=4.0.0 <12` and `>=12.0.1 <13`
 
 ## Usage
 
@@ -38,6 +38,33 @@ const sdk = new NodeSDK({
 sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
+
+### NestJS 12 and ESM applications
+
+NestJS 12 publishes ESM packages. Register the OpenTelemetry ESM loader before
+loading the application, including when the application uses CommonJS.
+ESM applications using earlier NestJS versions also need this loader.
+Keep `@nestjs/core`, `@nestjs/common`, and the HTTP adapter on the same version.
+
+Create `register.mjs`:
+
+```js
+import { register } from 'node:module';
+
+register('@opentelemetry/instrumentation/hook.mjs', import.meta.url);
+```
+
+Save the SDK setup above as `instrumentation.cjs`, then start a CommonJS application
+with:
+
+```sh
+node --import ./register.mjs --import ./instrumentation.cjs ./dist/main.js
+```
+
+For an ESM application, preload the SDK setup in the same way and use the
+application's ESM entry point. Initialize the SDK before importing NestJS.
+See the [OpenTelemetry ESM documentation](https://github.com/open-telemetry/opentelemetry-js/blob/main/doc/esm-support.md)
+for more details.
 
 ## Emitted Spans
 

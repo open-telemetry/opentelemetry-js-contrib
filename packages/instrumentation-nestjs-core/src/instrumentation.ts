@@ -18,13 +18,12 @@ import {
 } from '@opentelemetry/semantic-conventions';
 import type { NestFactory } from '@nestjs/core/nest-factory.js';
 import type { RouterExecutionContext } from '@nestjs/core/router/router-execution-context.js';
-import type { Controller } from '@nestjs/common/interfaces';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { redactUrl } from './redact-url';
 import { AttributeNames, NestType } from './enums';
 
-const supportedVersions = ['>=4.0.0 <12'];
+const supportedVersions = ['>=4.0.0 <12', '>=12.0.1 <13'];
 
 export class NestInstrumentation extends InstrumentationBase {
   static readonly COMPONENT = '@nestjs/core';
@@ -143,7 +142,7 @@ function createWrapCreateHandler(
   ) {
     return function createHandlerWithTrace(
       this: RouterExecutionContext,
-      instance: Controller,
+      instance: Parameters<RouterExecutionContext['create']>[0],
       callback: (...args: any[]) => unknown
     ) {
       arguments[1] = createWrapHandler(tracer, moduleVersion, callback);
