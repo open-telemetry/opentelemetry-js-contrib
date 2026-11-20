@@ -21,6 +21,11 @@ import {
   ATTR_FAAS_INSTANCE,
   ATTR_FAAS_NAME,
   ATTR_FAAS_VERSION,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_NAME,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_REGION,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_ZONE,
+  ATTR_GCP_GCE_INSTANCE_HOSTNAME,
+  ATTR_GCP_GCE_INSTANCE_NAME,
   ATTR_HOST_ID,
   ATTR_HOST_NAME,
   ATTR_HOST_TYPE,
@@ -55,6 +60,11 @@ const ATTRIBUTE_NAMES = [
   ATTR_FAAS_NAME,
   ATTR_FAAS_VERSION,
   ATTR_FAAS_INSTANCE,
+  ATTR_GCP_GCE_INSTANCE_NAME,
+  ATTR_GCP_GCE_INSTANCE_HOSTNAME,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_NAME,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_REGION,
+  ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_ZONE,
 ] as const;
 
 // Ensure that all resource keys are accounted for in ATTRIBUTE_NAMES
@@ -165,21 +175,38 @@ async function gaeResource(): Promise<Resource> {
 }
 
 async function gceResource(): Promise<Resource> {
-  const [zoneAndRegion, hostType, hostId, hostName] = await Promise.all([
-    gce.availabilityZoneAndRegion(),
-    gce.hostType(),
-    gce.hostId(),
-    gce.hostName(),
-  ]);
+  const [zoneAndRegion, hostType, hostId, hostName, instanceHostname, mig] =
+    await Promise.all([
+      gce.availabilityZoneAndRegion(),
+      gce.hostType(),
+      gce.hostId(),
+      gce.hostName(),
+      gce.instanceHostname(),
+      gce.managedInstanceGroup(),
+    ]);
 
-  return await makeResource({
+  const attrs: GcpResourceAttributes = {
     [ATTR_CLOUD_PLATFORM]: CLOUD_PLATFORM_VALUE_GCP_COMPUTE_ENGINE,
     [ATTR_CLOUD_AVAILABILITY_ZONE]: zoneAndRegion.zone,
     [ATTR_CLOUD_REGION]: zoneAndRegion.region,
     [ATTR_HOST_TYPE]: hostType,
     [ATTR_HOST_ID]: hostId,
     [ATTR_HOST_NAME]: hostName,
-  });
+    [ATTR_GCP_GCE_INSTANCE_NAME]: hostName,
+  };
+  if (instanceHostname !== undefined) {
+    attrs[ATTR_GCP_GCE_INSTANCE_HOSTNAME] = instanceHostname;
+  }
+  if (mig !== undefined) {
+    attrs[ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_NAME] = mig.name;
+    if (mig.type === 'zone') {
+      attrs[ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_ZONE] = mig.location;
+    } else {
+      attrs[ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_REGION] = mig.location;
+    }
+  }
+
+  return await makeResource(attrs);
 }
 
 async function makeResource(attrs: GcpResourceAttributes): Promise<Resource> {
