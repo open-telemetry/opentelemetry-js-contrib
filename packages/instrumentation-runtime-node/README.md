@@ -78,6 +78,7 @@ This instrumentation emits metrics defined in the experimental `@opentelemetry/s
 | `nodejs.eventloop.delay.p90` | 90th-percentile event loop delay |
 | `nodejs.eventloop.delay.p99` | 99th-percentile event loop delay |
 | `v8js.gc.duration` | Garbage Collection pause duration by type |
+| `v8js.memory.heap.max` | Maximum size the V8 heap can grow to (`heap_size_limit`) |
 | `v8js.memory.heap.space.size` | Total pre-allocated size of a heap space |
 | `v8js.memory.heap.used` | Used heap memory in a heap space |
 | `v8js.memory.heap.space.available_size` | Available size in a heap space |
