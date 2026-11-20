@@ -5,7 +5,42 @@
 
 [component owners](https://github.com/open-telemetry/opentelemetry-js-contrib/blob/main/.github/component_owners.yml): @martinkuba @wolfgangcodes @pkanal
 
+> **Deprecated:** This instrumentation has moved to [`@opentelemetry/browser-instrumentation/experimental/errors`](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#errors). Use `ErrorsInstrumentation` from that package for new applications and follow the [migration steps](#migration) below for existing applications.
+
 This module provides automatic instrumentation for capturing unhandled exceptions and promise rejections in web applications.
+
+## Migration
+
+Replace the package dependency:
+
+```bash
+npm uninstall @opentelemetry/instrumentation-web-exception
+npm install --save @opentelemetry/browser-instrumentation
+```
+
+Change the import and class name from `ExceptionInstrumentation` to `ErrorsInstrumentation`. If you import the config type, rename `GlobalErrorsInstrumentationConfig` to `ErrorsInstrumentationConfig`, imported from the same replacement export. The `enabled` and `applyCustomAttributes` options are unchanged. The callback still accepts `Error | string` and returns attributes to add to the exception log record.
+
+Before:
+
+```typescript
+import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
+
+new ExceptionInstrumentation({ applyCustomAttributes });
+```
+
+After:
+
+```typescript
+import { ErrorsInstrumentation } from '@opentelemetry/browser-instrumentation/experimental/errors';
+
+new ErrorsInstrumentation({ applyCustomAttributes });
+```
+
+The instrumentation scope name changes from `@opentelemetry/instrumentation-web-exception` to `@opentelemetry/browser-instrumentation/errors`. Update queries, dashboards and filters that select logs by instrumentation scope name.
+
+Keep your OpenTelemetry Logs SDK setup and logger provider. The replacement still emits `exception` log records for uncaught errors and unhandled promise rejections. Register only the replacement errors instrumentation to avoid capturing the same error twice.
+
+See the browser [migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md#navigation-and-exceptions) for more detail.
 
 ## Installation
 
