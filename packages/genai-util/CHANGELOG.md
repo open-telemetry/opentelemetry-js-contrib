@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.5.0...genai-util-v0.6.0) (2026-11-20)
+
+
+### Features
+
+* **genai-util:** expose agent invocation APIs on TelemetryHandler ([#3896](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3896)) ([f3bac90](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f3bac90b785971132bc453170384e878abaff6ff))
+
 ## [0.5.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/genai-util-v0.4.0...genai-util-v0.5.0) (2026-11-05)
 
 
