@@ -80,30 +80,112 @@ describe('gcpDetector', () => {
     });
   });
 
-  it('detects a GCE resource', async () => {
-    metadataStub.instance
-      .withArgs('id')
-      .resolves(12345)
+  describe('detects a GCE resource', () => {
+    beforeEach(() => {
+      metadataStub.instance
+        .withArgs('id')
+        .resolves(12345)
 
-      .withArgs('machine-type')
-      .resolves('fake-machine-type')
+        .withArgs('machine-type')
+        .resolves('fake-machine-type')
 
-      .withArgs('name')
-      .resolves('fake-name')
+        .withArgs('name')
+        .resolves('fake-name')
 
-      .withArgs('zone')
-      .resolves('projects/233510669999/zones/us-east4-b');
+        .withArgs('hostname')
+        .resolves('fake-name.us-east4-b.c.fake-project-id.internal')
 
-    const resource = await detectAndWait();
-    assert.deepStrictEqual(resource.attributes, {
-      'cloud.account.id': 'fake-project-id',
-      'cloud.availability_zone': 'us-east4-b',
-      'cloud.platform': 'gcp_compute_engine',
-      'cloud.provider': 'gcp',
-      'cloud.region': 'us-east4',
-      'host.id': '12345',
-      'host.name': 'fake-name',
-      'host.type': 'fake-machine-type',
+        .withArgs('zone')
+        .resolves('projects/233510669999/zones/us-east4-b')
+
+        .withArgs('attributes/created-by')
+        .rejects(new Error('not found'));
+    });
+
+    it('standalone VM', async () => {
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.availability_zone': 'us-east4-b',
+        'cloud.platform': 'gcp_compute_engine',
+        'cloud.provider': 'gcp',
+        'cloud.region': 'us-east4',
+        'gcp.gce.instance.hostname':
+          'fake-name.us-east4-b.c.fake-project-id.internal',
+        'gcp.gce.instance.name': 'fake-name',
+        'host.id': '12345',
+        'host.name': 'fake-name',
+        'host.type': 'fake-machine-type',
+      });
+    });
+
+    it('standalone VM without hostname', async () => {
+      metadataStub.instance
+        .withArgs('hostname')
+        .rejects(new Error('not found'));
+
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.availability_zone': 'us-east4-b',
+        'cloud.platform': 'gcp_compute_engine',
+        'cloud.provider': 'gcp',
+        'cloud.region': 'us-east4',
+        'gcp.gce.instance.name': 'fake-name',
+        'host.id': '12345',
+        'host.name': 'fake-name',
+        'host.type': 'fake-machine-type',
+      });
+    });
+
+    it('zonal MIG', async () => {
+      metadataStub.instance
+        .withArgs('attributes/created-by')
+        .resolves(
+          'projects/233510669999/zones/us-east4-b/instanceGroupManagers/my-zonal-mig'
+        );
+
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.availability_zone': 'us-east4-b',
+        'cloud.platform': 'gcp_compute_engine',
+        'cloud.provider': 'gcp',
+        'cloud.region': 'us-east4',
+        'gcp.gce.instance.hostname':
+          'fake-name.us-east4-b.c.fake-project-id.internal',
+        'gcp.gce.instance.name': 'fake-name',
+        'gcp.gce.instance_group_manager.name': 'my-zonal-mig',
+        'gcp.gce.instance_group_manager.zone': 'us-east4-b',
+        'host.id': '12345',
+        'host.name': 'fake-name',
+        'host.type': 'fake-machine-type',
+      });
+    });
+
+    it('regional MIG', async () => {
+      metadataStub.instance
+        .withArgs('attributes/created-by')
+        .resolves(
+          'projects/233510669999/regions/us-east4/instanceGroupManagers/my-regional-mig'
+        );
+
+      const resource = await detectAndWait();
+      assert.deepStrictEqual(resource.attributes, {
+        'cloud.account.id': 'fake-project-id',
+        'cloud.availability_zone': 'us-east4-b',
+        'cloud.platform': 'gcp_compute_engine',
+        'cloud.provider': 'gcp',
+        'cloud.region': 'us-east4',
+        'gcp.gce.instance.hostname':
+          'fake-name.us-east4-b.c.fake-project-id.internal',
+        'gcp.gce.instance.name': 'fake-name',
+        'gcp.gce.instance_group_manager.name': 'my-regional-mig',
+        'gcp.gce.instance_group_manager.region': 'us-east4',
+        'host.id': '12345',
+        'host.name': 'fake-name',
+        'host.type': 'fake-machine-type',
+      });
     });
   });
 

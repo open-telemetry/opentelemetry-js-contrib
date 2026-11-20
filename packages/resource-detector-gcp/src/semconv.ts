@@ -117,6 +117,60 @@ export const ATTR_FAAS_NAME = 'faas.name' as const;
 export const ATTR_FAAS_VERSION = 'faas.version' as const;
 
 /**
+ * The hostname of a GCE instance. This is the full value of the default or [custom hostname](https://cloud.google.com/compute/docs/instances/custom-hostname-vm).
+ *
+ * @example my-host1234.example.com
+ * @example sample-vm.us-west1-b.c.my-project.internal
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_GCE_INSTANCE_HOSTNAME =
+  'gcp.gce.instance.hostname' as const;
+
+/**
+ * The instance name of a GCE instance. This is the value provided by `host.name`, the visible name of the instance in the Cloud Console UI, and the prefix for the default hostname of the instance as defined by the [default internal DNS name](https://cloud.google.com/compute/docs/internal-dns#instance-fully-qualified-domain-names).
+ *
+ * @example instance-1
+ * @example my-vm-name
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_GCE_INSTANCE_NAME = 'gcp.gce.instance.name' as const;
+
+/**
+ * The name of the Instance Group Manager (IGM) that manages this VM, if any.
+ *
+ * @example web-igm
+ * @example my-managed-group
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_NAME =
+  'gcp.gce.instance_group_manager.name' as const;
+
+/**
+ * The region of a **regional** Instance Group Manager (e.g., `us-central1`). Set this **only** when the IGM is regional.
+ *
+ * @example us-central1
+ * @example europe-west1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_REGION =
+  'gcp.gce.instance_group_manager.region' as const;
+
+/**
+ * The zone of a **zonal** Instance Group Manager (e.g., `us-central1-a`). Set this **only** when the IGM is zonal.
+ *
+ * @example us-central1-a
+ * @example europe-west1-b
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_GCE_INSTANCE_GROUP_MANAGER_ZONE =
+  'gcp.gce.instance_group_manager.zone' as const;
+
+/**
  * Unique host ID. For Cloud, this must be the instance_id assigned by the cloud provider. For non-containerized systems, this should be the `machine-id`. See the table below for the sources to use to determine the `machine-id` based on operating system.
  *
  * @example fdbf79e8af94cb7f9e8df36789187052

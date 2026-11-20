@@ -32,20 +32,25 @@ This package implements Semantic Convention [Version 1.39.0](https://github.com/
 
 ### GCP Detector
 
-| Resource Attribute      | Description                                                           |
-|-------------------------|-----------------------------------------------------------------------|
-| cloud.account.id        | Value of `project-id` from GCP Metadata project.                      |
-| cloud.availability_zone | Value of `zone` from GCP Metadata instance (parsed from full path).   |
-| cloud.platform          | The GCP platform where the application is running.                    |
-| cloud.provider          | The cloud provider. In this context, it's always `gcp`                |
-| cloud.region            | Value of `region` from GCP Metadata instance (parsed from full path). |
-| faas.instance           | Value of `id` from GCP Metadata instance.                             |
-| faas.name               | Value of Environment Variable `K_SERVICE`.                            |
-| faas.version            | Value of Environment Variable `K_REVISION`.                           |
-| host.id                 | Value of `id` from GCP Metadata instance.                             |
-| host.name               | Value of `name` from GCP Metadata instance.                           |
-| host.type               | Value of `machine-type` from GCP Metadata instance.                   |
-| k8s.cluster.name        | Value of `attributes/cluster-name` from GCP Metadata instance.        |
+| Resource Attribute                    | Description                                                                                    |
+|---------------------------------------|------------------------------------------------------------------------------------------------|
+| cloud.account.id                      | Value of `project-id` from GCP Metadata project.                                               |
+| cloud.availability_zone               | Value of `zone` from GCP Metadata instance (parsed from full path).                            |
+| cloud.platform                        | The GCP platform where the application is running.                                             |
+| cloud.provider                        | The cloud provider. In this context, it's always `gcp`                                         |
+| cloud.region                          | Value of `region` from GCP Metadata instance (parsed from full path).                          |
+| faas.instance                         | Value of `id` from GCP Metadata instance.                                                      |
+| faas.name                             | Value of Environment Variable `K_SERVICE`.                                                     |
+| faas.version                          | Value of Environment Variable `K_REVISION`.                                                    |
+| gcp.gce.instance.hostname             | Value of `hostname` from GCP Metadata instance (GCE).                                          |
+| gcp.gce.instance.name                 | Value of `name` from GCP Metadata instance (GCE).                                              |
+| gcp.gce.instance_group_manager.name   | Name of the Managed Instance Group parsed from `attributes/created-by` (GCE MIG).              |
+| gcp.gce.instance_group_manager.region | Region of a regional Managed Instance Group parsed from `attributes/created-by` (GCE MIG).     |
+| gcp.gce.instance_group_manager.zone   | Zone of a zonal Managed Instance Group parsed from `attributes/created-by` (GCE MIG).          |
+| host.id                               | Value of `id` from GCP Metadata instance.                                                      |
+| host.name                             | Value of `name` from GCP Metadata instance.                                                    |
+| host.type                             | Value of `machine-type` from GCP Metadata instance.                                            |
+| k8s.cluster.name                      | Value of `attributes/cluster-name` from GCP Metadata instance.                                 |
 
 ## Useful links
 
