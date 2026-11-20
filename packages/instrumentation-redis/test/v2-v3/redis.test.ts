@@ -324,6 +324,29 @@ describe('redis v2-v3', () => {
       });
     });
 
+    describe('maskStatementHook config', () => {
+      beforeEach(() => {
+        instrumentation.setConfig({
+          serializeKeys: true,
+          maskStatementHook: () => {
+            throw new Error('maskStatementHook error');
+          },
+        });
+      });
+
+      REDIS_OPERATIONS.forEach(operation => {
+        it(`should not fail because of maskStatementHook error for operation ${operation.description}`, done => {
+          operation.method((err, _reply) => {
+            assert.ifError(err);
+            const endedSpans = testUtils.getTestSpans();
+            assert.strictEqual(endedSpans.length, 1);
+            assert.ok(!(ATTR_DB_QUERY_TEXT in endedSpans[0].attributes));
+            done();
+          });
+        });
+      });
+    });
+
     describe('responseHook config', () => {
       describe('valid responseHook', () => {
         const dataFieldName = 'redis.data';

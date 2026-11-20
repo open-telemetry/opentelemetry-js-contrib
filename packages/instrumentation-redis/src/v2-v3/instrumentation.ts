@@ -27,7 +27,14 @@ import {
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
 import { DB_SYSTEM_NAME_VALUE_REDIS } from '../semconv';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import {
+  createDbStatementSerializer,
+  defaultDbStatementMaskingHook,
+  defaultDbStatementSerializer,
+} from '@opentelemetry/redis-common';
+
+// built once, the option is read per command but the serializer is stateless
+const keySerializer = createDbStatementSerializer({ serializeKeys: true });
 
 export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrumentationConfig> {
   static readonly COMPONENT = 'redis';
@@ -118,15 +125,37 @@ export class RedisInstrumentationV2_V3 extends InstrumentationBase<RedisInstrume
           return original.apply(this, arguments);
         }
 
-        const dbStatementSerializer =
-          config?.dbStatementSerializer || defaultDbStatementSerializer;
+        const serializer =
+          config?.dbStatementSerializer ||
+          (config?.serializeKeys
+            ? keySerializer
+            : defaultDbStatementSerializer);
+
+        let dbQueryText: string | undefined = serializer(cmd.command, cmd.args);
+        if (config?.serializeKeys) {
+          try {
+            dbQueryText = (
+              config.maskStatementHook || defaultDbStatementMaskingHook
+            )(dbQueryText);
+          } catch (e) {
+            // do not export the unmasked statement
+            dbQueryText = undefined;
+            instrumentation._diag.error(
+              'maskStatementHook threw an exception',
+              e,
+              { commandName: cmd.command }
+            );
+          }
+        }
 
         const attributes: Attributes = {};
         Object.assign(attributes, {
           [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
           [ATTR_DB_OPERATION_NAME]: cmd.command,
-          [ATTR_DB_QUERY_TEXT]: dbStatementSerializer(cmd.command, cmd.args),
         });
+        if (dbQueryText != null) {
+          attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+        }
 
         const span = instrumentation.tracer.startSpan(
           `${RedisInstrumentationV2_V3.COMPONENT}-${cmd.command}`,
