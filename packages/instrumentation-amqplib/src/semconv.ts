@@ -30,3 +30,28 @@ export const ATTR_MESSAGING_OPERATION = 'messaging.operation' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_MESSAGING_SYSTEM = 'messaging.system' as const;
+
+/**
+ * The RabbitMQ cluster name, obtained from the broker metadata exposed
+ * through the RabbitMQ client API.
+ *
+ * @note Not yet part of `@opentelemetry/semantic-conventions` — tracked in
+ * https://github.com/open-telemetry/semantic-conventions/issues/3997. Mirrors
+ * `messaging.kafka.cluster.id` in shape.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_RABBITMQ_CLUSTER_NAME =
+  'messaging.rabbitmq.cluster.name' as const;
+
+/**
+ * The name of the RabbitMQ virtual host that the messaging operation is
+ * scoped to.
+ *
+ * @note Not yet part of `@opentelemetry/semantic-conventions` — tracked in
+ * https://github.com/open-telemetry/semantic-conventions/issues/3997.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_MESSAGING_RABBITMQ_VHOST_NAME =
+  'messaging.rabbitmq.vhost.name' as const;
