@@ -12,9 +12,10 @@
         "{projectRoot}/tsdown.*.config.ts",
         "{workspaceRoot}/tsconfig.json",
         "{workspaceRoot}/tsdown.config.ts",
+        "{workspaceRoot}/scripts/legacy-entrypoints.mjs",
         "{workspaceRoot}/package-lock.json"
       ],
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": ["{projectRoot}/dist", "{projectRoot}/build"],
       "cache": true
     },
     "watch": {
