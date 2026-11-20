@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.69.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.69.0...instrumentation-long-task-v0.69.1) (2026-11-20)
+
+
+### Bug Fixes
+
+* **instrumentation-long-task:** deprecate package ([#3669](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3669)) ([3bbfcae](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3bbfcaecf9bd3ac287d654ac31159a49c9f24d1c))
+
 ## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-long-task-v0.68.0...instrumentation-long-task-v0.69.0) (2026-11-05)
 
 
