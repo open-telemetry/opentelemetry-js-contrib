@@ -250,9 +250,13 @@ export function initializeToolCall(
   currentLLM: CurrentLLMSpanState,
   chunk: Extract<StreamChunk, { type: 'TOOL_CALL_START' }>
 ): void {
+  const toolName =
+    (chunk as unknown as { toolCallName?: string }).toolCallName ??
+    chunk.toolName ??
+    '';
   currentLLM.outputToolCalls.set(chunk.toolCallId, {
     id: chunk.toolCallId,
-    name: chunk.toolName,
+    name: toolName,
     arguments: '',
   });
 }

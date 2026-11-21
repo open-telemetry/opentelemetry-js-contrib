@@ -612,6 +612,232 @@ describe('OpenTelemetry TanStack AI Middleware', () => {
       expect(modelSpan.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(25);
       expect(modelSpan.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]).toBe(15);
     });
+
+    it('extracts response model, response id, finish reason, and usage from chunk.metadata.tanstack on RUN_FINISHED', () => {
+      const middleware = openTelemetryMiddleware({
+        tracer: ctx.tracer,
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const reqCtx = createContext();
+      middleware.onStart?.(reqCtx);
+      middleware.onConfig?.(
+        { ...reqCtx, phase: 'beforeModel' },
+        createConfig([{ role: 'user', content: 'Testing metadata' }])
+      );
+      middleware.onChunk?.(reqCtx, {
+        type: 'RUN_FINISHED',
+        timestamp: Date.now(),
+        runId: 'fallback-run-id',
+        metadata: {
+          tanstack: {
+            model: 'gpt-4o-2024-11-20',
+            responseId: 'resp-tanstack-xyz',
+            finishReason: 'tool_calls',
+            usage: {
+              inputTokens: 45,
+              outputTokens: 18,
+              totalTokens: 63,
+            },
+          },
+        },
+      } as any);
+      middleware.onFinish?.(reqCtx, {
+        finishReason: 'stop',
+        duration: 15,
+        content: '',
+      });
+
+      const spans = ctx.getSpans();
+      const modelSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_CHAT
+      )!;
+
+      expect(modelSpan.attributes[ATTR_GEN_AI_RESPONSE_MODEL]).toBe(
+        'gpt-4o-2024-11-20'
+      );
+      expect(modelSpan.attributes[ATTR_GEN_AI_RESPONSE_ID]).toBe(
+        'resp-tanstack-xyz'
+      );
+      expect(modelSpan.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual(
+        ['tool_calls']
+      );
+      expect(modelSpan.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(45);
+      expect(modelSpan.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]).toBe(18);
+    });
+
+    it('reads finishReason from info.metadata.tanstack on onFinish', () => {
+      const middleware = openTelemetryMiddleware({
+        tracer: ctx.tracer,
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const reqCtx = createContext();
+      middleware.onStart?.(reqCtx);
+      middleware.onFinish?.(reqCtx, {
+        finishReason: undefined as any,
+        metadata: {
+          tanstack: {
+            finishReason: 'stop',
+          },
+        },
+        duration: 10,
+        content: 'Done',
+      } as any);
+
+      const spans = ctx.getSpans();
+      const agentSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+      )!;
+
+      expect(agentSpan.attributes['tanstack.ai.finish_reason']).toBe('stop');
+    });
+
+    it('maps ctx.threadId to gen_ai.conversation.id across agent, model, and tool spans', async () => {
+      const middleware = openTelemetryMiddleware({
+        tracer: ctx.tracer,
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const reqCtx = createContext({
+        conversationId: undefined,
+        threadId: 'thread-tanstack-123',
+      } as any);
+
+      middleware.onStart?.(reqCtx);
+      middleware.onConfig?.(
+        { ...reqCtx, phase: 'beforeModel' },
+        createConfig([{ role: 'user', content: 'Hello' }])
+      );
+      middleware.onBeforeToolCall?.(reqCtx, {
+        toolCallId: 'tc-thread',
+        toolName: 'my_tool',
+        args: {},
+        tool: {
+          name: 'my_tool',
+          description: 'A tool',
+          execute: async () => 'result',
+        } as any,
+      } as any);
+      middleware.onAfterToolCall?.(reqCtx, {
+        toolCallId: 'tc-thread',
+        toolName: 'my_tool',
+        ok: true,
+        duration: 5,
+        result: 'result',
+      } as any);
+      middleware.onChunk?.(reqCtx, {
+        type: 'RUN_FINISHED',
+        timestamp: Date.now(),
+        runId: 'r-thread',
+        finishReason: 'stop',
+      });
+      middleware.onFinish?.(reqCtx, {
+        finishReason: 'stop',
+        duration: 20,
+        content: 'done',
+      });
+
+      const spans = ctx.getSpans();
+      const agentSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT
+      )!;
+      const modelSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_CHAT
+      )!;
+      const toolSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
+      )!;
+
+      expect(agentSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID]).toBe(
+        'thread-tanstack-123'
+      );
+      expect(modelSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID]).toBe(
+        'thread-tanstack-123'
+      );
+      expect(toolSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID]).toBe(
+        'thread-tanstack-123'
+      );
+    });
+
+    it('handles toolCallName on TOOL_CALL_START and onBeforeToolCall', () => {
+      const middleware = openTelemetryMiddleware({
+        tracer: ctx.tracer,
+        tracerProvider: ctx.tracerProvider,
+        captureContent: true,
+      });
+
+      const reqCtx = createContext();
+      middleware.onStart?.(reqCtx);
+      middleware.onConfig?.(
+        { ...reqCtx, phase: 'beforeModel' },
+        createConfig([{ role: 'user', content: 'Run tool' }])
+      );
+      middleware.onChunk?.(reqCtx, {
+        type: 'TOOL_CALL_START',
+        toolCallId: 'call-tcn-1',
+        toolCallName: 'database_lookup',
+        timestamp: Date.now(),
+      } as any);
+      middleware.onChunk?.(reqCtx, {
+        type: 'RUN_FINISHED',
+        timestamp: Date.now(),
+        runId: 'r-tcn',
+        finishReason: 'tool_calls',
+      });
+
+      middleware.onBeforeToolCall?.(reqCtx, {
+        toolCallId: 'call-tcn-1',
+        toolCallName: 'database_lookup',
+        args: { query: 'users' },
+        tool: {
+          name: 'database_lookup',
+          execute: async () => ['user1'],
+        } as any,
+      } as any);
+      middleware.onAfterToolCall?.(reqCtx, {
+        toolCallId: 'call-tcn-1',
+        toolCallName: 'database_lookup',
+        ok: true,
+        duration: 5,
+        result: ['user1'],
+      } as any);
+      middleware.onFinish?.(reqCtx, {
+        finishReason: 'stop',
+        duration: 15,
+        content: '',
+      });
+
+      const spans = ctx.getSpans();
+      const modelSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_CHAT
+      )!;
+      const toolSpan = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
+      )!;
+
+      expect(toolSpan.attributes[ATTR_GEN_AI_TOOL_NAME]).toBe(
+        'database_lookup'
+      );
+      const outputMessages = JSON.parse(
+        modelSpan.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string
+      );
+      expect(outputMessages[0].parts[0].name).toBe('database_lookup');
+    });
   });
 
   describe('wrapFetch context propagation', () => {
@@ -1054,6 +1280,165 @@ describe('OpenTelemetry TanStack AI Middleware', () => {
 
       // Terminal cleanup must restore original execute and clear pending queue:
       expect(errTool.execute).toBe(originalFn);
+    });
+
+    it('isolates tool executions across concurrent requests sharing the same tool and identical toolCallId', async () => {
+      const middleware = openTelemetryMiddleware({
+        tracer: ctx.tracer,
+        tracerProvider: ctx.tracerProvider,
+      });
+
+      const reqA = createContext({ requestId: 'req-a' });
+      const reqB = createContext({ requestId: 'req-b' });
+
+      middleware.onStart?.(reqA);
+      middleware.onStart?.(reqB);
+
+      let capturedSpanA: string | undefined;
+      let capturedSpanB: string | undefined;
+      const originalFn = async (args: any) => {
+        const activeSpanId = trace
+          .getSpan(context.active())
+          ?.spanContext().spanId;
+        if (args.req === 'A') {
+          capturedSpanA = activeSpanId;
+        } else {
+          capturedSpanB = activeSpanId;
+        }
+        return { success: true, req: args.req };
+      };
+      const sharedTool = {
+        name: 'shared_calculator',
+        description: 'Calculator tool shared across concurrent requests',
+        execute: originalFn,
+      };
+
+      // Both concurrent requests receive the identical toolCallId (e.g. 'call_0')
+      middleware.onBeforeToolCall?.(reqA, {
+        toolCallId: 'call_0',
+        toolName: 'shared_calculator',
+        args: { req: 'A' },
+        tool: sharedTool as any,
+        toolCall: {
+          id: 'call_0',
+          type: 'function',
+          function: { name: 'shared_calculator', arguments: '{"req":"A"}' },
+        },
+      });
+
+      middleware.onBeforeToolCall?.(reqB, {
+        toolCallId: 'call_0',
+        toolName: 'shared_calculator',
+        args: { req: 'B' },
+        tool: sharedTool as any,
+        toolCall: {
+          id: 'call_0',
+          type: 'function',
+          function: { name: 'shared_calculator', arguments: '{"req":"B"}' },
+        },
+      });
+
+      // Request A's tool executes first:
+      const resA = await sharedTool.execute(
+        { req: 'A' },
+        { toolCallId: 'call_0' }
+      );
+      expect(resA).toEqual({ success: true, req: 'A' });
+
+      // Request A finishes completely:
+      middleware.onAfterToolCall?.(reqA, {
+        toolCallId: 'call_0',
+        toolName: 'shared_calculator',
+        tool: sharedTool as any,
+        toolCall: {
+          id: 'call_0',
+          type: 'function',
+          function: { name: 'shared_calculator', arguments: '{"req":"A"}' },
+        },
+        ok: true,
+        duration: 10,
+        result: resA,
+      });
+      middleware.onFinish?.(reqA, {
+        finishReason: 'stop',
+        duration: 20,
+        content: 'done A',
+      });
+
+      // Request A finishing must NOT remove or corrupt Request B's tool execution wrapper:
+      expect(sharedTool.execute).not.toBe(originalFn);
+
+      // Now Request B's tool executes:
+      const resB = await sharedTool.execute(
+        { req: 'B' },
+        { toolCallId: 'call_0' }
+      );
+      expect(resB).toEqual({ success: true, req: 'B' });
+
+      // Request B finishes:
+      middleware.onAfterToolCall?.(reqB, {
+        toolCallId: 'call_0',
+        toolName: 'shared_calculator',
+        tool: sharedTool as any,
+        toolCall: {
+          id: 'call_0',
+          type: 'function',
+          function: { name: 'shared_calculator', arguments: '{"req":"B"}' },
+        },
+        ok: true,
+        duration: 12,
+        result: resB,
+      });
+      middleware.onFinish?.(reqB, {
+        finishReason: 'stop',
+        duration: 25,
+        content: 'done B',
+      });
+
+      // Now that both requests are done, tool is restored:
+      expect(sharedTool.execute).toBe(originalFn);
+
+      const spans = ctx.getSpans();
+      const toolSpans = spans.filter(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL
+      );
+      expect(toolSpans.length).toBe(2);
+
+      const agentSpanA = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+            GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT &&
+          s.attributes['tanstack.ai.request.id'] === 'req-a'
+      )!;
+      const agentSpanB = spans.find(
+        s =>
+          s.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+            GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT &&
+          s.attributes['tanstack.ai.request.id'] === 'req-b'
+      )!;
+
+      const toolSpanA = toolSpans.find(
+        s =>
+          (s.parentSpanContext?.spanId ?? (s as any).parentSpanId) ===
+          agentSpanA.spanContext().spanId
+      )!;
+      const toolSpanB = toolSpans.find(
+        s =>
+          (s.parentSpanContext?.spanId ?? (s as any).parentSpanId) ===
+          agentSpanB.spanContext().spanId
+      )!;
+
+      expect(toolSpanA).toBeDefined();
+      expect(toolSpanB).toBeDefined();
+      expect(toolSpanA.spanContext().spanId).not.toBe(
+        toolSpanB.spanContext().spanId
+      );
+
+      // Verify that Request A ran inside toolSpanA and Request B ran inside toolSpanB:
+      expect(capturedSpanA).toBe(toolSpanA.spanContext().spanId);
+      expect(capturedSpanB).toBe(toolSpanB.spanContext().spanId);
     });
   });
 

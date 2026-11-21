@@ -43,22 +43,39 @@ import type {
   UsageInfo,
 } from './types';
 
+interface PendingToolExecution {
+  requestId: string;
+  toolCallId: string;
+  invocation: ToolInvocation;
+}
+
 // Module-scoped tracking to coordinate tool execute wrapping across concurrent requests
 // and across multiple openTelemetryMiddleware instances sharing the same tool objects.
-const globalToolInvocationsByCallId = new Map<string, ToolInvocation>();
-const globalPendingCallsByTool = new WeakMap<object, string[]>();
+const globalPendingCallsByTool = new WeakMap<object, PendingToolExecution[]>();
 const globalOriginalExecutes = new WeakMap<
   object,
   (...args: unknown[]) => unknown
 >();
 
-function restoreToolExecuteIfClean(tool: object, callId?: string): void {
+function cleanupPendingForRequest(
+  tool: object,
+  requestId: string,
+  callId?: string
+): void {
   const pending = globalPendingCallsByTool.get(tool);
   if (pending) {
     if (callId) {
-      const idx = pending.indexOf(callId);
+      const idx = pending.findIndex(
+        p => p.requestId === requestId && p.toolCallId === callId
+      );
       if (idx !== -1) {
         pending.splice(idx, 1);
+      }
+    } else {
+      for (let i = pending.length - 1; i >= 0; i--) {
+        if (pending[i].requestId === requestId) {
+          pending.splice(i, 1);
+        }
       }
     }
     if (pending.length === 0) {
@@ -169,6 +186,10 @@ export function openTelemetryMiddleware(
         return;
       }
 
+      const conversationId =
+        ctx.conversationId ??
+        (ctx as unknown as { threadId?: string }).threadId;
+
       const attributes: Record<string, unknown> = {
         [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
         [ATTR_GEN_AI_AGENT_NAME]: agentName,
@@ -178,8 +199,8 @@ export function openTelemetryMiddleware(
         'tanstack.ai.streaming': ctx.streaming,
       };
 
-      if (ctx.conversationId) {
-        attributes[ATTR_GEN_AI_CONVERSATION_ID] = ctx.conversationId;
+      if (conversationId) {
+        attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversationId;
       }
 
       const chatSpan = tracer.startSpan(AGENT_SPAN_NAME, {
@@ -214,6 +235,10 @@ export function openTelemetryMiddleware(
         });
       }
 
+      const conversationId =
+        ctx.conversationId ??
+        (ctx as unknown as { threadId?: string }).threadId;
+
       const inputMessages = getInputMessages(config);
       const systemInstructions = getSystemInstructions(config);
 
@@ -224,7 +249,7 @@ export function openTelemetryMiddleware(
         providerName: ctx.provider,
         requestModel: ctx.model,
         operationName: 'chat',
-        conversationId: ctx.conversationId,
+        conversationId,
         inputMessages,
         systemInstructions,
         requestOptions: {
@@ -293,20 +318,47 @@ export function openTelemetryMiddleware(
           break;
         }
         case 'RUN_FINISHED': {
-          if (chunk.model) {
-            currentLLM.invocation.setResponseModel(chunk.model);
+          const tanstackMeta = (
+            chunk as unknown as {
+              metadata?: { tanstack?: Record<string, unknown> };
+            }
+          ).metadata?.tanstack;
+
+          const responseModel =
+            (typeof tanstackMeta?.model === 'string'
+              ? tanstackMeta.model
+              : undefined) ?? chunk.model;
+          if (responseModel) {
+            currentLLM.invocation.setResponseModel(responseModel);
           }
+
           const responseId =
+            (typeof tanstackMeta?.responseId === 'string'
+              ? tanstackMeta.responseId
+              : typeof tanstackMeta?.id === 'string'
+                ? tanstackMeta.id
+                : undefined) ??
             (chunk as unknown as { responseId?: string }).responseId ??
             chunk.runId;
           if (responseId) {
             currentLLM.invocation.setResponseId(responseId);
           }
+
+          const finishReason =
+            (typeof tanstackMeta?.finishReason === 'string'
+              ? tanstackMeta.finishReason
+              : undefined) ?? chunk.finishReason;
+
+          const usage =
+            (tanstackMeta?.usage as UsageInfo | undefined) ??
+            chunk.usage ??
+            undefined;
+
           endCurrentLLM(
             state,
             { code: SpanStatusCode.UNSET },
-            chunk.usage ?? undefined,
-            chunk.finishReason
+            usage,
+            finishReason
           );
           break;
         }
@@ -337,24 +389,30 @@ export function openTelemetryMiddleware(
       }
 
       const parentContext = trace.setSpan(context.active(), state.chatSpan);
+      const conversationId =
+        ctx.conversationId ??
+        (ctx as unknown as { threadId?: string }).threadId;
+      const toolName =
+        (hookCtx as unknown as { toolCallName?: string }).toolCallName ??
+        hookCtx.toolName ??
+        '';
 
       const toolInvocation = handler.startTool({
         parentContext,
-        toolName: hookCtx.toolName,
+        toolName,
         toolCallId: hookCtx.toolCallId,
         toolDescription: getToolDescription(hookCtx.tool),
         toolArguments: hookCtx.args,
         agentName,
-        conversationId: ctx.conversationId,
+        conversationId,
       });
 
       state.toolInvocations.set(hookCtx.toolCallId, toolInvocation);
-      globalToolInvocationsByCallId.set(hookCtx.toolCallId, toolInvocation);
 
       // Manage tool execution context per call rather than capturing in a wrapper
       // added to the shared tool object.
       // 1. Tool objects may be shared across multiple calls and concurrent chat requests.
-      // 2. TanStack AI 1.0 prepares parallel calls before starting tool bodies.
+      // 2. TanStack AI prepares parallel calls before starting tool bodies.
       // 3. Coordination across middleware instances and terminal cleanup on error/abort
       //    ensures wrappers are not prematurely stripped and pending queues are drained.
       const toolWithExecute = hookCtx.tool as
@@ -375,7 +433,11 @@ export function openTelemetryMiddleware(
           pending = [];
           globalPendingCallsByTool.set(toolWithExecute, pending);
         }
-        pending.push(hookCtx.toolCallId);
+        pending.push({
+          requestId: ctx.requestId,
+          toolCallId: hookCtx.toolCallId,
+          invocation: toolInvocation,
+        });
 
         if (!globalOriginalExecutes.has(toolWithExecute)) {
           const originalExecute = toolWithExecute.execute;
@@ -387,27 +449,30 @@ export function openTelemetryMiddleware(
           ) {
             // TanStack AI passes context as the 2nd argument: { toolCallId, emitCustomEvent, ... }
             const execCtx = args[1] as { toolCallId?: string } | undefined;
-            let callId = execCtx?.toolCallId;
+            const callId = execCtx?.toolCallId;
 
             const pendingList = globalPendingCallsByTool.get(toolWithExecute);
-            if (!callId) {
-              callId = pendingList?.shift();
-            } else if (pendingList) {
-              const idx = pendingList.indexOf(callId);
-              if (idx !== -1) {
-                pendingList.splice(idx, 1);
+            let matched: PendingToolExecution | undefined;
+
+            if (pendingList && pendingList.length > 0) {
+              if (callId) {
+                const idx = pendingList.findIndex(p => p.toolCallId === callId);
+                if (idx !== -1) {
+                  matched = pendingList.splice(idx, 1)[0];
+                }
+              }
+              if (!matched) {
+                matched = pendingList.shift();
               }
             }
-
-            const invocation = callId
-              ? globalToolInvocationsByCallId.get(callId)
-              : undefined;
 
             const origFn =
               globalOriginalExecutes.get(toolWithExecute) ?? originalExecute;
 
-            if (invocation) {
-              return invocation.withContext(() => origFn.apply(this, args));
+            if (matched?.invocation) {
+              return matched.invocation.withContext(() =>
+                origFn.apply(this, args)
+              );
             }
             return origFn.apply(this, args);
           };
@@ -437,12 +502,17 @@ export function openTelemetryMiddleware(
       }
 
       state?.toolInvocations.delete(info.toolCallId);
+
+      const tool =
+        info.tool && typeof info.tool === 'object' && info.tool !== null
+          ? (info.tool as object)
+          : state?.toolsByCallId.get(info.toolCallId);
+
       state?.toolsByCallId.delete(info.toolCallId);
-      globalToolInvocationsByCallId.delete(info.toolCallId);
 
       // Clean up pending queue and restore execute function if no calls remain pending across all requests
-      if (info.tool && typeof info.tool === 'object' && info.tool !== null) {
-        restoreToolExecuteIfClean(info.tool, info.toolCallId);
+      if (tool) {
+        cleanupPendingForRequest(tool, ctx.requestId, info.toolCallId);
       }
     },
 
@@ -458,20 +528,27 @@ export function openTelemetryMiddleware(
         endCurrentLLM(state, { code: SpanStatusCode.UNSET });
       }
 
+      const finishReason =
+        (
+          info as unknown as {
+            metadata?: { tanstack?: Record<string, unknown> };
+          }
+        ).metadata?.tanstack?.finishReason ??
+        info.finishReason ??
+        '';
+
       state.chatSpan.setAttributes({
-        'tanstack.ai.finish_reason': info.finishReason ?? '',
+        'tanstack.ai.finish_reason': finishReason,
         'tanstack.ai.duration_ms': info.duration,
       });
 
-      state.toolInvocations.forEach((inv, callId) => {
-        globalToolInvocationsByCallId.delete(callId);
+      state.toolInvocations.forEach(inv => {
         inv.stop();
       });
       state.toolInvocations.clear();
 
-      state.toolsByCallId.forEach((tool, callId) => {
-        restoreToolExecuteIfClean(tool, callId);
-        globalToolInvocationsByCallId.delete(callId);
+      state.toolsByCallId.forEach(tool => {
+        cleanupPendingForRequest(tool, ctx.requestId);
       });
       state.toolsByCallId.clear();
 
@@ -502,14 +579,10 @@ export function openTelemetryMiddleware(
         message: reason,
       });
 
-      for (const callId of state.toolInvocations.keys()) {
-        globalToolInvocationsByCallId.delete(callId);
-      }
       endAllToolSpansWithError(state.toolInvocations, reason);
 
-      state.toolsByCallId.forEach((tool, callId) => {
-        restoreToolExecuteIfClean(tool, callId);
-        globalToolInvocationsByCallId.delete(callId);
+      state.toolsByCallId.forEach(tool => {
+        cleanupPendingForRequest(tool, ctx.requestId);
       });
       state.toolsByCallId.clear();
 
@@ -550,14 +623,10 @@ export function openTelemetryMiddleware(
         message: error.message,
       });
 
-      for (const callId of state.toolInvocations.keys()) {
-        globalToolInvocationsByCallId.delete(callId);
-      }
       endAllToolSpansWithError(state.toolInvocations, error.message);
 
-      state.toolsByCallId.forEach((tool, callId) => {
-        restoreToolExecuteIfClean(tool, callId);
-        globalToolInvocationsByCallId.delete(callId);
+      state.toolsByCallId.forEach(tool => {
+        cleanupPendingForRequest(tool, ctx.requestId);
       });
       state.toolsByCallId.clear();
 
