@@ -115,8 +115,13 @@ class StreamState {
   /**
    * Process a Converse stream event. `ConverseStream` and Amazon Nova models
    * invoked through `InvokeModelWithResponseStream` use the same event schema.
+   * Returns whether the event carries model output (a tool call start or a
+   * content delta), as opposed to message start/stop and usage events.
    */
-  processConverseEvent(event: Record<string, any>): void {
+  processConverseEvent(event: Record<string, any>): boolean {
+    const carriesOutput =
+      isRecord(event.contentBlockStart?.start?.toolUse) ||
+      isRecord(event.contentBlockDelta?.delta);
     if (isRecord(event.messageStart) && event.messageStart.role) {
       this.role = event.messageStart.role;
     }
@@ -174,6 +179,7 @@ class StreamState {
           )
         ) ?? this.cacheWriteTokens;
     }
+    return carriesOutput;
   }
 
   flush(invocation: InferenceInvocation): void {
@@ -214,7 +220,9 @@ function wrapStream<TChunk>(
   stream: AsyncIterable<TChunk>,
   invocation: InferenceInvocation,
   state: StreamState,
-  onChunk: (chunk: TChunk) => void
+  // Returns whether the chunk carries model output, so that only those chunks
+  // count towards the chunk timing metrics.
+  onChunk: (chunk: TChunk) => boolean
 ): AsyncIterable<TChunk> {
   const flush = () => state.flush(invocation);
   return handler.wrapAsyncStream(stream, {
@@ -236,9 +244,9 @@ export function wrapConverseStream(
   captureContent: boolean
 ): AsyncIterable<any> {
   const state = new StreamState(captureContent);
-  return wrapStream(handler, stream, invocation, state, chunk => {
-    if (isRecord(chunk)) state.processConverseEvent(chunk);
-  });
+  return wrapStream(handler, stream, invocation, state, chunk =>
+    isRecord(chunk) ? state.processConverseEvent(chunk) : false
+  );
 }
 
 /**
@@ -255,11 +263,12 @@ export function wrapInvokeModelStream(
   const state = new StreamState(captureContent);
   const { blocks } = state;
 
-  const onChunk = (event: any) => {
+  const onChunk = (event: any): boolean => {
     const bytes = event?.chunk?.bytes;
-    if (!(bytes instanceof Uint8Array)) return;
+    if (!(bytes instanceof Uint8Array)) return false;
     const data = parseBody(bytes);
-    if (!data) return;
+    if (!data) return false;
+    let carriesOutput = false;
 
     // Invocation metrics appended by Bedrock to the last chunk of every model.
     const metrics = data['amazon-bedrock-invocationMetrics'];
@@ -308,6 +317,7 @@ export function wrapInvokeModelStream(
         break;
       }
       case 'content_block_start': {
+        if (data.content_block?.type === 'tool_use') carriesOutput = true;
         if (!captureContent) break;
         const index = data.index ?? 0;
         blocks.touch(index);
@@ -334,6 +344,7 @@ export function wrapInvokeModelStream(
       }
       case 'content_block_delta': {
         const delta = data.delta;
+        if (isRecord(delta)) carriesOutput = true;
         if (!captureContent || !isRecord(delta)) break;
         const index = data.index ?? 0;
         if (
@@ -366,7 +377,7 @@ export function wrapInvokeModelStream(
     }
 
     // Amazon Nova format (the Converse event schema)
-    state.processConverseEvent(data);
+    if (state.processConverseEvent(data)) carriesOutput = true;
 
     // Legacy Claude / Titan / Llama / Mistral / Cohere chunks
     const firstOutput =
@@ -401,9 +412,11 @@ export function wrapInvokeModelStream(
       // Cohere Command R `stream-end` event
       state.stopReason = data.finish_reason;
     }
+    if (typeof text === 'string' && text !== '') carriesOutput = true;
     if (captureContent && typeof text === 'string') {
       state.text.push(text);
     }
+    return carriesOutput;
   };
 
   return wrapStream(handler, stream, invocation, state, onChunk);

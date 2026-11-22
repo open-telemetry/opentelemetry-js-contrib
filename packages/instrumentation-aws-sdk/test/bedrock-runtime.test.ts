@@ -372,13 +372,34 @@ describe('Bedrock', () => {
 
       const response = await client.send(command);
       const chunks: string[] = [];
+      let events = 0;
       for await (const item of response.stream!) {
+        events++;
         const text = item.contentBlockDelta?.delta?.text;
         if (text) {
           chunks.push(text);
         }
       }
       expect(chunks.join('')).toBe('Hi! How are you? How');
+      // Only content deltas are timed, not message start/stop or usage events.
+      expect(events).toBeGreaterThan(chunks.length);
+      await meterProvider.forceFlush();
+      const chunkTimings = (name: string) =>
+        metricExporter
+          .getMetrics()
+          .flatMap(rm => rm.scopeMetrics)
+          .flatMap(sm => sm.metrics)
+          .filter(m => m.descriptor.name === name)
+          .flatMap(m =>
+            m.dataPointType === DataPointType.HISTOGRAM ? m.dataPoints : []
+          )
+          .reduce((count, point) => count + point.value.count, 0);
+      expect(chunkTimings('gen_ai.client.operation.time_to_first_chunk')).toBe(
+        1
+      );
+      expect(
+        chunkTimings('gen_ai.client.operation.time_per_output_chunk')
+      ).toBe(chunks.length - 1);
 
       const testSpans: ReadableSpan[] = getTestSpans();
       const converseSpans: ReadableSpan[] = testSpans.filter(

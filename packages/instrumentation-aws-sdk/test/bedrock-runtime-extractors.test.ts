@@ -12,6 +12,13 @@
 import { SpanStatusCode } from '@opentelemetry/api';
 import { getTestSpans } from '@opentelemetry/contrib-test-utils';
 import { TelemetryHandler } from '@opentelemetry/genai-util';
+import {
+  AggregationTemporality,
+  DataPointType,
+  InMemoryMetricExporter,
+  MeterProvider,
+  PeriodicExportingMetricReader,
+} from '@opentelemetry/sdk-metrics';
 import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { expect } from 'expect';
 import {
@@ -299,6 +306,85 @@ describe('Bedrock Runtime extractors', () => {
           finish_reason: 'error',
         },
       ]);
+    });
+  });
+
+  describe('chunk timing', () => {
+    it('times only InvokeModel stream chunks that carry model output', async () => {
+      const exporter = new InMemoryMetricExporter(AggregationTemporality.DELTA);
+      const meterProvider = new MeterProvider({
+        readers: [new PeriodicExportingMetricReader({ exporter })],
+      });
+      const timedHandler = new TelemetryHandler({
+        instrumentationName: 'bedrock-extractors-test',
+        instrumentationVersion: '0.0.0',
+        meterProvider,
+      });
+      const invocation = timedHandler.startInference({
+        providerName: 'aws.bedrock',
+        requestModel: 'anthropic.claude-test',
+        operationName: 'chat',
+      });
+
+      await consume(
+        wrapInvokeModelStream(
+          timedHandler,
+          streamOf(
+            invokeModelChunks(
+              {
+                type: 'message_start',
+                message: { role: 'assistant', usage: { input_tokens: 5 } },
+              },
+              {
+                type: 'content_block_start',
+                index: 0,
+                content_block: { type: 'text', text: '' },
+              },
+              {
+                type: 'content_block_delta',
+                index: 0,
+                delta: { type: 'text_delta', text: 'Hel' },
+              },
+              {
+                type: 'content_block_delta',
+                index: 0,
+                delta: { type: 'text_delta', text: 'lo' },
+              },
+              { type: 'content_block_stop', index: 0 },
+              {
+                type: 'message_delta',
+                delta: { stop_reason: 'end_turn' },
+                usage: { output_tokens: 2 },
+              },
+              {
+                type: 'message_stop',
+                'amazon-bedrock-invocationMetrics': {
+                  inputTokenCount: 5,
+                  outputTokenCount: 2,
+                },
+              }
+            )
+          ),
+          invocation,
+          false
+        )
+      );
+
+      await meterProvider.forceFlush();
+      const count = (name: string) =>
+        exporter
+          .getMetrics()
+          .flatMap(rm => rm.scopeMetrics)
+          .flatMap(sm => sm.metrics)
+          .filter(m => m.descriptor.name === name)
+          .flatMap(m =>
+            m.dataPointType === DataPointType.HISTOGRAM ? m.dataPoints : []
+          )
+          .reduce((total, point) => total + point.value.count, 0);
+      // Two text deltas: one first chunk, one interval between them.
+      expect(count('gen_ai.client.operation.time_to_first_chunk')).toBe(1);
+      expect(count('gen_ai.client.operation.time_per_output_chunk')).toBe(1);
+      await meterProvider.shutdown();
     });
   });
 
