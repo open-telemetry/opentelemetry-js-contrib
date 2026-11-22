@@ -569,6 +569,10 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    // The body was never read, so there is no finish reason to report.
+    expect(
+      spans[0].attributes['gen_ai.response.finish_reasons']
+    ).toBeUndefined();
   });
 
   it('leaves the SDK untouched when tracing is suppressed', async () => {
