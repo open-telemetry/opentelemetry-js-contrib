@@ -21,8 +21,12 @@ export type AsyncStream<TChunk> = AsyncIterable<TChunk>;
 export interface AsyncStreamWrapperOptions<TChunk> {
   /** The active invocation owning the stream lifecycle. */
   invocation: BaseInvocation;
-  /** Hook called for each stream chunk. */
-  onChunk?: (chunk: TChunk) => void | Promise<void>;
+  /**
+   * Hook called for each stream chunk. Return `false` when the chunk carries no
+   * model output (e.g. a message start or usage event), to leave it out of the
+   * `time_to_first_chunk` and `time_per_output_chunk` metrics.
+   */
+  onChunk?: (chunk: TChunk) => void | boolean | Promise<void | boolean>;
   /** Hook called when the stream ends or is closed cleanly. */
   onEnd?: () => void | Promise<void>;
   /** Hook called when the stream encounters an error. */
@@ -61,16 +65,19 @@ export function wrapAsyncStream<
       ? fn()
       : context.with(invocation.getContext(), fn);
 
-  const processChunk = async (chunk: TChunk): Promise<void> => {
+  // Resolves to whether the chunk counts towards the chunk timing metrics.
+  const processChunk = async (chunk: TChunk): Promise<boolean> => {
     if (options.onChunk && !isFinalized && !invocation.isEnded()) {
       try {
-        await context.with(invocation.getContext(), () =>
+        const result = await context.with(invocation.getContext(), () =>
           options.onChunk!(chunk)
         );
+        return result !== false;
       } catch (err) {
         invocation.getDiag().error('Error in GenAI stream onChunk hook', err);
       }
     }
+    return true;
   };
 
   /**
@@ -165,8 +172,9 @@ export function wrapAsyncStream<
           if (isFinalized || invocation.isEnded()) {
             return;
           }
-          await processChunk(result.value);
+          const carriesOutput = await processChunk(result.value);
           if (
+            carriesOutput &&
             invocation instanceof InferenceInvocation &&
             !isFinalized &&
             !invocation.isEnded()

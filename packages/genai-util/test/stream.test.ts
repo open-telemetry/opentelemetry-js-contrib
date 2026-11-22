@@ -485,6 +485,90 @@ describe('TelemetryHandler.wrapAsyncStream', () => {
     );
   });
 
+  it('should leave chunks for which onChunk returns false out of the chunk timing metrics', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'aws.bedrock',
+      requestModel: 'model-a',
+    });
+
+    const delayMs = 20;
+    async function* rawStream() {
+      yield 'message-start';
+      // The first output chunk arrives well after the message start event.
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      yield 'delta-1';
+      yield 'delta-2';
+      yield 'usage';
+    }
+    const wrapped = handler.wrapAsyncStream(rawStream(), {
+      invocation,
+      onChunk: chunk => chunk.startsWith('delta'),
+    });
+
+    for await (const chunk of wrapped) {
+      assert.ok(chunk);
+    }
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const metrics = resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+    const histogram = (name: string) => {
+      const metric = metrics.find(m => m.descriptor.name === name);
+      assert.ok(metric, `${name} should be recorded`);
+      return metric.dataPoints[0].value as { count: number; min: number };
+    };
+
+    const ttft = histogram(METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK);
+    assert.strictEqual(ttft.count, 1);
+    assert.ok(
+      ttft.min >= delayMs / 1000,
+      `time_to_first_chunk (${ttft.min}s) should be measured to the first output chunk`
+    );
+    // Only the gap between the two deltas is an output chunk interval.
+    assert.strictEqual(
+      histogram(METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK).count,
+      1
+    );
+  });
+
+  it('should record no chunk timing when no chunk carries model output', async () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test',
+      instrumentationVersion: '1.2.3',
+      tracerProvider: ctx.tracerProvider,
+      meterProvider: ctx.meterProvider,
+    });
+
+    const invocation = handler.startInference({
+      providerName: 'aws.bedrock',
+      requestModel: 'model-a',
+    });
+    const wrapped = handler.wrapAsyncStream(
+      createAsyncChunkGenerator(['message-start', 'usage']),
+      { invocation, onChunk: () => false }
+    );
+    for await (const chunk of wrapped) {
+      assert.ok(chunk);
+    }
+
+    const { resourceMetrics } = await ctx.metricReader.collect();
+    const names = (resourceMetrics.scopeMetrics[0]?.metrics ?? []).map(
+      m => m.descriptor.name
+    );
+    assert.ok(
+      !names.includes(METRIC_GEN_AI_CLIENT_OPERATION_TIME_TO_FIRST_CHUNK)
+    );
+    assert.ok(
+      !names.includes(METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK)
+    );
+  });
+
   it('should handle empty stream (0 chunks) by setting stream attribute, omitting chunk timing, and finalizing', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test',
