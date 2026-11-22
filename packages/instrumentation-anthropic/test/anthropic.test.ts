@@ -603,6 +603,29 @@ describe('Anthropic instrumentation', function () {
     expect(getTestSpans()).toHaveLength(0);
   });
 
+  it('records an SSE error raised during concurrent reads rather than an abort', async () => {
+    await withCassette('anthropic-messages-stream-sse-error.json', async () => {
+      const stream = await mockClient.messages.create({
+        ...requestBody,
+        stream: true,
+      });
+
+      // The first read settling must not hide that the second is still
+      // pending when the SDK aborts its controller for the SSE error.
+      const iterator = stream[Symbol.asyncIterator]();
+      const results = await Promise.allSettled([
+        iterator.next(),
+        iterator.next(),
+      ]);
+      expect(results.map(result => result.status)).toContain('rejected');
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).not.toBe('APIUserAbortError');
+  });
+
   it('records an SSE error rather than the abort the SDK raises for it', async () => {
     await withCassette('anthropic-messages-stream-sse-error.json', async () => {
       const stream = await mockClient.messages.create({

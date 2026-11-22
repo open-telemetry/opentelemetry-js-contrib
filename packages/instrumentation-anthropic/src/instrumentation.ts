@@ -85,13 +85,15 @@ interface CallState {
   /** Records response metadata and usage onto `invocation`. */
   response: ResponseRecorder;
   /**
-   * Set only while an `iterator.next()` call is outstanding. The SDK aborts
-   * its own controller from inside that call when an SSE `error` event ends
-   * iteration, so an abort observed in this window belongs to the iterator.
+   * The number of `iterator.next()` calls still outstanding. The SDK aborts
+   * its own controller from inside such a call when an SSE `error` event ends
+   * iteration, so an abort observed while any is pending belongs to the
+   * iterator. A count rather than a flag, because a caller may issue several
+   * reads before awaiting any, and the first to settle must not hide the rest.
    * A suspended iterator (parked at `yield`) is caller-controlled time and is
    * deliberately excluded, so cancelling there still ends the span.
    */
-  awaitingNext: boolean;
+  pendingReads: number;
   /**
    * Set while the wrapped iterator closes the SDK iterator. `return()` aborts
    * the controller as ordinary cleanup, which must not read as a cancellation.
@@ -271,7 +273,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
         const state: CallState = {
           invocation,
           response: new ResponseRecorder(invocation),
-          awaitingNext: false,
+          pendingReads: 0,
           closing: false,
           aborted: false,
           helperOwned: inMessagesStreamHelper > 0,
@@ -538,7 +540,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     if (signal) {
       if (
         signal.aborted &&
-        !state.awaitingNext &&
+        state.pendingReads === 0 &&
         !state.closing &&
         !state.helperOwned
       ) {
@@ -554,7 +556,11 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           // while `next()` is outstanding is left to the iterator. An abort
           // while the iterator is suspended is the caller cancelling, and may
           // be the last thing that ever happens to this stream.
-          if (!state.awaitingNext && !state.closing && !state.helperOwned) {
+          if (
+            state.pendingReads === 0 &&
+            !state.closing &&
+            !state.helperOwned
+          ) {
             this._failWithAbort(state);
           }
         },
@@ -576,7 +582,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
     let exhausted = false;
     return {
       next: async () => {
-        state.awaitingNext = true;
+        state.pendingReads++;
         let result: IteratorResult<unknown>;
         try {
           result = await iterator.next();
@@ -586,7 +592,7 @@ export class AnthropicInstrumentation extends InstrumentationBase<AnthropicInstr
           if (state.helperOwned) this._fail(state, error);
           throw error;
         } finally {
-          state.awaitingNext = false;
+          state.pendingReads--;
         }
         if (result.done) {
           exhausted = true;
