@@ -5,6 +5,7 @@
 
 import {
   context,
+  createContextKey,
   diag,
   trace,
   SpanKind,
@@ -26,19 +27,19 @@ import {
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { TelemetryHandler } from '@opentelemetry/genai-util';
 import {
-  InstrumentationBase,
-  InstrumentationNodeModuleDefinition,
-  InstrumentationNodeModuleFile,
-} from '@opentelemetry/instrumentation';
-import {
+  ATTR_GEN_AI_AGENT_NAME,
   ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_INPUT_MESSAGES,
   ATTR_GEN_AI_OPERATION_NAME,
   ATTR_GEN_AI_OUTPUT_MESSAGES,
-  ATTR_GEN_AI_WORKFLOW_NAME,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
-  METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
 } from './semconv';
+import {
+  InstrumentationBase,
+  InstrumentationNodeModuleDefinition,
+  InstrumentationNodeModuleFile,
+} from '@opentelemetry/instrumentation';
 import type * as Runnables from '@langchain/core/runnables';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import type {
@@ -46,16 +47,22 @@ import type {
   CallbackManagerForToolRun,
 } from '@langchain/core/callbacks/manager';
 import type { StructuredTool } from '@langchain/core/tools';
+import type * as PregelModule from '@langchain/langgraph/pregel';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
 import { batchOutputMessages, isRecord, messages } from './content';
 import { addToolCallbacks, getToolContext } from './tool-callbacks';
+import { addGraphCallbacks, getGraphContext } from './graph-callbacks';
+import {
+  trackAgentComposition,
+  trackReactAgentFactory,
+} from './internal-react-agent';
 import {
   isInternalWorkflow,
   isTrackingFactory,
+  markAgentGraph,
   markAgentPrompt,
-  markAgentPromptComposition,
   markStructuredOutput,
   markWorkflow,
   ownValue,
@@ -65,6 +72,9 @@ import {
 
 const MODULE_NAME = '@langchain/core';
 const SUPPORTED_VERSIONS = ['>=1.0.0 <2'];
+const ACTIVE_GRAPH_CONTEXT = createContextKey(
+  'opentelemetry.langchain.active_graph_context'
+);
 
 interface WorkflowPatch {
   owners: Set<LangChainInstrumentation>;
@@ -72,6 +82,7 @@ interface WorkflowPatch {
 }
 
 const workflowPatches = new WeakMap<object, Map<PropertyKey, WorkflowPatch>>();
+const graphConfigurations = new WeakMap<object, (config: unknown) => void>();
 
 interface ToolExecutor {
   _call(
@@ -142,6 +153,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   declare private _toolTracerProvider: TracerProvider | undefined;
   declare private _toolMeterProvider: MeterProvider | undefined;
   declare private _toolExecutors: Set<WeakRef<ToolExecutor>> | undefined;
+  declare private _callbackManager: typeof CallbackManager | undefined;
+  declare private _getGraphConfig:
+    | (typeof import('@langchain/langgraph'))['getConfig']
+    | undefined;
 
   constructor(config: LangChainInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -198,13 +213,17 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   override _updateMetricInstruments() {
     try {
       this._workflowDuration = this.meter.createHistogram(
-        METRIC_GEN_AI_INVOKE_WORKFLOW_DURATION,
+        METRIC_GEN_AI_INVOKE_AGENT_DURATION,
         {
-          description: 'Records duration of GenAI workflow.',
+          description:
+            'The end-to-end duration of a single in-process agent, workflow, or ' +
+            'framework entrypoint invocation, from the moment the invocation starts until ' +
+            'it emits the last chunk of its final response or terminates with an error.',
           unit: 's',
           advice: {
             explicitBucketBoundaries: [
-              1, 5, 10, 30, 60, 120, 300, 600, 1800, 3600, 7200,
+              0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4, 12.8, 25.6, 51.2, 102.4, 204.8,
+              409.6, 900, 1800, 3600, 7200, 14400, 43200, 86400,
             ],
           },
         }
@@ -322,7 +341,10 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           this._unpatchMethod(
             module.CallbackManager.prototype,
             'handleToolStart'
-          )
+          ),
+        (module: { CallbackManager: typeof CallbackManager }) => {
+          this._callbackManager = module.CallbackManager;
+        }
       ),
     ]);
     return [
@@ -339,6 +361,39 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         undefined,
         undefined,
         ['cjs', 'js'].flatMap(extension => [
+          createTrackedModuleFile(
+            `langchain/dist/agents/index.${extension}`,
+            () => {},
+            () => {},
+            (module: { createAgent: (...args: never[]) => unknown }) => {
+              if (!isTrackingFactory(module.createAgent))
+                this._wrapTracking(
+                  module,
+                  'createAgent',
+                  trackFactory(markAgentGraph, this._diag)
+                );
+            }
+          ),
+          createTrackedModuleFile(
+            `langchain/dist/agents/ReactAgent.${extension}`,
+            () => {},
+            () => {},
+            (module: {
+              ReactAgent: {
+                prototype: { withConfig: (...args: never[]) => unknown };
+              };
+            }) => {
+              if (
+                typeof module.ReactAgent.prototype.withConfig === 'function' &&
+                !isTrackingFactory(module.ReactAgent.prototype.withConfig)
+              )
+                this._wrapTracking(
+                  module.ReactAgent.prototype,
+                  'withConfig',
+                  trackFactory(markAgentGraph, this._diag)
+                );
+            }
+          ),
           createTrackedModuleFile(
             `langchain/dist/agents/withAgentName.${extension}`,
             () => {},
@@ -373,7 +428,260 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           ),
         ])
       ),
+      new InstrumentationNodeModuleDefinition(
+        '@langchain/langgraph',
+        SUPPORTED_VERSIONS,
+        undefined,
+        undefined,
+        ['cjs', 'js'].flatMap(extension => [
+          createTrackedModuleFile(
+            `@langchain/langgraph/dist/pregel/utils/config.${extension}`,
+            () => {},
+            () => {},
+            (
+              module: Pick<
+                typeof import('@langchain/langgraph'),
+                'getConfig'
+              > & {
+                ensureLangGraphConfig: (...args: never[]) => unknown;
+              }
+            ) => {
+              this._getGraphConfig = module.getConfig;
+              if (
+                typeof module.ensureLangGraphConfig === 'function' &&
+                !isTrackingFactory(module.ensureLangGraphConfig)
+              )
+                this._wrapTracking(
+                  module,
+                  'ensureLangGraphConfig',
+                  trackFactory((result, _receiver, args) => {
+                    if (!isRecord(args[1])) return;
+                    const configure = graphConfigurations.get(args[1]);
+                    graphConfigurations.delete(args[1]);
+                    try {
+                      configure?.(result);
+                    } catch {
+                      this._diag.warn(
+                        'LangChain: could not register graph callbacks'
+                      );
+                    }
+                  }, this._diag)
+                );
+            }
+          ),
+          createTrackedModuleFile(
+            `@langchain/langgraph/dist/pregel/index.${extension}`,
+            (module: typeof PregelModule) => this._patchGraphs(module),
+            (module: typeof PregelModule) => {
+              this._unpatchMethod(module.Pregel.prototype, '_streamIterator');
+            },
+            (module: typeof PregelModule) => {
+              if (!isTrackingFactory(module.Pregel.prototype.withConfig))
+                this._wrapTracking(
+                  module.Pregel.prototype,
+                  'withConfig',
+                  trackFactory((result, receiver) => {
+                    if (isRecord(receiver) && isInternalWorkflow(receiver))
+                      markWorkflow(result);
+                  }, this._diag)
+                );
+            }
+          ),
+          createTrackedModuleFile(
+            `@langchain/langgraph/dist/utils.${extension}`,
+            (module: {
+              RunnableCallable: {
+                prototype: Pick<Runnables.Runnable, 'invoke'>;
+              };
+            }) => {
+              this._patchMethod(
+                module.RunnableCallable.prototype,
+                'invoke',
+                (owners, restore) => original =>
+                  new Proxy(original, {
+                    apply: (
+                      target,
+                      receiver: Runnables.Runnable,
+                      args: Parameters<typeof original>
+                    ) => {
+                      const owner = Array.from(owners)
+                        .reverse()
+                        .find(instance => instance.isEnabled());
+                      if (!owner) restore();
+                      const invoke = () =>
+                        Reflect.apply(target, receiver, args);
+                      return owner
+                        ? owner._withGraphContext(args[1], invoke)
+                        : invoke();
+                    },
+                  })
+              );
+            },
+            (module: {
+              RunnableCallable: {
+                prototype: Pick<Runnables.Runnable, 'invoke'>;
+              };
+            }) =>
+              this._unpatchMethod(module.RunnableCallable.prototype, 'invoke')
+          ),
+          createTrackedModuleFile(
+            `@langchain/langgraph/dist/prebuilt/agentName.${extension}`,
+            () => {},
+            () => {},
+            (module: {
+              withAgentName: (model: unknown, mode: unknown) => unknown;
+            }) => {
+              if (!isTrackingFactory(module.withAgentName))
+                this._wrapTracking(
+                  module,
+                  'withAgentName',
+                  trackFactory(markWorkflow, this._diag)
+                );
+            }
+          ),
+          createTrackedModuleFile(
+            `@langchain/langgraph/dist/prebuilt/react_agent_executor.${extension}`,
+            () => {},
+            () => {},
+            (module: { createReactAgent: (...args: never[]) => unknown }) => {
+              if (!isTrackingFactory(module.createReactAgent))
+                this._wrapTracking(
+                  module,
+                  'createReactAgent',
+                  trackReactAgentFactory(this._diag)
+                );
+            }
+          ),
+        ])
+      ),
     ];
+  }
+
+  private _withGraphContext<R>(options: unknown, invoke: () => R): R {
+    const parent = context.active();
+    if (isTracingSuppressed(parent)) return invoke();
+    let graph: Context | undefined;
+    try {
+      graph = getGraphContext(ownValue(options, 'callbacks'));
+    } catch {
+      this._diag.warn('LangChain: could not read graph execution context');
+    }
+    // Descendant spans inherit this invocation marker; preserve their context.
+    return graph && parent.getValue(ACTIVE_GRAPH_CONTEXT) !== graph
+      ? context.with(graph.setValue(ACTIVE_GRAPH_CONTEXT, graph), invoke)
+      : invoke();
+  }
+
+  private _patchGraphs(module: typeof PregelModule) {
+    // Observe the SDK's resolved configuration instead of duplicating its
+    // version-dependent merging of callbacks, metadata and configurable.
+    this._patchMethod(
+      module.Pregel.prototype,
+      '_streamIterator',
+      (owners, restore) => original =>
+        new Proxy(original, {
+          apply(
+            target,
+            receiver: Runnables.Runnable,
+            args: [unknown, Runnables.RunnableConfig?]
+          ) {
+            const owner = Array.from(owners)
+              .reverse()
+              .find(instance => instance.isEnabled());
+            if (!owner) restore();
+            const active = context.active();
+            if (
+              !owner ||
+              isTracingSuppressed(active) ||
+              isInternalWorkflow(receiver)
+            )
+              return Reflect.apply(target, receiver, args);
+            const manager = owner._callbackManager;
+            if (!manager) {
+              owner._diag.warn(
+                'LangChain: graph callback manager is unavailable'
+              );
+              return Reflect.apply(target, receiver, args);
+            }
+            let state: WorkflowState | undefined;
+            try {
+              const inherited = owner._getGraphConfig?.();
+              const inheritedParent = getGraphContext(
+                ownValue(inherited, 'callbacks')
+              );
+              // Each iterator needs its own identity even when options are reused.
+              const options: Runnables.RunnableConfig = Object.create(
+                Object.getPrototypeOf(args[1] ?? {}),
+                Object.getOwnPropertyDescriptors(args[1] ?? {})
+              );
+              graphConfigurations.set(options, config => {
+                if (!owner.isEnabled()) return;
+                if (!isRecord(config))
+                  throw new TypeError(
+                    'Unsupported normalized graph configuration'
+                  );
+                const callbacks = ownValue(config, 'callbacks');
+                function isManager(value: unknown): value is CallbackManager {
+                  return (
+                    isRecord(value) &&
+                    typeof value.copy === 'function' &&
+                    Array.isArray(value.handlers)
+                  );
+                }
+                if (
+                  callbacks !== undefined &&
+                  !Array.isArray(callbacks) &&
+                  !isManager(callbacks)
+                )
+                  throw new TypeError(
+                    'Unsupported graph callback configuration'
+                  );
+                const runName = ownValue(config, 'runName');
+                const configurable = ownValue(config, 'configurable');
+                const configured = manager._configureSync(callbacks ?? []);
+                if (!configured) return;
+                const graphCallbacks = addGraphCallbacks(
+                  configured,
+                  manager,
+                  (input, metadata, parent) => {
+                    if (
+                      !owner.isEnabled() ||
+                      isTracingSuppressed(context.active())
+                    )
+                      return undefined;
+                    try {
+                      state = owner._startWorkflow(
+                        receiver,
+                        input,
+                        { runName, configurable, metadata },
+                        false,
+                        trace.getSpan(active)
+                          ? active
+                          : (parent ?? inheritedParent ?? active)
+                      );
+                      return state.context;
+                    } catch {
+                      owner._diag.warn(
+                        'LangChain: could not start graph telemetry'
+                      );
+                      return undefined;
+                    }
+                  },
+                  (output, failure) => {
+                    if (state) owner._end(state, output, failure);
+                  },
+                  owner._diag
+                );
+                config.callbacks = graphCallbacks;
+              });
+              args[1] = options;
+            } catch {
+              owner._diag.warn('LangChain: could not register graph callbacks');
+            }
+            return Reflect.apply(target, receiver, args);
+          },
+        })
+    );
   }
 
   private _patchToolCalls(tool: typeof StructuredTool) {
@@ -484,7 +792,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 this.copy(),
                 manager,
                 () => currentOwner()?._getToolTelemetry(),
-                () => currentOwner()?._diag ?? diag
+                () => currentOwner()?._diag ?? diag,
+                () =>
+                  trace.getSpan(context.active())
+                    ? undefined
+                    : getGraphContext(this)
               );
             } catch {
               owner._diag.warn('LangChain: could not register tool callbacks');
@@ -497,12 +809,17 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _trackRunnableFactories(module: typeof Runnables) {
     if (!module.Runnable) return;
-    if (!isTrackingFactory(module.Runnable.prototype.pipe))
-      this._wrapTracking(
-        module.Runnable.prototype,
-        'pipe',
-        trackFactory(markAgentPromptComposition, this._diag)
-      );
+    for (const owner of [module.Runnable, module.RunnableSequence]) {
+      if (
+        typeof owner.prototype.pipe === 'function' &&
+        !isTrackingFactory(owner.prototype.pipe)
+      )
+        this._wrapTracking(
+          owner.prototype,
+          'pipe',
+          trackAgentComposition(this._diag)
+        );
+    }
     this._trackWorkflowOwner(module.RunnableToolLike);
     if (!isTrackingFactory(module.Runnable.prototype.asTool))
       this._wrapTracking(
@@ -628,7 +945,13 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
 
   private _unpatchMethod(
     target: object,
-    method: 'invoke' | 'batch' | 'call' | '_call' | 'handleToolStart'
+    method:
+      | 'invoke'
+      | 'batch'
+      | 'call'
+      | '_call'
+      | 'handleToolStart'
+      | '_streamIterator'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
@@ -695,46 +1018,23 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     )
       return invoke();
     let state: WorkflowState | undefined;
+    let isGraphAdapter = false;
     try {
       // LangGraph sets omitSequenceTags on internal node/channel-writer
       // sequences (e.g. PregelNode.getNode()) to omit seq:step:* callback tags.
       // Skip these internal adapters rather than reporting them as workflows.
-      if (!('omitSequenceTags' in target && target.omitSequenceTags === true)) {
-        const tracer = this.tracer;
-        const durationHistogram = this._workflowDuration;
-        const capture = this.getConfig().captureMessageContent === 'span_only';
-        const attributes = this._generateWorkflowAttributes(
-          target,
-          input,
-          options,
-          capture
-        );
-        const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
-        const name = attributes[ATTR_GEN_AI_WORKFLOW_NAME];
-        const metricAttributes: Attributes = {};
-        if (typeof name === 'string')
-          metricAttributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
-        const startTime = hrTime();
-        const span = tracer.startSpan(
-          name ? `${operation} ${name}` : operation,
-          { kind: SpanKind.INTERNAL, attributes, startTime },
-          parent
-        );
-        state = {
-          span,
-          context: trace.setSpan(parent, span),
-          startTime,
-          durationHistogram,
-          metricAttributes,
-          capture,
-          batch,
-          ended: false,
-        };
+      isGraphAdapter =
+        'omitSequenceTags' in target && target.omitSequenceTags === true;
+      if (!isGraphAdapter) {
+        state = this._startWorkflow(target, input, options, batch, parent);
       }
     } catch {
       this._diag.warn('LangChain: could not start operation telemetry');
     }
-    if (!state) return invoke();
+    if (!state)
+      return isGraphAdapter
+        ? this._withGraphContext(options, invoke)
+        : invoke();
     const active = state;
     let result: R;
     try {
@@ -759,12 +1059,51 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return result;
   }
 
+  private _startWorkflow(
+    target: object,
+    input: unknown,
+    options: unknown,
+    batch: boolean,
+    parent: Context
+  ): WorkflowState {
+    const capture = this.getConfig().captureMessageContent === 'span_only';
+    const attributes = this._generateWorkflowAttributes(
+      target,
+      input,
+      options,
+      capture
+    );
+    const operation = GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW;
+    const name = attributes[ATTR_GEN_AI_AGENT_NAME];
+    const metricAttributes: Attributes = {
+      [ATTR_GEN_AI_OPERATION_NAME]: operation,
+    };
+    if (typeof name === 'string')
+      metricAttributes[ATTR_GEN_AI_AGENT_NAME] = name;
+    const startTime = hrTime();
+    const span = this.tracer.startSpan(
+      name ? `${operation} ${name}` : operation,
+      { kind: SpanKind.INTERNAL, attributes, startTime },
+      parent
+    );
+    return {
+      span,
+      context: trace.setSpan(parent, span),
+      startTime,
+      durationHistogram: this._workflowDuration,
+      metricAttributes,
+      capture,
+      batch,
+      ended: false,
+    };
+  }
+
   /**
    * Builds workflow and conversation attributes from the runnable and options,
    * adding input messages only when content capture is enabled.
    */
   private _generateWorkflowAttributes(
-    target: Runnables.Runnable,
+    target: object,
     input: unknown,
     options: unknown,
     capture: boolean
@@ -788,7 +1127,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
     };
     if (typeof name === 'string' && name.trim().length > 0)
-      attributes[ATTR_GEN_AI_WORKFLOW_NAME] = name;
+      attributes[ATTR_GEN_AI_AGENT_NAME] = name;
     if (conversation !== undefined)
       attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
     if (capture) {

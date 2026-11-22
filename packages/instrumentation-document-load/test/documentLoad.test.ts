@@ -455,6 +455,54 @@ describe('DocumentLoad Instrumentation', () => {
       });
     });
   });
+
+  describe('when urls contain sensitive information', () => {
+    let spyEntries: any;
+    let originalUrl: string;
+    beforeEach(() => {
+      originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}${location.search}&sig=secret`
+      );
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          name: 'https://user:pass@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=AKIA&X-Amz-Signature=secret&v=1',
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+      history.replaceState(history.state, '', originalUrl);
+    });
+
+    it('should redact url.full on document and resource spans', done => {
+      plugin.enable();
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans() as ReadableSpan[];
+        const fetchSpan = spans.find(s => s.name === 'documentFetch');
+        const rootSpan = spans.find(s => s.name === 'documentLoad');
+        const resourceSpan = spans.find(s => s.name === 'resourceFetch');
+        assert.ok(fetchSpan && rootSpan && resourceSpan);
+
+        for (const span of [fetchSpan, rootSpan]) {
+          const url = span.attributes[ATTR_URL_FULL] as string;
+          assert.isOk(url.endsWith('&sig=REDACTED'), url);
+          assert.notInclude(url, 'secret');
+        }
+        assert.strictEqual(
+          resourceSpan.attributes[ATTR_URL_FULL],
+          'https://REDACTED:REDACTED@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&v=1'
+        );
+        done();
+      });
+    });
+  });
   describe('when resource entries are available AND secureConnectionStart is 0', () => {
     let spyEntries: any;
     beforeEach(() => {

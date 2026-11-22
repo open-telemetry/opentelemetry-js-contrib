@@ -23,12 +23,15 @@ import {
 import type {
   InferenceRequestOptions,
   InputMessages,
+  LocalAgentRequestOptions,
   OutputMessages,
+  RemoteAgentRequestOptions,
   SystemInstructionPart,
   SystemInstructions,
   TokenCountsByModality,
   TokenUsageByModality,
   TokenUsageDetails,
+  ToolDefinitions,
 } from './types';
 
 /**
@@ -248,6 +251,25 @@ export function formatSystemInstructions(
 }
 
 /**
+ * Format tool definitions into a JSON string for span attribute storage.
+ *
+ * @param definitions - Tool definitions payload to format.
+ * @returns JSON string representation of tool definitions, or `undefined` if empty/invalid.
+ */
+export function formatToolDefinitions(
+  definitions?: ToolDefinitions
+): string | undefined {
+  if (!definitions || definitions.length === 0) {
+    return undefined;
+  }
+  try {
+    return JSON.stringify(definitions);
+  } catch {
+    return undefined;
+  }
+}
+
+/**
  * Extract a standard `error.type` attribute value from an error or exception
  * following OpenTelemetry GenAI semantic conventions.
  *
@@ -340,6 +362,62 @@ export function getRequestOptionsAttributes(
   }
   if (requestOptions.reasoningLevel !== undefined) {
     attrs[ATTR_GEN_AI_REQUEST_REASONING_LEVEL] = requestOptions.reasoningLevel;
+  }
+
+  return attrs;
+}
+
+/**
+ * Extract OpenTelemetry span attributes from GenAI agent request options.
+ *
+ * @param requestOptions - Optional agent request options to extract attributes from.
+ * @param includeStream - Whether to extract `gen_ai.request.stream` (true for remote client agent spans).
+ * @returns Attributes object populated with GenAI agent request semantic conventions.
+ */
+export function getAgentRequestOptionsAttributes(
+  requestOptions?: LocalAgentRequestOptions | RemoteAgentRequestOptions,
+  includeStream = false
+): Attributes {
+  const attrs: Attributes = {};
+  if (!requestOptions) {
+    return attrs;
+  }
+
+  if (requestOptions.temperature !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_TEMPERATURE] = requestOptions.temperature;
+  }
+  if (requestOptions.topP !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_TOP_P] = requestOptions.topP;
+  }
+  if (requestOptions.maxTokens !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_MAX_TOKENS] = requestOptions.maxTokens;
+  }
+  if (requestOptions.stopSequences && requestOptions.stopSequences.length > 0) {
+    attrs[ATTR_GEN_AI_REQUEST_STOP_SEQUENCES] = requestOptions.stopSequences;
+  }
+  if (requestOptions.frequencyPenalty !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY] =
+      requestOptions.frequencyPenalty;
+  }
+  if (requestOptions.presencePenalty !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY] =
+      requestOptions.presencePenalty;
+  }
+  if (
+    requestOptions.choiceCount !== undefined &&
+    requestOptions.choiceCount > 1
+  ) {
+    attrs[ATTR_GEN_AI_REQUEST_CHOICE_COUNT] = requestOptions.choiceCount;
+  }
+  if (requestOptions.seed !== undefined) {
+    attrs[ATTR_GEN_AI_REQUEST_SEED] = requestOptions.seed;
+  }
+  if (
+    includeStream &&
+    'stream' in requestOptions &&
+    requestOptions.stream === true
+  ) {
+    attrs[ATTR_GEN_AI_REQUEST_STREAM] = true;
   }
 
   return attrs;

@@ -21,6 +21,7 @@ import type { RouterExecutionContext } from '@nestjs/core/router/router-executio
 import type { Controller } from '@nestjs/common/interfaces';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { redactUrl } from './redact-url';
 import { AttributeNames, NestType } from './enums';
 
 const supportedVersions = ['>=4.0.0 <12'];
@@ -172,7 +173,11 @@ function createWrapCreateHandler(
           [AttributeNames.CALLBACK]: callbackName,
         };
         attributes[ATTR_HTTP_REQUEST_METHOD] = req.method;
-        attributes[ATTR_URL_FULL] = req.originalUrl || req.url;
+        // Redact credentials and sensitive query string values (e.g. signatures)
+        // as recommended by the semantic conventions.
+        const url = req.originalUrl || req.url;
+        attributes[ATTR_URL_FULL] =
+          typeof url === 'string' ? redactUrl(url) : url;
         const span = tracer.startSpan(spanName, { attributes });
         const spanContext = api.trace.setSpan(api.context.active(), span);
 

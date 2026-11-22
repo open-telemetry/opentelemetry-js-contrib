@@ -22,21 +22,44 @@ import {
   ATTR_GEN_AI_REQUEST_ENCODING_FORMATS,
   ATTR_GEN_AI_EMBEDDINGS_DIMENSION_COUNT,
   ATTR_GEN_AI_TOKEN_MODALITY,
+  ATTR_GEN_AI_TOOL_DEFINITIONS,
+  ATTR_GEN_AI_INPUT_MESSAGES_REF,
+  ATTR_GEN_AI_OUTPUT_MESSAGES_REF,
+  ATTR_GEN_AI_SYSTEM_INSTRUCTIONS_REF,
+  ATTR_GEN_AI_TOOL_DEFINITIONS_REF,
+  ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID,
+  ATTR_GEN_AI_USAGE_TEXT_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_TEXT_OUTPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_TEXT_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_IMAGE_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_IMAGE_OUTPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_IMAGE_CACHE_READ_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_AUDIO_INPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_AUDIO_OUTPUT_TOKENS,
+  ATTR_GEN_AI_USAGE_AUDIO_CACHE_READ_INPUT_TOKENS,
+  GEN_AI_FINISH_REASON_VALUE_INTERRUPTED,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_PROVIDER_NAME_VALUE_OPENAI,
   GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEN_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_VERTEX_AI,
   GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI,
+  GEN_AI_PROVIDER_NAME_VALUE_MISTRAL,
+  GEN_AI_PROVIDER_NAME_VALUE_OLLAMA,
   GEN_AI_TOKEN_MODALITY_VALUE_AUDIO,
   GEN_AI_TOKEN_MODALITY_VALUE_IMAGE,
   GEN_AI_TOKEN_MODALITY_VALUE_TEXT,
   GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN,
   GEN_AI_SCHEMA_URL,
   METRIC_GEN_AI_CLIENT_OPERATION_DURATION,
+  METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+  METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+  METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_INPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_OPERATION_OUTPUT_TOKENS,
   METRIC_GEN_AI_CLIENT_INFERENCE_USAGE_INPUT_TOKENS,
@@ -48,6 +71,8 @@ import {
   METRIC_GEN_AI_CLIENT_OPERATION_TIME_PER_OUTPUT_CHUNK,
   EVENT_GEN_AI_CLIENT_INFERENCE_OPERATION_DETAILS,
   EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,
+  EVENT_GEN_AI_INVOKE_AGENT_EXCEPTION,
+  EVENT_GEN_AI_CLIENT_INVOKE_AGENT_EXCEPTION,
 } from '../src/semconv';
 
 describe('GenAI Semantic Conventions', () => {
@@ -97,6 +122,63 @@ describe('GenAI Semantic Conventions', () => {
       'gen_ai.embeddings.dimension.count'
     );
     assert.strictEqual(ATTR_GEN_AI_TOKEN_MODALITY, 'gen_ai.token.modality');
+    assert.strictEqual(ATTR_GEN_AI_TOOL_DEFINITIONS, 'gen_ai.tool.definitions');
+    assert.strictEqual(
+      ATTR_GEN_AI_INPUT_MESSAGES_REF,
+      'gen_ai.input.messages_ref'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_OUTPUT_MESSAGES_REF,
+      'gen_ai.output.messages_ref'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_SYSTEM_INSTRUCTIONS_REF,
+      'gen_ai.system_instructions_ref'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_TOOL_DEFINITIONS_REF,
+      'gen_ai.tool.definitions_ref'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_REQUEST_PREVIOUS_RESPONSE_ID,
+      'gen_ai.request.previous_response.id'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_TEXT_INPUT_TOKENS,
+      'gen_ai.usage.text.input_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_TEXT_OUTPUT_TOKENS,
+      'gen_ai.usage.text.output_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_TEXT_CACHE_READ_INPUT_TOKENS,
+      'gen_ai.usage.text.cache_read.input_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_IMAGE_INPUT_TOKENS,
+      'gen_ai.usage.image.input_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_IMAGE_OUTPUT_TOKENS,
+      'gen_ai.usage.image.output_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_IMAGE_CACHE_READ_INPUT_TOKENS,
+      'gen_ai.usage.image.cache_read.input_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_AUDIO_INPUT_TOKENS,
+      'gen_ai.usage.audio.input_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_AUDIO_OUTPUT_TOKENS,
+      'gen_ai.usage.audio.output_tokens'
+    );
+    assert.strictEqual(
+      ATTR_GEN_AI_USAGE_AUDIO_CACHE_READ_INPUT_TOKENS,
+      'gen_ai.usage.audio.cache_read.input_tokens'
+    );
   });
 
   it('should define expected constant values', () => {
@@ -110,6 +192,10 @@ describe('GenAI Semantic Conventions', () => {
       'invoke_workflow'
     );
     assert.strictEqual(
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER,
+      'invoke_runner'
+    );
+    assert.strictEqual(
       GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
       'execute_tool'
     );
@@ -121,10 +207,13 @@ describe('GenAI Semantic Conventions', () => {
       'gcp.vertex_ai'
     );
     assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_GCP_GEMINI, 'gcp.gemini');
+    assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_MISTRAL, 'mistral');
+    assert.strictEqual(GEN_AI_PROVIDER_NAME_VALUE_OLLAMA, 'ollama');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_AUDIO, 'audio');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_IMAGE, 'image');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_TEXT, 'text');
     assert.strictEqual(GEN_AI_TOKEN_MODALITY_VALUE_UNKNOWN, 'unknown');
+    assert.strictEqual(GEN_AI_FINISH_REASON_VALUE_INTERRUPTED, 'interrupted');
   });
 
   it('should define expected metric and event names', () => {
@@ -175,6 +264,30 @@ describe('GenAI Semantic Conventions', () => {
     assert.strictEqual(
       EVENT_GEN_AI_CLIENT_OPERATION_EXCEPTION,
       'gen_ai.client.operation.exception'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_INVOKE_AGENT_DURATION,
+      'gen_ai.invoke_agent.duration'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_INVOKE_AGENT_INFERENCE_CALLS,
+      'gen_ai.invoke_agent.inference_calls'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_INVOKE_AGENT_TOOL_CALLS,
+      'gen_ai.invoke_agent.tool_calls'
+    );
+    assert.strictEqual(
+      METRIC_GEN_AI_CLIENT_INVOKE_AGENT_DURATION,
+      'gen_ai.client.invoke_agent.duration'
+    );
+    assert.strictEqual(
+      EVENT_GEN_AI_INVOKE_AGENT_EXCEPTION,
+      'gen_ai.invoke_agent.exception'
+    );
+    assert.strictEqual(
+      EVENT_GEN_AI_CLIENT_INVOKE_AGENT_EXCEPTION,
+      'gen_ai.client.invoke_agent.exception'
     );
   });
 });
