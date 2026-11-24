@@ -1045,19 +1045,42 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
       const finishReason: FinishReason | undefined =
         mapFinishReason(chatOutput.finishReason) ?? lastChunkFinishReason;
+      const shouldCaptureContent = invocation.shouldCaptureContent();
+      // Normally we only parse `chatOutput.messages` when content capture is enabled.
+      // We also parse them when multiple choices were requested (`n > 1`, so
+      // `coalesceOutputMessages` is false) so we know how many responses the model
+      // returned when building `finish_reasons` below.
+      const outputMessages =
+        shouldCaptureContent ||
+        (!coalesceOutputMessages && finishReason !== undefined)
+          ? extractOutputMessages(
+              messages,
+              structuredObject,
+              coalesceOutputMessages
+            )
+          : undefined;
+
       if (finishReason) {
-        invocation.setFinishReasons([finishReason]);
+        // BeeAI provides one overall `finishReason` for the call, whereas OpenTelemetry
+        // expects one entry per returned choice (e.g. `['stop', 'stop']` when `n: 2`).
+        // If `setFinishReasons` has fewer entries than `outputMessages`, `genai-util`
+        // fills the missing entries with `'error'`.
+        const choiceCount =
+          !coalesceOutputMessages && outputMessages && outputMessages.length > 1
+            ? outputMessages.length
+            : 1;
+        invocation.setFinishReasons(
+          Array.from({ length: choiceCount }, () => finishReason)
+        );
       }
 
-      if (invocation.shouldCaptureContent()) {
-        const outputMessages = extractOutputMessages(
-          messages,
-          structuredObject,
-          coalesceOutputMessages
-        );
-        if (outputMessages.length > 0) {
-          invocation.addOutputMessages(outputMessages);
-        }
+      // Only record the message text/parts on the span when content capture is enabled.
+      if (
+        shouldCaptureContent &&
+        outputMessages &&
+        outputMessages.length > 0
+      ) {
+        invocation.addOutputMessages(outputMessages);
       }
     }
   }

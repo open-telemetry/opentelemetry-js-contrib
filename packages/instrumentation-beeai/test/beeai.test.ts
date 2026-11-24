@@ -719,6 +719,10 @@ describe('BeeAIInstrumentation', () => {
       expect(spans).toHaveLength(1);
       const span = spans[0];
       expect(span.attributes[ATTR_GEN_AI_REQUEST_CHOICE_COUNT]).toBe(2);
+      expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+        'stop',
+      ]);
       expect(
         JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string)
       ).toEqual([
@@ -731,6 +735,40 @@ describe('BeeAIInstrumentation', () => {
           parts: [{ type: 'text', content: 'Candidate 2 answer' }],
         },
       ]);
+    });
+
+    it('records per-candidate finish_reasons without leaking output content when captureMessageContent is none on multi-choice (n > 1) responses', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'none' });
+      const llm = new MockChatModel({
+        modelId: 'granite-3-8b-instruct',
+        providerId: 'watsonx',
+        responses: [
+          () =>
+            new ChatModelOutput(
+              [
+                new AssistantMessage('Candidate 1 secret'),
+                new AssistantMessage('Candidate 2 secret'),
+              ],
+              { promptTokens: 14, completionTokens: 12, totalTokens: 26 },
+              'stop'
+            ),
+        ],
+      });
+
+      await llm.create({
+        messages: [new UserMessage('Give two options')],
+        n: 2,
+      });
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const span = spans[0];
+      expect(span.attributes[ATTR_GEN_AI_REQUEST_CHOICE_COUNT]).toBe(2);
+      expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+        'stop',
+      ]);
+      expect(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES]).toBeUndefined();
     });
 
     it('coalesces split single-choice assistant message segments on non-streaming n=1 responses', async () => {
