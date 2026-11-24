@@ -37,6 +37,15 @@ import type { BaseAgent } from 'beeai-framework/agents/base';
 import type { ChatModel } from 'beeai-framework/backend/chat';
 import type { EmbeddingModel } from 'beeai-framework/backend/embedding';
 import type { Tool } from 'beeai-framework/tools/base';
+import type {
+  ActiveAgentRun,
+  ActiveRun,
+  AnyInvocation,
+  BeeAIRunLike,
+  MethodPatch,
+  RunOperationSpec,
+  StartedRunOperation,
+} from './internal-types';
 import type { BeeAIInstrumentationConfig } from './types';
 import {
   extractAgentInput,
@@ -57,95 +66,6 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
 const MODULE_NAME = 'beeai-framework';
 const SUPPORTED_VERSIONS = ['>=0.1.9 <0.1.14'];
-
-type AnyInvocation =
-  | LocalAgentInvocation
-  | ToolInvocation
-  | InferenceInvocation
-  | EmbeddingInvocation;
-
-interface MethodPatch {
-  owners: Set<BeeAIInstrumentation>;
-  restore: () => void;
-}
-
-interface BaseActiveRun {
-  kind: 'agent' | 'tool' | 'inference' | 'embedding';
-  runId: string;
-  parentId?: string;
-  invocation: AnyInvocation;
-  callerSpan?: Span;
-}
-
-interface ActiveAgentRun extends BaseActiveRun {
-  kind: 'agent';
-  invocation: LocalAgentInvocation;
-  agentName?: string;
-  llm?: unknown;
-  inputTokens?: number;
-  outputTokens?: number;
-}
-
-type ActiveRun = BaseActiveRun | ActiveAgentRun;
-
-interface BeeAIRunLike<R = unknown> extends Promise<R> {
-  handler: () => Promise<R>;
-  runContext?: {
-    runId?: string;
-    parentId?: string;
-    groupId?: string;
-    context?: Record<string, unknown>;
-    runParams?: unknown;
-    instance?: unknown;
-    emitter?: {
-      on?: (
-        event: string,
-        callback: (data: unknown, meta: unknown) => void
-      ) => (() => void) | void;
-      match?: (
-        matcher: string | ((event: { name?: string }) => boolean),
-        callback: (data: unknown, meta: unknown) => void
-      ) => (() => void) | void;
-    };
-  };
-}
-
-interface RunStartParams {
-  owner: BeeAIInstrumentation;
-  handler: TelemetryHandler;
-  instance: unknown;
-  effectiveInput: unknown;
-  parentContext: Context;
-  callerContext: Context;
-  runId: string | undefined;
-  parentId: string | undefined;
-  parentRun: ActiveRun | undefined;
-  runContext: BeeAIRunLike['runContext'];
-  enclosingAgent: ActiveAgentRun | undefined;
-}
-
-interface StartedRunOperation<TInvocation extends AnyInvocation> {
-  invocation: TInvocation;
-  activeRun?: ActiveRun;
-  cleanup?: () => void;
-  onSuccess?: (result: unknown) => void;
-  onFailure?: () => void;
-}
-
-interface RunOperationSpec<TInvocation extends AnyInvocation> {
-  label: string;
-  isolatesAgentScope?: boolean;
-  startSyncInvocation: (
-    owner: BeeAIInstrumentation,
-    handler: TelemetryHandler,
-    instance: unknown,
-    inputArg: unknown,
-    callerContext: Context
-  ) => TInvocation | undefined;
-  startRun: (
-    params: RunStartParams
-  ) => StartedRunOperation<TInvocation> | undefined;
-}
 
 const ACTIVE_AGENT_CONTEXT_KEY = createContextKey(
   'OpenTelemetry BeeAI Active Agent Run'
