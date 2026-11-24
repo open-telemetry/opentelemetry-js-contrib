@@ -1074,7 +1074,11 @@ describe('BeeAIInstrumentation', () => {
       const httpSpan = tracer.startSpan('http-request');
       const httpContext = trace.setSpan(context.active(), httpSpan);
 
-      const customSpan = tracer.startSpan('custom-parent', undefined, httpContext);
+      const customSpan = tracer.startSpan(
+        'custom-parent',
+        undefined,
+        httpContext
+      );
       const customContext = trace.setSpan(httpContext, customSpan);
 
       const agent = new CustomAgent();
