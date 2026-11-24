@@ -1100,7 +1100,7 @@ describe('BeeAIInstrumentation', () => {
       );
     });
 
-    it('preserves Run middleware, observe, context, and catch chaining without duplicate execution', async () => {
+    it('preserves lazy Run builder chaining (.context, .middleware, .observe) before awaiting', async () => {
       let handlerRuns = 0;
       let middlewareCalled = false;
       let observeCalled = false;
@@ -1128,15 +1128,74 @@ describe('BeeAIInstrumentation', () => {
           });
         });
 
-      run.catch(() => {});
-
+      // Run is lazy: building the chain must not execute the handler or start spans yet.
       expect(handlerRuns).toBe(0);
+      expect(getTestSpans()).toHaveLength(0);
+
       const output = await run;
       expect(handlerRuns).toBe(1);
       expect(middlewareCalled).toBe(true);
       expect(observeCalled).toBe(true);
       expect(output.getTextContent()).toBe('ok:ctx-val');
       expect(getTestSpans()).toHaveLength(1);
+    });
+
+    it('preserves cold LazyPromise re-execution and late .context/.observe/.middleware chaining', async () => {
+      let handlerRuns = 0;
+      const tool = new DynamicTool({
+        name: 'reexec_tool',
+        description: 'Tests cold LazyPromise re-execution parity',
+        inputSchema: z.object({ value: z.string() }),
+        handler: async (input, _options, run) => {
+          handlerRuns++;
+          const tag = (run.context as { tag?: string }).tag ?? 'none';
+          return new StringToolOutput(`${input.value}:${tag}:${handlerRuns}`);
+        },
+      });
+
+      // 1. Re-awaiting the same Run executes the underlying handler each time
+      //    (matching native BeeAI LazyPromise semantics) and records a span per run.
+      const reusableRun = tool.run({ value: 'poll' });
+      const firstOut = await reusableRun;
+      const secondOut = await reusableRun;
+
+      expect(firstOut.getTextContent()).toBe('poll:none:1');
+      expect(secondOut.getTextContent()).toBe('poll:none:2');
+      expect(handlerRuns).toBe(2);
+      expect(
+        getTestSpans().filter(s => s.name === 'execute_tool reexec_tool')
+      ).toHaveLength(2);
+
+      // 2. In BeeAI, `.catch()` triggers an initial LazyPromise execution; chaining
+      //    `.context()`, `.middleware()`, and `.observe()` afterwards must still run
+      //    fresh on the subsequent `await` rather than returning a stale cached promise.
+      resetMemoryExporter();
+      handlerRuns = 0;
+      let lateMiddlewareRuns = 0;
+      let lateObservedStarts = 0;
+
+      const chainedRun = tool.run({ value: 'late' });
+      chainedRun.catch(() => {});
+      await new Promise(resolve => setImmediate(resolve));
+
+      const lateOut = await chainedRun
+        .context({ tag: 'set-late' })
+        .middleware(() => {
+          lateMiddlewareRuns++;
+        })
+        .observe(emitter => {
+          emitter.on('start', () => {
+            lateObservedStarts++;
+          });
+        });
+
+      expect(lateOut.getTextContent()).toBe('late:set-late:2');
+      expect(handlerRuns).toBe(2);
+      expect(lateMiddlewareRuns).toBe(1);
+      expect(lateObservedStarts).toBe(1);
+      expect(
+        getTestSpans().filter(s => s.name === 'execute_tool reexec_tool')
+      ).toHaveLength(2);
     });
 
     it('logs a warning and skips patching when manuallyInstrument receives an unsupported version', () => {

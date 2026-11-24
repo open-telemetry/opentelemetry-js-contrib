@@ -1217,8 +1217,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   }
 
   /**
-   * Wraps `run.handler` so telemetry spans, context propagation, and cleanup
-   * run once when the lazy BeeAI `Run` is awaited or subscribed to.
+   * Wraps `run.handler` so each execution of a lazy BeeAI `Run` creates its
+   * own telemetry span, propagates context, and cleans up on settlement.
    */
   private _wrapRunInstance<TInvocation extends AnyInvocation>(
     run: BeeAIRunLike,
@@ -1230,7 +1230,6 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     spec: RunOperationSpec<TInvocation>
   ): void {
     const originalHandler = run.handler;
-    let inFlightPromise: Promise<unknown> | undefined;
     const executeWrappedRun = async () => {
       const owner = this._resolveActiveOwner(owners, restore);
       const executionContext = context.active();
@@ -1327,12 +1326,12 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       }
     };
 
-    run.handler = () => {
-      if (!inFlightPromise) {
-        inFlightPromise = executeWrappedRun();
-      }
-      return inFlightPromise;
-    };
+    // BeeAI's `Run` extends `LazyPromise`, which is cold and re-executable:
+    // every `.then()`, `.catch()`, `.finally()`, or `await` drains queued
+    // `.context()` / `.observe()` / `.middleware()` tasks via `before()` and
+    // invokes `this.handler()` fresh. Do not memoize the promise here, as
+    // caching would suppress re-execution and drop late-bound tasks.
+    run.handler = () => executeWrappedRun();
   }
 
   /**
