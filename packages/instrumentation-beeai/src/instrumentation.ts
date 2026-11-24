@@ -164,10 +164,17 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   declare private _lastCaptureEnv: string | undefined;
   declare private _manualTargets: Set<object> | undefined;
 
+  /**
+   * Initializes the BeeAI instrumentation with optional configuration.
+   */
   constructor(config: BeeAIInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
+  /**
+   * Enables instrumentation and re-applies patches to any manually instrumented
+   * module targets.
+   */
   override enable(): void {
     super.enable();
     if (this._manualTargets) {
@@ -177,6 +184,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Disables instrumentation and removes patches from any manually instrumented
+   * module targets.
+   */
   override disable(): void {
     super.disable();
     if (this._manualTargets) {
@@ -186,23 +197,38 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Updates instrumentation configuration and invalidates the cached
+   * `TelemetryHandler`.
+   */
   override setConfig(config: BeeAIInstrumentationConfig = {}): void {
     super.setConfig(config);
     this._telemetryHandler = undefined;
   }
 
+  /**
+   * Sets an explicit `TracerProvider` and resets the cached `TelemetryHandler`.
+   */
   override setTracerProvider(tracerProvider: TracerProvider): void {
     super.setTracerProvider(tracerProvider);
     this._explicitTracerProvider = tracerProvider;
     this._telemetryHandler = undefined;
   }
 
+  /**
+   * Sets an explicit `MeterProvider` and resets the cached `TelemetryHandler`.
+   */
   override setMeterProvider(meterProvider: MeterProvider): void {
     super.setMeterProvider(meterProvider);
     this._explicitMeterProvider = meterProvider;
     this._telemetryHandler = undefined;
   }
 
+  /**
+   * Lazily creates and caches the `TelemetryHandler`, recreating it if
+   * `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` changes when unset in
+   * config.
+   */
   private _getTelemetryHandler(): TelemetryHandler {
     const config = this.getConfig();
     const currentEnv =
@@ -223,6 +249,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     return this._telemetryHandler;
   }
 
+  /**
+   * Registers automatic CJS/ESM module hooks for `beeai-framework` and its
+   * agent, tool, chat, and embedding subpath modules.
+   */
   protected init() {
     const files = ['cjs', 'js'].flatMap(ext => [
       createTrackedModuleFile(
@@ -303,6 +333,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Unwraps CJS/ESM module exports (including `default` exports) into an object
+   * containing instrumentable BeeAI classes.
+   */
   private _normalizeModule(moduleExports: unknown):
     | {
         BaseAgent?: typeof BaseAgent;
@@ -329,6 +363,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     return moduleExports;
   }
 
+  /**
+   * Patches all available BeeAI classes (`BaseAgent`, `Tool`, `ChatModel`,
+   * `EmbeddingModel`) exported by a module object.
+   */
   private _patchModule(moduleExports: unknown): void {
     const target = this._normalizeModule(moduleExports);
     if (!target) {
@@ -351,6 +389,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     this._patchEmbeddingModel(target.EmbeddingModel);
   }
 
+  /**
+   * Removes instrumentation patches from all BeeAI classes exported by a module
+   * object.
+   */
   private _unpatchModule(moduleExports: unknown): void {
     const target = this._normalizeModule(moduleExports);
     if (!target) {
@@ -362,6 +404,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     this._unpatchEmbeddingModel(target.EmbeddingModel);
   }
 
+  /**
+   * Patches `BaseAgent.prototype.run` to record `invoke_agent` telemetry.
+   */
   private _patchBaseAgent(baseAgent: typeof BaseAgent | undefined): void {
     if (!baseAgent?.prototype) return;
     this._patchRunMethod(
@@ -371,21 +416,34 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     );
   }
 
+  /**
+   * Restores `BaseAgent.prototype.run` to its unpatched implementation.
+   */
   private _unpatchBaseAgent(baseAgent: typeof BaseAgent | undefined): void {
     if (!baseAgent?.prototype) return;
     this._unpatchMethod(baseAgent.prototype, 'run');
   }
 
+  /**
+   * Patches `Tool.prototype.run` to record `execute_tool` telemetry.
+   */
   private _patchTool(tool: typeof Tool | undefined): void {
     if (!tool?.prototype) return;
     this._patchRunMethod(tool.prototype, 'run', this._getToolOperationSpec());
   }
 
+  /**
+   * Restores `Tool.prototype.run` to its unpatched implementation.
+   */
   private _unpatchTool(tool: typeof Tool | undefined): void {
     if (!tool?.prototype) return;
     this._unpatchMethod(tool.prototype, 'run');
   }
 
+  /**
+   * Patches `ChatModel.prototype.create` and `createStructure` to record `chat`
+   * inference telemetry.
+   */
   private _patchChatModel(chatModel: typeof ChatModel | undefined): void {
     if (!chatModel?.prototype) return;
     this._patchRunMethod(
@@ -400,12 +458,19 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     );
   }
 
+  /**
+   * Restores `ChatModel.prototype.create` and `createStructure` to their
+   * unpatched implementations.
+   */
   private _unpatchChatModel(chatModel: typeof ChatModel | undefined): void {
     if (!chatModel?.prototype) return;
     this._unpatchMethod(chatModel.prototype, 'create');
     this._unpatchMethod(chatModel.prototype, 'createStructure');
   }
 
+  /**
+   * Patches `EmbeddingModel.prototype.create` to record `embeddings` telemetry.
+   */
   private _patchEmbeddingModel(
     embeddingModel: typeof EmbeddingModel | undefined
   ): void {
@@ -417,6 +482,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     );
   }
 
+  /**
+   * Restores `EmbeddingModel.prototype.create` to its unpatched implementation.
+   */
   private _unpatchEmbeddingModel(
     embeddingModel: typeof EmbeddingModel | undefined
   ): void {
@@ -424,6 +492,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     this._unpatchMethod(embeddingModel.prototype, 'create');
   }
 
+  /**
+   * Builds the `Run` lifecycle specification for `BaseAgent` executions,
+   * tracking `success` events and aggregated token usage.
+   */
   private _getAgentOperationSpec(): RunOperationSpec<LocalAgentInvocation> {
     return {
       label: 'agent',
@@ -514,6 +586,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Starts a `LocalAgentInvocation` span with agent metadata, configured model
+   * options, and optional input messages and system instructions.
+   */
   private _startAgentInvocation(
     handler: TelemetryHandler,
     agentInstance: unknown,
@@ -558,6 +634,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
+  /**
+   * Records aggregated token usage and optional output messages on a completed
+   * `LocalAgentInvocation`.
+   */
   private _finalizeAgentInvocation(
     invocation: LocalAgentInvocation,
     result: unknown,
@@ -605,6 +685,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Builds the `Run` lifecycle specification for `Tool` executions, skipping
+   * internal `final_answer` calls and attributing calls to any enclosing agent.
+   */
   private _getToolOperationSpec(): RunOperationSpec<ToolInvocation> {
     return {
       label: 'tool',
@@ -680,6 +764,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Starts a `ToolInvocation` span with tool metadata, call ID, enclosing agent
+   * name, and optional arguments.
+   */
   private _startToolInvocation(
     handler: TelemetryHandler,
     toolInstance: unknown,
@@ -719,6 +807,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
+  /**
+   * Builds the `Run` lifecycle specification for standard or structured
+   * `ChatModel` calls, attaching `newToken` listeners when streaming.
+   */
   private _getChatOperationSpec(
     isStructured: boolean
   ): RunOperationSpec<InferenceInvocation> {
@@ -804,6 +896,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Starts an `InferenceInvocation` span for a `ChatModel` request and returns
+   * whether the call is streaming.
+   */
   private _startChatInvocation(
     handler: TelemetryHandler,
     chatModelInstance: unknown,
@@ -866,6 +962,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     return { invocation, isStreaming };
   }
 
+  /**
+   * Populates response ID, token usage (rolling up into any enclosing agent),
+   * finish reason, and output messages on a completed `InferenceInvocation`.
+   */
   private _finalizeChatInvocation(
     invocation: InferenceInvocation,
     result: unknown,
@@ -942,6 +1042,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Builds the `Run` lifecycle specification for `EmbeddingModel` calls,
+   * recording vector dimensions and token usage upon completion.
+   */
   private _getEmbeddingOperationSpec(): RunOperationSpec<EmbeddingInvocation> {
     return {
       label: 'embedding',
@@ -996,6 +1100,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Starts an `EmbeddingInvocation` span with provider and model metadata.
+   */
   private _startEmbeddingInvocation(
     handler: TelemetryHandler,
     embeddingModelInstance: unknown,
@@ -1021,6 +1128,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     });
   }
 
+  /**
+   * Patches a BeeAI prototype method returning a `Run` with telemetry lifecycle
+   * handling defined by `spec`.
+   */
   private _patchRunMethod<
     T extends object,
     K extends keyof T,
@@ -1031,6 +1142,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     );
   }
 
+  /**
+   * Creates a method wrapper that captures synchronous invocation failures and
+   * wraps returned BeeAI `Run` instances for deferred async execution.
+   */
   private _createRunMethodWrapper<TInvocation extends AnyInvocation>(
     owners: Set<BeeAIInstrumentation>,
     restore: () => void,
@@ -1070,6 +1185,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Records a failed invocation span and error metric when a patched method
+   * throws synchronously before returning a `Run`.
+   */
   private _recordSyncFailure<TInvocation extends AnyInvocation>(
     instance: unknown,
     inputArg: unknown,
@@ -1097,6 +1216,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     }
   }
 
+  /**
+   * Wraps `run.handler` so telemetry spans, context propagation, and cleanup
+   * run once when the lazy BeeAI `Run` is awaited or subscribed to.
+   */
   private _wrapRunInstance<TInvocation extends AnyInvocation>(
     run: BeeAIRunLike,
     instance: unknown,
@@ -1212,6 +1335,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     };
   }
 
+  /**
+   * Applies an owner-tracked patch to `target[method]` so multiple
+   * `BeeAIInstrumentation` instances can share a single wrapper safely.
+   */
   private _patchMethod<T extends object, K extends keyof T>(
     target: T,
     method: K,
@@ -1244,6 +1371,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     patches.set(method, patch);
   }
 
+  /**
+   * Unregisters this instrumentation instance from `target[method]` and
+   * restores the original method when no owners remain.
+   */
   private _unpatchMethod(
     target: object,
     method: 'run' | 'create' | 'createStructure'
@@ -1255,6 +1386,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     patch.restore();
   }
 
+  /**
+   * Finds the most recently registered enabled `BeeAIInstrumentation` owner for
+   * a shared patch, restoring the original method if no owners remain.
+   */
   private _resolveActiveOwner(
     owners: Set<BeeAIInstrumentation>,
     restore: () => void
@@ -1269,10 +1404,18 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   }
 }
 
+/**
+ * Checks whether a value is a lazy BeeAI `Run` object exposing a `handler`
+ * function.
+ */
 function isBeeAIRun(value: unknown): value is BeeAIRunLike {
   return isRecord(value) && typeof value.handler === 'function';
 }
 
+/**
+ * Checks whether a `beeai-framework` semantic version falls within the
+ * supported `>=0.1.9 <0.1.14` range.
+ */
 function isSupportedVersion(version: unknown): boolean {
   if (typeof version !== 'string') return true;
   const match =
@@ -1286,6 +1429,10 @@ function isSupportedVersion(version: unknown): boolean {
   return major === 0 && minor === 1 && patch >= 9 && patch < 14;
 }
 
+/**
+ * Tracks all loaded CJS/ESM module copies, including those loaded while
+ * disabled, so each copy is patched or unpatched together.
+ */
 function createTrackedModuleFile<T extends object>(
   name: string,
   patch: (module: T) => void,
@@ -1321,6 +1468,10 @@ function createTrackedModuleFile<T extends object>(
   return file;
 }
 
+/**
+ * Extracts `agentName` and `agentDescription` from a BeeAI agent instance,
+ * tolerating custom `meta` getters that may throw.
+ */
 function extractAgentMetadata(agentInstance: unknown): {
   agentName?: string;
   agentDescription?: string;
@@ -1352,6 +1503,10 @@ function extractAgentMetadata(agentInstance: unknown): {
   return { agentName, agentDescription };
 }
 
+/**
+ * Extracts the final assistant message role and text from a BeeAI agent
+ * `success` event payload.
+ */
 function extractSuccessEventMessage(
   data: unknown
 ): { role: string; text: string } | undefined {
@@ -1378,6 +1533,10 @@ function extractSuccessEventMessage(
   return undefined;
 }
 
+/**
+ * Identifies BeeAI's internal `final_answer` control-flow tool within an agent
+ * run so it is excluded from user tool telemetry.
+ */
 function isInternalFinalAnswerTool(
   toolInstance: unknown,
   enclosingAgent: ActiveAgentRun | undefined
@@ -1391,6 +1550,10 @@ function isInternalFinalAnswerTool(
   );
 }
 
+/**
+ * Walks the `Run` parent chain and OpenTelemetry contexts to find the enclosing
+ * active agent run, if any.
+ */
 function findEnclosingAgentRun(
   parentId: string | undefined,
   callerContext?: Context,
@@ -1418,6 +1581,10 @@ function findEnclosingAgentRun(
   return undefined;
 }
 
+/**
+ * Resolves the parent OpenTelemetry `Context` for a `Run`, preferring external
+ * caller or execution spans over ancestor `Run` spans when nested.
+ */
 function resolveParentContext(
   callerContext: Context,
   executionContext: Context,
