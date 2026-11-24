@@ -1213,8 +1213,8 @@ describe('BeeAIInstrumentation', () => {
         },
         DiagLogLevel.WARN
       );
+      const customInst = new BeeAIInstrumentation();
       try {
-        const customInst = new BeeAIInstrumentation();
         customInst.manuallyInstrument({
           ...bee,
           Version: '0.2.0',
@@ -1224,8 +1224,38 @@ describe('BeeAIInstrumentation', () => {
           'DependencyConflict'
         );
       } finally {
+        customInst.disable();
         diag.disable();
       }
+    });
+
+    it('emits telemetry for a pre-constructed lazy Run across disable() and enable() cycles', async () => {
+      let runs = 0;
+      const tool = new DynamicTool({
+        name: 'toggle_cycle_tool',
+        description: 'Tests lazy Run owner lookup across disable/enable',
+        inputSchema: z.object({ value: z.string() }),
+        handler: async input => {
+          runs++;
+          return new StringToolOutput(`${input.value}:${runs}`);
+        },
+      });
+
+      // Construct lazy Run while enabled, then toggle disable() -> enable()
+      const prebuiltRun = tool.run({ value: 'ping' });
+
+      instrumentation.disable();
+      const disabledOut = await prebuiltRun;
+      expect(disabledOut.getTextContent()).toBe('ping:1');
+      expect(getTestSpans()).toHaveLength(0);
+
+      instrumentation.enable();
+      const reenabledOut = await prebuiltRun;
+      expect(reenabledOut.getTextContent()).toBe('ping:2');
+      const spans = getTestSpans().filter(
+        s => s.name === 'execute_tool toggle_cycle_tool'
+      );
+      expect(spans).toHaveLength(1);
     });
 
     it('patches subpath modules without BaseAgent and unpatches manual targets on disable()', () => {

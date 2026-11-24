@@ -1179,14 +1179,21 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     K extends keyof T,
     TInvocation extends AnyInvocation,
   >(target: T, method: K, spec: RunOperationSpec<TInvocation>): void {
-    this._patchMethod(target, method, (owners, restore) =>
-      this._createRunMethodWrapper(owners, restore, spec)
+    this._patchMethod(
+      target,
+      method,
+      this._createRunMethodWrapper<T[K], TInvocation>(target, method, spec)
     );
   }
 
   /**
    * Creates a method wrapper that captures synchronous invocation failures and
    * wraps returned BeeAI `Run` instances for deferred async execution.
+   *
+   * Resolves the active `BeeAIInstrumentation` owner dynamically via `(target,
+   * method)` rather than closing over `this` or a specific `owners` set, so
+   * lazy `Run` instances survive `disable()` / `enable()` cycles without
+   * pinning instrumentation instances in memory.
    *
    * @template TMethod - Exact property signature (`T[K]`) of the prototype
    *   method being patched, preserving its parameter and return types across
@@ -1196,15 +1203,14 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
    *   `EmbeddingInvocation`) managed by `spec` for this operation.
    */
   private _createRunMethodWrapper<TMethod, TInvocation extends AnyInvocation>(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void,
+    target: object,
+    method: PropertyKey,
     spec: RunOperationSpec<TInvocation>
   ): (original: TMethod) => TMethod {
     return (original: TMethod): TMethod => {
       const originalFn = original as unknown as (...args: unknown[]) => unknown;
-      const instrumentation = this;
       return function patchedBeeAIMethod(this: unknown, ...args: unknown[]) {
-        const owner = instrumentation._resolveActiveOwner(owners, restore);
+        const owner = BeeAIInstrumentation._resolveActiveOwner(target, method);
         const callerContext = context.active();
         if (!owner || isTracingSuppressed(callerContext)) {
           return originalFn.apply(this, args);
@@ -1220,13 +1226,13 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
         if (isBeeAIRun(returned) && !wrappedRuns.has(returned)) {
           wrappedRuns.add(returned);
-          owner._wrapRunInstance(
+          BeeAIInstrumentation._wrapRunInstance(
             returned,
             this,
             args[0],
             callerContext,
-            owners,
-            restore,
+            target,
+            method,
             spec
           );
         }
@@ -1270,21 +1276,97 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   }
 
   /**
-   * Wraps `run.handler` so each execution of a lazy BeeAI `Run` creates its
-   * own telemetry span, propagates context, and cleans up on settlement.
+   * Applies an owner-tracked patch to `target[method]` so multiple
+   * `BeeAIInstrumentation` instances can share a single wrapper safely.
+   *
+   * @param target - Prototype or object whose method is being patched.
+   * @param method - Property key of the method on `target` to wrap.
+   * @param factory - Wrapper builder invoked with the original method to
+   *   produce its patched replacement when no patch is active yet.
    */
-  private _wrapRunInstance<TInvocation extends AnyInvocation>(
+  private _patchMethod<T extends object, K extends keyof T>(
+    target: T,
+    method: K,
+    factory: (original: T[K]) => T[K]
+  ): void {
+    if (typeof target[method] !== 'function') return;
+    const patches =
+      methodPatches.get(target) ?? new Map<PropertyKey, MethodPatch>();
+    methodPatches.set(target, patches);
+    const existing = patches.get(method);
+    if (existing) {
+      existing.owners.add(this);
+      return;
+    }
+    const owners = new Set([this]);
+    const original = target[method];
+    const patch: MethodPatch = {
+      owners,
+      restore: () => {
+        if (owners.size !== 0 || target[method] !== wrapped) return;
+        target[method] = original;
+        if (patches.get(method) === patch) patches.delete(method);
+        if (patches.size === 0) methodPatches.delete(target);
+      },
+    };
+    const wrapped = factory(original);
+    target[method] = wrapped;
+    patches.set(method, patch);
+  }
+
+  /**
+   * Unregisters this instrumentation instance from `target[method]` and
+   * restores the original method when no owners remain.
+   */
+  private _unpatchMethod(
+    target: object,
+    method: 'run' | 'create' | 'createStructure'
+  ): void {
+    const patches = methodPatches.get(target);
+    if (!patches) return;
+    const patch = patches.get(method);
+    if (!patch?.owners.delete(this)) return;
+    patch.restore();
+  }
+
+  /**
+   * Finds the most recently registered enabled `BeeAIInstrumentation` owner for
+   * `(target, method)` via a live `methodPatches` lookup so lazy `Run` closures
+   * do not pin stale `owners` sets or instrumentation instances across
+   * `disable()` / `enable()` cycles.
+   */
+  private static _resolveActiveOwner(
+    target: object,
+    method: PropertyKey
+  ): BeeAIInstrumentation | undefined {
+    const patch = methodPatches.get(target)?.get(method);
+    if (!patch) return undefined;
+    const owner = Array.from(patch.owners)
+      .reverse()
+      .find(instance => instance.isEnabled());
+    if (!owner && patch.owners.size === 0) {
+      patch.restore();
+    }
+    return owner;
+  }
+
+  /**
+   * Wraps `run.handler` so each execution of a lazy BeeAI `Run` creates its own
+   * telemetry span, propagates context, and cleans up on settlement, resolving
+   * the active owner dynamically via `(target, method)` at execution time.
+   */
+  private static _wrapRunInstance<TInvocation extends AnyInvocation>(
     run: BeeAIRunLike,
     instance: unknown,
     inputArg: unknown,
     callerContext: Context,
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void,
+    target: object,
+    method: PropertyKey,
     spec: RunOperationSpec<TInvocation>
   ): void {
     const originalHandler = run.handler;
     const executeWrappedRun = async () => {
-      const owner = this._resolveActiveOwner(owners, restore);
+      const owner = BeeAIInstrumentation._resolveActiveOwner(target, method);
       const executionContext = context.active();
       if (
         !owner ||
@@ -1393,74 +1475,6 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     // invokes `this.handler()` fresh. Do not memoize the promise here, as
     // caching would suppress re-execution and drop late-bound tasks.
     run.handler = () => executeWrappedRun();
-  }
-
-  /**
-   * Applies an owner-tracked patch to `target[method]` so multiple
-   * `BeeAIInstrumentation` instances can share a single wrapper safely.
-   */
-  private _patchMethod<T extends object, K extends keyof T>(
-    target: T,
-    method: K,
-    factory: (
-      owners: Set<BeeAIInstrumentation>,
-      restore: () => void
-    ) => (original: T[K]) => T[K]
-  ): void {
-    if (typeof target[method] !== 'function') return;
-    const patches =
-      methodPatches.get(target) ?? new Map<PropertyKey, MethodPatch>();
-    methodPatches.set(target, patches);
-    const existing = patches.get(method);
-    if (existing) {
-      existing.owners.add(this);
-      return;
-    }
-    const owners = new Set([this]);
-    const original = target[method];
-    const patch: MethodPatch = {
-      owners,
-      restore: () => {
-        if (owners.size !== 0 || target[method] !== wrapped) return;
-        target[method] = original;
-        if (patches.get(method) === patch) patches.delete(method);
-      },
-    };
-    const wrapped = factory(owners, patch.restore)(original);
-    target[method] = wrapped;
-    patches.set(method, patch);
-  }
-
-  /**
-   * Unregisters this instrumentation instance from `target[method]` and
-   * restores the original method when no owners remain.
-   */
-  private _unpatchMethod(
-    target: object,
-    method: 'run' | 'create' | 'createStructure'
-  ): void {
-    const patches = methodPatches.get(target);
-    if (!patches) return;
-    const patch = patches.get(method);
-    if (!patch?.owners.delete(this)) return;
-    patch.restore();
-  }
-
-  /**
-   * Finds the most recently registered enabled `BeeAIInstrumentation` owner for
-   * a shared patch, restoring the original method if no owners remain.
-   */
-  private _resolveActiveOwner(
-    owners: Set<BeeAIInstrumentation>,
-    restore: () => void
-  ): BeeAIInstrumentation | undefined {
-    const owner = Array.from(owners)
-      .reverse()
-      .find(instance => instance.isEnabled());
-    if (!owner && owners.size === 0) {
-      restore();
-    }
-    return owner;
   }
 }
 
