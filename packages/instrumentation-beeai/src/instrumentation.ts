@@ -1187,24 +1187,32 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   /**
    * Creates a method wrapper that captures synchronous invocation failures and
    * wraps returned BeeAI `Run` instances for deferred async execution.
+   *
+   * @template TMethod - Exact property signature (`T[K]`) of the prototype
+   *   method being patched, preserving its parameter and return types across
+   *   `_patchMethod` without `strictFunctionTypes` contravariance mismatches.
+   * @template TInvocation - GenAI telemetry invocation type
+   *   (`LocalAgentInvocation`, `ToolInvocation`, `InferenceInvocation`, or
+   *   `EmbeddingInvocation`) managed by `spec` for this operation.
    */
-  private _createRunMethodWrapper<TInvocation extends AnyInvocation>(
+  private _createRunMethodWrapper<TMethod, TInvocation extends AnyInvocation>(
     owners: Set<BeeAIInstrumentation>,
     restore: () => void,
     spec: RunOperationSpec<TInvocation>
-  ) {
-    return <F extends (...args: unknown[]) => unknown>(original: F): F => {
+  ): (original: TMethod) => TMethod {
+    return (original: TMethod): TMethod => {
+      const originalFn = original as unknown as (...args: unknown[]) => unknown;
       const instrumentation = this;
       return function patchedBeeAIMethod(this: unknown, ...args: unknown[]) {
         const owner = instrumentation._resolveActiveOwner(owners, restore);
         const callerContext = context.active();
         if (!owner || isTracingSuppressed(callerContext)) {
-          return original.apply(this, args);
+          return originalFn.apply(this, args);
         }
 
         let returned: unknown;
         try {
-          returned = original.apply(this, args);
+          returned = originalFn.apply(this, args);
         } catch (error) {
           owner._recordSyncFailure(this, args[0], callerContext, error, spec);
           throw error;
@@ -1223,7 +1231,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           );
         }
         return returned;
-      } as F;
+      } as unknown as TMethod;
     };
   }
 
