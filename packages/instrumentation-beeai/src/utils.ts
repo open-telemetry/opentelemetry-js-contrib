@@ -284,6 +284,43 @@ function inferModalityFromMimeType(
   return fallback;
 }
 
+/**
+ * Validates standard base64 characters, optional `=` padding, and unused
+ * trailing bits in linear time and constant space before passing strings to
+ * Node's permissive `Buffer.from(..., 'base64')` decoder.
+ */
+function isValidBase64(value: string): boolean {
+  let length = value.length;
+  while (length > 0 && value.charCodeAt(length - 1) === 61 /* '=' */) {
+    length--;
+  }
+  const padding = value.length - length;
+  const remainder = length % 4;
+  if (
+    length === 0 ||
+    padding > 2 ||
+    remainder === 1 ||
+    (padding > 0 && (value.length % 4 !== 0 || remainder !== 4 - padding))
+  ) {
+    return false;
+  }
+  let last = 0;
+  for (let i = 0; i < length; i++) {
+    const code = value.charCodeAt(i);
+    if (code >= 65 && code <= 90) last = code - 65;
+    else if (code >= 97 && code <= 122) last = code - 71;
+    else if (code >= 48 && code <= 57) last = code + 4;
+    else if (code === 43) last = 62;
+    else if (code === 47) last = 63;
+    else return false;
+  }
+  return remainder === 2
+    ? (last & 15) === 0
+    : remainder === 3
+      ? (last & 3) === 0
+      : true;
+}
+
 function convertBinaryOrUriPart(
   rawData: unknown,
   mimeType: string | undefined,
@@ -319,19 +356,30 @@ function convertBinaryOrUriPart(
     if (!trimmed) {
       return undefined;
     }
-    const dataUrlMatch =
-      /^data:([^;,]+)?(?:;[^;,=]+=[^;,]+)*;base64,(.+)$/is.exec(trimmed);
-    if (dataUrlMatch) {
+    if (/^data:/i.test(trimmed)) {
+      const dataUrlMatch =
+        /^data:([^;,]+)?(?:;[^;,=]+=[^;,]+)*;base64,(.+)$/is.exec(trimmed);
+      if (!dataUrlMatch) {
+        return undefined;
+      }
       const detectedMime = dataUrlMatch[1] || mimeType;
+      let payload = dataUrlMatch[2];
+      if (payload.includes('%')) {
+        try {
+          payload = decodeURIComponent(payload);
+        } catch {
+          return undefined;
+        }
+      }
+      if (!isValidBase64(payload)) {
+        return undefined;
+      }
       return {
         type: 'blob',
         modality: inferModalityFromMimeType(detectedMime, defaultModality),
-        content: new Uint8Array(Buffer.from(dataUrlMatch[2], 'base64')),
+        content: Buffer.from(payload, 'base64'),
         ...(detectedMime ? { mime_type: detectedMime } : {}),
       };
-    }
-    if (trimmed.toLowerCase().startsWith('data:')) {
-      return undefined;
     }
     if (/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//.test(trimmed)) {
       return {
@@ -341,10 +389,13 @@ function convertBinaryOrUriPart(
         ...(mimeType ? { mime_type: mimeType } : {}),
       };
     }
+    if (!isValidBase64(trimmed)) {
+      return undefined;
+    }
     return {
       type: 'blob',
       modality,
-      content: new Uint8Array(Buffer.from(trimmed, 'base64')),
+      content: Buffer.from(trimmed, 'base64'),
       ...(mimeType ? { mime_type: mimeType } : {}),
     };
   }

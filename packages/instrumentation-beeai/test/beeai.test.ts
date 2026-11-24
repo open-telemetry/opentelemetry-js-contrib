@@ -123,7 +123,7 @@ import {
   JSONToolOutput,
   StringToolOutput,
 } from 'beeai-framework/tools/base';
-import { mapProviderName } from '../src/utils';
+import { convertBeeAIMessage, mapProviderName } from '../src/utils';
 
 class TestMetricReader extends MetricReader {
   protected async onForceFlush(): Promise<void> {}
@@ -1549,6 +1549,106 @@ describe('BeeAIInstrumentation', () => {
       expect(outputMessages[0].parts).toEqual([
         { type: 'reasoning', content: 'Step-by-step reasoning' },
         { type: 'text', content: 'Final answer' },
+      ]);
+    });
+
+    it('validates base64 multimodal parts without duplicate Uint8Array copies and omits non-base64 strings', async () => {
+      // Verify convertBeeAIMessage returns Buffer directly (a Uint8Array subclass)
+      // without allocating a second TypedArray copy via `new Uint8Array(Buffer.from(...))`.
+      const directConverted = convertBeeAIMessage(
+        new UserMessage([
+          {
+            type: 'image',
+            image: 'data:image/png;base64,aGVsbG8%3D',
+          },
+          {
+            type: 'file',
+            data: 'AQIDBA==',
+            mimeType: 'application/pdf',
+          },
+        ])
+      );
+      expect(directConverted?.parts).toHaveLength(2);
+      const imageBlob = directConverted?.parts[0] as {
+        type: string;
+        content: Uint8Array;
+      };
+      const fileBlob = directConverted?.parts[1] as {
+        type: string;
+        content: Uint8Array;
+      };
+      expect(Buffer.isBuffer(imageBlob.content)).toBe(true);
+      expect(Array.from(imageBlob.content)).toEqual([104, 101, 108, 108, 111]);
+      expect(Buffer.isBuffer(fileBlob.content)).toBe(true);
+      expect(Array.from(fileBlob.content)).toEqual([1, 2, 3, 4]);
+
+      // Verify end-to-end span serialization omits local file paths, relative paths,
+      // and malformed base64 instead of emitting silently corrupted binary blobs.
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const llm = new MockChatModel({
+        modelId: 'gpt-4o',
+        providerId: 'openai',
+      });
+
+      await llm.create({
+        messages: [
+          new UserMessage([
+            { type: 'text', text: 'Inspect valid and invalid attachments' },
+            {
+              type: 'file',
+              data: '/var/data/quarterly-report.pdf',
+              mimeType: 'application/pdf',
+            },
+            {
+              type: 'image',
+              image: './relative/chart.png',
+              mimeType: 'image/png',
+            },
+            {
+              type: 'image',
+              image: 'data:image/png;base64,not-valid-base64!',
+            },
+            {
+              type: 'image',
+              image: 'data:image/png;base64,%ZZ',
+            },
+            {
+              type: 'file',
+              data: 'aGVsbG9=', // non-zero unused trailing bits
+              mimeType: 'application/octet-stream',
+            },
+            {
+              type: 'file',
+              data: 'abcde', // invalid length % 4 === 1
+              mimeType: 'application/octet-stream',
+            },
+            {
+              type: 'file',
+              data: 'AQIDBA', // valid unpadded base64 ([1, 2, 3, 4])
+              mimeType: 'application/pdf',
+            },
+          ]),
+        ],
+      });
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const inputMessages = JSON.parse(
+        spans[0].attributes[ATTR_GEN_AI_INPUT_MESSAGES] as string
+      );
+      expect(inputMessages).toEqual([
+        {
+          role: 'user',
+          parts: [
+            { type: 'text', content: 'Inspect valid and invalid attachments' },
+            {
+              type: 'blob',
+              modality: 'document',
+              content: 'AQIDBA==',
+              mime_type: 'application/pdf',
+            },
+          ],
+        },
       ]);
     });
 
