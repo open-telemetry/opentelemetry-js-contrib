@@ -748,7 +748,7 @@ describe('BeeAIInstrumentation', () => {
                   toolCallId: 'call_wx_1',
                   toolName: 'search_docs',
                   args: { q: 'beeai' },
-                } as unknown as bee.MessageContentPart),
+                }),
               ],
               { promptTokens: 18, completionTokens: 10, totalTokens: 28 },
               'tool-calls'
@@ -1129,7 +1129,7 @@ describe('BeeAIInstrumentation', () => {
                   toolCallId: 'call_abc123',
                   toolName: 'lookup_user',
                   args: { userId: '42' },
-                } as unknown as bee.MessageContentPart),
+                }),
               ],
               { promptTokens: 30, completionTokens: 12, totalTokens: 42 },
               'tool-calls'
@@ -1146,7 +1146,7 @@ describe('BeeAIInstrumentation', () => {
                       toolCallId: 'call_final999',
                       toolName: 'final_answer',
                       args: { response: 'User 42 is Alice.' },
-                    } as unknown as bee.MessageContentPart)
+                    })
                   : new AssistantMessage('User 42 is Alice.'),
               ],
               { promptTokens: 50, completionTokens: 10, totalTokens: 60 },
@@ -1416,12 +1416,12 @@ describe('BeeAIInstrumentation', () => {
         1
       );
       // Both models are still accounted for in client inference usage metrics.
-      const totalClientInputTokens = (
-        clientInputUsage?.dataPoints ?? []
-      ).reduce(
-        (acc, dp) => acc + (typeof dp.value === 'number' ? dp.value : 0),
-        0
-      );
+      let totalClientInputTokens = 0;
+      for (const dp of clientInputUsage?.dataPoints ?? []) {
+        if (typeof dp.value === 'number') {
+          totalClientInputTokens += dp.value;
+        }
+      }
       expect(totalClientInputTokens).toBe(605);
 
       // Also verify built-in LLMTool sharing the exact same ChatModel instance as the agent.
@@ -1441,8 +1441,12 @@ describe('BeeAIInstrumentation', () => {
         public memory = memory;
         protected readonly input = { llm: agentLlm };
 
-        get meta() {
-          return { name: 'EntityAgent', description: 'Calls LLMTool' };
+        override get meta() {
+          return {
+            name: 'EntityAgent',
+            description: 'Calls LLMTool',
+            tools: [],
+          };
         }
 
         protected async _run(input: { prompt: string }) {
@@ -1799,7 +1803,7 @@ describe('BeeAIInstrumentation', () => {
                   {
                     type: 'reasoning',
                     text: 'Step-by-step reasoning',
-                  } as unknown as bee.MessageContentPart,
+                  } as unknown as AssistantMessage['content'][number],
                   { type: 'text', text: 'Final answer' },
                 ]),
               ],
@@ -1832,7 +1836,7 @@ describe('BeeAIInstrumentation', () => {
               toolCallId: 'call_1',
               toolName: 'calc',
               result: { answer: 42 },
-            } as unknown as bee.MessageContentPart,
+            } as unknown as UserMessage['content'][number],
           ]),
         ],
         responseFormat: { type: 'object-json' },
@@ -2063,11 +2067,15 @@ describe('BeeAIInstrumentation', () => {
 
       // Build lazy Runs inside parentCtx and await them outside parentCtx to verify
       // passthrough parent context propagation into delegated calls.
-      const [toolRun, chatRun, embRun] = context.with(parentCtx, () => [
-        beeLcTool.run({ query: 'otel' }),
-        beeLcChat.create({ messages: [new UserMessage('Hello')] }),
-        beeLcEmbedding.create({ values: ['embed-me'] }),
-      ]);
+      const [toolRun, chatRun, embRun] = context.with(
+        parentCtx,
+        () =>
+          [
+            beeLcTool.run({ query: 'otel' }),
+            beeLcChat.create({ messages: [new UserMessage('Hello')] }),
+            beeLcEmbedding.create({ values: ['embed-me'] }),
+          ] as const
+      );
 
       const toolOut = await toolRun;
       const chatOut = await chatRun;
@@ -2156,10 +2164,11 @@ describe('BeeAIInstrumentation', () => {
         public memory = new UnconstrainedMemory();
         protected readonly input = { llm: beeLcChat };
 
-        get meta() {
+        override get meta() {
           return {
             name: 'DelegatingAssistant',
             description: 'Uses LangChain adapters',
+            tools: [],
           };
         }
 
@@ -2229,8 +2238,12 @@ describe('BeeAIInstrumentation', () => {
         memory: new UnconstrainedMemory(),
       });
 
+      const remoteInternal = remoteAgent as unknown as {
+        client: { stream: (...args: unknown[]) => AsyncGenerator<unknown> };
+        isRunning: boolean;
+      };
       let observedParentSpanId: string | undefined;
-      sinon.stub(remoteAgent.client, 'stream').callsFake(async function* () {
+      sinon.stub(remoteInternal.client, 'stream').callsFake(async function* () {
         observedParentSpanId = trace.getActiveSpan()?.spanContext().spanId;
         yield {
           event: 'message',
@@ -2264,7 +2277,7 @@ describe('BeeAIInstrumentation', () => {
       expect(spans[0].name).toBe('caller-op');
 
       // Also verify synchronous BaseAgent error path (`isRunning = true`) is skipped.
-      remoteAgent.isRunning = true;
+      remoteInternal.isRunning = true;
       expect(() => remoteAgent.run({ input: 'concurrent' })).toThrow(
         /already running/i
       );

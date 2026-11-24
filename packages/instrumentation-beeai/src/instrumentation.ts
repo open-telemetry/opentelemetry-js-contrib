@@ -486,19 +486,21 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           // Ignore listener registration errors
         }
 
+        const cleanupFn =
+          typeof unsubscribe === 'function' ? unsubscribe : undefined;
+
         return {
           invocation,
           activeRun: activeRecord,
-          cleanup:
-            typeof unsubscribe === 'function'
-              ? () => {
-                  try {
-                    unsubscribe();
-                  } catch {
-                    // Ignore listener cleanup errors
-                  }
+          cleanup: cleanupFn
+            ? () => {
+                try {
+                  cleanupFn();
+                } catch {
+                  // Ignore listener cleanup errors
                 }
-              : undefined,
+              }
+            : undefined,
           onSuccess: result => {
             owner._finalizeAgentInvocation(
               invocation,
@@ -684,8 +686,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           }
           return undefined;
         }
-        const toolCallMsg = isRecord(runContext?.context)
-          ? runContext.context.toolCallMsg
+        const rawContext = runContext?.context;
+        const toolCallMsg = isRecord(rawContext)
+          ? rawContext.toolCallMsg
           : undefined;
         const toolCallId =
           isRecord(toolCallMsg) &&
@@ -855,6 +858,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           }
         }
 
+        const cleanupFn =
+          typeof unsubscribe === 'function' ? unsubscribe : undefined;
+
         return {
           invocation,
           activeRun: runId
@@ -866,16 +872,15 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
                 callerSpan: trace.getSpan(callerContext),
               }
             : undefined,
-          cleanup:
-            typeof unsubscribe === 'function'
-              ? () => {
-                  try {
-                    unsubscribe();
-                  } catch {
-                    // Ignore listener cleanup errors
-                  }
+          cleanup: cleanupFn
+            ? () => {
+                try {
+                  cleanupFn();
+                } catch {
+                  // Ignore listener cleanup errors
                 }
-              : undefined,
+              }
+            : undefined,
           onSuccess: result => {
             owner._finalizeChatInvocation(
               invocation,
@@ -1368,9 +1373,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         executionContext,
         parentRun
       );
+      const runParams = runContext?.runParams;
       const effectiveInput =
-        Array.isArray(runContext?.runParams) && runContext.runParams.length > 0
-          ? runContext.runParams[0]
+        Array.isArray(runParams) && runParams.length > 0
+          ? runParams[0]
           : inputArg;
 
       let started: StartedRunOperation<TInvocation> | undefined;
