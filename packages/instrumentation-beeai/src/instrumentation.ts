@@ -81,6 +81,7 @@ interface ActiveAgentRun extends BaseActiveRun {
   kind: 'agent';
   invocation: LocalAgentInvocation;
   agentName?: string;
+  llm?: unknown;
   inputTokens?: number;
   outputTokens?: number;
 }
@@ -133,6 +134,7 @@ interface StartedRunOperation<TInvocation extends AnyInvocation> {
 
 interface RunOperationSpec<TInvocation extends AnyInvocation> {
   label: string;
+  isolatesAgentScope?: boolean;
   startSyncInvocation: (
     owner: BeeAIInstrumentation,
     handler: TelemetryHandler,
@@ -497,6 +499,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   private _getAgentOperationSpec(): RunOperationSpec<LocalAgentInvocation> {
     return {
       label: 'agent',
+      isolatesAgentScope: true,
       startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) => {
         if (isRemoteAgent(instance)) {
           return undefined;
@@ -523,6 +526,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           return undefined;
         }
         const metadata = extractAgentMetadata(instance);
+        const agentInput = isRecord(instance)
+          ? ownDataValue(instance, 'input')
+          : undefined;
+        const configuredLlm = isRecord(agentInput) ? agentInput.llm : undefined;
         const invocation = owner._startAgentInvocation(
           handler,
           instance,
@@ -537,6 +544,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
               parentId,
               invocation,
               agentName: metadata.agentName,
+              llm: configuredLlm,
               callerSpan: trace.getSpan(callerContext),
             }
           : undefined;
@@ -719,6 +727,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   private _getToolOperationSpec(): RunOperationSpec<ToolInvocation> {
     return {
       label: 'tool',
+      isolatesAgentScope: true,
       startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
         isLangChainDelegatedTool(instance)
           ? undefined
@@ -876,11 +885,16 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         runContext,
         enclosingAgent,
       }) => {
+        const targetAgent =
+          enclosingAgent &&
+          (!enclosingAgent.llm || enclosingAgent.llm === instance)
+            ? enclosingAgent
+            : undefined;
         // Skip BeeAI client inference spans/metrics for LangChainChatModel
         // wrappers: downstream LangChain/provider instrumentations own the
         // model call, and `"langchain"` is not a GenAI provider name.
         if (isLangChainDelegatedModel(instance)) {
-          enclosingAgent?.invocation.recordInferenceCall();
+          targetAgent?.invocation.recordInferenceCall();
           return undefined;
         }
         const { invocation, isStreaming, coalesceOutputMessages } =
@@ -892,7 +906,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
             parentContext
           );
 
-        enclosingAgent?.invocation.recordInferenceCall();
+        targetAgent?.invocation.recordInferenceCall();
 
         let unsubscribe: (() => void) | void = undefined;
         let lastChunkFinishReason: FinishReason | undefined = undefined;
@@ -947,7 +961,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
               invocation,
               result,
               isStructured,
-              enclosingAgent,
+              targetAgent,
               lastChunkFinishReason,
               coalesceOutputMessages
             );
@@ -1465,10 +1479,14 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       if (!started) {
         // Propagate the resolved parent context so delegated downstream
         // instrumentations (e.g. @opentelemetry/instrumentation-langchain)
-        // still parent their spans under any enclosing BeeAI agent/caller span.
-        const passthroughContext = enclosingAgent
-          ? parentContext.setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
-          : parentContext;
+        // still parent their spans under any enclosing BeeAI agent/caller span,
+        // while isolating tool / remote-agent passthrough scopes so internal
+        // calls inside them do not roll up onto an outer BeeAI agent.
+        const passthroughContext = spec.isolatesAgentScope
+          ? parentContext.setValue(ACTIVE_AGENT_CONTEXT_KEY, null)
+          : enclosingAgent
+            ? parentContext.setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
+            : parentContext;
         return context.with(passthroughContext, () =>
           originalHandler.call(run)
         );
@@ -1480,11 +1498,13 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           ? invocation
               .getContext()
               .setValue(ACTIVE_AGENT_CONTEXT_KEY, activeRun)
-          : enclosingAgent
-            ? invocation
-                .getContext()
-                .setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
-            : invocation.getContext();
+          : activeRun?.kind === 'tool'
+            ? invocation.getContext().setValue(ACTIVE_AGENT_CONTEXT_KEY, null)
+            : enclosingAgent
+              ? invocation
+                  .getContext()
+                  .setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
+              : invocation.getContext();
       try {
         const result = await context.with(runScopeContext, () =>
           originalHandler.call(run)
@@ -1755,7 +1775,8 @@ function isLangChainDelegatedModel(modelInstance: unknown): boolean {
 
 /**
  * Walks the `Run` parent chain and OpenTelemetry contexts to find the enclosing
- * active agent run, if any.
+ * active agent run, stopping at tool or remote-agent boundaries so internal
+ * helper calls inside tools are not attributed to the parent agent.
  */
 function findEnclosingAgentRun(
   parentId: string | undefined,
@@ -1768,12 +1789,28 @@ function findEnclosingAgentRun(
     visited.add(currentId);
     const record = activeRuns.get(currentId);
     if (!record) break;
+    // Tool boundary: internal model or sub-tool calls belong to the tool, not the outer agent.
+    if (record.kind === 'tool') {
+      return undefined;
+    }
     if (record.kind === 'agent') {
+      // A cold Run constructed under an agent (`parentId` = agent) may be awaited inside a tool scope (`null`).
+      if (executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY) === null) {
+        return undefined;
+      }
       return record as ActiveAgentRun;
     }
     currentId = record.parentId;
   }
+  // Executing inside a tool/remote-agent scope (e.g., passthrough `LangChainTool` or lost `RunContext`).
+  if (executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY) === null) {
+    return undefined;
+  }
   const fromCaller = callerContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY);
+  // Constructed inside a tool/remote-agent scope; do not fall through to an outer `executionContext` agent.
+  if (fromCaller === null) {
+    return undefined;
+  }
   if (fromCaller) {
     return fromCaller as ActiveAgentRun;
   }
