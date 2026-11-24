@@ -522,6 +522,99 @@ describe('BeeAIInstrumentation', () => {
       expect(tpocMetric?.dataPoints.length).toBe(1);
     });
 
+    it('defaults finish_reasons to error with UNSET status when a stream is aborted early via newToken callback', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const chunk1 = new ChatModelOutput([new AssistantMessage('Partial ')]);
+      const chunk2 = new ChatModelOutput(
+        [new AssistantMessage('never reached')],
+        {
+          promptTokens: 10,
+          completionTokens: 5,
+          totalTokens: 15,
+        },
+        'stop'
+      );
+      const llm = new MockChatModel({
+        modelId: 'llama3.1',
+        providerId: 'ollama',
+        streamChunks: [chunk1, chunk2],
+      });
+
+      const response = await llm
+        .create({
+          messages: [new UserMessage('Abort stream test')],
+          stream: true,
+        })
+        .observe(emitter => {
+          emitter.on('newToken', ({ callbacks }) => {
+            callbacks.abort();
+          });
+        });
+
+      expect(response.getTextContent()).toBe('Partial ');
+      expect(response.finishReason).toBeUndefined();
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const span = spans[0];
+
+      expect(span.status.code).toBe(SpanStatusCode.UNSET);
+      expect(span.attributes[ATTR_ERROR_TYPE]).toBeUndefined();
+      expect(span.attributes[ATTR_GEN_AI_REQUEST_STREAM]).toBe(true);
+      expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'error',
+      ]);
+      expect(
+        JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string)
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Partial ' }],
+        },
+      ]);
+    });
+
+    it('preserves provider finishReason from an earlier stream chunk when a trailing usage-only chunk omits finishReason', async () => {
+      const chunk1 = new ChatModelOutput(
+        [new AssistantMessage('Complete reply')],
+        undefined,
+        'stop'
+      );
+      const chunk2 = new ChatModelOutput(
+        [],
+        {
+          promptTokens: 10,
+          completionTokens: 4,
+          totalTokens: 14,
+        },
+        undefined
+      );
+      const llm = new MockChatModel({
+        modelId: 'granite-3-8b-instruct',
+        providerId: 'watsonx',
+        streamChunks: [chunk1, chunk2],
+      });
+
+      const response = await llm.create({
+        messages: [new UserMessage('Trailing usage chunk test')],
+        stream: true,
+      });
+
+      expect(response.getTextContent()).toBe('Complete reply');
+      expect(response.finishReason).toBeUndefined();
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const span = spans[0];
+
+      expect(span.status.code).toBe(SpanStatusCode.UNSET);
+      expect(span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS]).toEqual([
+        'stop',
+      ]);
+      expect(span.attributes[ATTR_GEN_AI_USAGE_INPUT_TOKENS]).toBe(10);
+      expect(span.attributes[ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]).toBe(4);
+    });
+
     it('instruments ChatModel.createStructure and sets gen_ai.output.type to json', async () => {
       instrumentation.setConfig({ captureMessageContent: 'span_only' });
       const llm = new MockChatModel({

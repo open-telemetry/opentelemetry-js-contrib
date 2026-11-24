@@ -15,8 +15,6 @@ import {
 import { isTracingSuppressed } from '@opentelemetry/core';
 import {
   ATTR_GEN_AI_OUTPUT_TYPE,
-  GEN_AI_FINISH_REASON_VALUE_STOP,
-  GEN_AI_FINISH_REASON_VALUE_TOOL_CALL,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
   GEN_AI_OPERATION_NAME_VALUE_EMBEDDINGS,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
@@ -884,15 +882,27 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         enclosingAgent?.invocation.recordInferenceCall();
 
         let unsubscribe: (() => void) | void = undefined;
+        let lastChunkFinishReason: FinishReason | undefined = undefined;
         if (isStreaming) {
           try {
-            unsubscribe = runContext?.emitter?.on?.('newToken', () => {
-              try {
-                invocation.recordStreamChunk();
-              } catch {
-                // Ignore chunk recording errors
+            unsubscribe = runContext?.emitter?.on?.(
+              'newToken',
+              (event: unknown) => {
+                try {
+                  invocation.recordStreamChunk();
+                  if (isRecord(event) && isRecord(event.value)) {
+                    const chunkReason = mapFinishReason(
+                      event.value.finishReason
+                    );
+                    if (chunkReason) {
+                      lastChunkFinishReason = chunkReason;
+                    }
+                  }
+                } catch {
+                  // Ignore chunk recording errors
+                }
               }
-            });
+            );
           } catch {
             // Ignore listener registration errors
           }
@@ -924,8 +934,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
               invocation,
               result,
               isStructured,
-              isStreaming,
-              enclosingAgent
+              enclosingAgent,
+              lastChunkFinishReason
             );
           },
         };
@@ -1007,8 +1017,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     invocation: InferenceInvocation,
     result: unknown,
     isStructured: boolean,
-    isStreaming: boolean,
-    enclosingAgent: ActiveAgentRun | undefined
+    enclosingAgent: ActiveAgentRun | undefined,
+    lastChunkFinishReason?: FinishReason
   ): void {
     const chatOutput =
       isStructured && isRecord(result) && isRecord(result.output)
@@ -1051,18 +1061,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         }
       }
 
-      let finishReason: FinishReason | undefined = mapFinishReason(
-        chatOutput.finishReason
-      );
-      if (!finishReason && isStreaming) {
-        const hasToolCalls =
-          typeof chatOutput.getToolCalls === 'function' &&
-          Array.isArray(chatOutput.getToolCalls()) &&
-          chatOutput.getToolCalls().length > 0;
-        finishReason = hasToolCalls
-          ? GEN_AI_FINISH_REASON_VALUE_TOOL_CALL
-          : GEN_AI_FINISH_REASON_VALUE_STOP;
-      }
+      const finishReason: FinishReason | undefined =
+        mapFinishReason(chatOutput.finishReason) ?? lastChunkFinishReason;
       if (finishReason) {
         invocation.setFinishReasons([finishReason]);
       }
