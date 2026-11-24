@@ -689,6 +689,95 @@ describe('BeeAIInstrumentation', () => {
         'error',
       ]);
     });
+
+    it('preserves distinct output messages per candidate on non-streaming multi-choice (n > 1) responses', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const llm = new MockChatModel({
+        modelId: 'granite-3-8b-instruct',
+        providerId: 'watsonx',
+        responses: [
+          () =>
+            new ChatModelOutput(
+              [
+                new AssistantMessage('Candidate 1 answer'),
+                new AssistantMessage('Candidate 2 answer'),
+              ],
+              { promptTokens: 14, completionTokens: 12, totalTokens: 26 },
+              'stop'
+            ),
+        ],
+      });
+
+      await llm.create({
+        messages: [new UserMessage('Give two options')],
+        n: 2,
+      });
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const span = spans[0];
+      expect(span.attributes[ATTR_GEN_AI_REQUEST_CHOICE_COUNT]).toBe(2);
+      expect(
+        JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string)
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Candidate 1 answer' }],
+        },
+        {
+          role: 'assistant',
+          parts: [{ type: 'text', content: 'Candidate 2 answer' }],
+        },
+      ]);
+    });
+
+    it('coalesces split single-choice assistant message segments on non-streaming n=1 responses', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'span_only' });
+      const llm = new MockChatModel({
+        modelId: 'granite-3-8b-instruct',
+        providerId: 'watsonx',
+        responses: [
+          () =>
+            new ChatModelOutput(
+              [
+                new AssistantMessage('Let me look that up.'),
+                new AssistantMessage({
+                  type: 'tool-call',
+                  toolCallId: 'call_wx_1',
+                  toolName: 'search_docs',
+                  args: { q: 'beeai' },
+                } as unknown as bee.MessageContentPart),
+              ],
+              { promptTokens: 18, completionTokens: 10, totalTokens: 28 },
+              'tool-calls'
+            ),
+        ],
+      });
+
+      await llm.create({
+        messages: [new UserMessage('Search docs for beeai')],
+      });
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      const span = spans[0];
+      expect(
+        JSON.parse(span.attributes[ATTR_GEN_AI_OUTPUT_MESSAGES] as string)
+      ).toEqual([
+        {
+          role: 'assistant',
+          parts: [
+            { type: 'text', content: 'Let me look that up.' },
+            {
+              type: 'tool_call',
+              id: 'call_wx_1',
+              name: 'search_docs',
+              arguments: { q: 'beeai' },
+            },
+          ],
+        },
+      ]);
+    });
   });
 
   describe('EmbeddingModel instrumentation (EmbeddingInvocation)', () => {

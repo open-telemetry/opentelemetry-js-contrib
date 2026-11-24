@@ -883,13 +883,14 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           enclosingAgent?.invocation.recordInferenceCall();
           return undefined;
         }
-        const { invocation, isStreaming } = owner._startChatInvocation(
-          handler,
-          instance,
-          effectiveInput,
-          isStructured,
-          parentContext
-        );
+        const { invocation, isStreaming, coalesceOutputMessages } =
+          owner._startChatInvocation(
+            handler,
+            instance,
+            effectiveInput,
+            isStructured,
+            parentContext
+          );
 
         enclosingAgent?.invocation.recordInferenceCall();
 
@@ -947,7 +948,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
               result,
               isStructured,
               enclosingAgent,
-              lastChunkFinishReason
+              lastChunkFinishReason,
+              coalesceOutputMessages
             );
           },
         };
@@ -956,8 +958,16 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   }
 
   /**
-   * Starts an `InferenceInvocation` span for a `ChatModel` request and returns
-   * whether the call is streaming.
+   * Starts an `InferenceInvocation` span for a `ChatModel` request and computes
+   * streaming and output-message coalescing flags for finalization.
+   *
+   * `coalesceOutputMessages` is `true` for streaming calls (where
+   * `ChatModelOutput.fromChunks` emits one `AssistantMessage` per token) and
+   * single-choice (`n <= 1` or unset) calls (where adapters such as
+   * `WatsonxChatModel` split a single choice's text and tool calls into
+   * separate `AssistantMessage` instances), and `false` on non-streaming
+   * multi-choice (`n > 1`) calls so each candidate remains a distinct
+   * `OutputMessage` per GenAI semantic conventions.
    */
   private _startChatInvocation(
     handler: TelemetryHandler,
@@ -965,7 +975,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     inputArg: unknown,
     isStructured: boolean,
     parentContext: Context
-  ): { invocation: InferenceInvocation; isStreaming: boolean } {
+  ): {
+    invocation: InferenceInvocation;
+    isStreaming: boolean;
+    coalesceOutputMessages: boolean;
+  } {
     const providerName = mapProviderName(
       isRecord(chatModelInstance) ? chatModelInstance.providerId : undefined
     );
@@ -990,6 +1004,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       inputArg,
       isStreaming
     );
+    const coalesceOutputMessages =
+      isStreaming ||
+      requestOptions.choiceCount === undefined ||
+      requestOptions.choiceCount <= 1;
 
     const shouldCapture = handler.shouldCaptureContent();
     const rawMessages = isRecord(inputArg) ? inputArg.messages : undefined;
@@ -1018,19 +1036,32 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       parentContext,
     });
 
-    return { invocation, isStreaming };
+    return { invocation, isStreaming, coalesceOutputMessages };
   }
 
   /**
    * Populates response ID, token usage (rolling up into any enclosing agent),
    * finish reason, and output messages on a completed `InferenceInvocation`.
+   *
+   * @param invocation - Active inference telemetry invocation to populate.
+   * @param result - Raw `ChatModelOutput` (or `{ object, output }` for
+   *   `createStructure`) returned by the model.
+   * @param isStructured - Whether the call originated from `createStructure`.
+   * @param enclosingAgent - Enclosing agent run record for token roll-up, if any.
+   * @param lastChunkFinishReason - Fallback finish reason captured from stream
+   *   chunks when a trailing usage-only chunk omits `finishReason`.
+   * @param coalesceOutputMessages - Whether consecutive same-role messages in
+   *   `chatOutput.messages` should be merged into a single `OutputMessage`
+   *   (`true` for streaming chunks and `n <= 1` split single-choice segments;
+   *   `false` for non-streaming `n > 1` multi-choice candidates).
    */
   private _finalizeChatInvocation(
     invocation: InferenceInvocation,
     result: unknown,
     isStructured: boolean,
     enclosingAgent: ActiveAgentRun | undefined,
-    lastChunkFinishReason?: FinishReason
+    lastChunkFinishReason?: FinishReason,
+    coalesceOutputMessages = true
   ): void {
     const chatOutput =
       isStructured && isRecord(result) && isRecord(result.output)
@@ -1082,7 +1113,8 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       if (invocation.shouldCaptureContent()) {
         const outputMessages = extractOutputMessages(
           messages,
-          structuredObject
+          structuredObject,
+          coalesceOutputMessages
         );
         if (outputMessages.length > 0) {
           invocation.addOutputMessages(outputMessages);

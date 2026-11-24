@@ -499,10 +499,18 @@ function convertBeeAIPartSafe(rawPart: unknown): MessagePart | undefined {
   }
 }
 
-function mergeMessageParts(parts: MessagePart[]): MessagePart[] {
-  const merged: MessagePart[] = [];
-  for (const part of parts) {
-    const prev = merged[merged.length - 1];
+/**
+ * Appends `incoming` parts onto `target` in place, concatenating adjacent
+ * `'text'` or `'reasoning'` parts to avoid `O(N * M)` array/part copies across
+ * streamed `ChatModelOutput` chunks. Assumes `incoming` parts are freshly
+ * allocated by `convertBeeAIMessage`.
+ */
+function appendMergedParts(
+  target: MessagePart[],
+  incoming: MessagePart[]
+): void {
+  for (const part of incoming) {
+    const prev = target[target.length - 1];
     if (
       prev &&
       (part.type === 'text' || part.type === 'reasoning') &&
@@ -512,10 +520,9 @@ function mergeMessageParts(parts: MessagePart[]): MessagePart[] {
     ) {
       prev.content += part.content;
     } else {
-      merged.push({ ...part });
+      target.push(part);
     }
   }
-  return merged;
 }
 
 export function extractMessagesAndSystemInstructions(messages: unknown): {
@@ -549,9 +556,22 @@ export function extractMessagesAndSystemInstructions(messages: unknown): {
   return { inputMessages, systemInstructions };
 }
 
+/**
+ * Converts BeeAI `ChatModelOutput.messages` into GenAI `OutputMessages`.
+ *
+ * @param messages - Raw `ChatModelOutput.messages` array from BeeAI.
+ * @param fallbackObject - Parsed object from `createStructure` used as a JSON
+ *   text fallback when `messages` yields no output messages.
+ * @param coalesceOutputMessages - When `true`, merges consecutive same-role
+ *   messages in place so streamed token chunks and single-choice (`n <= 1`)
+ *   split segments (e.g. text + tool-call messages from one generation) form a
+ *   single `OutputMessage`. Set to `false` on non-streaming multi-choice
+ *   (`n > 1`) calls so each candidate remains a separate `OutputMessage`.
+ */
 export function extractOutputMessages(
   messages: unknown,
-  fallbackObject?: unknown
+  fallbackObject?: unknown,
+  coalesceOutputMessages = true
 ): OutputMessages {
   const outputMessages: OutputMessages = [];
   if (Array.isArray(messages)) {
@@ -559,12 +579,14 @@ export function extractOutputMessages(
       const converted = convertBeeAIMessage(rawMessage, 'assistant');
       if (converted) {
         const prev = outputMessages[outputMessages.length - 1];
-        if (prev && prev.role === converted.role) {
-          prev.parts = mergeMessageParts([...prev.parts, ...converted.parts]);
+        if (coalesceOutputMessages && prev && prev.role === converted.role) {
+          appendMergedParts(prev.parts, converted.parts);
         } else {
+          const parts: MessagePart[] = [];
+          appendMergedParts(parts, converted.parts);
           outputMessages.push({
             ...converted,
-            parts: mergeMessageParts(converted.parts),
+            parts,
           } as OutputMessage);
         }
       }
