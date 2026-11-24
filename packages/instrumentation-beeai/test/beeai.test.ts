@@ -95,6 +95,7 @@ import { instrumentation } from './load-instrumentation';
 import { BeeAIInstrumentation } from '../src';
 import * as bee from 'beeai-framework';
 import { BaseAgent } from 'beeai-framework/agents/base';
+import { RemoteAgent } from 'beeai-framework/agents/experimental/remote/agent';
 import { ReActAgent } from 'beeai-framework/agents/react/agent';
 import { ToolCallingAgent } from 'beeai-framework/agents/toolCalling/agent';
 import { DummyChatModel as BaseDummyChatModel } from 'beeai-framework/adapters/dummy/backend/chat';
@@ -1703,6 +1704,61 @@ describe('BeeAIInstrumentation', () => {
       expect(
         (toolCallsMetric?.dataPoints[0]?.value as { sum?: number })?.sum
       ).toBe(1);
+    });
+  });
+
+  describe('Experimental RemoteAgent opt-out', () => {
+    it('skips local INTERNAL agent spans and metrics on RemoteAgent while preserving caller context', async () => {
+      const remoteAgent = new RemoteAgent({
+        agentName: 'weather-acp-agent',
+        url: 'http://127.0.0.1:8080',
+        memory: new UnconstrainedMemory(),
+      });
+
+      let observedParentSpanId: string | undefined;
+      sinon.stub(remoteAgent.client, 'stream').callsFake(async function* () {
+        observedParentSpanId = trace.getActiveSpan()?.spanContext().spanId;
+        yield {
+          event: 'message',
+          id: '1',
+          data: JSON.stringify({
+            type: 'run.completed',
+            run: {
+              output: [{ parts: [{ content: 'Sunny, 72F' }] }],
+            },
+          }),
+        };
+      });
+
+      const appTracer = trace.getTracer('app-test');
+      let callerSpanId: string | undefined;
+      const out = await appTracer.startActiveSpan('caller-op', async span => {
+        callerSpanId = span.spanContext().spanId;
+        try {
+          return await remoteAgent.run({ input: 'Weather in SF?' });
+        } finally {
+          span.end();
+        }
+      });
+
+      expect(out.result.text).toBe('Sunny, 72F');
+      expect(observedParentSpanId).toBe(callerSpanId);
+
+      // Only the caller span should be emitted — no bogus INTERNAL invoke_agent span.
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].name).toBe('caller-op');
+
+      // Also verify synchronous BaseAgent error path (`isRunning = true`) is skipped.
+      remoteAgent.isRunning = true;
+      expect(() => remoteAgent.run({ input: 'concurrent' })).toThrow(
+        /already running/i
+      );
+      expect(getTestSpans()).toHaveLength(1);
+
+      const collected = await metricReader.collect();
+      const metrics = collected.resourceMetrics.scopeMetrics[0]?.metrics ?? [];
+      expect(metrics).toHaveLength(0);
     });
   });
 });

@@ -497,8 +497,17 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
   private _getAgentOperationSpec(): RunOperationSpec<LocalAgentInvocation> {
     return {
       label: 'agent',
-      startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
-        owner._startAgentInvocation(handler, instance, inputArg, callerCtx),
+      startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) => {
+        if (isRemoteAgent(instance)) {
+          return undefined;
+        }
+        return owner._startAgentInvocation(
+          handler,
+          instance,
+          inputArg,
+          callerCtx
+        );
+      },
       startRun: ({
         owner,
         handler,
@@ -510,6 +519,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         parentId,
         runContext,
       }) => {
+        if (isRemoteAgent(instance)) {
+          return undefined;
+        }
         const metadata = extractAgentMetadata(instance);
         const invocation = owner._startAgentInvocation(
           handler,
@@ -1621,6 +1633,36 @@ function isInternalFinalAnswerTool(
   return (
     toolInstance.name === 'final_answer' &&
     toolInstance.description === 'Sends the final answer to the user'
+  );
+}
+
+/**
+ * Identifies BeeAI's experimental `RemoteAgent` (`beeai-framework/agents/experimental/remote/agent`),
+ * which invokes an out-of-process ACP agent over HTTP rather than executing in-process.
+ */
+function isRemoteAgent(agentInstance: unknown): boolean {
+  if (!isRecord(agentInstance)) {
+    return false;
+  }
+  const emitter = ownDataValue(agentInstance, 'emitter');
+  const namespace = isRecord(emitter)
+    ? ownDataValue(emitter, 'namespace')
+    : undefined;
+  if (
+    Array.isArray(namespace) &&
+    namespace[0] === 'agent' &&
+    namespace[1] === 'remote'
+  ) {
+    return true;
+  }
+  const input = ownDataValue(agentInstance, 'input');
+  const client = ownDataValue(agentInstance, 'client');
+  return (
+    (agentInstance as { constructor?: { name?: string } }).constructor?.name ===
+      'RemoteAgent' &&
+    isRecord(input) &&
+    typeof input.url === 'string' &&
+    isRecord(client)
   );
 }
 
