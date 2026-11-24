@@ -27,6 +27,15 @@ export const ATTR_BROWSER_NAVIGATION_HASH_CHANGE =
   'browser.navigation.hash_change';
 export const ATTR_BROWSER_NAVIGATION_TYPE = 'browser.navigation.type';
 
+/**
+ * Instrumentation that emits `browser.navigation` log records for hard and
+ * soft navigations.
+ *
+ * @deprecated This instrumentation is deprecated in favor of
+ * `@opentelemetry/browser-instrumentation/experimental/navigation`, which
+ * exports it as `NavigationInstrumentation`. See
+ * https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md
+ */
 export class BrowserNavigationInstrumentation extends InstrumentationBase<BrowserNavigationInstrumentationConfig> {
   applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
     undefined;
