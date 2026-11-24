@@ -532,7 +532,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           : undefined;
 
         let eventMessage: { role: string; text: string } | undefined;
-        let unsubscribe: (() => void) | void;
+        let unsubscribe: (() => void) | void = undefined;
         try {
           unsubscribe = runContext?.emitter?.match?.(
             event => event?.name === 'success',
@@ -846,7 +846,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
         enclosingAgent?.invocation.recordInferenceCall();
 
-        let unsubscribe: (() => void) | void;
+        let unsubscribe: (() => void) | void = undefined;
         if (isStreaming) {
           try {
             unsubscribe = runContext?.emitter?.on?.('newToken', () => {
