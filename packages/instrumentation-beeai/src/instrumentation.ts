@@ -141,7 +141,7 @@ interface RunOperationSpec<TInvocation extends AnyInvocation> {
     instance: unknown,
     inputArg: unknown,
     callerContext: Context
-  ) => TInvocation;
+  ) => TInvocation | undefined;
   startRun: (
     params: RunStartParams
   ) => StartedRunOperation<TInvocation> | undefined;
@@ -603,10 +603,26 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       ? ownDataValue(agentInstance, 'input')
       : undefined;
     const llm = isRecord(agentInput) ? agentInput.llm : undefined;
-    const requestModel =
-      isRecord(llm) && typeof llm.modelId === 'string' && llm.modelId.trim()
-        ? llm.modelId.trim()
-        : undefined;
+    let requestModel: string | undefined;
+    if (isRecord(llm)) {
+      if (isLangChainDelegatedModel(llm)) {
+        const lcLLM = ownDataValue(llm, 'lcLLM');
+        const candidate = isRecord(lcLLM)
+          ? (ownDataValue(lcLLM, 'model') ?? ownDataValue(lcLLM, 'modelName'))
+          : undefined;
+        if (typeof candidate === 'string' && candidate.trim()) {
+          requestModel = candidate.trim();
+        }
+      } else {
+        try {
+          if (typeof llm.modelId === 'string' && llm.modelId.trim()) {
+            requestModel = llm.modelId.trim();
+          }
+        } catch {
+          // Ignore getter errors on custom ChatModel implementations
+        }
+      }
+    }
     const requestOptions = isRecord(llm)
       ? extractAgentRequestOptions(llm.parameters)
       : undefined;
@@ -687,20 +703,23 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
   /**
    * Builds the `Run` lifecycle specification for `Tool` executions, skipping
-   * internal `final_answer` calls and attributing calls to any enclosing agent.
+   * internal `final_answer` calls and LangChain delegation wrappers while
+   * attributing calls to any enclosing agent.
    */
   private _getToolOperationSpec(): RunOperationSpec<ToolInvocation> {
     return {
       label: 'tool',
       startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
-        owner._startToolInvocation(
-          handler,
-          instance,
-          inputArg,
-          undefined,
-          undefined,
-          callerCtx
-        ),
+        isLangChainDelegatedTool(instance)
+          ? undefined
+          : owner._startToolInvocation(
+              handler,
+              instance,
+              inputArg,
+              undefined,
+              undefined,
+              callerCtx
+            ),
       startRun: ({
         owner,
         handler,
@@ -715,6 +734,15 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         enclosingAgent,
       }) => {
         if (isInternalFinalAnswerTool(instance, enclosingAgent)) {
+          return undefined;
+        }
+        // Delegate tool span/metric emission to @opentelemetry/instrumentation-langchain
+        // for LangChainTool wrappers while still counting the tool call on any
+        // enclosing BeeAI agent.
+        if (isLangChainDelegatedTool(instance)) {
+          if (parentRun?.kind !== 'tool') {
+            enclosingAgent?.invocation.recordToolCall();
+          }
           return undefined;
         }
         const toolCallMsg = isRecord(runContext?.context)
@@ -817,13 +845,15 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     return {
       label: 'chat model',
       startSyncInvocation: (owner, handler, instance, inputArg, callerCtx) =>
-        owner._startChatInvocation(
-          handler,
-          instance,
-          inputArg,
-          isStructured,
-          callerCtx
-        ).invocation,
+        isLangChainDelegatedModel(instance)
+          ? undefined
+          : owner._startChatInvocation(
+              handler,
+              instance,
+              inputArg,
+              isStructured,
+              callerCtx
+            ).invocation,
       startRun: ({
         owner,
         handler,
@@ -836,6 +866,13 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         runContext,
         enclosingAgent,
       }) => {
+        // Skip BeeAI client inference spans/metrics for LangChainChatModel
+        // wrappers: downstream LangChain/provider instrumentations own the
+        // model call, and `"langchain"` is not a GenAI provider name.
+        if (isLangChainDelegatedModel(instance)) {
+          enclosingAgent?.invocation.recordInferenceCall();
+          return undefined;
+        }
         const { invocation, isStreaming } = owner._startChatInvocation(
           handler,
           instance,
@@ -1050,7 +1087,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     return {
       label: 'embedding',
       startSyncInvocation: (owner, handler, instance, _inputArg, callerCtx) =>
-        owner._startEmbeddingInvocation(handler, instance, callerCtx),
+        isLangChainDelegatedModel(instance)
+          ? undefined
+          : owner._startEmbeddingInvocation(handler, instance, callerCtx),
       startRun: ({
         owner,
         handler,
@@ -1060,6 +1099,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         runId,
         parentId,
       }) => {
+        if (isLangChainDelegatedModel(instance)) {
+          return undefined;
+        }
         const invocation = owner._startEmbeddingInvocation(
           handler,
           instance,
@@ -1205,6 +1247,9 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         inputArg,
         callerContext
       );
+      if (!invocation) {
+        return;
+      }
       invocation.fail({
         exception: error instanceof Error ? error : undefined,
       });
@@ -1284,7 +1329,15 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       }
 
       if (!started) {
-        return originalHandler.call(run);
+        // Propagate the resolved parent context so delegated downstream
+        // instrumentations (e.g. @opentelemetry/instrumentation-langchain)
+        // still parent their spans under any enclosing BeeAI agent/caller span.
+        const passthroughContext = enclosingAgent
+          ? parentContext.setValue(ACTIVE_AGENT_CONTEXT_KEY, enclosingAgent)
+          : parentContext;
+        return context.with(passthroughContext, () =>
+          originalHandler.call(run)
+        );
       }
 
       const { invocation, activeRun, onSuccess, onFailure } = started;
@@ -1547,6 +1600,61 @@ function isInternalFinalAnswerTool(
     toolInstance.name === 'final_answer' &&
     toolInstance.description === 'Sends the final answer to the user'
   );
+}
+
+/**
+ * Checks whether a BeeAI instance's emitter namespace includes `'langchain'`.
+ */
+function hasLangChainNamespace(instance: Record<string, unknown>): boolean {
+  const emitter = ownDataValue(instance, 'emitter');
+  const namespace = isRecord(emitter)
+    ? ownDataValue(emitter, 'namespace')
+    : undefined;
+  return Array.isArray(namespace) && namespace.includes('langchain');
+}
+
+/**
+ * Identifies BeeAI's `LangChainTool` adapter (`beeai-framework/adapters/langchain/tools`),
+ * which delegates execution directly to `@langchain/core/tools`.
+ */
+function isLangChainDelegatedTool(toolInstance: unknown): boolean {
+  if (!isRecord(toolInstance)) {
+    return false;
+  }
+  const wrappedTool = ownDataValue(toolInstance, 'tool');
+  return (
+    isRecord(wrappedTool) &&
+    typeof wrappedTool.invoke === 'function' &&
+    (hasLangChainNamespace(toolInstance) ||
+      (toolInstance as { constructor?: { name?: string } }).constructor
+        ?.name === 'LangChainTool')
+  );
+}
+
+/**
+ * Identifies BeeAI's `LangChainChatModel` and `LangChainEmbeddingModel` adapters
+ * (`beeai-framework/adapters/langchain/backend/*`), which delegate model calls
+ * to `@langchain/core` and report `providerId === 'langchain'`.
+ */
+function isLangChainDelegatedModel(modelInstance: unknown): boolean {
+  if (!isRecord(modelInstance)) {
+    return false;
+  }
+  if (
+    ownDataValue(modelInstance, 'lcLLM') !== undefined ||
+    ownDataValue(modelInstance, 'lcEmbedding') !== undefined ||
+    hasLangChainNamespace(modelInstance)
+  ) {
+    return true;
+  }
+  try {
+    return (
+      typeof modelInstance.providerId === 'string' &&
+      modelInstance.providerId.trim().toLowerCase() === 'langchain'
+    );
+  } catch {
+    return false;
+  }
 }
 
 /**
