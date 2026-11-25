@@ -34,6 +34,35 @@ async function main() {
   const instrumentation = new LangChainInstrumentation();
   instrumentation.setTracerProvider(tracing);
   instrumentation.setMeterProvider(metering);
+  try {
+    if (process.argv[2] === 'agent') {
+      const { createAgent } = require('langchain');
+      const { FakeChatModel } = require('@langchain/core/utils/testing');
+      class Model extends FakeChatModel {
+        bindTools() {
+          return this;
+        }
+      }
+      const agent = createAgent({
+        name: 'test_agent',
+        model: new Model({}),
+        tools: [],
+      });
+      const result = await agent.invoke({
+        messages: [{ role: 'user', content: 'hello' }],
+      });
+      assert.equal(result.messages.at(-1).content, 'hello');
+    } else {
+      await runGraph();
+    }
+  } finally {
+    instrumentation.disable();
+    await tracing.shutdown();
+    await metering.shutdown();
+  }
+}
+
+async function runGraph() {
   const {
     Annotation,
     StateGraph,
@@ -52,23 +81,17 @@ async function main() {
     .addEdge('step', END)
     .compile({ name: 'test_graph' });
   const input = { messages: [new HumanMessage('hello')] };
-  try {
-    if (process.argv[2] === 'error') {
-      await assert.rejects(operation.invoke(input), error => error === failure);
-    } else if (process.argv[2] === 'stream') {
-      for await (const chunk of await operation.stream(input)) {
-        assert.ok(chunk);
-      }
-    } else {
-      assert.equal(
-        (await operation.invoke(input)).messages[0].content,
-        'graph result'
-      );
+  if (process.argv[2] === 'error') {
+    await assert.rejects(operation.invoke(input), error => error === failure);
+  } else if (process.argv[2] === 'stream') {
+    for await (const chunk of await operation.stream(input)) {
+      assert.ok(chunk);
     }
-  } finally {
-    instrumentation.disable();
-    await tracing.shutdown();
-    await metering.shutdown();
+  } else {
+    assert.equal(
+      (await operation.invoke(input)).messages[0].content,
+      'graph result'
+    );
   }
 }
 main().catch(error => {

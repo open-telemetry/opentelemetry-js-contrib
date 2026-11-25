@@ -21,10 +21,10 @@ interface BlobPart extends MessagePart {
   mime_type?: unknown;
 }
 
-interface Message {
+type Message = {
   role: string;
   parts: MessagePart[];
-}
+};
 
 /**
  * Serializes normalized GenAI messages to JSON, encoding binary content as

@@ -54,7 +54,7 @@ import { Pregel } from '@langchain/langgraph/pregel';
 import { ToolNode } from '@langchain/langgraph/prebuilt';
 import * as sinon from 'sinon';
 import { FakeChatModel } from '@langchain/core/utils/testing';
-import { createAgent } from 'langchain';
+import { createAgent, createMiddleware } from 'langchain';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as content from '../src/content';
 import { addGraphCallbacks, getGraphContext } from '../src/graph-callbacks';
@@ -1225,21 +1225,244 @@ describe('LangChain donated graph callbacks', () => {
     });
   });
 
-  it('does not relabel an agent internal graph as a workflow', async () => {
+  it('only observes createAgent invoke, not direct graph or streaming calls', async () => {
     class Model extends FakeChatModel {
       override bindTools() {
         return this;
       }
     }
     const agent = createAgent({ model: new Model({}), tools: [] });
-    await agent.invoke({ messages: [new HumanMessage('hello')] });
+    const state = { messages: [new HumanMessage('hello')] };
+    await agent.graph.invoke(state);
+    for await (const chunk of await agent.stream(state)) assert.ok(chunk);
     assert.deepEqual(getTestSpans(), []);
+    await agent.invoke(state);
+    assert.deepEqual(
+      getTestSpans().map(span => span.name),
+      ['invoke_agent']
+    );
     if ('withConfig' in agent && typeof agent.withConfig === 'function') {
       await agent.withConfig({ runName: 'renamed-agent' }).invoke({
         messages: [new HumanMessage('hello')],
       });
-      assert.deepEqual(getTestSpans(), []);
+      assert.deepEqual(
+        getTestSpans().map(span => span.name),
+        ['invoke_agent', 'invoke_agent']
+      );
     }
+  });
+
+  it('does not interpret createAgent middleware state or retained assistant history as new messages', async () => {
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
+    const model = new (class extends FakeChatModel {
+      override bindTools() {
+        return this;
+      }
+    })({});
+    const generate = sinon.spy(model, '_generate');
+    const agent = createAgent({
+      model,
+      tools: [],
+      middleware: [
+        createMiddleware({
+          name: 'skipModel',
+          wrapModelCall: request => {
+            const last = request.messages.at(-1);
+            return last instanceof AIMessage ? last : new AIMessage('cached');
+          },
+        }),
+      ],
+    });
+    const privateState = { input: 'private input', output: 'private output' };
+    await Reflect.apply(agent.invoke, agent, [privateState]);
+    const retained = new AIMessage('earlier answer');
+    await agent.invoke({ messages: [new HumanMessage('hello'), retained] });
+    assert.equal(generate.callCount, 0);
+    const spans = getTestSpans();
+    assert.equal(spans.length, 2);
+    assert.equal(spans[0].attributes['gen_ai.input.messages'], undefined);
+    assert.ok(!JSON.stringify(spans[0].attributes).includes('private'));
+    assert.equal(spans[0].attributes['gen_ai.output.messages'], undefined);
+    assert.equal(spans[1].attributes['gen_ai.output.messages'], undefined);
+  });
+
+  it('keeps createAgent ownership when initialization invokes its graph directly', async () => {
+    instrumentation.setConfig({ captureMessageContent: 'span_only' });
+    const checkpointer = new MemorySaver();
+    const agent = createAgent({
+      name: 'outer',
+      model: new (class extends FakeChatModel {
+        override bindTools() {
+          return this;
+        }
+      })({}),
+      tools: [],
+      checkpointer,
+      middleware: [createMiddleware({ name: 'noop', beforeModel: () => ({}) })],
+    });
+    const original = checkpointer.getTuple.bind(checkpointer);
+    let reentered = false;
+    sinon.stub(checkpointer, 'getTuple').callsFake(async config => {
+      if (!reentered) {
+        reentered = true;
+        await agent.graph.invoke(
+          { messages: [new HumanMessage('inner graph')] },
+          {
+            ...config,
+            configurable: { ...config.configurable, thread_id: 'inner' },
+          }
+        );
+      }
+      return original(config);
+    });
+    const result = await agent.invoke(
+      { messages: [new HumanMessage('outer agent')] },
+      {
+        configurable: { thread_id: 'outer' },
+      }
+    );
+    assert.equal(result.messages.at(-1)?.content, 'outer agent');
+    assert.ok(reentered);
+    const spans = getTestSpans();
+    assert.equal(spans.length, 1);
+    assert.equal(spans[0].attributes['gen_ai.conversation.id'], 'outer');
+    assert.ok(!JSON.stringify(spans[0].attributes).includes('inner graph'));
+  });
+
+  for (const capture of ['none', 'span_only'] as const) {
+    it(`parents the donated createAgent tool loop without tracing model or graph internals (${capture})`, async () => {
+      instrumentation.setConfig({ captureMessageContent: capture });
+      const model = new (class extends FakeChatModel {
+        override bindTools() {
+          return this;
+        }
+        override async _generate(
+          ...[history]: Parameters<FakeChatModel['_generate']>
+        ) {
+          const message =
+            history.at(-1)?._getType() === 'tool'
+              ? new AIMessage('sunny')
+              : new AIMessage({
+                  content: '',
+                  tool_calls: [
+                    {
+                      name: 'get_weather',
+                      args: { input: 'Tokyo' },
+                      id: 'weather-1',
+                    },
+                  ],
+                });
+          return { generations: [{ text: '', message }] };
+        }
+      })({});
+      const tool = new DynamicTool({
+        name: 'get_weather',
+        description: 'Offline weather',
+        func: async city => `weather for ${city}`,
+      });
+      const agent = createAgent({ name: 'weather', model, tools: [tool] });
+      const onToolEnd = sinon.spy();
+      const result = await agent.invoke(
+        { messages: [new HumanMessage('forecast?')] },
+        {
+          callbacks: [{ handleToolEnd: onToolEnd }],
+          metadata: { session_id: 'thread-1' },
+        }
+      );
+      assert.equal(result.messages.at(-1)?.content, 'sunny');
+      assert.equal(onToolEnd.callCount, 1);
+      const spans = getTestSpans();
+      assert.deepEqual(spans.map(span => span.name).sort(), [
+        'execute_tool get_weather',
+        'invoke_agent weather',
+      ]);
+      const [toolSpan, agentSpan] = spans;
+      assert.equal(
+        toolSpan.parentSpanContext?.spanId,
+        agentSpan.spanContext().spanId
+      );
+      assert.equal(agentSpan.kind, SpanKind.INTERNAL);
+      assert.equal(
+        agentSpan.attributes['gen_ai.operation.name'],
+        'invoke_agent'
+      );
+      assert.equal(agentSpan.attributes['gen_ai.conversation.id'], 'thread-1');
+      for (const [key, role, text] of [
+        ['gen_ai.input.messages', 'user', 'forecast?'],
+        ['gen_ai.output.messages', 'assistant', 'sunny'],
+      ]) {
+        assert.equal(
+          agentSpan.attributes[key],
+          capture === 'none'
+            ? undefined
+            : JSON.stringify([
+                { role, parts: [{ type: 'text', content: text }] },
+              ])
+        );
+      }
+    });
+  }
+
+  it('keeps concurrent createAgent callbacks under their own caller', async () => {
+    const agent = createAgent({
+      model: new (class extends FakeChatModel {
+        override bindTools() {
+          return this;
+        }
+      })({}),
+      tools: [],
+    });
+    const tracer = trace.getTracer('agent-caller');
+    await Promise.all(
+      ['first', 'second'].map(id =>
+        tracer.startActiveSpan(id, async parent => {
+          try {
+            await agent.invoke(input(), { metadata: { session_id: id } });
+          } finally {
+            parent.end();
+          }
+        })
+      )
+    );
+    const spans = getTestSpans();
+    assert.equal(spans.length, 4);
+    for (const id of ['first', 'second']) {
+      const parent = spans.find(s => s.name === id);
+      const child = spans.find(
+        s => s.attributes['gen_ai.conversation.id'] === id
+      );
+      assert.ok(parent && child);
+      assert.equal(
+        child.parentSpanContext?.spanId,
+        parent.spanContext().spanId
+      );
+    }
+  });
+
+  it('preserves createAgent failures, suppression, and disabled behavior', async () => {
+    const failure = new TypeError('private failure');
+    const model = new (class extends FakeChatModel {
+      override bindTools() {
+        return this;
+      }
+      override async _generate(): Promise<never> {
+        throw failure;
+      }
+    })({});
+    const agent = createAgent({ model, tools: [], name: 'failed' });
+    const invoke = () => agent.invoke(input());
+    await context.with(suppressTracing(context.active()), () =>
+      assert.rejects(invoke, error => error === failure)
+    );
+    assert.deepEqual(getTestSpans(), []);
+    await assert.rejects(invoke, error => error === failure);
+    const [span] = getTestSpans();
+    assert.deepEqual(span.status, { code: SpanStatusCode.ERROR });
+    assert.equal(span.attributes['error.type'], 'TypeError');
+    assert.ok(!JSON.stringify(span.attributes).includes(failure.message));
+    instrumentation.disable();
+    await assert.rejects(invoke, error => error === failure);
+    assert.equal(getTestSpans().length, 1);
   });
 
   for (const includeAgentName of [undefined, 'inline'] as const) {

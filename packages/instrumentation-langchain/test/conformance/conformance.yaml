@@ -11,6 +11,26 @@ env:
   LANGCHAIN_TRACING: 'false'
 
 scenarios:
+  local_agent_invoke:
+    run: node graph.cjs agent
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          type: gen_ai.invoke_agent.internal
+          kind: INTERNAL
+          attributes:
+            gen_ai.operation.name: invoke_agent
+        expect:
+          count: 1
+          attributes:
+            gen_ai.agent.name: test_agent
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: '[{"role":"assistant","parts":[{"type":"text","content":"hello"}]}]'
+            error.type: {present: false}
+    metrics: [gen_ai.invoke_agent.duration]
+    events: []
+
   graph_content_disabled:
     run: node graph.cjs
     expected_violations:

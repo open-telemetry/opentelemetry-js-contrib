@@ -39,12 +39,14 @@ async function main() {
         mode === 'cjs'
           ? {
               graph: require('@langchain/langgraph'),
+              langchain: require('langchain'),
               prebuilt: require('@langchain/langgraph/prebuilt'),
               testing: require('@langchain/core/utils/testing'),
               messages: require('@langchain/core/messages'),
             }
           : {
               graph: await import('@langchain/langgraph'),
+              langchain: await import('langchain'),
               prebuilt: await import('@langchain/langgraph/prebuilt'),
               testing: await import('@langchain/core/utils/testing'),
               messages: await import('@langchain/core/messages'),
@@ -146,6 +148,20 @@ async function main() {
         assert.equal(result.messages.at(-1).content, 'hello');
         assert.deepEqual(firstExporter.getFinishedSpans(), []);
         assert.deepEqual(secondExporter.getFinishedSpans(), []);
+        const local = module.langchain.createAgent({
+          name: 'local',
+          model: new Model({}),
+          tools: [],
+        });
+        await local.invoke({ messages: [new HumanMessage('hello')] });
+        assert.deepEqual(
+          graphExporter.getFinishedSpans().map(span => span.name),
+          ['invoke_agent local']
+        );
+        assert.deepEqual(
+          (useSecond ? firstExporter : secondExporter).getFinishedSpans(),
+          []
+        );
       }
     }
   } finally {

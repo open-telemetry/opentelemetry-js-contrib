@@ -41,7 +41,8 @@ export function addGraphCallbacks(
     parent: Context | undefined
   ) => Context | undefined,
   end: (output: unknown, failure?: { error: unknown }) => void,
-  diag: DiagLogger
+  diag: DiagLogger,
+  generatedMessages?: WeakSet<object>
 ): CallbackManager {
   const parent = getGraphContext(configured);
   for (const handler of configured.handlers) {
@@ -92,7 +93,23 @@ export function addGraphCallbacks(
   handler.name = 'opentelemetry_langchain_graph';
   handler.awaitHandlers = true;
   configured.addHandler(handler, false);
-  const marker = manager.fromHandlers({}).handlers[0];
+  // A final state may contain only old conversation history. Only accept an
+  // assistant response actually observed in this run's SDK model callbacks.
+  const marker = manager.fromHandlers(
+    generatedMessages
+      ? {
+          handleLLMEnd(result) {
+            for (const generations of result.generations) {
+              for (const generation of generations) {
+                if ('message' in generation && isRecord(generation.message))
+                  generatedMessages.add(generation.message);
+              }
+            }
+          },
+        }
+      : {}
+  ).handlers[0];
+  if (generatedMessages) marker.awaitHandlers = true;
   marker.name = 'opentelemetry_langchain_graph_parent';
   graphInvocations.set(marker, invocation);
   configured.addHandler(marker, true);
