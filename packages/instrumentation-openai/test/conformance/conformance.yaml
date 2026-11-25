@@ -1,0 +1,97 @@
+# Copyright The OpenTelemetry Authors
+# SPDX-License-Identifier: Apache-2.0
+
+runner: genai-conformance
+instrumented_library: openai
+instrumentation_library: '@opentelemetry/instrumentation-openai'
+
+weaver:
+  registry: https://github.com/open-telemetry/semantic-conventions-genai.git@aa3b7f4394245fec260013898049780975a407a4[model]
+
+server:
+  run: genai-mock-server --port ${PORT}
+
+env:
+  OPENAI_BASE_URL: ${MOCK_SERVER_URL}/v1
+  OPENAI_API_KEY: test
+  OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: none
+
+scenarios:
+  chat:
+    run: node openai.cjs chat
+    spans:
+      - match:
+          type: gen_ai.client.inference
+          kind: CLIENT
+        expect:
+          count: 1
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.provider.name: openai
+            gen_ai.input.messages: {present: false}
+            gen_ai.output.messages: {present: false}
+    metrics: &inference_metrics
+      - gen_ai.client.operation.duration
+      - gen_ai.client.inference.operation.input_tokens
+      - gen_ai.client.inference.operation.output_tokens
+      - gen_ai.client.inference.usage.input_tokens
+      - gen_ai.client.inference.usage.output_tokens
+      - gen_ai.client.inference.usage.cache_read.input_tokens
+      - gen_ai.client.inference.usage.cache_write.input_tokens
+      - gen_ai.client.inference.usage.reasoning.output_tokens
+    events: []
+
+  responses_content:
+    run: node openai.cjs responses
+    env:
+      OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT: span_only
+    spans:
+      - match:
+          type: gen_ai.client.inference
+          kind: CLIENT
+        expect:
+          count: 1
+          attributes:
+            gen_ai.operation.name: chat
+            gen_ai.provider.name: openai
+            gen_ai.system_instructions: '[{"type":"text","content":"Keep it short."}]'
+            gen_ai.input.messages: '[{"role":"user","parts":[{"type":"text","content":"hello"}]}]'
+            gen_ai.output.messages: {present: true}
+    metrics: *inference_metrics
+    events: []
+
+  embeddings:
+    run: node openai.cjs embeddings
+    spans:
+      - match:
+          type: gen_ai.embeddings.client
+          kind: CLIENT
+        expect:
+          count: 1
+          attributes:
+            gen_ai.operation.name: embeddings
+            gen_ai.provider.name: openai
+            gen_ai.request.model: text-embedding-3-small
+            gen_ai.request.encoding_formats: [float]
+    metrics: [gen_ai.client.operation.duration]
+    events: []
+
+  embeddings_implicit_encoding:
+    run: node openai.cjs embeddings-default
+    expected_violations:
+      - id: genai_expected_attribute_missing
+        context:
+          missing_attribute: gen_ai.request.encoding_formats
+          operation: embeddings
+        reason: No encoding was supplied at the instrumented SDK boundary. The SDK chooses its wire encoding internally.
+    spans:
+      - match:
+          type: gen_ai.embeddings.client
+          kind: CLIENT
+        expect:
+          count: 1
+          attributes:
+            gen_ai.provider.name: openai
+            gen_ai.request.encoding_formats: {present: false}
+    metrics: [gen_ai.client.operation.duration]
+    events: []

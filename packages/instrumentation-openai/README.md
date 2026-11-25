@@ -34,9 +34,29 @@ sdk.start();
 process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
+## Configuration
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `captureMessageContent` | `'none' \| 'span_only'` | `'none'` | Use `'span_only'` to record messages and system instructions on spans. Text and tool arguments may contain sensitive data. Image, audio, and file input parts omit URL credentials, query strings, fragments, and binary payloads. |
+
+`OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` takes precedence over the
+option. To migrate from boolean configuration, replace `true` with `span_only`
+and `false` with `none`. The old boolean values no longer enable capture.
+
 ## Semantic Conventions
 
-This package implements Semantic Convention [Version 1.36.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.36.0/docs/README.md) for Chat Completions, and Semantic Convention [Version 1.38.0](https://github.com/open-telemetry/semantic-conventions/blob/v1.38.0/docs/README.md) for Responses API.
+Chat Completions, Embeddings, and Responses use `@opentelemetry/genai-util` for
+[GenAI spans and metrics](https://opentelemetry.io/docs/specs/semconv/gen-ai/).
+The provider is `openai` even when the client uses a custom base URL. Legacy
+per-message logs and the old token histogram are no longer emitted. Streaming
+spans end when iteration completes, fails, or exits early. A stream that is
+never consumed can leave its span open.
+
+To check the three operations against the GenAI semantic conventions, install
+the [conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance/tree/main/tools/gen-ai/runner),
+its mock server, and its pinned Weaver version. Build the package, then run
+`npm run test:conformance -w @opentelemetry/instrumentation-openai`.
 
 ## Useful links
 
