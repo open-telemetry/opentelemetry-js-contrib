@@ -115,6 +115,8 @@ URLs often carry other application-specific secrets (session ids, tokens, OAuth 
 > Providing `sanitizeUrl` **fully replaces** the default redaction described above. Your function is called with the **raw, unredacted URL**, and whatever it returns is recorded as-is. Credentials and signatures are **not** redacted unless your function does it.
 >
 > To keep the default redaction and only redact more, build on `defaultSanitizeUrl`, for example `url => defaultSanitizeUrl(url).replace(...)`.
+>
+> If your function throws, the error is logged and the navigation record is dropped. It does not fall back to the default redaction.
 
 ### Using the Default Sanitizer
 

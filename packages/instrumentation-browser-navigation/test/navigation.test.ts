@@ -8,6 +8,7 @@ import {
   InMemoryLogRecordExporter,
   SimpleLogRecordProcessor,
   ReadableLogRecord,
+  type LogRecordProcessor,
 } from '@opentelemetry/sdk-logs';
 
 import * as sinon from 'sinon';
@@ -20,7 +21,7 @@ import {
   ATTR_BROWSER_NAVIGATION_TYPE,
 } from '../src/instrumentation';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
-import { logs } from '@opentelemetry/api';
+import { diag, DiagLogLevel, logs, type LogRecord } from '@opentelemetry/api';
 // @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 // registerInstrumentations removed - using plugin.enable() directly
@@ -830,6 +831,303 @@ describe('Browser Navigation Instrumentation', () => {
       );
 
       done();
+    });
+  });
+
+  describe('robustness', () => {
+    let initialUrl: string;
+    let diagError: sinon.SinonStub;
+
+    beforeEach(() => {
+      initialUrl = location.href;
+      diagError = sinon.stub();
+      diag.setLogger(
+        {
+          error: diagError,
+          warn: sinon.stub(),
+          info: sinon.stub(),
+          debug: sinon.stub(),
+          verbose: sinon.stub(),
+        },
+        DiagLogLevel.ERROR
+      );
+    });
+
+    afterEach(() => {
+      if (instrumentation) {
+        instrumentation.disable();
+      }
+      history.replaceState(history.state, '', initialUrl);
+      diag.disable();
+    });
+
+    describe('when user callbacks throw', () => {
+      it('should drop the record and not throw from history.pushState() when sanitizeUrl throws', () => {
+        sandbox.stub(document, 'readyState').value('loading');
+        let throwNext = false;
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+          sanitizeUrl: url => {
+            if (throwNext) {
+              throwNext = false;
+              throw new Error('sanitizeUrl failed');
+            }
+            return url;
+          },
+        });
+        instrumentation.enable();
+
+        throwNext = true;
+        assert.doesNotThrow(() =>
+          history.pushState({}, '', '/sanitize-throws?token=raw')
+        );
+        assert.strictEqual(
+          exporter.getFinishedLogRecords().length,
+          0,
+          'must not emit a URL that sanitizeUrl did not sanitize'
+        );
+        assert.strictEqual(diagError.callCount, 1);
+
+        // The dropped navigation still moved the page, so the same URL again
+        // is not a new navigation.
+        history.replaceState({}, '', '/sanitize-throws?token=raw');
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
+
+        history.pushState({}, '', '/sanitize-recovers');
+        const records = exporter.getFinishedLogRecords();
+        assert.strictEqual(records.length, 1);
+        assert.strictEqual(
+          records[0].attributes[ATTR_URL_FULL],
+          `${location.origin}/sanitize-recovers`
+        );
+      });
+
+      it('should drop the page load record and still enable when sanitizeUrl throws', () => {
+        sandbox.stub(document, 'readyState').value('complete');
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+          sanitizeUrl: () => {
+            throw new Error('sanitizeUrl failed');
+          },
+        });
+
+        assert.doesNotThrow(() => instrumentation.enable());
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
+        assert.strictEqual(diagError.callCount, 1);
+      });
+
+      it('should emit the record and not throw from history.pushState() when applyCustomLogRecordData throws', () => {
+        sandbox.stub(document, 'readyState').value('loading');
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+          applyCustomLogRecordData: () => {
+            throw new Error('applyCustomLogRecordData failed');
+          },
+        });
+        instrumentation.enable();
+
+        assert.doesNotThrow(() =>
+          history.pushState({}, '', '/custom-data-throws')
+        );
+        const records = exporter.getFinishedLogRecords();
+        assert.strictEqual(records.length, 1);
+        assert.strictEqual(
+          records[0].attributes[ATTR_URL_FULL],
+          `${location.origin}/custom-data-throws`
+        );
+        assert.strictEqual(diagError.callCount, 1);
+      });
+    });
+
+    describe('when enable() fails partway', () => {
+      it('should roll back and allow a retry when emitting the page load record throws', () => {
+        sandbox.stub(document, 'readyState').value('complete');
+        const throwingProcessor: LogRecordProcessor = {
+          onEmit: () => {
+            throw new Error('emit failed');
+          },
+          forceFlush: () => Promise.resolve(),
+          shutdown: () => Promise.resolve(),
+        };
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+        });
+        instrumentation.setLoggerProvider(
+          new LoggerProvider({ processors: [throwingProcessor] })
+        );
+
+        assert.doesNotThrow(() => instrumentation.enable());
+        assert.strictEqual(instrumentation.isEnabled(), false);
+        assert.strictEqual(diagError.callCount, 1);
+
+        // No listener is left behind to record navigations while disabled.
+        instrumentation.setLoggerProvider(provider);
+        history.pushState({}, '', '/after-failed-enable');
+        window.dispatchEvent(new PopStateEvent('popstate'));
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 0);
+
+        instrumentation.enable();
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+
+        // The retry is fully hooked up: one navigation, one record.
+        exporter.reset();
+        history.pushState({}, '', '/retry-after-emit-failure');
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+      });
+
+      it('should undo a partial history patch and allow a retry when wrapping fails', () => {
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+        });
+        const internals = instrumentation as unknown as {
+          _wrap: (
+            nodule: History,
+            name: keyof History,
+            wrapper: unknown
+          ) => unknown;
+        };
+        const wrap = internals._wrap;
+        const wrapStub = sandbox
+          .stub(internals, '_wrap')
+          .callsFake((nodule, name, wrapper) => {
+            if (name === 'pushState') {
+              // What wrapping a non-configurable property throws.
+              throw new TypeError('Cannot redefine property: pushState');
+            }
+            return wrap(nodule, name, wrapper);
+          });
+        const replaceState = history.replaceState;
+        const pushState = history.pushState;
+
+        assert.doesNotThrow(() => instrumentation.enable());
+        assert.strictEqual(instrumentation.isEnabled(), false);
+        assert.strictEqual(
+          history.replaceState,
+          replaceState,
+          'replaceState should be unwrapped'
+        );
+        assert.strictEqual(history.pushState, pushState);
+        assert.strictEqual(diagError.callCount, 1);
+
+        wrapStub.restore();
+        instrumentation.enable();
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        exporter.reset();
+        history.replaceState({}, '', '/retry-after-wrap-failure');
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+      });
+
+      it('should roll back and allow a retry when window.navigation is not an EventTarget', () => {
+        if (!('navigation' in window)) {
+          return;
+        }
+        sandbox.stub(document, 'readyState').value('complete');
+        const navigationStub = sandbox
+          .stub(window as unknown as { navigation: unknown }, 'navigation')
+          .value({});
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: true,
+        });
+
+        assert.doesNotThrow(() => instrumentation.enable());
+        assert.strictEqual(instrumentation.isEnabled(), false);
+        assert.strictEqual(
+          exporter.getFinishedLogRecords().length,
+          0,
+          'a failed enable() should not emit the page load record'
+        );
+        assert.strictEqual(diagError.callCount, 1);
+
+        navigationStub.restore();
+        instrumentation.enable();
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+      });
+    });
+
+    describe('constructor-time enable()', () => {
+      it('should apply sanitizeUrl and applyCustomLogRecordData to the page load record', () => {
+        sandbox.stub(document, 'readyState').value('complete');
+        instrumentation = new BrowserNavigationInstrumentation({
+          useNavigationApiIfAvailable: false,
+          sanitizeUrl: () => 'https://example.com/sanitized',
+          applyCustomLogRecordData: (logRecord: LogRecord) => {
+            logRecord.attributes = {
+              ...logRecord.attributes,
+              'custom.attr': 'set',
+            };
+          },
+        });
+
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        const records = exporter.getFinishedLogRecords();
+        assert.strictEqual(records.length, 1);
+        assert.strictEqual(
+          records[0].attributes[ATTR_URL_FULL],
+          'https://example.com/sanitized'
+        );
+        assert.strictEqual(records[0].attributes['custom.attr'], 'set');
+      });
+
+      it('should keep the initial load state that enable() set', () => {
+        sandbox.stub(document, 'readyState').value('complete');
+        instrumentation = new BrowserNavigationInstrumentation({
+          useNavigationApiIfAvailable: false,
+        });
+
+        assert.strictEqual(exporter.getFinishedLogRecords().length, 1);
+        assert.strictEqual(
+          (instrumentation as unknown as { _hasProcessedInitialLoad?: boolean })
+            ._hasProcessedInitialLoad,
+          true
+        );
+      });
+    });
+
+    describe('setConfig()', () => {
+      it('should use the callbacks from the new config', () => {
+        instrumentation = new BrowserNavigationInstrumentation({
+          enabled: false,
+          useNavigationApiIfAvailable: false,
+          sanitizeUrl: () => 'https://example.com/old',
+        });
+        const sanitizeUrl = () => 'https://example.com/new';
+        const applyCustomLogRecordData = (logRecord: LogRecord) => {
+          logRecord.attributes = {
+            ...logRecord.attributes,
+            'custom.attr': 'new',
+          };
+        };
+        instrumentation.setConfig({
+          useNavigationApiIfAvailable: false,
+          sanitizeUrl,
+          applyCustomLogRecordData,
+        });
+        assert.strictEqual(instrumentation.sanitizeUrl, sanitizeUrl);
+        assert.strictEqual(
+          instrumentation.applyCustomLogRecordData,
+          applyCustomLogRecordData
+        );
+
+        instrumentation.enable();
+        exporter.reset();
+        history.pushState({}, '', '/set-config');
+        const records = exporter.getFinishedLogRecords();
+        assert.strictEqual(records.length, 1);
+        assert.strictEqual(
+          records[0].attributes[ATTR_URL_FULL],
+          'https://example.com/new'
+        );
+        assert.strictEqual(records[0].attributes['custom.attr'], 'new');
+      });
     });
   });
 });

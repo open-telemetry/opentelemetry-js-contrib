@@ -3,7 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { InstrumentationBase } from '@opentelemetry/instrumentation';
+import {
+  InstrumentationBase,
+  safeExecuteInTheMiddle,
+} from '@opentelemetry/instrumentation';
 import { type LogRecord } from '@opentelemetry/api';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 /** @knipignore */
@@ -37,14 +40,18 @@ export const ATTR_BROWSER_NAVIGATION_TYPE = 'browser.navigation.type';
  * https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md
  */
 export class BrowserNavigationInstrumentation extends InstrumentationBase<BrowserNavigationInstrumentationConfig> {
-  applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
-    undefined;
+  // Fields that setConfig() or enable() assign use `declare`: the base
+  // constructor calls both before super() returns, and a field initializer
+  // would then reset them.
+  declare applyCustomLogRecordData:
+    | ApplyCustomLogRecordDataFunction
+    | undefined;
   declare sanitizeUrl?: SanitizeUrlFunction; // No default sanitization
   declare private _onLoadHandler?: () => void;
   declare private _onPopStateHandler?: (ev: PopStateEvent) => void;
   declare private _onNavigateHandler?: (ev: Event) => void;
   private _lastUrl: string = location.href;
-  private _hasProcessedInitialLoad: boolean = false;
+  declare private _hasProcessedInitialLoad?: boolean;
 
   declare private _isHistoryPatched: boolean;
 
@@ -54,8 +61,12 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
    */
   constructor(config: BrowserNavigationInstrumentationConfig) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this.applyCustomLogRecordData = config?.applyCustomLogRecordData;
-    this.sanitizeUrl = config?.sanitizeUrl;
+  }
+
+  override setConfig(config: BrowserNavigationInstrumentationConfig) {
+    super.setConfig(config);
+    this.applyCustomLogRecordData = this._config.applyCustomLogRecordData;
+    this.sanitizeUrl = this._config.sanitizeUrl;
   }
 
   init() {}
@@ -63,20 +74,34 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   /**
    * Returns the value to record as `url.full`. A configured `sanitizeUrl`
    * callback fully replaces the default redaction of credentials and
-   * sensitive query string values.
+   * sensitive query string values. Returns `undefined` if `sanitizeUrl`
+   * throws: the record is then dropped, because the default redaction may
+   * keep what the callback was meant to remove.
    */
-  private _getUrlFull(url: string): string {
-    return this.sanitizeUrl ? this.sanitizeUrl(url) : redactUrl(url);
+  private _getUrlFull(url: string): string | undefined {
+    if (!this.sanitizeUrl) {
+      return redactUrl(url);
+    }
+    try {
+      return this.sanitizeUrl(url);
+    } catch (e) {
+      this._diag.error('sanitizeUrl threw, dropping the record', e);
+      return undefined;
+    }
   }
 
   /**
    * callback to be executed when using hard navigation
    */
   private _onHardNavigation() {
+    const urlFull = this._getUrlFull(document.documentURI);
+    if (urlFull === undefined) {
+      return;
+    }
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this._getUrlFull(document.documentURI),
+        [ATTR_URL_FULL]: urlFull,
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: false,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: false,
       },
@@ -102,6 +127,13 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     if (referrerUrl === currentUrl) {
       return;
     }
+    // Set before the record can be dropped: the page has moved either way.
+    this._lastUrl = currentUrl;
+
+    const urlFull = this._getUrlFull(currentUrl);
+    if (urlFull === undefined) {
+      return;
+    }
 
     const navType = this._mapChangeStateToType(changeState, navigationEvent);
     const sameDocument = this._determineSameDocument(
@@ -119,7 +151,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this._getUrlFull(currentUrl),
+        [ATTR_URL_FULL]: urlFull,
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: sameDocument,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: hashChange,
         ...(navType ? { [ATTR_BROWSER_NAVIGATION_TYPE]: navType } : {}),
@@ -127,9 +159,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     };
     this._applyCustomLogRecordData(navLogRecord, this.applyCustomLogRecordData);
     this.logger.emit(navLogRecord);
-
-    // Update the last known URL after processing
-    this._lastUrl = currentUrl;
   }
 
   /**
@@ -163,8 +192,18 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     if (this._enabled) {
       return;
     }
-    this._enabled = true;
+    try {
+      this._attach();
+      this._enabled = true;
+    } catch (e) {
+      // Never throw into the host app. Undo what was attached and stay
+      // disabled so a later enable() can retry.
+      this._diag.error('enable() failed, staying disabled', e);
+      this._detach();
+    }
+  }
 
+  private _attach() {
     const cfg = this.getConfig() as BrowserNavigationInstrumentationConfig;
     const useNavigationApiIfAvailable = !!cfg.useNavigationApiIfAvailable;
     const navigationApi =
@@ -176,9 +215,6 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       this._patchHistoryApi();
       this._isHistoryPatched = true;
     }
-
-    // Always listen for page load
-    this._waitForPageLoad();
 
     if (navigationApi) {
       if (this._onNavigateHandler) {
@@ -205,6 +241,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       };
       window.addEventListener('popstate', this._onPopStateHandler);
     }
+
+    // Always listen for page load. Last, as it may emit the page load record,
+    // which a retry after a failure above would emit again.
+    this._waitForPageLoad();
   }
 
   /**
@@ -215,7 +255,10 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       return;
     }
     this._enabled = false;
+    this._detach();
+  }
 
+  private _detach() {
     if (this._onLoadHandler) {
       document.removeEventListener('DOMContentLoaded', this._onLoadHandler);
       this._onLoadHandler = undefined;
@@ -270,7 +313,13 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
       'replaceState',
       this._patchHistoryMethod('replaceState')
     );
-    this._wrap(history, 'pushState', this._patchHistoryMethod('pushState'));
+    try {
+      this._wrap(history, 'pushState', this._patchHistoryMethod('pushState'));
+    } catch (e) {
+      // replaceState was wrapped just above, so this restores the original.
+      this._unwrap(history, 'replaceState');
+      throw e;
+    }
   }
 
   /**
@@ -284,7 +333,15 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined
   ) {
     if (applyCustomLogRecordData) {
-      applyCustomLogRecordData(logRecord);
+      safeExecuteInTheMiddle(
+        () => applyCustomLogRecordData(logRecord),
+        error => {
+          if (error) {
+            this._diag.error('applyCustomLogRecordData threw', error);
+          }
+        },
+        true
+      );
     }
   }
 

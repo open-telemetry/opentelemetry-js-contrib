@@ -21,6 +21,9 @@ export interface BrowserNavigationInstrumentationConfig
    * the URL semantic conventions. It is called with the raw, unredacted URL
    * and its return value is recorded as-is. To keep the default redaction,
    * use `defaultSanitizeUrl` or call it from your own function.
+   *
+   * If this function throws, the error is logged and the navigation record
+   * is dropped; it does not fall back to the default redaction.
    */
   sanitizeUrl?: SanitizeUrlFunction;
 }
