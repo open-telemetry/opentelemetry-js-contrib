@@ -22,7 +22,9 @@ const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrumentationConfig> {
   readonly version: string = PACKAGE_VERSION;
 
-  private _observer?: PerformanceObserver;
+  // `declare` avoids a field initializer that would run after super()'s
+  // constructor-time enable() and drop the observer it created.
+  declare private _observer?: PerformanceObserver;
 
   constructor(config: LongtaskInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
