@@ -57,10 +57,11 @@ npm install --save @opentelemetry/genai-util
 directly. Invocation types (`EmbeddingInvocation`, `InferenceInvocation`,
 `LocalAgentInvocation`, `ToolInvocation`), common request/message/config types
 (such as `GenAIInstrumentationConfig`, `ChatMessage`, `MessagePart`,
-`FinishReason`, and `TokenUsageDetails`), and `ATTR_GEN_AI_TOOL_CALL_ID` are
-also exported for integrations that need type annotations or to set the
-tool-call ID after starting an invocation; additional types and helpers are
-exported incrementally as instrumentations adopt them.
+`FinishReason`, and `TokenUsageDetails`), and selected GenAI semantic
+convention constants (attributes, operation names, provider names, finish
+reasons, output types, and tool types) are also exported; additional types,
+constants, and helpers are exported incrementally as instrumentations adopt
+them.
 
 ```typescript
 import { TelemetryHandler } from '@opentelemetry/genai-util';
