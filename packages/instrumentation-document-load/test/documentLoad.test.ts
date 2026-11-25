@@ -579,13 +579,13 @@ describe('DocumentLoad Instrumentation', () => {
 
         assert.isOk(
           (fetchSpan.attributes[ATTR_URL_FULL] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+            `${location.origin}/?wtr-session-id=`
           )
         );
 
         assert.isOk(
           (rootSpan.attributes[ATTR_URL_FULL] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+            `${location.origin}/?wtr-session-id=`
           )
         );
         assert.strictEqual(
@@ -874,7 +874,7 @@ describe('DocumentLoad Instrumentation', () => {
         assert.equal(spans[0].attributes['http.url'], undefined);
         assert.isOk(
           (spans[0].attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+            `${location.origin}/?wtr-session-id=`
           )
         );
         done();

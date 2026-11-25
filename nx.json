@@ -17,6 +17,9 @@
       "outputs": ["{projectRoot}/dist"],
       "cache": true
     },
+    "test:browser": {
+      "parallelism": false
+    },
     "watch": {
       "dependsOn": ["compile"]
     },
