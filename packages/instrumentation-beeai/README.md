@@ -44,6 +44,25 @@ sdk.start();
 | --- | --- | --- | --- |
 | `captureMessageContent` | `'none' \| 'span_only'` | `'none'` | Controls whether message contents, system instructions, tool arguments, and tool results are recorded on span attributes. Can also be configured via the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable. |
 
+### Manual Instrumentation
+
+For automatic patching, register `BeeAIInstrumentation` before importing `beeai-framework` (in ESM applications, also configure the OpenTelemetry instrumentation loader). In bundled or ESM environments where automatic module hooks are not used, call `manuallyInstrument` directly:
+
+```typescript
+import * as bee from 'beeai-framework';
+import { BeeAIInstrumentation } from '@opentelemetry/instrumentation-beeai';
+
+const instrumentation = new BeeAIInstrumentation();
+instrumentation.manuallyInstrument(bee);
+```
+
+## Boundary Behavior and Limitations
+
+- **LangChain adapters (`LangChainChatModel`, `LangChainEmbeddingModel`, `LangChainTool`)**: BeeAI skips emitting duplicate spans and metrics for LangChain delegation wrappers so downstream instrumentations (such as `@opentelemetry/instrumentation-langchain` or provider-specific instrumentations) own those calls. Active OpenTelemetry context is still propagated into delegated calls, and direct calls within an enclosing BeeAI agent still increment `gen_ai.invoke_agent.inference_calls` and `gen_ai.invoke_agent.tool_calls`.
+- **Experimental `RemoteAgent`**: `beeai-framework/agents/experimental/remote/agent` invokes out-of-process ACP agents over HTTP rather than executing in-process. `RemoteAgent` opts out of `INTERNAL` local-agent spans and metrics while preserving caller OpenTelemetry context for downstream HTTP instrumentation and isolating it from any outer BeeAI agent scope.
+- **Internal `final_answer` tool**: BeeAI's internal `final_answer` control-flow tool used by `ToolCallingAgent` is excluded from `execute_tool` spans and agent tool-call counts.
+- **Tool-internal calls**: `ChatModel` and nested `Tool` calls invoked inside a tool handler (such as `LLMTool` or custom helper tools) emit their own spans parented to the executing tool span, and their token usage and call counts are not rolled up into the enclosing agent.
+
 ## Useful links
 
 - For more information on OpenTelemetry, visit: <https://opentelemetry.io/>
