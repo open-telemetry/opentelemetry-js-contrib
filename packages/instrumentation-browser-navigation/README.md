@@ -3,6 +3,32 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
+> [!IMPORTANT]
+> This component is **deprecated** in favor of
+> [`@opentelemetry/browser-instrumentation`](https://www.npmjs.com/package/@opentelemetry/browser-instrumentation),
+> which provides this instrumentation as the subpath export
+> `@opentelemetry/browser-instrumentation/experimental/navigation`. Browser
+> instrumentation is consolidated in the
+> [opentelemetry-browser](https://github.com/open-telemetry/opentelemetry-browser)
+> repository.
+>
+> To migrate, install `@opentelemetry/browser-instrumentation` and replace
+> `BrowserNavigationInstrumentation` with `NavigationInstrumentation`:
+>
+> ```ts
+> import { NavigationInstrumentation } from '@opentelemetry/browser-instrumentation/experimental/navigation';
+> ```
+>
+> The emitted telemetry is unchanged: `browser.navigation` log records with the
+> same attributes. The new package registers instrumentations through the
+> browser SDK or their own `enable()` method instead of
+> `registerInstrumentations()`. See the
+> [migration guide](https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md)
+> for details.
+>
+> We will stop publishing new versions of
+> `@opentelemetry/instrumentation-browser-navigation` on June 30, 2027.
+
 This module provides automatic instrumentation for browser navigation in Web applications. It emits log records via the Logs API to represent:
 
 - **Page load** (hard navigation) - Initial page loads and full page refreshes
