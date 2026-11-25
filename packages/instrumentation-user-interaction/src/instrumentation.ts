@@ -630,8 +630,10 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   }
 
   /**
-   * Stops creating and renaming spans. Patches stay installed: they check
-   * `_enabled` and pass calls straight through while it is false.
+   * Stops creating and renaming spans. Patches stay installed: `_createSpan()`
+   * and the history patch check `_enabled`, while the listener and Zone patches
+   * keep their bookkeeping so listeners added earlier can still be removed and
+   * spans already started still end.
    */
   override disable() {
     if (!this._enabled) {
