@@ -6,13 +6,14 @@
 import {
   context,
   createContextKey,
+  isSpanContextValid,
   trace,
   type Context,
   type MeterProvider,
   type Span,
   type TracerProvider,
 } from '@opentelemetry/api';
-import { isTracingSuppressed } from '@opentelemetry/core';
+import { isTracingSuppressed, suppressTracing } from '@opentelemetry/core';
 import {
   ATTR_GEN_AI_OUTPUT_TYPE,
   GEN_AI_OPERATION_NAME_VALUE_CHAT,
@@ -67,6 +68,7 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 const MODULE_NAME = 'beeai-framework';
 const SUPPORTED_VERSIONS = ['>=0.1.9 <0.1.14'];
 
+// Private OTel Context key tracking the enclosing BeeAI agent run (or `null` inside tool/RemoteAgent scopes).
 const ACTIVE_AGENT_CONTEXT_KEY = createContextKey(
   'OpenTelemetry BeeAI Active Agent Run'
 );
@@ -1075,11 +1077,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       }
 
       // Only record the message text/parts on the span when content capture is enabled.
-      if (
-        shouldCaptureContent &&
-        outputMessages &&
-        outputMessages.length > 0
-      ) {
+      if (shouldCaptureContent && outputMessages && outputMessages.length > 0) {
         invocation.addOutputMessages(outputMessages);
       }
     }
@@ -1218,7 +1216,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       return function patchedBeeAIMethod(this: unknown, ...args: unknown[]) {
         const owner = BeeAIInstrumentation._resolveActiveOwner(target, method);
         const callerContext = context.active();
-        if (!owner || isTracingSuppressed(callerContext)) {
+        if (!owner) {
           return originalFn.apply(this, args);
         }
 
@@ -1226,7 +1224,10 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
         try {
           returned = originalFn.apply(this, args);
         } catch (error) {
-          owner._recordSyncFailure(this, args[0], callerContext, error, spec);
+          // We still wrap Runs under suppression so later re-runs trace, but skip sync errors here.
+          if (!isTracingSuppressed(callerContext)) {
+            owner._recordSyncFailure(this, args[0], callerContext, error, spec);
+          }
           throw error;
         }
 
@@ -1371,15 +1372,30 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
     spec: RunOperationSpec<TInvocation>
   ): void {
     const originalHandler = run.handler;
+    // Creation-time callerContext bridges the single-tick gap in patterns like
+    // `await context.with(ctx, () => runFactory())`, where `context.with()` pops
+    // before `await` runs the lazy `Run`. Consume it at most once so re-awaiting
+    // the cold `Run` uses the live execution context and drops references to
+    // ended spans/contexts for GC.
+    let pendingCallerContext: Context | undefined = callerContext;
     const executeWrappedRun = async () => {
       const owner = BeeAIInstrumentation._resolveActiveOwner(target, method);
       const executionContext = context.active();
-      if (
-        !owner ||
-        isTracingSuppressed(callerContext) ||
-        isTracingSuppressed(executionContext)
-      ) {
+      const consumedCallerContext = pendingCallerContext;
+      pendingCallerContext = undefined;
+
+      if (!owner || isTracingSuppressed(executionContext)) {
         return originalHandler.call(run);
+      }
+
+      const activeCallerContext = resolveActiveCallerContext(
+        consumedCallerContext,
+        executionContext
+      );
+      if (isTracingSuppressed(activeCallerContext)) {
+        return context.with(suppressTracing(executionContext), () =>
+          originalHandler.call(run)
+        );
       }
 
       const runContext = run.runContext;
@@ -1388,11 +1404,11 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
       const parentRun = parentId ? activeRuns.get(parentId) : undefined;
       const enclosingAgent = findEnclosingAgentRun(
         parentId,
-        callerContext,
+        activeCallerContext,
         executionContext
       );
       const parentContext = resolveParentContext(
-        callerContext,
+        activeCallerContext,
         executionContext,
         parentRun
       );
@@ -1411,7 +1427,7 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
           instance,
           effectiveInput,
           parentContext,
-          callerContext,
+          callerContext: activeCallerContext,
           runId,
           parentId,
           parentRun,
@@ -1723,9 +1739,109 @@ function isLangChainDelegatedModel(modelInstance: unknown): boolean {
 }
 
 /**
+ * Returns whether a value stored under `ACTIVE_AGENT_CONTEXT_KEY` is still an
+ * active in-flight {@link ActiveAgentRun} tracked in `activeRuns`.
+ *
+ * @param value - Unknown context value read from `ACTIVE_AGENT_CONTEXT_KEY`
+ *   (may be an {@link ActiveAgentRun}, `null` for an isolated tool/remote-agent
+ *   scope, or `undefined`).
+ */
+function isActiveAgentRun(value: unknown): value is ActiveAgentRun {
+  if (!isRecord(value) || value.kind !== 'agent') {
+    return false;
+  }
+  const candidate = value as unknown as ActiveAgentRun;
+  return (
+    typeof candidate.runId === 'string' &&
+    activeRuns.get(candidate.runId) === candidate
+  );
+}
+
+/**
+ * Returns whether `span` is usable as a live OpenTelemetry parent: either a
+ * local recording span (not yet ended) or a valid propagated remote span
+ * context (whose `isRecording()` is always `false`).
+ *
+ * @param span - OpenTelemetry {@link Span} extracted from a context, or
+ *   `undefined` when no span is bound to that context.
+ */
+function isUsableCallerSpan(span: Span | undefined): span is Span {
+  if (!span) {
+    return false;
+  }
+  if (span.isRecording()) {
+    return true;
+  }
+  const spanContext = span.spanContext();
+  return spanContext.isRemote === true && isSpanContextValid(spanContext);
+}
+
+/**
+ * Determines whether the creation-time `callerContext` is still valid to
+ * inherit for the current execution of a lazy BeeAI `Run`. Returns
+ * `callerContext` only on the initial execution while its span (if any) is
+ * still live and compatible with `executionContext`; otherwise falls back to
+ * `executionContext` once already consumed (re-execution), after its captured
+ * local span ends, or when running under an active span from a different trace
+ * (or after unspanned creation).
+ *
+ * @param callerContext - Single-use OpenTelemetry {@link Context} captured
+ *   when the `Run` was constructed, or `undefined` if already consumed by an
+ *   earlier execution.
+ * @param executionContext - Live OpenTelemetry {@link Context} active at
+ *   `await` / handler execution time (`context.active()`), checked to detect
+ *   new active spans or cross-trace handoffs and returned as the fallback.
+ * @returns `callerContext` if it should still be honored for suppression, agent
+ *   attribution, and span parenting; otherwise `executionContext`.
+ */
+function resolveActiveCallerContext(
+  callerContext: Context | undefined,
+  executionContext: Context
+): Context {
+  if (!callerContext) {
+    return executionContext;
+  }
+  const rawCallerSpan = trace.getSpan(callerContext);
+  const callerSpan = isUsableCallerSpan(rawCallerSpan)
+    ? rawCallerSpan
+    : undefined;
+
+  if (rawCallerSpan && !callerSpan) {
+    return executionContext;
+  }
+
+  const executionSpan = trace.getSpan(executionContext);
+  if (isUsableCallerSpan(executionSpan)) {
+    if (!callerSpan) {
+      return executionContext;
+    }
+    if (
+      executionSpan.spanContext().traceId !== callerSpan.spanContext().traceId
+    ) {
+      return executionContext;
+    }
+  }
+
+  return callerContext;
+}
+
+/**
  * Walks the `Run` parent chain and OpenTelemetry contexts to find the enclosing
  * active agent run, stopping at tool or remote-agent boundaries so internal
  * helper calls inside tools are not attributed to the parent agent.
+ *
+ * @param parentId - BeeAI `runContext.parentId` linking this `Run` to its
+ *   parent run in `activeRuns`, or `undefined` for top-level runs.
+ * @param callerContext - Validated creation-time OpenTelemetry {@link Context}
+ *   (from {@link resolveActiveCallerContext}), consulted as a fallback when
+ *   `parentId` does not resolve to an active agent or tool boundary.
+ * @param executionContext - Live OpenTelemetry {@link Context} active during
+ *   handler execution, used to enforce tool/remote-agent isolation (`null`
+ *   sentinel), detect cross-agent or cross-trace execution, and locate an
+ *   enclosing agent when `RunContext` parentage is absent.
+ * @returns The nearest live {@link ActiveAgentRun} that owns this execution,
+ *   or `undefined` when executing standalone, inside a tool/remote-agent
+ *   boundary, or across a different trace from the creating agent.
  */
 function findEnclosingAgentRun(
   parentId: string | undefined,
@@ -1743,8 +1859,24 @@ function findEnclosingAgentRun(
       return undefined;
     }
     if (record.kind === 'agent') {
-      // A cold Run constructed under an agent (`parentId` = agent) may be awaited inside a tool scope (`null`).
-      if (executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY) === null) {
+      // A cold Run constructed under an agent (`parentId` = agent) may be awaited
+      // inside a tool scope (`null`), inside another agent, or in a different trace.
+      const execValue = executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY);
+      if (execValue === null) {
+        return undefined;
+      }
+      if (isActiveAgentRun(execValue) && execValue !== record) {
+        return execValue;
+      }
+      const recordSpan = trace.getSpan(record.invocation.getContext());
+      const execSpan = executionContext
+        ? trace.getSpan(executionContext)
+        : undefined;
+      if (
+        recordSpan &&
+        isUsableCallerSpan(execSpan) &&
+        execSpan.spanContext().traceId !== recordSpan.spanContext().traceId
+      ) {
         return undefined;
       }
       return record as ActiveAgentRun;
@@ -1760,12 +1892,12 @@ function findEnclosingAgentRun(
   if (fromCaller === null) {
     return undefined;
   }
-  if (fromCaller) {
-    return fromCaller as ActiveAgentRun;
+  if (isActiveAgentRun(fromCaller)) {
+    return fromCaller;
   }
   const fromExecution = executionContext?.getValue(ACTIVE_AGENT_CONTEXT_KEY);
-  if (fromExecution) {
-    return fromExecution as ActiveAgentRun;
+  if (isActiveAgentRun(fromExecution)) {
+    return fromExecution;
   }
   return undefined;
 }
@@ -1779,7 +1911,10 @@ function resolveParentContext(
   executionContext: Context,
   parentRun: ActiveRun | undefined
 ): Context {
-  const callerSpan = trace.getSpan(callerContext);
+  const rawCallerSpan = trace.getSpan(callerContext);
+  const callerSpan = isUsableCallerSpan(rawCallerSpan)
+    ? rawCallerSpan
+    : undefined;
   const executionSpan = trace.getSpan(executionContext);
 
   if (parentRun) {
@@ -1805,9 +1940,6 @@ function resolveParentContext(
 
   if (callerSpan) {
     return callerContext;
-  }
-  if (executionSpan) {
-    return executionContext;
   }
   return executionContext;
 }

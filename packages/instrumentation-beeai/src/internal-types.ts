@@ -261,8 +261,9 @@ export interface RunStartParams {
   parentContext: Context;
 
   /**
-   * OpenTelemetry {@link Context} active at the call site when the `Run` was
-   * constructed (before it was awaited).
+   * Active OpenTelemetry {@link Context} associated with the caller: the
+   * creation-time context on initial execution while its span is live in the
+   * same trace, otherwise the execution-time context.
    */
   callerContext: Context;
 
