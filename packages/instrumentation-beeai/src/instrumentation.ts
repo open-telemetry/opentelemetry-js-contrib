@@ -111,15 +111,12 @@ export class BeeAIInstrumentation extends InstrumentationBase<BeeAIInstrumentati
 
   /**
    * Lazily creates and caches the `TelemetryHandler`, recreating it if
-   * `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` changes when unset in
-   * config.
+   * `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` changes.
    */
   private _getTelemetryHandler(): TelemetryHandler {
     const config = this.getConfig();
     const currentEnv =
-      config.captureMessageContent === undefined
-        ? process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT
-        : undefined;
+      process.env.OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT;
     if (!this._telemetryHandler || this._lastCaptureEnv !== currentEnv) {
       this._lastCaptureEnv = currentEnv;
       this._telemetryHandler = new TelemetryHandler({

@@ -150,5 +150,35 @@ describe('BeeAIInstrumentation - Tool', () => {
       ).toEqual({ query: 'test' });
       expect(span.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT]).toBeUndefined();
     });
+
+    it('honors OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT precedence over explicit config across cached runs', async () => {
+      instrumentation.setConfig({ captureMessageContent: 'none' });
+      const echoTool = new DynamicTool({
+        name: 'echo_tool',
+        description: 'Echoes input',
+        inputSchema: z.object({ text: z.string() }),
+        handler: async input => new StringToolOutput(`echo:${input.text}`),
+      });
+
+      // 1. Warm the cached TelemetryHandler with explicit `captureMessageContent: 'none'`
+      await echoTool.run({ text: 'first' });
+      expect(getTestSpans()[0].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT]).toBe(
+        undefined
+      );
+
+      // 2. Setting the env var overrides explicit config even after caching
+      process.env[CAPTURE_ENV_KEY] = 'span_only';
+      await echoTool.run({ text: 'second' });
+      expect(getTestSpans()[1].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT]).toBe(
+        'echo:second'
+      );
+
+      // 3. Clearing the env var falls back to explicit `captureMessageContent: 'none'`
+      delete process.env[CAPTURE_ENV_KEY];
+      await echoTool.run({ text: 'third' });
+      expect(getTestSpans()[2].attributes[ATTR_GEN_AI_TOOL_CALL_RESULT]).toBe(
+        undefined
+      );
+    });
   });
 });
