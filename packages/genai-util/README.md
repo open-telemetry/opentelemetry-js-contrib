@@ -34,6 +34,7 @@ npm install --save @opentelemetry/genai-util
   - Implements the `AsyncIterable` protocol for clean `for await (const chunk of stream)` consumption.
   - Records **Time To First Chunk (TTFT)** (`gen_ai.client.operation.time_to_first_chunk`), sets `gen_ai.response.time_to_first_chunk`, and sets `gen_ai.request.stream = true` on the first chunk.
   - Supports per-chunk callbacks (`onChunk`), completion hooks (`onEnd`), error handling (`onError`), and early iterator break (`return()`).
+  - `onChunk` can return `false` for a chunk that carries no model output (for example a message start or usage event), so that the chunk is left out of the chunk timing metrics.
   - Automatically finalizes spans and computes overall duration metrics.
 - **Metrics Helpers**: Pre-configured histograms (with standard explicit bucket boundaries) and counters:
   - `gen_ai.client.operation.duration` (in seconds)

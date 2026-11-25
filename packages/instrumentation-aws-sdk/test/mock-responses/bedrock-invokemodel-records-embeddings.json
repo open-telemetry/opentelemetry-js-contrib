@@ -1,0 +1,26 @@
+[
+  {
+    "scope": "https://bedrock-runtime.us-east-1.amazonaws.com:443",
+    "method": "POST",
+    "path": "/model/amazon.titan-embed-text-v1/invoke",
+    "body": {
+      "inputText": "The quick brown fox jumps over the lazy dog"
+    },
+    "status": 200,
+    "response": {
+      "embedding": [
+        0.1,
+        0.2,
+        0.3
+      ],
+      "inputTextTokenCount": 9
+    },
+    "rawHeaders": [
+      "Content-Type",
+      "application/json",
+      "x-amzn-bedrock-input-token-count",
+      "9"
+    ],
+    "responseIsBinary": false
+  }
+]

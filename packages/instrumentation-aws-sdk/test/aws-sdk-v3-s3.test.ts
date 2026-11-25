@@ -34,6 +34,7 @@ import { expect } from 'expect';
 import * as fs from 'fs';
 import * as nock from 'nock';
 import { ATTR_HTTP_RESPONSE_STATUS_CODE } from '@opentelemetry/semantic-conventions';
+import { HTTP_SPAN_NAME, TracedHttpHandler } from './traced-http-handler';
 
 const region = 'us-east-1';
 
@@ -121,6 +122,44 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
+    });
+
+    it('starts and ends a middleware-owned span', async () => {
+      nock(`https://ot-demo-test.s3.${region}.amazonaws.com/`)
+        .put('/aws-ot-s3-test-object.txt?x-id=PutObject')
+        .reply(
+          200,
+          fs.readFileSync('./test/mock-responses/s3-put-object.xml', 'utf8')
+        );
+
+      // Only service extensions that ask for it (Bedrock Runtime) own the span.
+      const client = new S3Client({
+        region,
+        requestHandler: new TracedHttpHandler(),
+      });
+      await client.send(
+        new PutObjectCommand({
+          Bucket: 'ot-demo-test',
+          Key: 'aws-ot-s3-test-object.txt',
+        })
+      );
+
+      const spans = getTestSpans();
+      expect(spans.map(s => s.name).sort()).toEqual(
+        ['S3.PutObject', HTTP_SPAN_NAME].sort()
+      );
+      const awsSpan = spans.find(s => s.name === 'S3.PutObject')!;
+      const httpSpan = spans.find(s => s.name === HTTP_SPAN_NAME)!;
+      expect(awsSpan.instrumentationScope.name).toBe(
+        '@opentelemetry/instrumentation-aws-sdk'
+      );
+      expect(awsSpan.kind).toBe(SpanKind.CLIENT);
+      expect(awsSpan.ended).toBe(true);
+      expect(awsSpan.status.code).toBe(SpanStatusCode.UNSET);
+      expect(awsSpan.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
+      expect(httpSpan.parentSpanContext?.spanId).toBe(
+        awsSpan.spanContext().spanId
+      );
     });
 
     it('aws error', async () => {
