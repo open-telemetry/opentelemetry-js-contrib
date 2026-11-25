@@ -579,11 +579,11 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
    * implements enable function
    */
   override enable() {
-    // Early return if already enabled or patched
     if (this._enabled) {
       return;
     }
     this._enabled = true;
+    // Patches from an earlier enable() are still installed (see disable()).
     if (typeof this._zonePatched === 'boolean') {
       return;
     }
@@ -630,7 +630,8 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
   }
 
   /**
-   * implements unpatch function
+   * Stops creating and renaming spans. Patches stay installed: they check
+   * `_enabled` and pass calls straight through while it is false.
    */
   override disable() {
     if (!this._enabled) {
