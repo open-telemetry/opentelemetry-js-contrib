@@ -48,6 +48,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   readonly version: string = '1';
   moduleName = this.component;
 
+  // `declare` avoids a field initializer that would run after super()'s
+  // constructor-time enable() and drop the timer it scheduled.
+  declare private _collectTimeout?: number;
+
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -60,7 +64,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   private _onDocumentLoaded() {
     // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd.
     // Support for event "loadend" is very limited and cannot be used
-    window.setTimeout(() => {
+    this._collectTimeout = window.setTimeout(() => {
+      this._collectTimeout = undefined;
       this._collectPerformance();
     });
   }
@@ -303,9 +308,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    * implements enable function
    */
   override enable() {
-    // remove previously attached load to avoid adding the same event twice
-    // in case of multiple enable calling.
-    window.removeEventListener('load', this._onDocumentLoaded);
+    // Already listening or collecting; going again would duplicate the trace.
+    if (this._enabled) {
+      return;
+    }
     this._waitForPageLoad();
     this._enabled = true;
   }
@@ -315,6 +321,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    */
   override disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
+    window.clearTimeout(this._collectTimeout);
+    this._collectTimeout = undefined;
     this._enabled = false;
   }
 }
