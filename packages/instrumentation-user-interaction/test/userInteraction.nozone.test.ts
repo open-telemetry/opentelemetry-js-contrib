@@ -112,6 +112,68 @@ describe('UserInteractionInstrumentation', () => {
       assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
     });
 
+    it('should stay disabled and undo partial patches when a wrap throws, then retry on enable()', () => {
+      // A hardened page (e.g. SES lockdown) can make a listener method
+      // non-configurable, so wrapping it throws. Lock only removeEventListener,
+      // so addEventListener is already wrapped when the failure happens.
+      const target = new EventTarget();
+      Object.defineProperty(target, 'addEventListener', {
+        configurable: true,
+        writable: true,
+        value: EventTarget.prototype.addEventListener,
+      });
+      Object.defineProperty(target, 'removeEventListener', {
+        value: EventTarget.prototype.removeEventListener,
+      });
+      const pushState = history.pushState;
+
+      userInteractionInstrumentation.disable();
+      userInteractionInstrumentation = new UserInteractionInstrumentation({
+        enabled: false,
+      });
+      const instrumentation = userInteractionInstrumentation as unknown as {
+        _getZoneWithPrototype: () => undefined;
+        _getPatchableEventTargets: () => EventTarget[];
+      };
+      sandbox.stub(instrumentation, '_getZoneWithPrototype').returns(undefined);
+      const getTargets = sandbox
+        .stub(instrumentation, '_getPatchableEventTargets')
+        .returns([target]);
+      const diagError = sandbox.stub(
+        userInteractionInstrumentation['_diag'],
+        'error'
+      );
+
+      assert.doesNotThrow(() => userInteractionInstrumentation.enable());
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), false);
+      sinon.assert.calledOnceWithExactly(
+        diagError,
+        sinon.match.string,
+        sinon.match.instanceOf(TypeError)
+      );
+      assert.strictEqual(
+        target.addEventListener,
+        EventTarget.prototype.addEventListener,
+        'addEventListener should be unwrapped'
+      );
+      assert.strictEqual(history.pushState, pushState, 'history untouched');
+
+      let calls = 0;
+      const listener = () => {
+        calls++;
+      };
+      target.addEventListener('test', listener);
+      target.removeEventListener('test', listener);
+      target.dispatchEvent(new Event('test'));
+      assert.strictEqual(calls, 0, 'removeEventListener should still work');
+
+      getTargets.restore();
+      userInteractionInstrumentation.enable();
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
+      fakeClickInteraction();
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+    });
+
     it('should not rename the active span on history changes after disable()', () => {
       userInteractionInstrumentation.disable();
       const span = tracerProvider.getTracer('test').startSpan('original');

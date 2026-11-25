@@ -387,14 +387,19 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
 
   /**
    * Patches the history api
+   * @param undo collects how to unwrap each applied wrap
    */
-  _patchHistoryApi() {
+  _patchHistoryApi(undo: Array<() => void> = []) {
     if (!this._enabled) return;
-    this._wrap(history, 'replaceState', this._patchHistoryMethod());
-    this._wrap(history, 'pushState', this._patchHistoryMethod());
-    this._wrap(history, 'back', this._patchHistoryMethod());
-    this._wrap(history, 'forward', this._patchHistoryMethod());
-    this._wrap(history, 'go', this._patchHistoryMethod());
+    for (const method of [
+      'replaceState',
+      'pushState',
+      'back',
+      'forward',
+      'go',
+    ] as const) {
+      this._wrapUndoable(undo, history, method, this._patchHistoryMethod());
+    }
   }
 
   /**
@@ -596,37 +601,72 @@ export class UserInteractionInstrumentation extends InstrumentationBase<UserInte
       'zone:',
       !!ZoneWithPrototype
     );
-    if (ZoneWithPrototype) {
-      this._zonePatched = true;
-      this._wrap(
-        ZoneWithPrototype.prototype,
-        'runTask',
-        this._patchZoneRunTask()
-      );
-      this._wrap(
-        ZoneWithPrototype.prototype,
-        'scheduleTask',
-        this._patchZoneScheduleTask()
-      );
-      this._wrap(
-        ZoneWithPrototype.prototype,
-        'cancelTask',
-        this._patchZoneCancelTask()
-      );
-    } else {
-      this._zonePatched = false;
-      const targets = this._getPatchableEventTargets();
-      targets.forEach(target => {
-        this._wrap(target, 'addEventListener', this._patchAddEventListener());
-        this._wrap(
-          target,
-          'removeEventListener',
-          this._patchRemoveEventListener()
+    // A wrap throws if the method is non-configurable, e.g. on a frozen
+    // prototype under SES lockdown. Undo the wraps already applied so a
+    // half-patched pair, such as a wrapped addEventListener without
+    // removeEventListener, can't break the page.
+    const undo: Array<() => void> = [];
+    try {
+      if (ZoneWithPrototype) {
+        this._wrapUndoable(
+          undo,
+          ZoneWithPrototype.prototype,
+          'runTask',
+          this._patchZoneRunTask()
         );
-      });
-    }
+        this._wrapUndoable(
+          undo,
+          ZoneWithPrototype.prototype,
+          'scheduleTask',
+          this._patchZoneScheduleTask()
+        );
+        this._wrapUndoable(
+          undo,
+          ZoneWithPrototype.prototype,
+          'cancelTask',
+          this._patchZoneCancelTask()
+        );
+      } else {
+        const targets = this._getPatchableEventTargets();
+        targets.forEach(target => {
+          this._wrapUndoable(
+            undo,
+            target,
+            'addEventListener',
+            this._patchAddEventListener()
+          );
+          this._wrapUndoable(
+            undo,
+            target,
+            'removeEventListener',
+            this._patchRemoveEventListener()
+          );
+        });
+      }
 
-    this._patchHistoryApi();
+      this._patchHistoryApi(undo);
+    } catch (e) {
+      this._diag.error('failed to apply patches, staying disabled', e);
+      undo.reverse().forEach(unwrap => unwrap());
+      // Leave _zonePatched unset so the next enable() retries.
+      this._enabled = false;
+      return;
+    }
+    this._zonePatched = !!ZoneWithPrototype;
+  }
+
+  /**
+   * Wraps like `_wrap` and records how to unwrap it in `undo`.
+   */
+  private _wrapUndoable<T extends object, K extends keyof T>(
+    undo: Array<() => void>,
+    nodule: T,
+    name: K,
+    wrapper: (original: T[K]) => T[K]
+  ) {
+    if (this._wrap(nodule, name, wrapper)) {
+      undo.push(() => this._unwrap(nodule, name));
+    }
   }
 
   /**

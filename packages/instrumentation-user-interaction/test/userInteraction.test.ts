@@ -5,7 +5,10 @@
 const originalSetTimeout = window.setTimeout;
 import { context, diag, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
-import { registerInstrumentations } from '@opentelemetry/instrumentation';
+import {
+  registerInstrumentations,
+  ShimWrapped,
+} from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
@@ -148,6 +151,39 @@ describe('UserInteractionInstrumentation', () => {
       assert.equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
+    });
+
+    it('should stay disabled and undo every wrap when patching throws part way', () => {
+      userInteractionInstrumentation.disable();
+      userInteractionInstrumentation = new UserInteractionInstrumentation({
+        enabled: false,
+      });
+      const instrumentation = userInteractionInstrumentation as unknown as {
+        _wrap: (
+          nodule: object,
+          name: string,
+          wrapper: unknown
+        ) => ShimWrapped | undefined;
+      };
+      // Fail on the last wrap, after the Zone and the other history methods
+      // were wrapped, as a non-configurable history.go would.
+      const wrap = sandbox.stub(instrumentation, '_wrap').callThrough();
+      wrap
+        .withArgs(sinon.match.same(history), 'go')
+        .throws(new TypeError('Cannot redefine property: go'));
+
+      assert.doesNotThrow(() => userInteractionInstrumentation.enable());
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), false);
+      const applied = wrap.getCalls().filter(call => !call.threw());
+      assert.strictEqual(applied.length, 7, 'should wrap Zone and history');
+      for (const { args, returnValue } of applied) {
+        const [nodule, name] = args;
+        assert.strictEqual(
+          (nodule as Record<string, unknown>)[name],
+          returnValue?.__original,
+          `${name} should be unwrapped`
+        );
+      }
     });
 
     it('should redact sensitive information in url.full', () => {
