@@ -116,6 +116,21 @@ describe('LongTaskInstrumentation', () => {
     assert.strictEqual(disconnect.callCount, 1);
   });
 
+  it('should stay disabled and recover on a later enable() if observe() throws', () => {
+    const observe = sandbox
+      .stub(PerformanceObserver.prototype, 'observe')
+      .throws(new TypeError('observe failed'));
+    const instrumentation = new LongTaskInstrumentation({ enabled: false });
+
+    assert.doesNotThrow(() => instrumentation.enable());
+    assert.strictEqual(instrumentation.isEnabled(), false);
+
+    observe.restore();
+    instrumentation.enable();
+    assert.strictEqual(instrumentation.isEnabled(), true);
+    instrumentation.disable();
+  });
+
   it('should report long taking tasks', async () => {
     const taskStart = await waitForLongTask(exportSpy);
 

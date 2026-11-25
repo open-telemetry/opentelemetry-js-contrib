@@ -101,17 +101,23 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
       return;
     }
 
-    this._observer = new PerformanceObserver(list => {
+    const observer = new PerformanceObserver(list => {
       list
         .getEntries()
         .forEach(entry =>
           this._createSpanFromEntry(entry as PerformanceLongTaskTiming)
         );
     });
-    this._observer.observe({
-      type: LONGTASK_PERFORMANCE_TYPE,
-      buffered: true,
-    });
+    try {
+      observer.observe({
+        type: LONGTASK_PERFORMANCE_TYPE,
+        buffered: true,
+      });
+    } catch (err) {
+      this._diag.error('failed to observe long tasks', err);
+      return;
+    }
+    this._observer = observer;
     this._enabled = true;
   }
 
