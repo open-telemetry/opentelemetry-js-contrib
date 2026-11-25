@@ -28,5 +28,22 @@
  * ```
  */
 export { TelemetryHandler } from './handler';
+export type { LocalAgentInvocation } from './invocations/agent';
+export type { EmbeddingInvocation } from './invocations/embedding';
+export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';
+export type {
+  ChatMessage,
+  FinishReason,
+  GenAIInstrumentationConfig,
+  InferenceRequestOptions,
+  InputMessages,
+  LocalAgentRequestOptions,
+  MessagePart,
+  Modality,
+  OutputMessage,
+  OutputMessages,
+  SystemInstructions,
+  TokenUsageDetails,
+} from './types';
 export { ATTR_GEN_AI_TOOL_CALL_ID } from './semconv';
