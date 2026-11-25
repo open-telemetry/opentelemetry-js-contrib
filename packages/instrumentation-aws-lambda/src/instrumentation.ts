@@ -69,6 +69,7 @@ import type {
 import { AwsLambdaInstrumentationConfig, EventContextExtractor } from './types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { redactUrl } from './redact-url';
 import { LambdaModule, SqsQueueArnParts } from './internal-types';
 
 const headerGetter: TextMapGetter<APIGatewayProxyEventHeaders> = {
@@ -878,7 +879,7 @@ export class AwsLambdaInstrumentation extends InstrumentationBase<AwsLambdaInstr
     const answer: Attributes = {};
     const fullUrl = this._extractFullUrl(event);
     if (fullUrl) {
-      answer[ATTR_URL_FULL] = fullUrl;
+      answer[ATTR_URL_FULL] = redactUrl(fullUrl);
     }
     return answer;
   }

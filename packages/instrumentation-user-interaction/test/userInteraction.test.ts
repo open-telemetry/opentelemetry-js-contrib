@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
-import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
+import { context, diag, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
@@ -27,6 +27,43 @@ const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 describe('UserInteractionInstrumentation', () => {
+  describe('deprecation', () => {
+    let warn: sinon.SinonStub;
+    let instrumentation: UserInteractionInstrumentation | undefined;
+
+    beforeEach(() => {
+      warn = sinon.stub();
+      diag.setLogger({
+        debug: () => {},
+        error: () => {},
+        info: () => {},
+        verbose: () => {},
+        warn,
+      });
+    });
+
+    afterEach(() => {
+      instrumentation?.disable();
+      diag.disable();
+    });
+
+    for (const enabled of [true, false]) {
+      it(`warns once on construction when enabled is ${enabled}`, () => {
+        instrumentation = new UserInteractionInstrumentation({ enabled });
+
+        sinon.assert.calledOnce(warn);
+        sinon.assert.calledWith(
+          warn,
+          '@opentelemetry/instrumentation-user-interaction',
+          'UserInteractionInstrumentation is deprecated. Use UserActionInstrumentation from @opentelemetry/browser-instrumentation/experimental/user-action instead.'
+        );
+        instrumentation.disable();
+        instrumentation.enable();
+        sinon.assert.calledOnce(warn);
+      });
+    }
+  });
+
   afterEach(() => {
     // clear body from elements created by some tests to make sure they are independent
     while (document.body.lastChild) {
@@ -113,6 +150,26 @@ describe('UserInteractionInstrumentation', () => {
       assertClickSpan(spanClick);
     });
 
+    it('should redact sensitive information in url.full', () => {
+      const originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+      );
+      try {
+        fakeClickInteraction();
+      } finally {
+        history.replaceState(history.state, '', originalUrl);
+      }
+      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      assert.equal(
+        spanClick.attributes['url.full'],
+        `${location.origin}${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+      );
+    });
+
     it('should ignore timeout when nothing happens afterwards', done => {
       fakeClickInteraction(() => {
         originalSetTimeout(() => {
@@ -177,6 +234,36 @@ describe('UserInteractionInstrumentation', () => {
             assert.equal(attributes.target_xpath, '//*[@id="testBtn"]');
 
             done();
+          });
+        });
+      });
+    });
+
+    it('should redact sensitive query string values in navigation span name', done => {
+      const originalUrl = location.href;
+      fakeClickInteraction(() => {
+        history.pushState(
+          { test: 'testing' },
+          '',
+          `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+        );
+        getData(FILE_URL, () => {
+          sandbox.clock.tick(1000);
+        }).then(() => {
+          originalSetTimeout(() => {
+            history.replaceState(history.state, '', originalUrl);
+            try {
+              assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+
+              const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
+              assert.equal(
+                spanClick.name,
+                `Navigation: ${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
           });
         });
       });

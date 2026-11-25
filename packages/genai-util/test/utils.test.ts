@@ -22,7 +22,9 @@ import {
   formatInputMessages,
   formatOutputMessages,
   formatSystemInstructions,
+  formatToolDefinitions,
   getErrorType,
+  getAgentRequestOptionsAttributes,
   getRequestOptionsAttributes,
   inferMissingModalityCounts,
   mergeTokenUsage,
@@ -326,6 +328,19 @@ describe('GenAI Utils', () => {
       assert.strictEqual(formatSystemInstructions('[]'), undefined);
       assert.strictEqual(formatSystemInstructions(undefined), undefined);
     });
+
+    it('formatToolDefinitions', () => {
+      const defs = [
+        {
+          type: 'function',
+          name: 'get_weather',
+          description: 'Get weather',
+        },
+      ];
+      assert.strictEqual(formatToolDefinitions(defs), JSON.stringify(defs));
+      assert.strictEqual(formatToolDefinitions([]), undefined);
+      assert.strictEqual(formatToolDefinitions(undefined), undefined);
+    });
   });
 
   describe('getErrorType', () => {
@@ -480,6 +495,43 @@ describe('GenAI Utils', () => {
         stopSequences: [],
       });
       assert.deepStrictEqual(result, {});
+    });
+  });
+
+  describe('getAgentRequestOptionsAttributes', () => {
+    it('should extract agent request options and include stream only when includeStream is true', () => {
+      const opts = {
+        temperature: 0.5,
+        topP: 0.8,
+        maxTokens: 512,
+        stopSequences: ['STOP'],
+        frequencyPenalty: 0.1,
+        presencePenalty: 0.2,
+        choiceCount: 2,
+        seed: 7,
+        stream: true,
+      };
+      assert.deepStrictEqual(getAgentRequestOptionsAttributes(opts, false), {
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.5,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 0.8,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 512,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['STOP'],
+        [ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY]: 0.1,
+        [ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY]: 0.2,
+        [ATTR_GEN_AI_REQUEST_CHOICE_COUNT]: 2,
+        [ATTR_GEN_AI_REQUEST_SEED]: 7,
+      });
+      assert.deepStrictEqual(getAgentRequestOptionsAttributes(opts, true), {
+        [ATTR_GEN_AI_REQUEST_TEMPERATURE]: 0.5,
+        [ATTR_GEN_AI_REQUEST_TOP_P]: 0.8,
+        [ATTR_GEN_AI_REQUEST_MAX_TOKENS]: 512,
+        [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['STOP'],
+        [ATTR_GEN_AI_REQUEST_FREQUENCY_PENALTY]: 0.1,
+        [ATTR_GEN_AI_REQUEST_PRESENCE_PENALTY]: 0.2,
+        [ATTR_GEN_AI_REQUEST_CHOICE_COUNT]: 2,
+        [ATTR_GEN_AI_REQUEST_SEED]: 7,
+        [ATTR_GEN_AI_REQUEST_STREAM]: true,
+      });
     });
   });
 
