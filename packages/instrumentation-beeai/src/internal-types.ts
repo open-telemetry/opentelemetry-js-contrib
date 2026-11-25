@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import type { Context, Span } from '@opentelemetry/api';
+import type { Context, DiagLogger, Span } from '@opentelemetry/api';
 import type {
   EmbeddingInvocation,
   InferenceInvocation,
@@ -11,11 +11,10 @@ import type {
   TelemetryHandler,
   ToolInvocation,
 } from '@opentelemetry/genai-util';
-import type { BeeAIInstrumentation } from './instrumentation';
 
 /**
  * Union of all `@opentelemetry/genai-util` invocation handles created and
- * managed by {@link BeeAIInstrumentation}.
+ * managed by `BeeAIInstrumentation`.
  */
 export type AnyInvocation =
   | LocalAgentInvocation
@@ -24,8 +23,31 @@ export type AnyInvocation =
   | EmbeddingInvocation;
 
 /**
+ * Internal handle representing a `BeeAIInstrumentation` instance inside the
+ * shared prototype patch registry without leaking private methods onto the
+ * public class surface or creating circular module imports.
+ */
+export interface PatchOwner {
+  /**
+   * Returns whether this instrumentation instance is currently enabled.
+   */
+  isEnabled: () => boolean;
+
+  /**
+   * Returns the lazily initialized `@opentelemetry/genai-util`
+   * {@link TelemetryHandler} for this instrumentation instance.
+   */
+  getTelemetryHandler: () => TelemetryHandler;
+
+  /**
+   * Returns the diagnostic logger attached to this instrumentation instance.
+   */
+  getDiag: () => DiagLogger;
+}
+
+/**
  * Tracks a single wrapped prototype method in the shared patch registry so
- * multiple {@link BeeAIInstrumentation} instances can instrument the same
+ * multiple `BeeAIInstrumentation` instances can instrument the same
  * `(target, method)` pair without double-wrapping.
  */
 export interface MethodPatch {
@@ -34,7 +56,7 @@ export interface MethodPatch {
    * this method, maintained in registration order so the most recently
    * registered enabled instance owns incoming calls.
    */
-  owners: Set<BeeAIInstrumentation>;
+  owners: Set<PatchOwner>;
 
   /**
    * Restores the original unpatched method on the target prototype and deletes
@@ -231,12 +253,6 @@ export interface BeeAIRunLike<R = unknown> extends Promise<R> {
  */
 export interface RunStartParams {
   /**
-   * Active, enabled {@link BeeAIInstrumentation} owner resolved dynamically for
-   * the patched `(target, method)` at execution time.
-   */
-  owner: BeeAIInstrumentation;
-
-  /**
    * Lazily initialized `@opentelemetry/genai-util` {@link TelemetryHandler}
    * used to start spans and record metrics.
    */
@@ -342,7 +358,7 @@ export interface StartedRunOperation<TInvocation extends AnyInvocation> {
 }
 
 /**
- * Declarative lifecycle specification supplied to `_patchRunMethod` defining
+ * Declarative lifecycle specification supplied to `patchRunMethod` defining
  * how an instrumented BeeAI operation (`agent`, `tool`, `chat model`, or
  * `embedding`) creates, scopes, and finalizes its telemetry.
  *
@@ -369,7 +385,6 @@ export interface RunOperationSpec<TInvocation extends AnyInvocation> {
    * synchronously before returning a `Run`, so the synchronous error can be
    * recorded immediately.
    *
-   * @param owner - Active {@link BeeAIInstrumentation} instance handling the call.
    * @param handler - {@link TelemetryHandler} used to construct the invocation.
    * @param instance - Receiver (`this`) on which the patched method threw.
    * @param inputArg - First argument (`args[0]`) passed to the patched method.
@@ -378,7 +393,6 @@ export interface RunOperationSpec<TInvocation extends AnyInvocation> {
    *   telemetry (for example, on delegated adapters or `RemoteAgent`).
    */
   startSyncInvocation: (
-    owner: BeeAIInstrumentation,
     handler: TelemetryHandler,
     instance: unknown,
     inputArg: unknown,
