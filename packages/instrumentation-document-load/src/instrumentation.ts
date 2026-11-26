@@ -48,6 +48,11 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   readonly version: string = '1';
   moduleName = this.component;
 
+  // `declare` so no class field is emitted: with target es2022 the field is
+  // reset to undefined after super() returns, losing the timeout that the
+  // constructor-time enable() scheduled.
+  declare private _collectTimeout?: number;
+
   constructor(config: DocumentLoadInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
@@ -60,7 +65,10 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
   private _onDocumentLoaded() {
     // Timeout is needed as load event doesn't have yet the performance metrics for loadEnd.
     // Support for event "loadend" is very limited and cannot be used
-    window.setTimeout(() => {
+    // Replace a collection that is still pending, so only one trace is exported.
+    window.clearTimeout(this._collectTimeout);
+    this._collectTimeout = window.setTimeout(() => {
+      this._collectTimeout = undefined;
       this._collectPerformance();
     });
   }
@@ -307,6 +315,7 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
     // in case of multiple enable calling.
     window.removeEventListener('load', this._onDocumentLoaded);
     this._waitForPageLoad();
+    this._enabled = true;
   }
 
   /**
@@ -314,5 +323,8 @@ export class DocumentLoadInstrumentation extends InstrumentationBase<DocumentLoa
    */
   override disable() {
     window.removeEventListener('load', this._onDocumentLoaded);
+    window.clearTimeout(this._collectTimeout);
+    this._collectTimeout = undefined;
+    this._enabled = false;
   }
 }
