@@ -22,8 +22,9 @@ const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrumentationConfig> {
   readonly version: string = PACKAGE_VERSION;
 
-  // `declare` avoids a field initializer that would run after super()'s
-  // constructor-time enable() and drop the observer it created.
+  // `declare` so no class field is emitted: with target es2022 the field is
+  // reset to undefined after super() returns, orphaning the observer that the
+  // constructor-time enable() created.
   declare private _observer?: PerformanceObserver;
 
   constructor(config: LongtaskInstrumentationConfig = {}) {
