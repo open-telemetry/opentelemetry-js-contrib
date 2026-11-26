@@ -213,6 +213,12 @@ export function parseUriOrBlobPart(
   };
 }
 
+export function redactedFileData(data: string): MessagePart {
+  return data.startsWith('data:')
+    ? parseUriOrBlobPart(data, 'document')
+    : telemetryBlobPart('document');
+}
+
 /**
  * Infer embedding vector dimensionality from either a float array or a
  * base64-encoded IEEE-754 float32 buffer (`4` bytes per dimension).
@@ -357,7 +363,7 @@ function chatContentToParts(
             file_id: part.file.file_id,
           } satisfies FilePart);
         } else if (part.file?.file_data) {
-          parts.push(parseUriOrBlobPart(part.file.file_data, 'document'));
+          parts.push(redactedFileData(part.file.file_data));
         }
         break;
       default: {
@@ -497,6 +503,15 @@ export function extractChatOutputMessages(
   return choices.map((choice): OutputMessage => {
     const parts: MessagePart[] = [];
     if (choice.message) {
+      if (choice.message.audio) {
+        parts.push(telemetryBlobPart('audio'));
+        if (choice.message.audio.transcript) {
+          parts.push({
+            type: 'text',
+            content: choice.message.audio.transcript,
+          });
+        }
+      }
       if (choice.message.content) {
         parts.push({ type: 'text', content: choice.message.content });
       }

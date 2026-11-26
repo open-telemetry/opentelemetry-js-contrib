@@ -163,6 +163,74 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
     });
   }
 
+  private _observeResponse<T>(
+    promise: APIPromise<T>,
+    invocation: InferenceInvocation | EmbeddingInvocation,
+    onParsed: (result: T) => void,
+    streaming = false
+  ): void {
+    let parsing = false;
+    let observed = false;
+    const fail = (err: unknown) => this._failInvocation(invocation, err);
+    try {
+      // Calling APIPromise.then starts parsing. Observe the SDK's own parser
+      // instead: create(), withResponse() and derived parse() helpers share
+      // this entry point across v4-v6, while asResponse() never uses it.
+      const descriptor = Object.getOwnPropertyDescriptor(
+        promise,
+        'parseResponse'
+      );
+      const parse = descriptor?.value as
+        | ((...args: unknown[]) => T | Promise<T>)
+        | undefined;
+      const canObserve = typeof parse === 'function' && descriptor?.writable;
+      if (canObserve) {
+        const diag = this._diag;
+        void Object.defineProperty(promise, 'parseResponse', {
+          ...descriptor,
+          value(this: unknown, ...args: unknown[]) {
+            parsing = true;
+            let result: T | Promise<T>;
+            try {
+              result = parse.apply(this, args);
+            } catch (err) {
+              fail(err);
+              throw err;
+            }
+            void Promise.resolve(result).then(value => {
+              if (!observed && !invocation.isEnded()) {
+                observed = true;
+                try {
+                  onParsed(value);
+                } catch (err) {
+                  diag.error('Unable to observe parsed OpenAI response', err);
+                  invocation.stop();
+                }
+              }
+            }, fail);
+            return result;
+          },
+        });
+      } else {
+        this._diag.warn(
+          'OpenAI response parser unavailable, recording request metadata only'
+        );
+      }
+      // Let a caller await asResponse() and then the same APIPromise.
+      // If nobody starts parsing, finish without reading or cloning the body.
+      void promise.asResponse().then(() => {
+        if (!parsing && (!streaming || !canObserve)) {
+          setImmediate(() => {
+            if (!parsing) invocation.stop();
+          });
+        }
+      }, fail);
+    } catch (err) {
+      this._diag.error('Unable to observe OpenAI APIPromise', err);
+      invocation.stop();
+    }
+  }
+
   private _attachStreamTelemetry<TChunk>(
     apiPromise: APIPromise<Stream<TChunk>>,
     handler: TelemetryHandler,
@@ -172,7 +240,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       'invocation' | 'onError'
     >
   ): APIPromise<Stream<TChunk>> {
-    void apiPromise.then(
+    this._observeResponse(
+      apiPromise,
+      invocation,
       (stream: AsyncIterable<TChunk>) => {
         const wrap = (source: AsyncIterable<TChunk>) =>
           handler.wrapAsyncStream(source, {
@@ -186,21 +256,21 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
         }
 
         // tee() uses this factory directly, bypassing Symbol.asyncIterator.
-        // Wrap only the first iterator so a second read retains the SDK error.
+        // Iterator construction does not consume the stream. Let the first
+        // iterator that actually advances own its telemetry.
         const original = stream.iterator.bind(stream);
         let wrapped = false;
         stream.iterator = () => {
           const iterator = original();
-          if (wrapped) return iterator;
-          wrapped = true;
-          return wrap({ [Symbol.asyncIterator]: () => iterator })[
-            Symbol.asyncIterator
-          ]();
+          const source = { [Symbol.asyncIterator]: () => iterator };
+          return (async function* () {
+            if (wrapped) return yield* source;
+            wrapped = true;
+            return yield* wrap(source);
+          })();
         };
       },
-      err => {
-        this._failInvocation(invocation, err);
-      }
+      true
     );
 
     return apiPromise;
@@ -266,17 +336,12 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           );
         }
 
-        void apiPromise.then(
-          result => {
-            self._onChatCompletionsCreateResult(
-              invocation,
-              result as ChatCompletion
-            );
-          },
-          err => {
-            self._failInvocation(invocation, err);
-          }
-        );
+        self._observeResponse(apiPromise, invocation, result => {
+          self._onChatCompletionsCreateResult(
+            invocation,
+            result as ChatCompletion
+          );
+        });
 
         return apiPromise;
       };
@@ -407,14 +472,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           throw err;
         }
 
-        void apiPromise.then(
-          result => {
-            self._onEmbeddingsCreateResult(invocation, params, result);
-          },
-          err => {
-            self._failInvocation(invocation, err);
-          }
-        );
+        self._observeResponse(apiPromise, invocation, result => {
+          self._onEmbeddingsCreateResult(invocation, params, result);
+        });
 
         return apiPromise;
       };
@@ -515,14 +575,9 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
           );
         }
 
-        void apiPromise.then(
-          result => {
-            self._onResponsesCreateResult(invocation, result as Response);
-          },
-          err => {
-            self._failInvocation(invocation, err);
-          }
-        );
+        self._observeResponse(apiPromise, invocation, result => {
+          self._onResponsesCreateResult(invocation, result as Response);
+        });
 
         return apiPromise;
       };
@@ -642,7 +697,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
             invocation.setAttribute(ATTR_GEN_AI_CONVERSATION_COMPACTED, true);
           }
           const finishReason = deriveResponsesFinishReason(completedTypes);
-          invocation.setFinishReasons([finishReason]);
+          if (finishReason) invocation.setFinishReasons([finishReason]);
           if (completedItems) {
             invocation.addOutputMessages(
               convertResponsesOutputToMessages(completedItems, finishReason)
@@ -697,7 +752,7 @@ export class OpenAIInstrumentation extends InstrumentationBase<OpenAIInstrumenta
       result.status,
       result.incomplete_details
     );
-    invocation.setFinishReasons([finishReason]);
+    if (finishReason) invocation.setFinishReasons([finishReason]);
 
     if (invocation.shouldCaptureContent() && outputItems.length > 0) {
       invocation.addOutputMessages(

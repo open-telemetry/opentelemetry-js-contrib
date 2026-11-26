@@ -240,6 +240,109 @@ describe('utils', function () {
       expect(msgs[0].parts[0]).toEqual(telemetryBlobPart('audio', 'audio/wav'));
     });
 
+    it('captures an audio-only reply without its encoded payload', () => {
+      const [message] = extractChatOutputMessages([
+        {
+          index: 0,
+          logprobs: null,
+          finish_reason: 'stop',
+          message: {
+            role: 'assistant',
+            content: null,
+            refusal: null,
+            audio: {
+              id: 'audio',
+              expires_at: 100,
+              data: 'QUJD',
+              transcript: 'hello',
+            },
+          },
+        },
+      ]);
+      expect(message.parts).toEqual([
+        telemetryBlobPart('audio'),
+        { type: 'text', content: 'hello' },
+      ]);
+    });
+
+    it('redacts media in both submitted and returned tool results', () => {
+      const output = [
+        {
+          type: 'input_image' as const,
+          detail: 'auto' as const,
+          image_url: 'https://example.com/img?sig=private',
+        },
+        { type: 'input_file' as const, file_data: 'QUJD' },
+      ];
+      const reply = {
+        type: 'function_call_output' as const,
+        status: 'completed' as const,
+        id: 'item',
+        call_id: 'call',
+        output,
+      };
+      const custom = { ...reply, type: 'custom_tool_call_output' as const };
+      const part = {
+        type: 'tool_call_response',
+        id: 'call',
+        response: [
+          { type: 'uri', modality: 'image', uri: 'https://example.com/img' },
+          telemetryBlobPart('document'),
+        ],
+      };
+      const messages = convertResponsesInputToMessages([reply, custom]);
+      expect(messages.map(m => m.parts)).toEqual([[part], [part]]);
+      const [result] = convertResponsesOutputToMessages(
+        [
+          reply,
+          custom,
+          {
+            id: 'out',
+            type: 'computer_call_output',
+            call_id: 'call',
+            status: 'completed',
+            output: {
+              type: 'computer_screenshot',
+              image_url: output[0].image_url,
+            },
+          },
+        ],
+        'stop'
+      );
+      expect(result.parts).toEqual([
+        part,
+        part,
+        { ...part, response: part.response[0] },
+      ]);
+    });
+
+    it('distinguishes pending Responses from client-side patch requests', () => {
+      expect(deriveResponsesFinishReason([], 'queued')).toBeUndefined();
+      expect(deriveResponsesFinishReason([], 'in_progress')).toBeUndefined();
+      const call = {
+        type: 'apply_patch_call' as const,
+        call_id: 'call',
+        id: 'item',
+        status: 'completed' as const,
+        operation: { type: 'create_file' as const, path: 'a', diff: '+text' },
+      };
+      const reason = deriveResponsesFinishReason([call], 'completed');
+      expect(reason).toBe('tool_call');
+      expect(convertResponsesOutputToMessages([call], reason)[0].parts).toEqual(
+        [
+          {
+            type: 'tool_call',
+            id: 'call',
+            name: 'apply_patch',
+            arguments: call.operation,
+          },
+        ]
+      );
+      expect(
+        convertResponsesInputToMessages([{ id: 'item' }])[0].parts
+      ).toEqual([{ type: 'item_reference', id: 'item' }]);
+    });
+
     it('extracts responses token usage', () => {
       expect(extractResponsesTokenUsage(null)).toBeUndefined();
       expect(

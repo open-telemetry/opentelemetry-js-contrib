@@ -378,6 +378,60 @@ describe('OpenAI capture and context', function () {
     }
   });
 
+  it('leaves the raw response body for the caller', async () => {
+    const raw = await chat().asResponse();
+    expect(raw.bodyUsed).toBe(false);
+    expect(await raw.json()).toMatchObject({ model: 'test' });
+    await new Promise<void>(resolve => setImmediate(resolve));
+    expect(getTestSpans()).toHaveLength(1);
+    expect(
+      getTestSpans()[0].attributes['gen_ai.response.model']
+    ).toBeUndefined();
+  });
+
+  it('captures the parsed result once after inspecting raw headers', async () => {
+    const request = chat();
+    const raw = await request.asResponse();
+    const [result, wrapped] = await Promise.all([
+      request,
+      request.withResponse(),
+    ]);
+    expect(wrapped.response).toBe(raw);
+    expect(wrapped.data).toBe(result);
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].attributes['gen_ai.response.model']).toBe('test');
+  });
+
+  it('lets the SDK parse structured outputs without reading the body twice', async function () {
+    if (!client.chat.completions.parse) this.skip();
+    nock(endpoint)
+      .post('/chat/completions')
+      .reply(200, {
+        model: 'test',
+        choices: [
+          {
+            index: 0,
+            finish_reason: 'stop',
+            message: { role: 'assistant', content: '{"n":1}' },
+          },
+        ],
+      });
+    const completion = await client.chat.completions.parse({
+      model: 'test',
+      messages: [],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'test',
+          schema: { type: 'object', properties: { n: { type: 'number' } } },
+        },
+      },
+    });
+    expect(completion.choices[0].message.parsed).toEqual({ n: 1 });
+    expect(getTestSpans()).toHaveLength(1);
+    expect(getTestSpans()[0].attributes['gen_ai.response.model']).toBe('test');
+  });
+
   it('finishes a partially consumed stream once and preserves streamed function arguments', async () => {
     instrumentation.setConfig({ captureMessageContent: 'span_only' });
     const frame = (delta: object) =>
@@ -396,6 +450,8 @@ describe('OpenAI capture and context', function () {
       messages: [],
       stream: true,
     });
+    // Obtaining, but not advancing, a different iterator must not claim the span.
+    stream[Symbol.asyncIterator]();
     let count = 0;
     for await (const chunk of stream) {
       expect(chunk.choices).toHaveLength(1);

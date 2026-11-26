@@ -53,6 +53,12 @@ per-message logs and the old token histogram are no longer emitted. Streaming
 spans end when iteration completes, fails, or exits early. A stream that is
 never consumed can leave its span open.
 
+The instrumentation does not read or clone the SDK's response body. For
+non-streaming calls consumed only through `.asResponse()`, or left unread
+until after the response arrives, spans can contain request metadata without
+parsed response or usage fields. With `span_only`, audio output is represented
+by its modality and available transcript, not the original audio bytes.
+
 To check the three operations against the GenAI semantic conventions, install
 the [conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance/tree/main/tools/gen-ai/runner),
 its mock server, and its pinned Weaver version. Build the package, then run

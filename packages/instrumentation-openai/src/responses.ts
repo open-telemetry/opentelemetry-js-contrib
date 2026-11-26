@@ -29,6 +29,7 @@ import {
 import type {
   EasyInputMessage,
   Response,
+  ResponseApplyPatchToolCall,
   ResponseCodeInterpreterToolCall,
   ResponseComputerToolCall,
   ResponseCreateParams,
@@ -46,10 +47,12 @@ import type {
 import {
   parseJsonArguments,
   parseUriOrBlobPart,
+  redactedFileData,
   telemetryBlobPart,
 } from './utils';
 
 const CLIENT_ACTIONABLE_OUTPUT_ITEM_TYPES = new Set<string>([
+  'apply_patch_call',
   'function_call',
   'custom_tool_call',
   'computer_call',
@@ -107,7 +110,10 @@ export function deriveResponsesFinishReason(
   outputItems: ReadonlyArray<Pick<ResponseOutputItem, 'type'>>,
   status?: string | null,
   incompleteDetails?: Response.IncompleteDetails | null
-): FinishReason {
+): FinishReason | undefined {
+  if (status === 'queued' || status === 'in_progress') {
+    return undefined;
+  }
   if (status === 'failed' || status === 'cancelled') {
     return GEN_AI_FINISH_REASON_VALUE_ERROR;
   }
@@ -148,27 +154,31 @@ export function extractResponsesSystemInstructions(
   return [{ type: 'text', content: instructions }];
 }
 
-function convertMessageContentItemParts(
-  item:
-    | EasyInputMessage
-    | ResponseInputItem.Message
-    | Responses.ResponseInputMessageItem
-    | ResponseOutputMessage
+function convertMessageContentParts(
+  contentItems:
+    | (
+        | EasyInputMessage
+        | ResponseInputItem.Message
+        | Responses.ResponseInputMessageItem
+        | ResponseOutputMessage
+      )['content']
+    | ResponseInputItem.FunctionCallOutput['output']
+    | ResponseCustomToolCallOutput['output']
 ): MessagePart[] {
   const parts: MessagePart[] = [];
-  if (typeof item.content === 'string') {
+  if (typeof contentItems === 'string') {
     parts.push({
       type: 'text',
-      content: item.content,
+      content: contentItems,
     } satisfies TextPart);
     return parts;
   }
 
-  if (!Array.isArray(item.content)) {
+  if (!Array.isArray(contentItems)) {
     return parts;
   }
 
-  for (const content of item.content) {
+  for (const content of contentItems) {
     switch (content.type) {
       case 'input_text':
       case 'output_text':
@@ -210,7 +220,7 @@ function convertMessageContentItemParts(
             file_id: fileItem.file_id,
           } satisfies FilePart);
         } else if (fileItem.file_data) {
-          parts.push(parseUriOrBlobPart(fileItem.file_data, 'document'));
+          parts.push(redactedFileData(fileItem.file_data));
         } else if (fileItem.file_url) {
           parts.push(parseUriOrBlobPart(fileItem.file_url, 'document'));
         } else {
@@ -476,6 +486,57 @@ function convertLocalShellCallPart(
   };
 }
 
+function convertApplyPatchCallPart(
+  item: Pick<ResponseApplyPatchToolCall, 'call_id' | 'operation'>
+): ToolCallRequestPart {
+  return {
+    type: 'tool_call',
+    id: item.call_id,
+    name: 'apply_patch',
+    arguments: item.operation,
+  };
+}
+
+function convertToolResult(
+  item: ResponseInputItem.FunctionCallOutput | ResponseCustomToolCallOutput
+): ToolCallResponsePart {
+  const output = item.output;
+  return {
+    type: 'tool_call_response',
+    id: item.call_id ?? item.id,
+    response: Array.isArray(output)
+      ? convertMessageContentParts(output)
+      : item.type === 'function_call_output'
+        ? (parseJsonArguments(output) ?? output)
+        : output,
+  };
+}
+
+function convertScreenshotResult(
+  item: Pick<ResponseInputItem.ComputerCallOutput, 'call_id' | 'id' | 'output'>
+): ToolCallResponsePart {
+  const { file_id, image_url, type } = item.output;
+  return {
+    type: 'tool_call_response',
+    id: item.call_id ?? item.id,
+    response: file_id
+      ? ({ type: 'file', modality: 'image', file_id } satisfies FilePart)
+      : image_url
+        ? parseUriOrBlobPart(image_url, 'image')
+        : { type },
+  };
+}
+
+function convertApplyPatchResult(
+  item: ResponseInputItem.ApplyPatchCallOutput
+): ToolCallResponsePart {
+  return {
+    type: 'tool_call_response',
+    id: item.call_id,
+    response: item.output ?? item.status,
+  };
+}
+
 function convertMcpApprovalRequestPart(
   item:
     | ResponseInputItem.McpApprovalRequest
@@ -491,51 +552,39 @@ function convertMcpApprovalRequestPart(
 }
 
 function convertInputItemToChatMessage(item: ResponseInputItem): ChatMessage {
-  const itemType = (item as { type?: string }).type ?? 'message';
-  switch (itemType) {
+  switch (item.type) {
+    case 'item_reference':
+    case null:
+    case undefined:
     case 'message':
+      return 'content' in item
+        ? { role: item.role, parts: convertMessageContentParts(item.content) }
+        : {
+            role: 'assistant',
+            parts: [{ type: 'item_reference', id: item.id }],
+          };
+    case 'apply_patch_call':
       return {
-        role: (item as EasyInputMessage).role,
-        parts: convertMessageContentItemParts(item as EasyInputMessage),
+        role: 'assistant',
+        parts: [convertApplyPatchCallPart(item)],
       };
+    case 'apply_patch_call_output':
+      return { role: 'tool', parts: [convertApplyPatchResult(item)] };
     case 'function_call':
       return {
         role: 'assistant',
         parts: [convertFunctionCallPart(item as ResponseFunctionToolCall)],
       };
-    case 'function_call_output': {
-      const out = item as ResponseInputItem.FunctionCallOutput;
-      const response =
-        typeof out.output === 'string'
-          ? (parseJsonArguments(out.output) ?? out.output)
-          : out.output;
-      return {
-        role: 'tool',
-        parts: [
-          {
-            type: 'tool_call_response',
-            id: out.call_id ?? out.id,
-            response,
-          } satisfies ToolCallResponsePart,
-        ],
-      };
-    }
     case 'custom_tool_call':
       return {
         role: 'assistant',
         parts: [convertCustomToolCallPart(item as ResponseCustomToolCall)],
       };
+    case 'function_call_output':
     case 'custom_tool_call_output': {
-      const out = item as ResponseCustomToolCallOutput;
       return {
         role: 'tool',
-        parts: [
-          {
-            type: 'tool_call_response',
-            id: out.call_id ?? out.id,
-            response: out.output,
-          } satisfies ToolCallResponsePart,
-        ],
+        parts: [convertToolResult(item)],
       };
     }
     case 'reasoning':
@@ -618,25 +667,7 @@ function convertInputItemToChatMessage(item: ResponseInputItem): ChatMessage {
         parts: [convertComputerCallPart(item as ResponseComputerToolCall)],
       };
     case 'computer_call_output': {
-      const out = item as ResponseInputItem.ComputerCallOutput;
-      return {
-        role: 'tool',
-        parts: [
-          {
-            type: 'tool_call_response',
-            id: out.call_id ?? out.id,
-            response: out.output.file_id
-              ? ({
-                  type: 'file',
-                  modality: 'image',
-                  file_id: out.output.file_id,
-                } satisfies FilePart)
-              : out.output.image_url
-                ? parseUriOrBlobPart(out.output.image_url, 'image')
-                : { type: out.output.type },
-          } satisfies ToolCallResponsePart,
-        ],
-      };
+      return { role: 'tool', parts: [convertScreenshotResult(item)] };
     }
     case 'local_shell_call':
       return {
@@ -658,18 +689,6 @@ function convertInputItemToChatMessage(item: ResponseInputItem): ChatMessage {
         ],
       };
     }
-    case 'item_reference': {
-      const ref = item as ResponseInputItem.ItemReference;
-      return {
-        role: 'assistant',
-        parts: [
-          {
-            type: 'item_reference',
-            id: ref.id,
-          } satisfies GenericPart,
-        ],
-      };
-    }
     default: {
       const generic = item as unknown as Record<string, unknown>;
       return {
@@ -680,7 +699,7 @@ function convertInputItemToChatMessage(item: ResponseInputItem): ChatMessage {
         parts: [
           {
             ...generic,
-            type: itemType,
+            type: item.type,
           } satisfies GenericPart,
         ],
       };
@@ -712,10 +731,19 @@ export function convertResponsesInputToMessages(
 }
 
 function convertOutputItemToParts(item: ResponseOutputItem): MessagePart[] {
-  const itemType = (item as { type?: string }).type ?? 'unknown';
+  const itemType = item.type;
   switch (itemType) {
     case 'message':
-      return convertMessageContentItemParts(item as ResponseOutputMessage);
+      return convertMessageContentParts(item.content);
+    case 'apply_patch_call':
+      return [convertApplyPatchCallPart(item)];
+    case 'apply_patch_call_output':
+      return [convertApplyPatchResult(item)];
+    case 'computer_call_output':
+      return [convertScreenshotResult(item)];
+    case 'function_call_output':
+    case 'custom_tool_call_output':
+      return [convertToolResult(item)];
     case 'function_call':
       return [convertFunctionCallPart(item as ResponseFunctionToolCall)];
     case 'custom_tool_call':
@@ -765,7 +793,7 @@ function convertOutputItemToParts(item: ResponseOutputItem): MessagePart[] {
       return [
         {
           ...generic,
-          type: itemType,
+          type: itemType ?? 'unknown',
         } satisfies GenericPart,
       ];
     }
@@ -777,14 +805,14 @@ function convertOutputItemToParts(item: ResponseOutputItem): MessagePart[] {
  */
 export function convertResponsesOutputToMessages(
   outputItems: ReadonlyArray<ResponseOutputItem>,
-  finishReason: FinishReason
+  finishReason: FinishReason | undefined
 ): OutputMessages {
   const parts: MessagePart[] = outputItems.flatMap(convertOutputItemToParts);
   return [
     {
       role: 'assistant',
       parts,
-      finish_reason: finishReason,
+      ...(finishReason && { finish_reason: finishReason }),
     },
   ];
 }
