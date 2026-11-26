@@ -70,6 +70,12 @@ The following semantic attributes are added to each error event:
 | `exception.message` | string | The error message |
 | `exception.stacktrace` | string | The error stack trace |
 
+When the thrown value is a string, only `exception.message` is set.
+
+Error events whose error is `null` or `undefined`, such as cross-origin script errors (`Script error.`), the `ResizeObserver` loop error and `throw null`, and unhandled rejections with a `null` or `undefined` reason are not reported.
+
+> **Note:** `ErrorsInstrumentation` in [`@opentelemetry/browser-instrumentation`](https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation) handles these differently. It reports an error event that has no error object but does have a message (such as `Script error.` or the `ResizeObserver` loop error) with only `exception.message`, set from the event's message. Expect these extra records after migrating.
+
 ## Example
 
 ```typescript

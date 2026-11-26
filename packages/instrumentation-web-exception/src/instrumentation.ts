@@ -47,10 +47,22 @@ export class ExceptionInstrumentation extends InstrumentationBase<GlobalErrorsIn
 
   onError(event: ErrorEvent | PromiseRejectionEvent) {
     const EXCEPTION_EVENT_NAME = 'exception';
-    const error: Error | string | undefined =
-      'reason' in event ? event.reason : event.error;
+    const isRejection = 'reason' in event;
+    const error: Error | string | null | undefined = isRejection
+      ? event.reason
+      : event.error;
 
-    if (error === undefined) {
+    // Browsers deliver an ErrorEvent whose error is null (Chrome, Safari) or
+    // undefined (Firefox) for cross-origin script errors ("Script error."),
+    // the ResizeObserver loop error and `throw null`, and a promise can be
+    // rejected with null or undefined. There is nothing to record, so drop
+    // these as undefined always was; null used to make this listener throw.
+    if (error === null || error === undefined) {
+      this._diag.debug(
+        isRejection
+          ? 'ignored unhandledrejection event with no reason'
+          : 'ignored error event with no error'
+      );
       return;
     }
 
