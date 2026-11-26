@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
+import * as diagch from 'diagnostics_channel';
 import { Writable } from 'stream';
 
 import {
@@ -14,6 +15,11 @@ import {
   trace,
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  ATTR_ERROR_TYPE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_URL_QUERY,
+} from '@opentelemetry/semantic-conventions';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
@@ -82,6 +88,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
       if (req.url === '/error') {
         // Simulate an error
         res.destroy();
+        return;
+      }
+      const status = req.url?.match(/^\/status\/(\d+)/);
+      if (status) {
+        res.statusCode = Number(status[1]);
+        res.end();
         return;
       }
       // There are some situations where there is no way to access headers
@@ -278,7 +290,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: firstQueryResponse!.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -293,7 +305,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         spanName: 'HTTP',
         httpMethod: '_OTHER',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -308,7 +320,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         spanName: 'QUERY',
         httpMethod: 'QUERY',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.strictEqual(
@@ -357,7 +369,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -421,7 +433,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -493,7 +505,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -573,7 +585,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
       });
       assert.deepStrictEqual(
@@ -642,7 +654,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
     });
 
@@ -731,6 +743,63 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
     });
 
+    it('should set error.type to the status code for a failing response', async function () {
+      for (const statusCode of [404, 500]) {
+        memoryExporter.reset();
+
+        const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/${statusCode}`;
+        const response = await undici.request(requestUrl);
+        await response.body.dump();
+
+        const span = memoryExporter.getFinishedSpans()[0];
+        assert.ok(span, 'a span is present');
+        assertSpan(span, {
+          hostname,
+          httpMethod: 'GET',
+          path: `/status/${statusCode}`,
+          httpStatusCode: statusCode,
+        });
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(
+          span.attributes[ATTR_ERROR_TYPE],
+          String(statusCode)
+        );
+      }
+    });
+
+    it('should not set error.type for a successful response', async function () {
+      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/204`;
+      const response = await undici.request(requestUrl);
+      await response.body.dump();
+
+      const span = memoryExporter.getFinishedSpans()[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], undefined);
+    });
+
+    it('should set url.query without the leading "?" and only when present', async function () {
+      const withQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`
+      );
+      await withQuery.body.dump();
+      const withoutQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/`
+      );
+      await withoutQuery.body.dump();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      assert.deepStrictEqual(
+        spans.map(span =>
+          ATTR_URL_QUERY in span.attributes
+            ? span.attributes[ATTR_URL_QUERY]
+            : '<not set>'
+        ),
+        ['query=test', '<not set>']
+      );
+    });
+
     it('should capture errors while doing request', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -753,6 +822,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpMethod: 'GET',
         path: '/error',
         error: fetchError,
+        errorType: 'UND_ERR_SOCKET',
         noNetPeer: true, // do not check network attribs
         forceStatus: {
           code: SpanStatusCode.ERROR,
@@ -878,7 +948,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
           httpStatusCode: queryResponse.statusCode,
           httpMethod: 'GET',
           path: '/',
-          query: '?query=test',
+          query: 'query=test',
           reqHeaders: testCase.headers,
         });
         assert.strictEqual(
@@ -910,9 +980,57 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: res.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
+    });
+
+    it('should redact sensitive query string values in url.full and url.query', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const origin = `${protocol}://${hostname}:${mockServer.port}`;
+      const res = await undici.request(
+        `${origin}/presigned?X-Amz-Credential=AKIA&X-Amz-Signature=secret&foo=bar`
+      );
+      await consumeResponseBody(res.body);
+
+      spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+      assert.strictEqual(
+        span.attributes['url.full'],
+        `${origin}/presigned?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar`
+      );
+      assert.strictEqual(
+        span.attributes['url.query'],
+        'X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar'
+      );
+    });
+
+    it('should set network.protocol.version to 2 when ALPN is h2', function () {
+      const request: any = {
+        method: 'GET',
+        origin: 'https://localhost:443',
+        path: '/',
+        headers: [],
+      };
+      const socket = {
+        remoteAddress: '127.0.0.1',
+        remotePort: 443,
+        alpnProtocol: 'h2',
+      };
+
+      diagch.channel('undici:request:create').publish({ request });
+      diagch.channel('undici:client:sendHeaders').publish({ request, socket });
+      diagch.channel('undici:request:trailers').publish({ request });
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '2'
+      );
     });
   });
 });

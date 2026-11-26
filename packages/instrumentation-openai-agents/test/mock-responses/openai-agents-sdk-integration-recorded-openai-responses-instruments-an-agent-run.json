@@ -1,0 +1,48 @@
+[
+    {
+        "scope": "https://api.openai.com:443",
+        "method": "POST",
+        "path": "/v1/responses",
+        "body": {
+            "model": "gpt-4o-mini",
+            "instructions": "Reply with exactly: hello from agent",
+            "input": [
+                {
+                    "role": "user",
+                    "content": "Say hello."
+                }
+            ],
+            "include": [],
+            "tools": [],
+            "stream": false
+        },
+        "status": 200,
+        "response": [
+            "1be207009c07762c60375d724384d06c99aea63df349e8416d5a5f82858a23af0922d2970a2c3aad00d2d5d77af66bef5dbd1209d17bfd3bbb37b83611493b88a683a4563aa5910929a0b298cdfc55012ac989fef61f4d1e0e22a793905d68d0795646a2b1e0fa1bd358eb42909eb1151d9bc041711b5af6de49152014b40d5559abeb62ca5e32fa1f44d3d6b29315367a5f83f931e37e4c4bec80e2bbaaf23be45b868badbc38cf9fe697e3952d350fd821863d64fa728be41407eb770859ba0e7a53506cc7f081a7048f0eca9b784b216c3df8249eb174344b5fef3f074317b7c17672333fd4486dd4d132340cac75dba8e7e58242db6ceb8733dfe5716781d63be1edbc6373172d18b6455889bbcf58dcdbde92e8a96413dc6b4bc3a1b647545dd33695a2c3cefab6ad312f5b612443919da3c1a83cbcd834885ee4c264713a74a4cbdab80a324ab0b157f5db0cbad7e376573cec0b83dd7e50201a76bca36f6be0373f12cb203086e1d97ec3bfd42fde3e94f25f1638acd32a64d14920ba4193df6d3ce3b19d9988e87db4f0af7e2972e6bdfa9330ed4456de1ace5a0aa460120e098513ea0187a09b50106cce9217d3378728b48264fa29eb3a81b67107f949863247196c2339582197ec5c47197bc46da324b1ea7d5f1ced91a67cee808f04b87614c9391e557d56f2014ab0759a19243b4303ef57a05fe17b2dde94a40d3a734c7d6a6b662d0e0c8b38ce56a2fdaf73e36d4f3e68b627bed9be8596244ded65a3b743d94dab90b0f9bd7c9c84d82e549c3b1b623a96dd715b27bca5f3e2a5ba1d5aa20f57e2e6d01e92f0865eb2a52697f9641c5ea1b23cd649d079d8e887d660a852b9bca224e0eddb381b6fb2096cf406"
+        ],
+        "rawHeaders": {
+            "access-control-expose-headers": "X-Request-ID, CF-Ray, CF-Ray",
+            "alt-svc": "h3=\":443\"; ma=86400",
+            "cf-cache-status": "DYNAMIC",
+            "cf-ray": "a29b54d5ee128c73-EWR",
+            "connection": "keep-alive",
+            "content-encoding": "br",
+            "content-type": "application/json",
+            "date": "Wed, 12 Aug 2026 00:23:28 GMT",
+            "openai-processing-ms": "1175",
+            "openai-version": "2020-10-01",
+            "server": "cloudflare",
+            "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+            "transfer-encoding": "chunked",
+            "x-content-type-options": "nosniff",
+            "x-ratelimit-limit-requests": "10000",
+            "x-ratelimit-limit-tokens": "200000",
+            "x-ratelimit-remaining-requests": "9999",
+            "x-ratelimit-remaining-tokens": "199960",
+            "x-ratelimit-reset-requests": "8.64s",
+            "x-ratelimit-reset-tokens": "12ms",
+            "x-request-id": "req_8adfab9ee3da4e689e67384998d369b9"
+        },
+        "responseIsBinary": false
+    }
+]

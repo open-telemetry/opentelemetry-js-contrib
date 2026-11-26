@@ -10,7 +10,7 @@ import { trace } from '@opentelemetry/api';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 import assert from 'assert';
 
-import { PgInstrumentation } from '../../build/src/index.js';
+import { PgInstrumentation } from '../../dist/index.mjs';
 
 const CONFIG = {
   user: process.env.POSTGRES_USER || 'postgres',
@@ -19,7 +19,7 @@ const CONFIG = {
   host: process.env.POSTGRES_HOST || 'localhost',
   port: process.env.POSTGRES_PORT
     ? parseInt(process.env.POSTGRES_PORT, 10)
-    : 54320,
+    : 15432,
 };
 
 const sdk = createTestNodeSdk({

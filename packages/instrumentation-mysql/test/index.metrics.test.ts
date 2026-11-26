@@ -26,7 +26,7 @@ instrumentation.disable();
 import { createPool, createPoolCluster } from 'mysql';
 import type { Pool, PoolCluster, PoolConnection } from 'mysql';
 
-const port = Number(process.env.MYSQL_PORT) || 33306;
+const port = Number(process.env.MYSQL_PORT) || 13306;
 const database = process.env.MYSQL_DATABASE || 'test_db';
 const host = process.env.MYSQL_HOST || '127.0.0.1';
 const user = process.env.MYSQL_USER || 'otel';

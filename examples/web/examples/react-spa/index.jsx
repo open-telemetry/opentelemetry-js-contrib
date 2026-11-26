@@ -18,24 +18,20 @@ const loggerProvider = new LoggerProvider({
   resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: 'react-spa-navigation-demo',
   }),
+  processors: [
+    // Add console exporter for development
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() }),
+    // Add OTLP HTTP exporter to send logs to server
+    new SimpleLogRecordProcessor({
+      exporter: new OTLPLogExporter({
+        url: 'http://localhost:4318/v1/logs', // Standard OTLP endpoint
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+    }),
+  ],
 });
-
-// Add console exporter for development
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())
-);
-
-// Add OTLP HTTP exporter to send logs to server
-loggerProvider.addLogRecordProcessor(
-  new SimpleLogRecordProcessor(
-    new OTLPLogExporter({
-      url: 'http://localhost:4318/v1/logs', // Standard OTLP endpoint
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    })
-  )
-);
 
 // Set the global logger provider
 logs.setGlobalLoggerProvider(loggerProvider);

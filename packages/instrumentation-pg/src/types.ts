@@ -33,6 +33,19 @@ export interface PgInstrumentationExecutionRequestHook {
   (span: api.Span, queryInfo: PgRequestHookInformation): void;
 }
 
+export interface PgConnectionHookInformation {
+  connection: {
+    database?: string;
+    host?: string;
+    port?: number;
+    user?: string;
+  };
+}
+
+export interface PgInstrumentationConnectionHook {
+  (span: api.Span, connectionInfo: PgConnectionHookInformation): void;
+}
+
 export interface PgInstrumentationConfig extends InstrumentationConfig {
   /**
    * If true, an attribute containing the query's parameters will be attached
@@ -47,6 +60,15 @@ export interface PgInstrumentationConfig extends InstrumentationConfig {
    * @default undefined
    */
   requestHook?: PgInstrumentationExecutionRequestHook;
+
+  /**
+   * Hook that allows adding custom span attributes based on the data about
+   * the connection being established. It is called for `pg.connect` and
+   * `pg-pool.connect` spans, which `requestHook` is not called for.
+   *
+   * @default undefined
+   */
+  connectionHook?: PgInstrumentationConnectionHook;
 
   /**
    * Hook that allows adding custom span attributes based on the data

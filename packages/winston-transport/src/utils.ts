@@ -5,11 +5,11 @@
 
 import {
   AnyValue,
-  LogAttributes,
+  Attributes,
   LogRecord,
   Logger,
   SeverityNumber,
-} from '@opentelemetry/api-logs';
+} from '@opentelemetry/api';
 import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 const npmLevels: Record<string, number> = {
@@ -46,8 +46,135 @@ const cliLevels: Record<string, number> = {
   silly: SeverityNumber.TRACE,
 };
 
-function getSeverityNumber(level: string): SeverityNumber | undefined {
-  return npmLevels[level] ?? sysLoglevels[level] ?? cliLevels[level];
+export const otelLogLevels: Record<string, number> = {
+  fatal: 0,
+  error: 1,
+  warn: 2,
+  info: 3,
+  debug: 4,
+  trace: 5,
+};
+
+export const otelSeverityMapping: Record<string, SeverityNumber> = {
+  fatal: SeverityNumber.FATAL,
+  error: SeverityNumber.ERROR,
+  warn: SeverityNumber.WARN,
+  info: SeverityNumber.INFO,
+  debug: SeverityNumber.DEBUG,
+  trace: SeverityNumber.TRACE,
+};
+
+const OTEL_CONTEXT_SYMBOL = Symbol.for(
+  'opentelemetry.js.contrib.winston.context'
+);
+const LOG_CORRELATION_FIELDS = new Set(['trace_id', 'span_id', 'trace_flags']);
+
+function getSeverityNumber(
+  level: string,
+  severityMapping?: Record<string, SeverityNumber>
+): SeverityNumber | undefined {
+  return (
+    severityMapping?.[level] ??
+    otelSeverityMapping[level] ??
+    npmLevels[level] ??
+    sysLoglevels[level] ??
+    cliLevels[level]
+  );
+}
+
+const CIRCULAR_REFERENCE_VALUE = '[Circular]';
+const ERROR_PROPERTY_NAMES = [
+  'name',
+  'message',
+  'stack',
+  'code',
+  'cause',
+  'errors',
+];
+
+function isPlainObject(value: object): value is Record<string, unknown> {
+  const constructor = (value as { constructor?: unknown }).constructor;
+  return constructor === Object || constructor === undefined;
+}
+
+function serializeError(error: Error, ancestors: Set<object>): Attributes {
+  const serialized: Attributes = {};
+  const propertyNames = new Set([
+    ...ERROR_PROPERTY_NAMES,
+    ...Object.getOwnPropertyNames(error),
+  ]);
+
+  ancestors.add(error);
+  for (const propertyName of propertyNames) {
+    const propertyValue = (error as unknown as Record<string, unknown>)[
+      propertyName
+    ];
+    if (propertyValue !== undefined) {
+      serialized[propertyName] = normalizeAttributeValue(
+        propertyValue,
+        ancestors,
+        true
+      );
+    }
+  }
+  ancestors.delete(error);
+
+  return serialized;
+}
+
+function normalizeAttributeValue(
+  value: unknown,
+  ancestors = new Set<object>(),
+  stringifyUnsupported = false
+): AnyValue {
+  if (
+    value == null ||
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    value instanceof Uint8Array
+  ) {
+    return value;
+  }
+
+  if (typeof value !== 'object') {
+    return stringifyUnsupported ? String(value) : (value as AnyValue);
+  }
+
+  if (ancestors.has(value)) {
+    return CIRCULAR_REFERENCE_VALUE;
+  }
+
+  if (value instanceof Error) {
+    return serializeError(value, ancestors);
+  }
+
+  if (Array.isArray(value)) {
+    ancestors.add(value);
+    const normalized = value.map(item =>
+      normalizeAttributeValue(item, ancestors, stringifyUnsupported)
+    );
+    ancestors.delete(value);
+    return normalized;
+  }
+
+  if (isPlainObject(value)) {
+    ancestors.add(value);
+    const normalized: Attributes = {};
+    for (const key in value) {
+      if (Object.prototype.hasOwnProperty.call(value, key)) {
+        normalized[key] = normalizeAttributeValue(
+          value[key],
+          ancestors,
+          stringifyUnsupported
+        );
+      }
+    }
+    ancestors.delete(value);
+    return normalized;
+  }
+
+  return stringifyUnsupported ? String(value) : (value as AnyValue);
 }
 
 /**
@@ -81,7 +208,7 @@ function isSdkLogsExceptionCandidate(value: unknown): boolean {
 function extractCauseAttributes(
   key: 'err' | 'error',
   value: unknown
-): LogAttributes {
+): Attributes {
   if (value == null || typeof value !== 'object' || !('cause' in value)) {
     return {};
   }
@@ -91,7 +218,7 @@ function extractCauseAttributes(
     return {};
   }
 
-  const attributes: LogAttributes = {};
+  const attributes: Attributes = {};
   if (typeof cause === 'string' || typeof cause === 'number') {
     attributes[`${key}.cause`] = cause as AnyValue;
     return attributes;
@@ -149,7 +276,7 @@ function extractCauseAttributes(
 function getExceptionPayload(record: Record<string | symbol, any>): {
   exception: unknown;
   excludedAttributes: string[];
-  additionalAttributes?: LogAttributes;
+  additionalAttributes?: Attributes;
 } | null {
   for (const key of ['err', 'error'] as const) {
     const value = record[key];
@@ -205,15 +332,25 @@ function getExceptionPayload(record: Record<string | symbol, any>): {
 
 export function emitLogRecord(
   record: Record<string | symbol, any>,
-  logger: Logger
+  logger: Logger,
+  severityMapping?: Record<string, SeverityNumber>,
+  logSeverity?: SeverityNumber
 ): void {
+  const levelSym = record[Symbol.for('level')];
+  const severityNumber = getSeverityNumber(levelSym, severityMapping);
+  if (
+    logSeverity != null &&
+    (severityNumber ?? SeverityNumber.UNSPECIFIED) < logSeverity
+  ) {
+    return;
+  }
+
   const { message, level, ...splat } = record;
   const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
-  const attributes: LogAttributes = {};
+  const attributes: Attributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
   // property.
-  const levelSym = record[Symbol.for('level')];
   const exceptionPayload = getExceptionPayload(record);
   const excludedAttributes = new Set(
     exceptionPayload?.excludedAttributes ?? []
@@ -221,9 +358,10 @@ export function emitLogRecord(
   for (const key in rest) {
     if (
       Object.prototype.hasOwnProperty.call(rest, key) &&
-      !excludedAttributes.has(key)
+      !excludedAttributes.has(key) &&
+      !LOG_CORRELATION_FIELDS.has(key)
     ) {
-      attributes[key] = rest[key];
+      attributes[key] = normalizeAttributeValue(rest[key]);
     }
   }
   if (exceptionPayload?.additionalAttributes) {
@@ -240,12 +378,14 @@ export function emitLogRecord(
   }
   const normalizedEventName =
     typeof eventName === 'string' ? eventName : undefined;
+  const context = record[OTEL_CONTEXT_SYMBOL];
 
   const logRecord: LogRecord = {
-    severityNumber: getSeverityNumber(levelSym),
+    severityNumber,
     severityText: levelSym,
     body: message,
     attributes: attributes,
+    ...(context ? { context } : {}),
     ...(exceptionPayload ? { exception: exceptionPayload.exception } : {}),
     ...(normalizedEventName !== undefined
       ? { eventName: normalizedEventName }

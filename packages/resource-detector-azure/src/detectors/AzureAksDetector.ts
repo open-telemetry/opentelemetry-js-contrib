@@ -4,6 +4,7 @@
  */
 
 import * as fs from 'fs';
+import * as path from 'path';
 
 import { diag } from '@opentelemetry/api';
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
@@ -11,15 +12,20 @@ import {
   ATTR_CLOUD_PLATFORM,
   ATTR_CLOUD_PROVIDER,
   ATTR_K8S_CLUSTER_NAME,
+  ATTR_K8S_POD_NAME,
+  ATTR_K8S_POD_UID,
   CLOUD_PLATFORM_VALUE_AZURE_AKS,
   CLOUD_PROVIDER_VALUE_AZURE,
 } from '../semconv';
 import {
   AKS_CLUSTER_RESOURCE_ID,
+  AKS_CLUSTER_RESOURCE_ID_KEY,
   AKS_METADATA_FILE_PATH,
   AksClusterMetadata,
   CLOUD_RESOURCE_ID_RESOURCE_ATTRIBUTE,
   extractClusterNameFromResourceId,
+  K8S_POD_NAME,
+  K8S_POD_UID,
 } from '../types';
 
 /**
@@ -29,6 +35,8 @@ import {
  *
  * The ConfigMap contains a single key 'clusterResourceId' with the full ARM resource ID.
  * The cluster name is extracted from this resource ID.
+ * Pod identity is read from K8S_POD_NAME and K8S_POD_UID environment variables
+ * populated through the Kubernetes Downward API.
  *
  * @returns a {@link Resource} populated with data about the AKS environment or an empty Resource if detection fails.
  */
@@ -57,6 +65,22 @@ class AzureAksDetector implements ResourceDetector {
         };
       }
 
+      const podName = process.env[K8S_POD_NAME];
+      if (podName) {
+        attributes = {
+          ...attributes,
+          [ATTR_K8S_POD_NAME]: podName,
+        };
+      }
+
+      const podUid = process.env[K8S_POD_UID];
+      if (podUid) {
+        attributes = {
+          ...attributes,
+          [ATTR_K8S_POD_UID]: podUid,
+        };
+      }
+
       diag.debug('AzureAksDetector: detected AKS cluster:', metadata);
     }
 
@@ -80,31 +104,12 @@ class AzureAksDetector implements ResourceDetector {
 
   private getAksMetadataFromFile(): AksClusterMetadata | undefined {
     try {
-      if (!fs.existsSync(AKS_METADATA_FILE_PATH)) {
+      const content = this.readAksMetadataContent();
+      if (content === undefined) {
         return undefined;
       }
 
-      const content = fs.readFileSync(AKS_METADATA_FILE_PATH, 'utf8');
-      const metadata: AksClusterMetadata = {};
-
-      // Parse the ConfigMap file content (key=value format)
-      // The native aks-cluster-metadata ConfigMap has a single key: clusterResourceId
-      const lines = content.split('\n');
-      for (const line of lines) {
-        const trimmedLine = line.trim();
-        if (!trimmedLine || trimmedLine.startsWith('#')) {
-          continue;
-        }
-
-        const [key, ...valueParts] = trimmedLine.split('=');
-        const value = valueParts.join('=').trim();
-
-        if (key === 'clusterResourceId' && value) {
-          metadata.resourceId = value;
-          metadata.name = extractClusterNameFromResourceId(value);
-        }
-      }
-
+      const metadata = this.parseAksMetadata(content);
       if (metadata.resourceId) {
         return metadata;
       }
@@ -116,6 +121,80 @@ class AzureAksDetector implements ResourceDetector {
     }
 
     return undefined;
+  }
+
+  /**
+   * Reads the raw AKS metadata content, supporting the layouts the
+   * aks-cluster-metadata ConfigMap can take inside a pod:
+   *
+   * - mounted as a volume, where Kubernetes creates a directory containing one
+   *   file per key, so the value lives in `<path>/clusterResourceId`
+   * - mounted with `subPath`, or written by tooling, where the path is a file
+   *   holding either the raw resource ID or `clusterResourceId=<resource ID>`
+   */
+  private readAksMetadataContent(): string | undefined {
+    const stats = fs.statSync(AKS_METADATA_FILE_PATH, {
+      throwIfNoEntry: false,
+    });
+
+    if (!stats) {
+      return undefined;
+    }
+
+    if (stats.isDirectory()) {
+      const keyPath = path.join(
+        AKS_METADATA_FILE_PATH,
+        AKS_CLUSTER_RESOURCE_ID_KEY
+      );
+      if (!fs.existsSync(keyPath)) {
+        return undefined;
+      }
+      return fs.readFileSync(keyPath, 'utf8');
+    }
+
+    return fs.readFileSync(AKS_METADATA_FILE_PATH, 'utf8');
+  }
+
+  private parseAksMetadata(content: string): AksClusterMetadata {
+    const metadata: AksClusterMetadata = {};
+    let keyedResourceId: string | undefined;
+    const bareValues: string[] = [];
+
+    // The native aks-cluster-metadata ConfigMap has a single key: clusterResourceId.
+    const lines = content.split('\n');
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine || trimmedLine.startsWith('#')) {
+        continue;
+      }
+
+      const separatorIndex = trimmedLine.indexOf('=');
+      if (separatorIndex === -1) {
+        bareValues.push(trimmedLine);
+        continue;
+      }
+
+      const key = trimmedLine.slice(0, separatorIndex).trim();
+      const value = trimmedLine.slice(separatorIndex + 1).trim();
+
+      if (key === AKS_CLUSTER_RESOURCE_ID_KEY && value) {
+        keyedResourceId = value;
+      }
+    }
+
+    // An explicit `clusterResourceId=<value>` entry always wins. Otherwise fall back to a
+    // bare value, which is what Kubernetes writes when the key is projected into a file of
+    // its own. Only a single unambiguous line is accepted so that unrelated content in a
+    // multi line file is never mistaken for the resource ID.
+    const resourceId =
+      keyedResourceId ?? (bareValues.length === 1 ? bareValues[0] : undefined);
+
+    if (resourceId) {
+      metadata.resourceId = resourceId;
+      metadata.name = extractClusterNameFromResourceId(resourceId);
+    }
+
+    return metadata;
   }
 }
 

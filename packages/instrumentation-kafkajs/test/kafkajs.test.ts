@@ -27,6 +27,7 @@ import {
   METRIC_MESSAGING_PROCESS_DURATION,
   METRIC_MESSAGING_CLIENT_CONSUMED_MESSAGES,
   METRIC_MESSAGING_CLIENT_OPERATION_DURATION,
+  ATTR_MESSAGING_KAFKA_CLUSTER_ID,
 } from '../src/semconv';
 import {
   getTestSpans,
@@ -1639,6 +1640,464 @@ describe('instrumentation-kafkajs', () => {
           },
         ],
       });
+    });
+  });
+
+  describe('cluster id', () => {
+    // Test double: swaps kafkajs's own createCluster factory so a synthetic
+    // Cluster flows through the real producer()/consumer() call chain.
+    // kafkajs >= 1.3.0 uses Symbol(private:Kafka:createCluster);
+    // kafkajs < 1.3.0 uses the plain 'createCluster' string property.
+    function getCreateClusterKey(kafkaInst: object): PropertyKey | undefined {
+      return (
+        Object.getOwnPropertySymbols(kafkaInst).find(s =>
+          s.toString().includes('createCluster')
+        ) ??
+        (typeof (kafkaInst as Record<string, unknown>)['createCluster'] ===
+        'function'
+          ? 'createCluster'
+          : undefined)
+      );
+    }
+
+    function initProducerOnInstance(kafkaInst: Kafka): Producer {
+      patchProducerSend(
+        async (): Promise<RecordMetadata[]> => [
+          {
+            topicName: 'test-topic',
+            partition: 0,
+            errorCode: 0,
+            offset: '0',
+            timestamp: '0',
+          },
+        ]
+      );
+      instrumentation.disable();
+      instrumentation.enable();
+      return kafkaInst.producer();
+    }
+
+    it('sets messaging.kafka.cluster.id on producer spans when cluster ID is available', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-success',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey1 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey1) {
+        Reflect.set(kafkaForTest as object, _ccKey1, () => ({
+          brokerPool: { metadata: { clusterId: 'my-cluster-123' } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'my-cluster-123'
+      );
+    });
+
+    it('does not set messaging.kafka.cluster.id when cluster provides no ID', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-no-method',
+        brokers: ['mock:9092'],
+      });
+
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('does not set messaging.kafka.cluster.id when cluster ID is null', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-null',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey2 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey2) {
+        Reflect.set(kafkaForTest as object, _ccKey2, () => ({
+          brokerPool: { metadata: { clusterId: null } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('does not set messaging.kafka.cluster.id when cluster ID is not a string', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-noadmin',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey3 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey3) {
+        Reflect.set(kafkaForTest as object, _ccKey3, () => ({
+          brokerPool: { metadata: { clusterId: 42 } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('sets messaging.kafka.cluster.id on sendBatch spans when cluster ID is available', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-sendbatch',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey4 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey4) {
+        Reflect.set(kafkaForTest as object, _ccKey4, () => ({
+          brokerPool: { metadata: { clusterId: 'batch-cluster-456' } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.sendBatch({
+        topicMessages: [
+          {
+            topic: 'test-topic',
+            messages: [{ value: 'hello' }],
+          },
+        ],
+      });
+
+      const spans = getTestSpans();
+      assert.ok(spans.length >= 1);
+      spans.forEach(span => {
+        assert.strictEqual(
+          span.attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+          'batch-cluster-456'
+        );
+      });
+    });
+
+    it('does not set messaging.kafka.cluster.id when cluster ID is empty string', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-test-empty-str',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey5 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey5) {
+        Reflect.set(kafkaForTest as object, _ccKey5, () => ({
+          brokerPool: { metadata: { clusterId: '' } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('sets messaging.kafka.cluster.id on consumer eachMessage span when cluster ID is available', async () => {
+      const origConsumerProto = kafkajs.Kafka.prototype.consumer;
+      let localRunConfig: ConsumerRunConfig | undefined;
+      kafkajs.Kafka.prototype.consumer = function (...args): Consumer {
+        const cons: Consumer = origConsumerProto.apply(this, args);
+        cons.run = function (cfg?: ConsumerRunConfig): Promise<void> {
+          localRunConfig = cfg;
+          return Promise.resolve();
+        };
+        return cons;
+      };
+
+      instrumentation.disable();
+      instrumentation.enable();
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-consumer',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey6 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey6) {
+        Reflect.set(kafkaForTest as object, _ccKey6, () => ({
+          brokerPool: { metadata: { clusterId: 'consumer-cluster-789' } },
+        }));
+      }
+      consumer = kafkaForTest.consumer({ groupId: 'cluster-id-test-group' });
+      consumer.run({ eachMessage: async () => {} });
+      kafkajs.Kafka.prototype.consumer = origConsumerProto;
+
+      await localRunConfig?.eachMessage?.({
+        topic: 'test-topic',
+        partition: 0,
+        message: {
+          key: Buffer.from('key', 'utf8'),
+          value: Buffer.from('value', 'utf8'),
+          timestamp: '1234',
+          size: 10,
+          attributes: 1,
+          offset: '0',
+        },
+        heartbeat: async () => {},
+        pause: () => () => {},
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'consumer-cluster-789'
+      );
+    });
+
+    it('reads cluster id fresh on every send without caching', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-no-cache',
+        brokers: ['mock:9092'],
+      });
+      const mockCluster = {
+        brokerPool: { metadata: { clusterId: 'cluster-v1' } },
+      };
+      const _ccKey7 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey7) {
+        Reflect.set(kafkaForTest as object, _ccKey7, () => mockCluster);
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'a' }],
+      });
+      let spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'cluster-v1'
+      );
+
+      // Mutate the cluster object — no caching means the next span picks it up.
+      mockCluster.brokerPool.metadata.clusterId = 'cluster-v2';
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'b' }],
+      });
+      spans = getTestSpans();
+      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(
+        spans[1].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'cluster-v2'
+      );
+    });
+
+    it('does not call admin() to resolve cluster id', async () => {
+      let adminCallCount = 0;
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-no-admin-call',
+        brokers: ['mock:9092'],
+      });
+      (kafkaForTest as unknown as { admin: () => kafkajs.Admin }).admin =
+        () => {
+          adminCallCount++;
+          return {} as unknown as kafkajs.Admin;
+        };
+
+      const _ccKey8 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey8) {
+        Reflect.set(kafkaForTest as object, _ccKey8, () => ({
+          brokerPool: { metadata: { clusterId: 'direct-cluster' } },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'direct-cluster'
+      );
+      assert.strictEqual(
+        adminCallCount,
+        0,
+        'admin() must never be called by the instrumentation'
+      );
+    });
+
+    it('does not break message flow when cluster ID lookup throws', async () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-throws',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey9 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey9) {
+        Reflect.set(kafkaForTest as object, _ccKey9, () => ({
+          brokerPool: {
+            get metadata(): never {
+              throw new Error('clusterId boom');
+            },
+          },
+        }));
+      }
+      producer = initProducerOnInstance(kafkaForTest);
+
+      await producer.send({
+        topic: 'test-topic',
+        messages: [{ value: 'hello' }],
+      });
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        undefined
+      );
+    });
+
+    it('sets messaging.kafka.cluster.id on consumer eachBatch spans when cluster ID is available', async () => {
+      const origConsumerProto = kafkajs.Kafka.prototype.consumer;
+      let localRunConfig: ConsumerRunConfig | undefined;
+      kafkajs.Kafka.prototype.consumer = function (...args): Consumer {
+        const cons: Consumer = origConsumerProto.apply(this, args);
+        cons.run = function (cfg?: ConsumerRunConfig): Promise<void> {
+          localRunConfig = cfg;
+          return Promise.resolve();
+        };
+        return cons;
+      };
+
+      instrumentation.disable();
+      instrumentation.enable();
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-eachbatch',
+        brokers: ['mock:9092'],
+      });
+      const _ccKey10 = getCreateClusterKey(kafkaForTest as object);
+      if (_ccKey10) {
+        Reflect.set(kafkaForTest as object, _ccKey10, () => ({
+          brokerPool: { metadata: { clusterId: 'batch-consumer-cluster' } },
+        }));
+      }
+      consumer = kafkaForTest.consumer({
+        groupId: 'cluster-id-eachbatch-group',
+      });
+      consumer.run({ eachBatch: async () => {} });
+      kafkajs.Kafka.prototype.consumer = origConsumerProto;
+
+      await localRunConfig?.eachBatch?.({
+        batch: {
+          topic: 'test-topic',
+          partition: 0,
+          highWatermark: '1',
+          messages: [],
+        },
+      } as unknown as EachBatchPayload);
+
+      const spans = getTestSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'batch-consumer-cluster'
+      );
+    });
+
+    it('does not add any own property or symbol to the Kafka instance while capturing the cluster', () => {
+      const kafkaForTest = new Kafka({
+        clientId: 'cluster-id-no-mutation',
+        brokers: ['mock:9092'],
+      });
+      const keysBefore = [
+        ...Object.getOwnPropertyNames(kafkaForTest),
+        ...Object.getOwnPropertySymbols(kafkaForTest),
+      ];
+
+      kafkaForTest.producer();
+      kafkaForTest.consumer({ groupId: 'cluster-id-no-mutation-group' });
+
+      const keysAfter = [
+        ...Object.getOwnPropertyNames(kafkaForTest),
+        ...Object.getOwnPropertySymbols(kafkaForTest),
+      ];
+      assert.deepStrictEqual(keysAfter, keysBefore);
+    });
+
+    it('leaves a non-function module export untouched', () => {
+      const file = instrumentation['_getClusterCaptureFile'](
+        'kafkajs/src/producer/index.js'
+      );
+      const notAFunction = { some: 'object' };
+      assert.strictEqual(file.patch(notAFunction), notAFunction);
+    });
+
+    it('captures params.cluster from the wrapped factory and surfaces it on a span for that client', () => {
+      const file = instrumentation['_getClusterCaptureFile'](
+        'kafkajs/src/producer/index.js'
+      );
+      const fakeClient = { marker: 'fake-client' };
+      const originalFactory = (params?: Record<string, unknown>) => {
+        assert.strictEqual(params?.some, 'param');
+        return fakeClient;
+      };
+
+      const wrapped = file.patch(originalFactory) as typeof originalFactory;
+      const cluster = {
+        brokerPool: { metadata: { clusterId: 'direct-capture-cluster' } },
+      };
+      const result = wrapped({ some: 'param', cluster });
+      assert.strictEqual(result, fakeClient);
+
+      const span = instrumentation['_startProducerSpan'](
+        'direct-capture-topic',
+        { key: null, value: 'v' } as unknown as Message,
+        fakeClient
+      );
+      span.end();
+
+      const spans = getTestSpans();
+      const found = spans.find(s => s.name === 'send direct-capture-topic');
+      assert.ok(found);
+      assert.strictEqual(
+        found!.attributes[ATTR_MESSAGING_KAFKA_CLUSTER_ID],
+        'direct-capture-cluster'
+      );
     });
   });
 
