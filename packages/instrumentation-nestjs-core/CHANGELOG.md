@@ -1,6 +1,64 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.72.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.72.0...instrumentation-nestjs-core-v0.72.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-nestjs-core:** redact sensitive URL query parameters ([#3907](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3907)) ([2f7190a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/2f7190a9f553c411c8fd81b3552c4cc9a8d367cf))
+
+## [0.72.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.71.0...instrumentation-nestjs-core-v0.72.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
+## [0.71.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.70.0...instrumentation-nestjs-core-v0.71.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.69.0...instrumentation-nestjs-core-v0.70.0) (2026-10-15)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-nestjs-core:** "feat(instrumentation-nestjs-core): add support for NestJS 12 ([#3733](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3733))" (#3836)
+
+### Reverts
+
+* **instrumentation-nestjs-core:** "feat(instrumentation-nestjs-core): add support for NestJS 12 ([#3733](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3733))" ([#3836](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3836)) ([086158f](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/086158fc91d6380aeea3f5b0f3207a685a4667d6))
+
+## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.68.0...instrumentation-nestjs-core-v0.69.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+* **instrumentation-nestjs-core:** add support for NestJS 12 ([#3733](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3733)) ([7303430](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7303430bd1deb30e337e2a443f888acd557ca730))
+
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.67.0...instrumentation-nestjs-core-v0.68.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
 ## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-nestjs-core-v0.66.0...instrumentation-nestjs-core-v0.67.0) (2026-07-23)
 
 

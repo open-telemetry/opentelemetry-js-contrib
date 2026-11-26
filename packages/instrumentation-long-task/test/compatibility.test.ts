@@ -4,8 +4,7 @@
  */
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { LongTaskInstrumentation } from '../src';
 import { DummySpanExporter } from './util';
 
@@ -21,17 +20,18 @@ const _globalThis: typeof globalThis =
           : ({} as typeof globalThis);
 
 describe("LongTaskInstrumentation doesn't throw in unsupported environments", () => {
-  let webTracerProvider: WebTracerProvider;
+  let tracerProvider: TracerProvider;
   let dummySpanExporter: DummySpanExporter;
 
   before(() => {
     dummySpanExporter = new DummySpanExporter();
-    webTracerProvider = new WebTracerProvider({
+    tracerProvider = new TracerProvider({
       spanProcessors: [
         new SimpleSpanProcessor({ exporter: dummySpanExporter }),
       ],
     });
-    webTracerProvider.register();
+    trace.setGlobalTracerProvider(tracerProvider);
+    // No context-manager or propagator needed for the tests below.
   });
 
   after(() => {

@@ -12,9 +12,7 @@ process termination.
 
 ## Supported Versions
 
-- Node.js `>=14.10`
-
-<!-- - 14.6.0 - this package uses _private properties_ -->
+- Node.js `>=22.15.0`
 
 ## Example
 
@@ -28,22 +26,18 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { PrometheusExporter } from '@opentelemetry/exporter-prometheus';
 import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 
-const prometheusExporter = new PrometheusExporter({
-  port: 9464,
-  startServer: true
-});
-
 const sdk = new NodeSDK({
-  metricReader: prometheusExporter,
-  instrumentations: [new RuntimeNodeInstrumentation({
-    monitoringPrecision: 5000,
-  })],
+  metricReaders: [
+    // Setup the SDK to export metrics via a Prometheus endpoint.
+    new PrometheusExporter({ port: 9464, startServer: true }),
+  ],
+  instrumentations: [
+    new RuntimeNodeInstrumentation({ monitoringPrecision: 5000 })
+  ],
 });
 
 sdk.start()
 ```
-
-[`NodeSDK`](https://www.npmjs.com/package/@opentelemetry/sdk-node) is the full OpenTelemetry SDK for Node.js that is a layer of abstraction on top of the `@opentelemetry/sdk-metrics` and `@opentelemetry/sdk-trace-*` packages. By specifying `metricReader`, it will initialize the metrics SDK and creates a `MeterProvider`. [`@opentelemetry/exporter-prometheus`](https://www.npmjs.com/package/@opentelemetry/exporter-prometheus) will output metrics collected by registered instrumentation on a `/metrics` endpoint.
 
 Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should see:
 
@@ -54,11 +48,7 @@ Go to [`localhost:9464/metrics`](http://localhost:9464/metrics), and you should 
 nodejs_performance_event_loop_utilization 0.010140079547955264
 ```
 
-> Metrics will only be exported after it has collected two ELU readings (at least approximately `RuntimeNodeInstrumentationConfig.monitoringPrecision` milliseconds after initialization). Otherwise, you may see:
->
-> ```txt
-> # no registered metrics
-> ```
+> On the very first metrics collection the event loop utilization and time metrics may report zero or near-zero values while the instrumentation establishes a baseline.
 
 ### Options
 
@@ -66,9 +56,9 @@ nodejs_performance_event_loop_utilization 0.010140079547955264
 
 | name                                        | type  | unit        | default | description                                                                                                                                                                                                                                                                                     |
 |---------------------------------------------|-------|-------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`monitoringPrecision`](./src/types.ts#L25) | `int` | millisecond | `10`    | The approximate number of milliseconds for which to calculate event loop utilization averages. A larger value will result in more accurate averages at the expense of less granular data. Should be set to below the scrape interval of your metrics collector to avoid duplicated data points. |
-| [`captureUncaughtException`](./src/types.ts#L31) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
-| [`applyCustomExceptionAttributes`](./src/types.ts#L43) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
+| [`monitoringPrecision`](./src/types.ts) | `int` | millisecond | `10`    | The resolution in milliseconds for the event loop delay histogram (`perf_hooks.monitorEventLoopDelay`). A smaller value gives finer-grained delay samples at the cost of more overhead. Has no effect on event loop utilization or time metrics. |
+| [`captureUncaughtException`](./src/types.ts) | `bool` | - | `false` | Whether to emit a `LogRecord` for uncaught exceptions (severity `FATAL`). Uses the `uncaughtExceptionMonitor` process event. |
+| [`applyCustomExceptionAttributes`](./src/types.ts) | `function` | - | `undefined` | Optional callback to attach custom attributes to emitted exception log records. |
 
 ## Semantic Conventions
 

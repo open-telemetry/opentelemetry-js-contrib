@@ -20,42 +20,82 @@ An example run looks like this:
 
 ```bash
 $ node -r ./telemetry.js app.js
-{"name":"myapp","hostname":"amachine.local","pid":93017,"level":20,"msg":"hi","time":"2023-09-27T23:24:06.074Z","v":0}
+{"name":"myapp","hostname":"mymachine.local","pid":88561,"level":20,"foo":"bar","msg":"hi","time":"2026-09-24T19:34:55.284Z","v":0}
 {
-  timestamp: 1695857046074000,
+  resource: {
+    attributes: {
+      'service.name': 'bunyan-example',
+      'host.name': 'mymachine.local',
+      'host.arch': 'arm64',
+      'host.id': '...'
+      'process.pid': 88561,
+      'process.executable.name': 'node',
+      'process.executable.path': '/Users/bob/.nvm/versions/node/v24.20.0/bin/node',
+      'process.command_args': [
+        '/Users/bob/.nvm/versions/node/v24.20.0/bin/node',
+        '-r',
+        './telemetry.js',
+        '/Users/bob/src/opentelemetry-js-contrib/examples/bunyan/app.js'
+      ],
+      'process.runtime.version': '24.20.0',
+      'process.runtime.name': 'nodejs',
+      'process.runtime.description': 'Node.js',
+      'process.command': '/Users/bob/src/opentelemetry-js-contrib/examples/bunyan/app.js',
+      'process.owner': 'bob',
+      'telemetry.sdk.language': 'nodejs',
+      'telemetry.sdk.name': 'opentelemetry',
+      'telemetry.sdk.version': '2.11.0'
+    }
+  },
+  instrumentationScope: {
+    name: '@opentelemetry/instrumentation-bunyan',
+    version: '0.67.0',
+    schemaUrl: undefined
+  },
+  timestamp: 1790278495284000,
   traceId: undefined,
   spanId: undefined,
   traceFlags: undefined,
   severityText: 'debug',
   severityNumber: 5,
+  eventName: undefined,
   body: 'hi',
   attributes: { name: 'myapp', foo: 'bar' }
 }
-{"name":"myapp","hostname":"amachine.local","pid":93017,"level":30,"msg":"this record will have trace_id et al fields for the current span","time":"2023-09-27T23:24:06.079Z","v":0,"trace_id":"af5ce23816c4feabb713ee1dc84ef4d3","span_id":"5f50e181ec7bc621","trace_flags":"01"}
+
+{"name":"myapp","hostname":"mymachine.local","pid":88561,"level":30,"msg":"this record will have trace_id et al fields for the current span","time":"2026-09-24T19:34:55.286Z","v":0,"trace_id":"99fce6a1282980264ba243f469863814","span_id":"6bbaed70a29905b6","trace_flags":"01"}
 {
-  timestamp: 1695857046079000,
-  traceId: 'af5ce23816c4feabb713ee1dc84ef4d3',
-  spanId: '5f50e181ec7bc621',
+  resource: {
+    attributes: { ... }
+  },
+  instrumentationScope: {
+    name: '@opentelemetry/instrumentation-bunyan',
+    version: '0.67.0',
+    schemaUrl: undefined
+  },
+  timestamp: 1790278495286000,
+  traceId: '99fce6a1282980264ba243f469863814',
+  spanId: '6bbaed70a29905b6',
   traceFlags: 1,
   severityText: 'info',
   severityNumber: 9,
+  eventName: undefined,
   body: 'this record will have trace_id et al fields for the current span',
-  attributes: {
-    name: 'myapp',
-    trace_id: 'af5ce23816c4feabb713ee1dc84ef4d3',
-    span_id: '5f50e181ec7bc621',
-    trace_flags: '01'
-  }
+  attributes: { name: 'myapp' }
 }
 {
-  traceId: 'af5ce23816c4feabb713ee1dc84ef4d3',
-  parentId: undefined,
+  resource: {
+    attributes: { ... }
+  },
+  instrumentationScope: { name: 'example', version: undefined, schemaUrl: undefined },
+  traceId: '99fce6a1282980264ba243f469863814',
+  parentSpanContext: undefined,
   traceState: undefined,
   name: 'manual-span',
-  id: '5f50e181ec7bc621',
+  id: '6bbaed70a29905b6',
   kind: 0,
-  timestamp: 1695857046079000,
-  duration: 1407.196,
+  timestamp: 1790278495286000,
+  duration: 198.334,
   attributes: {},
   status: { code: 0 },
   events: [],
@@ -77,38 +117,9 @@ this, then the added Bunyan stream will be a no-op.)
 
 # Resource attributes
 
-One thing the `ConsoleLogRecordExporter` output above does not show is some
-additional data that is included in exported log records: resource attributes.
-
 Every OpenTelemetry LoggerProvider has a "resource". The OpenTelemetry SDK
 provides configurable "resource detectors" that collect data that is then
 included with log records. This can include "host.name" (provided by the
-`HostDetector`) and "process.pid" (provided by the `ProcessDetector`) -- which
-is why this instrumentation does **not** include the Bunyan "hostname" and "pid"
-fields in the log record attributes.
-
-When configured with the `HostDetector` and `ProcessDetector` (as shown in
-"telemetry.js") the log records above also include resource attributes such
-as the following:
-
-```js
-{
-  'process.pid': 93017,
-  'process.executable.name': 'node',
-  'process.executable.path': '/Users/trentm/.nvm/versions/node/v18.18.2/bin/node',
-  'process.command_args': [
-    '/Users/trentm/.nvm/versions/node/v18.18.2/bin/node',
-    '-r',
-    './telemetry.js',
-    '/Users/trentm/src/opentelemetry-js-contrib/packages/instrumentation-bunyan/examples/app.js'
-  ],
-  'process.runtime.version': '18.18.2',
-  'process.runtime.name': 'nodejs',
-  'process.runtime.description': 'Node.js',
-  'process.command': '/Users/trentm/src/opentelemetry-js-contrib/packages/instrumentation-bunyan/examples/app.js',
-  'process.owner': 'trentm'
-  'host.name': 'amachine.local',
-  'host.arch': 'amd64',
-  'host.id': '...'
-}
-```
+`HostDetector`) and "process.pid" (provided by the `ProcessDetector`).
+`instrumentation-bunyan` drops the Bunyan "hostname" and "pid" fields from
+OTel Log Records to avoid duplication.

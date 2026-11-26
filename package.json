@@ -19,8 +19,8 @@
     "test:ci:affected": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env nx affected -t test",
     "test:browser": "nx run-many -t test:browser",
     "test:browser:ci:affected": "nx affected -t test:browser",
-    "test-all-versions": "npm run --if-present test-all-versions --workspaces",
-    "test-all-versions:ci:affected": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env sh -c 'npm --loglevel=silent run list:affected | xargs -I {} -t npm run --if-present test-all-versions -w {}'",
+    "test-all-versions": "cross-env NPM_CONFIG_MIN_RELEASE_AGE=0 npm run --if-present test-all-versions --workspaces",
+    "test-all-versions:ci:affected": "cross-env NODE_OPTIONS='-r dotenv/config' DOTENV_CONFIG_PATH=./test/test-services.env NPM_CONFIG_MIN_RELEASE_AGE=0 sh -c 'npm --loglevel=silent run list:affected | xargs -I {} -t npm run --if-present test-all-versions -w {}'",
     "test-services:start": "docker compose -f ./test/docker-compose.yaml up -d --wait",
     "test-services:start:affected": "docker compose -f test/docker-compose.yaml up -d --wait $(./scripts/npm-run-on-affected.sh -s --if-present test-services:ls)",
     "test-services:stop": "docker compose -f ./test/docker-compose.yaml down",
@@ -34,7 +34,9 @@
     "lint:prettier": "prettier --check .",
     "lint:prettier:fix": "prettier --write .",
     "lint:readme": "nx run-many -t lint:readme",
-    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts"
+    "lint:release-please": "node scripts/check-release-please.mjs",
+    "lint:semconv-deps": "./scripts/lint-semconv-deps.mjs -x packages/contrib-test-utils/src/resource-assertions.ts",
+    "verify-pack": "node scripts/verify-pack.mjs"
   },
   "keywords": [
     "opentelemetry",
@@ -47,10 +49,11 @@
   "author": "OpenTelemetry Authors",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@babel/core": "7.29.6",
+    "@babel/core": "7.29.13",
     "@babel/preset-env": "7.28.5",
-    "@eslint/js": "9.39.4",
+    "@eslint/js": "9.39.5",
     "@nx/eslint": "20.8.4",
+    "@opentelemetry/api": "^1.10.0",
     "@types/mocha": "10.0.10",
     "@types/node": "22.17.1",
     "@types/semver": "7.7.1",
@@ -61,30 +64,31 @@
     "babel-loader": "10.0.0",
     "babel-plugin-istanbul": "8.0.0",
     "cross-env": "10.1.0",
-    "eslint": "9.39.4",
+    "eslint": "9.39.5",
     "eslint-plugin-baseline-js": "0.4.2",
     "eslint-plugin-import": "2.32.0",
     "eslint-plugin-n": "17.21.3",
     "eslint-plugin-yet-another-license-header": "0.2.0",
     "expect": "29.7.0",
-    "glob": "13.0.6",
+    "glob": "14.0.6",
     "globals": "^17.0.0",
     "karma": "6.4.4",
     "karma-chrome-launcher": "3.2.0",
     "karma-coverage": "2.2.1",
     "karma-mocha": "2.0.1",
-    "karma-spec-reporter": "0.0.36",
+    "karma-spec-reporter": "0.0.37",
     "karma-webpack": "5.0.1",
-    "knip": "6.23.0",
-    "lerna": "9.0.7",
+    "knip": "6.41.0",
+    "lerna": "10.1.2",
     "markdownlint-cli2": "0.19.1",
-    "minimatch": "10.2.5",
+    "minimatch": "11.0.8",
     "mocha": "11.7.5",
-    "nock": "14.0.15",
+    "nock": "14.0.17",
     "nx": "20.8.4",
     "nyc": "17.1.0",
     "prettier": "3.6.2",
     "process": "0.11.10",
+    "publint": "0.3.25",
     "rimraf": "5.0.10",
     "safe-stable-stringify": "2.5.0",
     "semver": "7.7.4",
@@ -92,6 +96,7 @@
     "test-all-versions": "6.2.0",
     "ts-loader": "9.5.7",
     "ts-node": "10.9.2",
+    "tsdown": "0.23.7",
     "typescript": "5.0.4",
     "typescript-eslint": "8.41.0",
     "util": "0.12.5",
@@ -101,5 +106,17 @@
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devEngines": {
+    "runtime": {
+      "name": "node",
+      "version": "^24.11.1 || >=26.0.0",
+      "onFail": "warn"
+    },
+    "packageManager": {
+      "name": "npm",
+      "version": ">=11.10.0",
+      "onFail": "warn"
+    }
+  }
 }

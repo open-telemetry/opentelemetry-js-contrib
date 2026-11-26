@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import { createTestNodeSdk } from '@opentelemetry/contrib-test-utils';
 
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { ExpressInstrumentation } from '../../build/src/index.js';
+import { ExpressInstrumentation } from '../../dist/index.mjs';
 
 const sdk = createTestNodeSdk({
   serviceName: 'use-express-nested',

@@ -4,11 +4,10 @@
  */
 const originalSetTimeout = window.setTimeout;
 
-import { trace } from '@opentelemetry/api';
+import { context, trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
 import * as tracing from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { UserInteractionInstrumentation } from '../src';
@@ -30,7 +29,7 @@ describe('UserInteractionInstrumentation', () => {
   describe('when zone.js is NOT available', () => {
     let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
-    let webTracerProvider: WebTracerProvider;
+    let tracerProvider: tracing.TracerProvider;
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
@@ -53,7 +52,7 @@ describe('UserInteractionInstrumentation', () => {
         });
 
       registerInstrumentations({
-        tracerProvider: webTracerProvider,
+        tracerProvider,
         instrumentations: [
           userInteractionInstrumentation,
           new XMLHttpRequestInstrumentation(),
@@ -79,12 +78,16 @@ describe('UserInteractionInstrumentation', () => {
 
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
-      webTracerProvider = new WebTracerProvider({
+      tracerProvider = new tracing.TracerProvider({
         spanProcessors: [
           new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
         ],
       });
-      webTracerProvider.register();
+      trace.setGlobalTracerProvider(tracerProvider);
+      context.setGlobalContextManager(
+        new tracing.StackContextManager().enable()
+      );
+      // A global propagator is not necessary for tests in this file.
 
       registerTestInstrumentations();
 
@@ -714,6 +717,52 @@ describe('UserInteractionInstrumentation', () => {
       document.addEventListener('click', listener, null);
       // @ts-expect-error see above
       document.removeEventListener('click', listener, null);
+    });
+
+    it('should preserve bare global addEventListener calls', () => {
+      // web-vitals calls the global event-listener function without a receiver.
+      // The native browser implementation accepts that form, so instrumentation
+      // must not use the undefined receiver as a WeakMap key first.
+      const { addEventListener, removeEventListener } = window;
+      let calls = 0;
+      const listener = () => {
+        calls++;
+      };
+
+      addEventListener('open-telemetry-bare-listener', listener);
+      window.dispatchEvent(new Event('open-telemetry-bare-listener'));
+      removeEventListener('open-telemetry-bare-listener', listener);
+
+      assert.strictEqual(calls, 1);
+    });
+
+    it('should preserve valid weak-map symbols and delegate invalid receivers', () => {
+      // Symbols cannot be EventTarget receivers in a browser, so use the real
+      // wrapper with a narrow original-function double to assert its boundary.
+      type OriginalAddEventListener = (
+        type: string,
+        listener: EventListenerOrEventListenerObject | null,
+        useCapture?: boolean | AddEventListenerOptions
+      ) => void;
+      const original = sandbox.stub();
+      const patched = (
+        userInteractionInstrumentation as unknown as {
+          _patchAddEventListener: () => (
+            original: OriginalAddEventListener
+          ) => unknown;
+        }
+      )._patchAddEventListener()(original) as {
+        call(thisArg: unknown, type: string, listener: () => void): unknown;
+      };
+      const listener = () => {};
+
+      assert.doesNotThrow(() => {
+        patched.call(Symbol('unregistered'), 'click', listener);
+      });
+      assert.doesNotThrow(() => {
+        patched.call(Symbol.for('registered'), 'click', listener);
+      });
+      assert.strictEqual(original.callCount, 2);
     });
 
     it('should handle disable', () => {

@@ -15,7 +15,7 @@ npm install --save @opentelemetry/instrumentation-host-metrics
 
 ## Supported Versions
 
-- Node.js `^18.19.0 || >=20.6.0`
+- Node.js `>=22.15.0`
 
 ## Usage
 

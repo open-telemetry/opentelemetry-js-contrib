@@ -1,7 +1,14 @@
 ioredis:
-  # Ignoring v4.19.0. Tests never ends. Caused by https://github.com/luin/ioredis/pull/1219
-  versions:
-    include: '>=2.0.0 <6'
-    exclude: '4.19.0'
-    mode: max-7
-  commands: npm run test
+  - versions:
+      # Ignoring v4.19.0. Tests never ends. Caused by https://github.com/luin/ioredis/pull/1219
+      include: '>=2.0.0 <6'
+      exclude: '4.19.0'
+      mode: max-7
+    commands: npm run test
+  - versions:
+      include: '>=6.0.0 <7'
+      mode: max-7
+    # ioredis v6 requires Node.js v20 or later.
+    # https://github.com/redis/ioredis/releases/tag/v6.0.0
+    node: ">=20"
+    commands: npm run test

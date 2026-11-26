@@ -31,6 +31,14 @@ export function defaultSanitizeUrl(url: string): string {
     'client_id',
     'signature',
     'hash',
+    // Keys from the URL semantic conventions (matched case-sensitively).
+    'sig',
+    'Signature',
+    'AWSAccessKeyId',
+    'X-Goog-Signature',
+    'X-Amz-Signature',
+    'X-Amz-Credential',
+    'X-Amz-Security-Token',
   ];
   try {
     const urlObj = new URL(url);

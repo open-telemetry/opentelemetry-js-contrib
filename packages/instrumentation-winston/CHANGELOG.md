@@ -1,6 +1,91 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.70.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.69.0...instrumentation-winston-v0.70.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+## [0.69.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.68.1...instrumentation-winston-v0.69.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.34.0 to ^0.35.0
+
+## [0.68.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.68.0...instrumentation-winston-v0.68.1) (2026-10-16)
+
+
+### Reverts
+
+* revert "feat(instrumentation-winston): add @opentelemetry/winston-transport as peer dependency ([#3771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3771)) ([#3776](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3776))" ([#3842](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3842)) ([5bdb354](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5bdb35488bd6321f1dc8e34f381252f4174610a3))
+
+## [0.68.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.67.0...instrumentation-winston-v0.68.0) (2026-10-15)
+
+
+### Features
+
+* **instrumentation-winston:** add @opentelemetry/winston-transport as peer dependency ([#3771](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3771)) ([#3776](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3776)) ([79df7cc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79df7ccf47e0cecba5956cdae4191f731150745d))
+* **winston:** support native OpenTelemetry log levels and custom severity mapping ([#3345](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3345)) ([#3740](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3740)) ([6089306](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/60893066c1b6326bdd22384f150f7e742b839d15))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.33.0 to ^0.34.0
+  * peerDependencies
+    * @opentelemetry/winston-transport bumped from ^0.32.0 to ^0.34.0
+
+## [0.67.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.66.0...instrumentation-winston-v0.67.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.32.0 to ^0.33.0
+
+## [0.66.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.65.0...instrumentation-winston-v0.66.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-winston:** preserve log trace context ([#3682](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3682)) ([e1d4daa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1d4daa2423e708fab7c95671728a8e80223fbea))
+* **winston-transport:** serialize Error attributes ([#3672](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3672)) ([82a5bc2](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/82a5bc2b90d6c84f93069e928bb0213e5a27e33f))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/winston-transport bumped from ^0.31.0 to ^0.32.0
+
 ## [0.65.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-winston-v0.64.0...instrumentation-winston-v0.65.0) (2026-07-23)
 
 

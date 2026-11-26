@@ -2,12 +2,11 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import { trace } from '@opentelemetry/api';
+import { diag, DiagLogLevel, trace } from '@opentelemetry/api';
 import { hrTimeToMilliseconds, hrTimeToNanoseconds } from '@opentelemetry/core';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { SimpleSpanProcessor } from '@opentelemetry/sdk-trace';
-import { ReadableSpan } from '@opentelemetry/sdk-trace';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { ReadableSpan, TracerProvider } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import { LongTaskInstrumentation } from '../src';
@@ -42,7 +41,7 @@ async function waitForLongTask(exportSpy: sinon.SinonStub) {
 describe('LongTaskInstrumentation', () => {
   let longTaskInstrumentation: LongTaskInstrumentation;
   let sandbox: sinon.SinonSandbox;
-  let webTracerProvider: WebTracerProvider;
+  let tracerProvider: TracerProvider;
   let dummySpanExporter: DummySpanExporter;
   let exportSpy: sinon.SinonStub;
   let deregister: () => void;
@@ -51,12 +50,13 @@ describe('LongTaskInstrumentation', () => {
     sandbox = sinon.createSandbox();
     dummySpanExporter = new DummySpanExporter();
     exportSpy = sandbox.stub(dummySpanExporter, 'export');
-    webTracerProvider = new WebTracerProvider({
+    tracerProvider = new TracerProvider({
       spanProcessors: [
         new SimpleSpanProcessor({ exporter: dummySpanExporter }),
       ],
     });
-    webTracerProvider.register();
+    trace.setGlobalTracerProvider(tracerProvider);
+    // No context-manager or propagator needed for the tests below.
 
     longTaskInstrumentation = new LongTaskInstrumentation({
       enabled: false,
@@ -71,7 +71,32 @@ describe('LongTaskInstrumentation', () => {
     deregister();
     sandbox.restore();
     exportSpy.restore();
+    diag.disable();
     trace.disable();
+  });
+
+  it('should warn that the instrumentation is deprecated', () => {
+    const warn = sandbox.spy();
+    diag.setLogger(
+      {
+        error() {},
+        warn,
+        info() {},
+        debug() {},
+        verbose() {},
+      },
+      DiagLogLevel.WARN
+    );
+
+    const instrumentation = new LongTaskInstrumentation({ enabled: false });
+
+    assert.ok(
+      warn.calledWithExactly(
+        '@opentelemetry/instrumentation-long-task is deprecated. Use LongAnimationFrameInstrumentation from @opentelemetry/browser-instrumentation instead.'
+      )
+    );
+    assert.strictEqual(warn.callCount, 1);
+    instrumentation.disable();
   });
 
   it('should report long taking tasks', async () => {

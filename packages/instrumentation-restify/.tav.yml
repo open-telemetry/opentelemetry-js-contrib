@@ -1,5 +1,13 @@
 restify:
   - versions:
+      include: '>=12.0.0 <13'
+      mode: latest-minors
+    node: ">=22"
+    commands: npm run test
+    env:
+      - SKIP_TEST_IF_DISABLED=true
+
+  - versions:
       include: '>=10.0.0 <12'
       mode: latest-minors
     node: ">=18 <24"
