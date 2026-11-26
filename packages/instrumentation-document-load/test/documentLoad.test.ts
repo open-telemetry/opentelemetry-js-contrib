@@ -260,13 +260,6 @@ describe('DocumentLoad Instrumentation', () => {
 
   describe('isEnabled', () => {
     it('should follow enable() and disable()', () => {
-      // Not 'complete': enable() then only adds a 'load' listener that
-      // disable() removes, instead of scheduling a collection that outlives
-      // the test.
-      Object.defineProperty(window.document, 'readyState', {
-        writable: true,
-        value: 'loading',
-      });
       assert.strictEqual(plugin.isEnabled(), false);
       plugin.enable();
       assert.strictEqual(plugin.isEnabled(), true);
@@ -291,6 +284,42 @@ describe('DocumentLoad Instrumentation', () => {
       setTimeout(() => {
         assert.strictEqual(window.document.readyState, 'complete');
         assert.strictEqual(spyEntries.callCount, 3);
+        done();
+      });
+    });
+
+    it('should not collect the performance when disabled before the collection runs', done => {
+      plugin.enable();
+      plugin.disable();
+      setTimeout(() => {
+        assert.strictEqual(spyEntries.callCount, 0);
+        assert.strictEqual(exporter.getFinishedSpans().length, 0);
+        done();
+      });
+    });
+
+    it('should not collect the performance when disabled after constructor-time enable', done => {
+      plugin = new DocumentLoadInstrumentation();
+      plugin.setTracerProvider(provider);
+      plugin.disable();
+      setTimeout(() => {
+        assert.strictEqual(spyEntries.callCount, 0);
+        assert.strictEqual(exporter.getFinishedSpans().length, 0);
+        done();
+      });
+    });
+
+    it('should collect the performance once when enabled again before the collection runs', done => {
+      plugin.enable();
+      plugin.disable();
+      plugin.enable();
+      plugin.enable();
+      setTimeout(() => {
+        assert.strictEqual(spyEntries.callCount, 3);
+        const rootSpans = exporter
+          .getFinishedSpans()
+          .filter(span => span.name === 'documentLoad');
+        assert.strictEqual(rootSpans.length, 1);
         done();
       });
     });
@@ -331,6 +360,17 @@ describe('DocumentLoad Instrumentation', () => {
       );
       setTimeout(() => {
         assert.strictEqual(spyEntries.callCount, 3);
+        done();
+      });
+    });
+
+    it('should not collect performance when disabled after the document load event', done => {
+      plugin.enable();
+      window.dispatchEvent(new Event('load'));
+      plugin.disable();
+      setTimeout(() => {
+        assert.strictEqual(spyEntries.callCount, 0);
+        assert.strictEqual(exporter.getFinishedSpans().length, 0);
         done();
       });
     });
