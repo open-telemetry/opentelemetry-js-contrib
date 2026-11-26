@@ -4,8 +4,10 @@
  */
 
 /**
- * Default URL sanitization function that redacts credentials and sensitive query parameters.
- * This is the default implementation used when no custom sanitizeUrl callback is provided.
+ * URL sanitization function that redacts credentials, the query parameters
+ * that the default redaction covers, and other common sensitive ones such as
+ * `password`, `token` and `session`. It is not the default: it is only used
+ * when passed as `sanitizeUrl` or called from your own `sanitizeUrl`.
  *
  * @param url - The URL to sanitize
  * @returns The sanitized URL with credentials and sensitive parameters redacted
