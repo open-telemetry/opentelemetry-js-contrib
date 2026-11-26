@@ -90,11 +90,17 @@ describe('ExceptionInstrumentation', () => {
       const instrumentation = new ExceptionInstrumentation({
         enabled: false,
       });
-      assert.strictEqual(instrumentation.isEnabled(), false);
-      instrumentation.enable();
-      assert.strictEqual(instrumentation.isEnabled(), true);
-      instrumentation.disable();
-      assert.strictEqual(instrumentation.isEnabled(), false);
+      try {
+        assert.strictEqual(instrumentation.isEnabled(), false);
+        instrumentation.enable();
+        assert.strictEqual(instrumentation.isEnabled(), true);
+        instrumentation.disable();
+        assert.strictEqual(instrumentation.isEnabled(), false);
+      } finally {
+        // Remove the window listeners even if an assertion fails, so they
+        // don't record errors from later tests.
+        instrumentation.disable();
+      }
     });
   });
 
