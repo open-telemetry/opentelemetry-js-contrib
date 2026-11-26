@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -61,7 +50,7 @@ export class InstanaPropagator implements TextMapPropagator {
    * Injects the current span context into Instana's vendor specific trace correlation headers (X-INSTANA-T, X-INSTANA-S
    * and X-INSTANA-L).
    */
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) {
       return;
@@ -78,7 +67,11 @@ export class InstanaPropagator implements TextMapPropagator {
    * Extracts the span context from Instana's vendor specific trace correlation headers (X-INSTANA-T, X-INSTANA-S
    * and X-INSTANA-L).
    */
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     let traceId = readHeader(carrier, getter, INSTANA_TRACE_ID_HEADER);
     if (traceId && traceId.length < 32) {
       traceId = traceId.padStart(32, '0');
@@ -119,7 +112,7 @@ export class InstanaPropagator implements TextMapPropagator {
     return context;
   }
 
-  fields(): string[] {
+  public fields(): string[] {
     return FIELDS.slice();
   }
 }

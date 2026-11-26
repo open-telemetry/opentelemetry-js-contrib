@@ -1,22 +1,11 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { ExceptionInstrumentation } from '../src/instrumentation';
-// @ts-expect-error: not an export, but we want the prebundled version
-import chai from 'chai/chai.js';
+// @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
+import { assert } from 'chai';
 import {
   LoggerProvider,
   SimpleLogRecordProcessor,
@@ -28,15 +17,16 @@ import {
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
 } from '@opentelemetry/semantic-conventions';
-import { logs } from '@opentelemetry/api-logs';
-const assert = chai.assert;
+import { logs } from '@opentelemetry/api';
 
-const STRING_ERROR = 'Some error string.'
+const STRING_ERROR = 'Some error string.';
 
 describe('ExceptionInstrumentation', () => {
   const exporter = new InMemoryLogRecordExporter();
-  const logRecordProcessor = new SimpleLogRecordProcessor(exporter);
-  const loggerProvider = new LoggerProvider({processors:[logRecordProcessor]});
+  const logRecordProcessor = new SimpleLogRecordProcessor({ exporter });
+  const loggerProvider = new LoggerProvider({
+    processors: [logRecordProcessor],
+  });
   logs.setGlobalLoggerProvider(loggerProvider);
 
   // Helper function to throw an error of a specific type so that we can allow the error to propagate and test the instrumentation.
@@ -96,17 +86,15 @@ describe('ExceptionInstrumentation', () => {
   });
 
   describe('throwing an error', () => {
-    const instr = new ExceptionInstrumentation();
+    let disableInstrumentations: () => void;
     beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [new ExceptionInstrumentation()],
       });
-
-      instr.enable();
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
 
@@ -139,8 +127,14 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], 'Something happened!');
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_TYPE], 'ValidationError');
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          'Something happened!'
+        );
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_TYPE],
+          'ValidationError'
+        );
         assert.strictEqual(event.attributes[ATTR_EXCEPTION_STACKTRACE], stack);
       }, 0);
     });
@@ -154,7 +148,10 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          STRING_ERROR
+        );
       }, 0);
     });
   });
@@ -168,21 +165,24 @@ describe('ExceptionInstrumentation', () => {
         'app.custom.exception': error.message.toLocaleUpperCase(),
       };
     };
-    const instr = new ExceptionInstrumentation({
-      applyCustomAttributes: applyCustomAttrs,
-    });
-    beforeEach(() => {
-      registerInstrumentations({
-        instrumentations: [instr],
-      });
 
-      instr.enable();
+    let disableInstrumentations: () => void;
+
+    beforeEach(() => {
+      disableInstrumentations = registerInstrumentations({
+        instrumentations: [
+          new ExceptionInstrumentation({
+            applyCustomAttributes: applyCustomAttrs,
+          }),
+        ],
+      });
     });
 
     afterEach(() => {
-      instr.disable();
+      disableInstrumentations();
       exporter.reset();
     });
+
     it('should add custom attributes to the event', async () => {
       setTimeout(() => {
         throwErr('Something happened!');
@@ -208,8 +208,14 @@ describe('ExceptionInstrumentation', () => {
         const events = exporter.getFinishedLogRecords();
         assert.ok(events.length > 0, 'Expected at least one log record');
         const event = events[0];
-        assert.strictEqual(event.attributes[ATTR_EXCEPTION_MESSAGE], STRING_ERROR);
-        assert.strictEqual(event.attributes['app.custom.exception'], STRING_ERROR.toLocaleUpperCase());
+        assert.strictEqual(
+          event.attributes[ATTR_EXCEPTION_MESSAGE],
+          STRING_ERROR
+        );
+        assert.strictEqual(
+          event.attributes['app.custom.exception'],
+          STRING_ERROR.toLocaleUpperCase()
+        );
       }, 0);
     });
   });

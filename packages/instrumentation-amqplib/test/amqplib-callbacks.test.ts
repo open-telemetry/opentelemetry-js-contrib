@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import 'mocha';
 import { expect } from 'expect';
@@ -26,11 +15,11 @@ const instrumentation = registerInstrumentationTesting(
 );
 
 import * as amqpCallback from 'amqplib/callback_api';
+import { ATTR_MESSAGING_SYSTEM } from '../src/semconv';
 import {
-  ATTR_MESSAGING_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 import {
   ATTR_MESSAGING_DESTINATION,
   ATTR_MESSAGING_DESTINATION_KIND,
@@ -155,10 +144,10 @@ describe('amqplib instrumentation callback model', () => {
           '0.9.1'
         );
         expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toEqual(censoredUrl);
-        expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
 
@@ -179,10 +168,10 @@ describe('amqplib instrumentation callback model', () => {
           '0.9.1'
         );
         expect(consumeSpan.attributes[ATTR_MESSAGING_URL]).toEqual(censoredUrl);
-        expect(consumeSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(consumeSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(consumeSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(consumeSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
 
@@ -319,10 +308,10 @@ describe('amqplib instrumentation callback model', () => {
           expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toEqual(
             censoredUrl
           );
-          expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+          expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
             TEST_RABBITMQ_HOST
           );
-          expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+          expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
             TEST_RABBITMQ_PORT
           );
 
@@ -349,10 +338,10 @@ describe('amqplib instrumentation callback model', () => {
           expect(consumeSpan.attributes[ATTR_MESSAGING_URL]).toEqual(
             censoredUrl
           );
-          expect(consumeSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+          expect(consumeSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
             TEST_RABBITMQ_HOST
           );
-          expect(consumeSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+          expect(consumeSpan.attributes[ATTR_SERVER_PORT]).toEqual(
             TEST_RABBITMQ_PORT
           );
 
@@ -465,10 +454,10 @@ describe('amqplib instrumentation callback model', () => {
           '0.9.1'
         );
         expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toEqual(censoredUrl);
-        expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
 
@@ -489,10 +478,10 @@ describe('amqplib instrumentation callback model', () => {
           '0.9.1'
         );
         expect(consumeSpan.attributes[ATTR_MESSAGING_URL]).toEqual(censoredUrl);
-        expect(consumeSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+        expect(consumeSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
           TEST_RABBITMQ_HOST
         );
-        expect(consumeSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+        expect(consumeSpan.attributes[ATTR_SERVER_PORT]).toEqual(
           TEST_RABBITMQ_PORT
         );
 
@@ -587,10 +576,10 @@ describe('amqplib instrumentation callback model', () => {
           expect(publishSpan.attributes[ATTR_MESSAGING_URL]).toEqual(
             censoredUrl
           );
-          expect(publishSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+          expect(publishSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
             TEST_RABBITMQ_HOST
           );
-          expect(publishSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+          expect(publishSpan.attributes[ATTR_SERVER_PORT]).toEqual(
             TEST_RABBITMQ_PORT
           );
 
@@ -617,10 +606,10 @@ describe('amqplib instrumentation callback model', () => {
           expect(consumeSpan.attributes[ATTR_MESSAGING_URL]).toEqual(
             censoredUrl
           );
-          expect(consumeSpan.attributes[ATTR_NET_PEER_NAME]).toEqual(
+          expect(consumeSpan.attributes[ATTR_SERVER_ADDRESS]).toEqual(
             TEST_RABBITMQ_HOST
           );
-          expect(consumeSpan.attributes[ATTR_NET_PEER_PORT]).toEqual(
+          expect(consumeSpan.attributes[ATTR_SERVER_PORT]).toEqual(
             TEST_RABBITMQ_PORT
           );
 

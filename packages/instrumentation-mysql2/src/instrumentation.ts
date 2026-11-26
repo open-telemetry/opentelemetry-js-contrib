@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as api from '@opentelemetry/api';
@@ -21,14 +10,7 @@ import {
   InstrumentationNodeModuleFile,
   isWrapped,
   safeExecuteInTheMiddle,
-  SemconvStability,
-  semconvStabilityFromStr,
 } from '@opentelemetry/instrumentation';
-import {
-  DB_SYSTEM_VALUE_MYSQL,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-} from './semconv';
 import { addSqlCommenterComment } from '@opentelemetry/sql-common';
 import type * as mysqlTypes from 'mysql2';
 import { MySQL2InstrumentationConfig } from './types';
@@ -52,24 +34,8 @@ type formatType = typeof mysqlTypes.format;
 const supportedVersions = ['>=1.4.2 <4'];
 
 export class MySQL2Instrumentation extends InstrumentationBase<MySQL2InstrumentationConfig> {
-  private _netSemconvStability!: SemconvStability;
-  private _dbSemconvStability!: SemconvStability;
-
   constructor(config: MySQL2InstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-    this._setSemconvStabilityFromEnv();
-  }
-
-  // Used for testing.
-  private _setSemconvStabilityFromEnv() {
-    this._netSemconvStability = semconvStabilityFromStr(
-      'http',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
-    this._dbSemconvStability = semconvStabilityFromStr(
-      'database',
-      process.env.OTEL_SEMCONV_STABILITY_OPT_IN
-    );
   }
 
   protected init() {
@@ -159,11 +125,7 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
         const { maskStatement, maskStatementHook, responseHook } =
           thisPlugin.getConfig();
 
-        const attributes: api.Attributes = getConnectionAttributes(
-          this.config,
-          thisPlugin._dbSemconvStability,
-          thisPlugin._netSemconvStability
-        );
+        const attributes: api.Attributes = getConnectionAttributes(this.config);
         const dbQueryText = getQueryText(
           query,
           format,
@@ -171,14 +133,9 @@ export class MySQL2Instrumentation extends InstrumentationBase<MySQL2Instrumenta
           maskStatement,
           maskStatementHook
         );
-        if (thisPlugin._dbSemconvStability & SemconvStability.OLD) {
-          attributes[ATTR_DB_SYSTEM] = DB_SYSTEM_VALUE_MYSQL;
-          attributes[ATTR_DB_STATEMENT] = dbQueryText;
-        }
-        if (thisPlugin._dbSemconvStability & SemconvStability.STABLE) {
-          attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
-          attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
-        }
+
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
 
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: api.SpanKind.CLIENT,

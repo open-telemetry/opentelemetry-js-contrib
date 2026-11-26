@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as diagch from 'diagnostics_channel';
 import { URL } from 'url';
@@ -45,6 +34,7 @@ import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_NETWORK_PEER_ADDRESS,
   ATTR_NETWORK_PEER_PORT,
+  ATTR_NETWORK_PROTOCOL_VERSION,
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
   ATTR_URL_FULL,
@@ -66,6 +56,7 @@ import {
   ResponseHeadersMessage,
 } from './internal-types';
 import { UndiciInstrumentationConfig, UndiciRequest } from './types';
+import { redactQueryString, redactUrl } from './redact-url';
 
 interface InstrumentationRecord {
   span: Span;
@@ -78,10 +69,10 @@ interface InstrumentationRecord {
 export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumentationConfig> {
   // Keep ref to avoid https://github.com/nodejs/node/issues/42170 bug and for
   // unsubscribing.
-  private declare _channelSubs: Array<ListenerRecord>;
+  declare private _channelSubs: Array<ListenerRecord>;
   private _recordFromReq = new WeakMap<UndiciRequest, InstrumentationRecord>();
 
-  private declare _httpClientDurationHistogram: Histogram;
+  declare private _httpClientDurationHistogram: Histogram;
 
   constructor(config: UndiciInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -156,23 +147,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     diagnosticChannel: string,
     onMessage: (message: any, name: string | symbol) => void
   ) {
-    // `diagnostics_channel` had a ref counting bug until v18.19.0.
-    // https://github.com/nodejs/node/pull/47520
-    const [major, minor] = process.version
-      .replace('v', '')
-      .split('.')
-      .map(n => Number(n));
-    const useNewSubscribe = major > 18 || (major === 18 && minor >= 19);
-
-    let unsubscribe: () => void;
-    if (useNewSubscribe) {
-      diagch.subscribe?.(diagnosticChannel, onMessage);
-      unsubscribe = () => diagch.unsubscribe?.(diagnosticChannel, onMessage);
-    } else {
-      const channel = diagch.channel(diagnosticChannel);
-      channel.subscribe(onMessage);
-      unsubscribe = () => channel.unsubscribe(onMessage);
-    }
+    diagch.subscribe(diagnosticChannel, onMessage);
+    const unsubscribe = () => diagch.unsubscribe(diagnosticChannel, onMessage);
 
     this._channelSubs.push({
       name: diagnosticChannel,
@@ -261,11 +237,17 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     const attributes: Attributes = {
       [ATTR_HTTP_REQUEST_METHOD]: requestMethod,
       [ATTR_HTTP_REQUEST_METHOD_ORIGINAL]: request.method,
-      [ATTR_URL_FULL]: requestUrl.toString(),
+      [ATTR_URL_FULL]: redactUrl(requestUrl.toString()),
       [ATTR_URL_PATH]: requestUrl.pathname,
-      [ATTR_URL_QUERY]: requestUrl.search,
       [ATTR_URL_SCHEME]: urlScheme,
     };
+
+    if (requestUrl.search) {
+      // `url.query` is the query component without the leading '?'
+      attributes[ATTR_URL_QUERY] = redactQueryString(
+        requestUrl.search.slice(1)
+      );
+    }
 
     const schemePorts: Record<string, string> = { https: '443', http: '80' };
     const serverAddress = requestUrl.hostname;
@@ -368,10 +350,13 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const config = this.getConfig();
     const { span } = record;
-    const { remoteAddress, remotePort } = socket;
+    const { remoteAddress, remotePort, alpnProtocol } = socket;
     const spanAttributes: Attributes = {
       [ATTR_NETWORK_PEER_ADDRESS]: remoteAddress,
       [ATTR_NETWORK_PEER_PORT]: remotePort,
+      // undici only ever offers `http/1.1` and, with `allowH2`, `h2` as ALPN
+      // protocols; a connection that negotiated neither is HTTP/1.1.
+      [ATTR_NETWORK_PROTOCOL_VERSION]: alpnProtocol === 'h2' ? '2' : '1.1',
     };
 
     // After hooks have been processed (which may modify request headers)
@@ -384,13 +369,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
       for (const [name, value] of headersMap.entries()) {
         if (headersToAttribs.has(name)) {
-          const attrValue = Array.isArray(value) ? value.join(', ') : value;
+          const attrValue = Array.isArray(value) ? value : [value];
           spanAttributes[`http.request.header.${name}`] = attrValue;
         }
       }
     }
 
     span.setAttributes(spanAttributes);
+    record.attributes = Object.assign(record.attributes, spanAttributes);
   }
 
   // This is the 3rd message we get for each request and it's fired when the server
@@ -407,9 +393,14 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     }
 
     const { span, attributes } = record;
+    const isError = response.statusCode >= 400;
     const spanAttributes: Attributes = {
       [ATTR_HTTP_RESPONSE_STATUS_CODE]: response.statusCode,
     };
+
+    if (isError) {
+      spanAttributes[ATTR_ERROR_TYPE] = String(response.statusCode);
+    }
 
     const config = this.getConfig();
 
@@ -420,36 +411,30 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       true
     );
 
-    const headersToAttribs = new Set();
-
     if (config.headersToSpanAttributes?.responseHeaders) {
+      const headersToAttribs = new Set();
       config.headersToSpanAttributes?.responseHeaders.forEach(name =>
         headersToAttribs.add(name.toLowerCase())
       );
-    }
 
-    for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
-      const name = response.headers[idx].toString().toLowerCase();
-      const value = response.headers[idx + 1];
+      for (let idx = 0; idx < response.headers.length; idx = idx + 2) {
+        const name = response.headers[idx].toString().toLowerCase();
+        const value = response.headers[idx + 1];
 
-      if (headersToAttribs.has(name)) {
-        spanAttributes[`http.response.header.${name}`] = value.toString();
-      }
-
-      if (name === 'content-length') {
-        const contentLength = Number(value.toString());
-        if (!isNaN(contentLength)) {
-          spanAttributes['http.response.header.content-length'] = contentLength;
+        if (headersToAttribs.has(name)) {
+          const attrName = `http.response.header.${name}`;
+          if (!Object.hasOwn(spanAttributes, attrName)) {
+            spanAttributes[attrName] = [value.toString()];
+          } else {
+            (spanAttributes[attrName] as string[]).push(value.toString());
+          }
         }
       }
     }
 
     span.setAttributes(spanAttributes);
     span.setStatus({
-      code:
-        response.statusCode >= 400
-          ? SpanStatusCode.ERROR
-          : SpanStatusCode.UNSET,
+      code: isError ? SpanStatusCode.ERROR : SpanStatusCode.UNSET,
     });
     record.attributes = Object.assign(attributes, spanAttributes);
   }
@@ -461,7 +446,6 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
     if (!record) {
       return;
     }
-
     const { span, attributes, startTime } = record;
 
     // End the span
@@ -487,22 +471,36 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
 
     const { span, attributes, startTime } = record;
 
-    // NOTE: in `undici@6.3.0` when request aborted the error type changes from
-    // a custom error (`RequestAbortedError`) to a built-in `DOMException` carrying
-    // some differences:
-    // - `code` is from DOMEXception (ABORT_ERR: 20)
-    // - `message` changes
-    // - stacktrace is smaller and contains node internal frames
-    span.recordException(error);
-    span.setStatus({
-      code: SpanStatusCode.ERROR,
-      message: error.message,
-    });
-    span.end();
-    this._recordFromReq.delete(request);
+    // Per OTel HTTP spec: if the request was intentionally cancelled via an
+    // AbortController signal, it SHOULD NOT be treated as an error.
+    // Span status should be left unset and error.type should not be set.
+    // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#http-client
+    const isAbort =
+      error.name === 'AbortError' ||
+      (typeof DOMException !== 'undefined' &&
+        error instanceof DOMException &&
+        error.code === DOMException.ABORT_ERR);
 
-    // Record metrics (with the error)
-    attributes[ATTR_ERROR_TYPE] = error.message;
+    if (isAbort) {
+      span.end();
+    } else {
+      // error.type must be a low-cardinality class of error per semconv, and an
+      // empty value collapses into a duplicate series on Prometheus-based
+      // exporters. Use the error code/name, never the free-form, possibly empty
+      // message.
+      const errorType = error.code || error.name || 'Error';
+      attributes[ATTR_ERROR_TYPE] = errorType;
+      span.setAttribute(ATTR_ERROR_TYPE, errorType);
+
+      span.recordException(error);
+      span.setStatus({
+        code: SpanStatusCode.ERROR,
+        message: error.message,
+      });
+      span.end();
+    }
+
+    this._recordFromReq.delete(request);
     this.recordRequestDuration(attributes, startTime);
   }
 
@@ -517,6 +515,7 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       ATTR_SERVER_PORT,
       ATTR_URL_SCHEME,
       ATTR_ERROR_TYPE,
+      ATTR_NETWORK_PROTOCOL_VERSION,
     ];
     keysToCopy.forEach(key => {
       if (key in attributes) {
@@ -544,6 +543,8 @@ export class UndiciInstrumentation extends InstrumentationBase<UndiciInstrumenta
       PATCH: true,
       DELETE: true,
       TRACE: true,
+      // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+      QUERY: true,
     };
 
     if (original.toUpperCase() in knownMethods) {

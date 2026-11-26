@@ -1,22 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-// for testing locally "npm run docker:start"
-
-import { context, trace, SpanKind, Span } from '@opentelemetry/api';
+import { context, trace, Span } from '@opentelemetry/api';
 import * as assert from 'assert';
 import { MongoDBInstrumentation, MongoDBInstrumentationConfig } from '../src';
 import { MongoResponseHookInformation } from '../src';
@@ -34,10 +21,10 @@ const instrumentation = registerInstrumentationTesting(
 import type { MongoClient, Collection } from 'mongodb';
 import { assertSpans, accessCollection, DEFAULT_MONGO_HOST } from './utils';
 import {
-  ATTR_DB_STATEMENT,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+  ATTR_DB_QUERY_TEXT,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 
 describe('MongoDBInstrumentation-Tracing-v3', () => {
   function create(config: MongoDBInstrumentationConfig = {}) {
@@ -118,13 +105,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .insertMany(insertData)
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.insert',
-              SpanKind.CLIENT,
-              'insert',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'insert', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -140,13 +121,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .updateOne({ a: 2 }, { $set: { b: 1 } })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.update',
-              SpanKind.CLIENT,
-              'update',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'update', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -162,13 +137,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .deleteOne({ a: 3 })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.remove',
-              SpanKind.CLIENT,
-              'remove',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'remove', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -188,13 +157,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.find',
-              SpanKind.CLIENT,
-              'find',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'find', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -217,22 +180,18 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
               // assert that we correctly got the first as a find
               assertSpans(
                 getTestSpans().filter(
-                  span => !span.name.includes('mongodb.getMore')
+                  span => !span.name.includes(`getMore ${COLLECTION_NAME}`)
                 ),
-                'mongodb.find',
-                SpanKind.CLIENT,
                 'find',
-                undefined
+                COLLECTION_NAME
               );
               // assert that we correctly got the first as a find
               assertSpans(
                 getTestSpans().filter(
-                  span => !span.name.includes('mongodb.find')
+                  span => !span.name.includes(`find ${COLLECTION_NAME}`)
                 ),
-                'mongodb.getMore',
-                SpanKind.CLIENT,
                 'getMore',
-                undefined
+                COLLECTION_NAME
               );
               done();
             })
@@ -253,13 +212,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .createIndex({ a: 1 })
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.createIndexes',
-              SpanKind.CLIENT,
-              'createIndexes',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'createIndexes', '$cmd');
             done();
           })
           .catch(err => {
@@ -279,13 +232,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(
-              getTestSpans(),
-              'mongodb.aggregate',
-              SpanKind.CLIENT,
-              'aggregate',
-              undefined
-            );
+            assertSpans(getTestSpans(), 'aggregate', '$cmd');
             done();
           })
           .catch(err => {
@@ -314,19 +261,14 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            const operationName = 'mongodb.insert';
-            assertSpans(
-              spans,
-              operationName,
-              SpanKind.CLIENT,
-              'insert',
-              undefined,
-              false,
-              false
+            assertSpans(spans, 'insert', COLLECTION_NAME, false, false);
+            const mongoSpan = spans.find(
+              s =>
+                s.instrumentationScope.name ===
+                '@opentelemetry/instrumentation-mongodb'
             );
-            const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.strictEqual(dbStatement[key], '?');
             done();
@@ -349,19 +291,14 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            const operationName = 'mongodb.aggregate';
-            assertSpans(
-              spans,
-              operationName,
-              SpanKind.CLIENT,
-              'aggregate',
-              undefined,
-              false,
-              false
+            assertSpans(spans, 'aggregate', '$cmd', false, false);
+            const mongoSpan = spans.find(
+              s =>
+                s.instrumentationScope.name ===
+                '@opentelemetry/instrumentation-mongodb'
             );
-            const mongoSpan = spans.find(s => s.name === operationName);
             const dbStatement = JSON.parse(
-              mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+              mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
             );
             assert.deepEqual(dbStatement, {
               aggregate: '?',
@@ -402,19 +339,14 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              const operationName = 'mongodb.insert';
-              assertSpans(
-                spans,
-                operationName,
-                SpanKind.CLIENT,
-                'insert',
-                undefined,
-                false,
-                true
+              assertSpans(spans, 'insert', COLLECTION_NAME, false, true);
+              const mongoSpan = spans.find(
+                s =>
+                  s.instrumentationScope.name ===
+                  '@opentelemetry/instrumentation-mongodb'
               );
-              const mongoSpan = spans.find(s => s.name === operationName);
               const dbStatement = JSON.parse(
-                mongoSpan!.attributes[ATTR_DB_STATEMENT] as string
+                mongoSpan!.attributes[ATTR_DB_QUERY_TEXT] as string
               );
               assert.strictEqual(dbStatement[key], value);
               done();
@@ -444,13 +376,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'mongodb.insert',
-                SpanKind.CLIENT,
-                'insert',
-                undefined
-              );
+              assertSpans(spans, 'insert', COLLECTION_NAME);
               done();
             })
             .catch(err => {
@@ -547,13 +473,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             .then(() => {
               span.end();
               const spans = getTestSpans();
-              assertSpans(
-                spans,
-                'mongodb.find',
-                SpanKind.CLIENT,
-                'find',
-                undefined
-              );
+              assertSpans(spans, 'find', COLLECTION_NAME);
               done();
             })
             .catch(err => {
@@ -575,13 +495,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             span.end();
             const spans = getTestSpans();
             const mainSpan = spans[spans.length - 1];
-            assertSpans(
-              spans,
-              'mongodb.insert',
-              SpanKind.CLIENT,
-              'insert',
-              undefined
-            );
+            assertSpans(spans, 'insert', COLLECTION_NAME);
             resetMemoryExporter();
 
             collection
@@ -591,13 +505,7 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
                 const spans2 = getTestSpans();
                 spans2.push(mainSpan);
 
-                assertSpans(
-                  spans2,
-                  'mongodb.find',
-                  SpanKind.CLIENT,
-                  'find',
-                  undefined
-                );
+                assertSpans(spans2, 'find', COLLECTION_NAME);
                 assert.strictEqual(
                   mainSpan.spanContext().spanId,
                   spans2[0].parentSpanContext?.spanId
@@ -653,11 +561,11 @@ describe('MongoDBInstrumentation-Tracing-v3', () => {
             (err, address) => {
               if (err) return done(err);
               assert.strictEqual(
-                mongoSpan.attributes[ATTR_NET_PEER_NAME],
+                mongoSpan.attributes[ATTR_SERVER_ADDRESS],
                 address
               );
               assert.strictEqual(
-                mongoSpan.attributes[ATTR_NET_PEER_PORT],
+                mongoSpan.attributes[ATTR_SERVER_PORT],
                 process.env.MONGODB_PORT
                   ? parseInt(process.env.MONGODB_PORT)
                   : 27017

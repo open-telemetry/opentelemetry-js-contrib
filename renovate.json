@@ -13,7 +13,17 @@
     },
     {
       "matchUpdateTypes": ["minor"],
+      "matchCategories": ["js"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "matchCategories": ["!js"],
+      "schedule": ["before 3am on Monday"]
+    },
+    {
+      "matchCategories": ["ci"],
+      "schedule": ["before 3am on Monday"]
     },
     {
       "matchPackageNames": ["@opentelemetry/api"],
@@ -23,6 +33,7 @@
       "groupName": "OTel Core experimental",
       "matchPackageNames": [
         "@opentelemetry/api-logs",
+        "@opentelemetry/configuration",
         "@opentelemetry/exporter-logs-otlp-grpc",
         "@opentelemetry/exporter-logs-otlp-http",
         "@opentelemetry/exporter-logs-otlp-proto",
@@ -55,12 +66,17 @@
   ],
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 3am on Monday"]
+    "schedule": ["before 3am on Monday"],
+    "minimumReleaseAge": "0"
   },
   "ignoreDeps": ["@types/node"],
   "ignorePaths": ["archive/**", "examples/**"],
   "assignees": ["@dyladan", "@legendecas", "@pichlermarc", "@trentm"],
   "schedule": ["before 3am on Friday"],
   "labels": ["dependencies"],
-  "semanticCommitType": "feat"
+  "semanticCommitType": "feat",
+  "constraints": {
+    "npm": ">=11.18.0"
+  },
+  "minimumReleaseAge": "1 week"
 }

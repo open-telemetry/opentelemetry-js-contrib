@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { context, diag } from '@opentelemetry/api';
@@ -52,7 +41,7 @@ const WIN_OS_BEANSTALK_CONF_PATH =
   'C:\\Program Files\\Amazon\\XRay\\environment.conf';
 
 export class AwsBeanstalkDetector implements ResourceDetector {
-  BEANSTALK_CONF_PATH: string;
+  public BEANSTALK_CONF_PATH: string;
   private static readFileAsync = util.promisify(fs.readFile);
   private static fileAccessAsync = util.promisify(fs.access);
 
@@ -64,7 +53,7 @@ export class AwsBeanstalkDetector implements ResourceDetector {
     }
   }
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const dataPromise = context.with(suppressTracing(context.active()), () =>
       this._gatherData()
     );
@@ -89,7 +78,7 @@ export class AwsBeanstalkDetector implements ResourceDetector {
   /**
    * Async resource attributes for AWS Beanstalk configuration read from file.
    */
-  async _gatherData(): Promise<DetectedResourceAttributes> {
+  private async _gatherData(): Promise<DetectedResourceAttributes> {
     try {
       await AwsBeanstalkDetector.fileAccessAsync(
         this.BEANSTALK_CONF_PATH,

@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`mysql`](https://www.npmjs.com/package/mysql) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`mysql`](https://www.npmjs.com/package/mysql) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -23,48 +23,45 @@ npm install --save @opentelemetry/instrumentation-mysql
 
 OpenTelemetry MySQL Instrumentation allows the user to automatically collect trace data and export them to the backend of choice, to give observability to distributed systems when working with [mysql](https://www.npmjs.com/package/mysql).
 
-To load a specific plugin (**MySQL** in this case), specify it in the registerInstrumentations's configuration
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { MySQLInstrumentation } = require('@opentelemetry/instrumentation-mysql');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new MySQLInstrumentation(),
   ],
-})
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
-
-See [examples/mysql](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main//examples/mysql) for a short example.
 
 ### MySQL instrumentation Options
 
-| Options | Type | Default | Description |
-| ------- | ---- | ------- | ----------- |
-| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, an attribute containing the query's parameters will be attached the spans generated to represent the query |
-
+| Options                                           | Type      | Default | Description |
+| ------------------------------------------------- | --------- | ------- | ----------- |
+| [`enhancedDatabaseReporting`](./src/types.ts#L24) | `boolean` | `false` | If true, a `db.mysql.values` attribute containing the query's parameters will be add to database spans. Note that this is not an attribute defined in [Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/database/mysql/). |
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+The `instrumentation-mysql` versions 0.66.0 and later emit the stable v1.33.0+ semantic conventions.
 
 Attributes collected:
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.connection_string`  | The connection string used to connect to the database.                         |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.operation`          | The name of the operation being executed.                                      |
-| `db.statement`          | The database statement being executed.                                         |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.user`               | Username for accessing the database.                                           |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
+| Attribute        | Description |
+| ---------------- | ----------- |
+| `db.system.name` | The database system. Always `'mysql'`. |
+| `db.namespace`   | The database associated with the connection, as provided at connection time. (This does not track changes made via `SELECT DATABASE()`.) |
+| `db.query.text`  | The database query being executed. |
+| `server.address` | Remote hostname or similar. |
+| `server.port`    | Remote port number. |
+
+Metrics collected:
+
+- [`db.client.connection.count`](https://opentelemetry.io/docs/specs/semconv/database/database-metrics/#metric-dbclientconnectioncount) - The number of connections currently in a given state.
 
 ## Useful links
 

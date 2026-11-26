@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -22,14 +11,14 @@ import {
   trace,
   Span,
 } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import * as ioredisTypes from 'ioredis';
@@ -40,18 +29,16 @@ import {
   IORedisRequestHookInformation,
 } from '../src/types';
 import {
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
   ATTR_EXCEPTION_MESSAGE,
   ATTR_EXCEPTION_STACKTRACE,
   ATTR_EXCEPTION_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  DB_SYSTEM_VALUE_REDIS,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from '../src/semconv';
 
 const memoryExporter = new InMemorySpanExporter();
 
@@ -62,11 +49,10 @@ const CONFIG = {
 
 const REDIS_URL = `redis://${CONFIG.host}:${CONFIG.port}`;
 
-const DEFAULT_ATTRIBUTES = {
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_CONNECTION_STRING]: REDIS_URL,
+const DEFAULT_STABLE_ATTRIBUTES = {
+  [ATTR_DB_SYSTEM_NAME]: DB_SYSTEM_NAME_VALUE_REDIS,
+  [ATTR_SERVER_ADDRESS]: CONFIG.host,
+  [ATTR_SERVER_PORT]: CONFIG.port,
 };
 
 const unsetStatus: SpanStatus = {
@@ -88,8 +74,8 @@ const sanitizeEventForAssertion = (span: ReadableSpan) => {
 };
 
 describe('ioredis', () => {
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   let ioredis: typeof ioredisTypes.default;
   let instrumentation: IORedisInstrumentation;
@@ -131,34 +117,58 @@ describe('ioredis', () => {
       const span = provider.getTracer('ioredis-test').startSpan('test span');
       let client: ioredisTypes.Redis;
       const attributes = {
-        ...DEFAULT_ATTRIBUTES,
-        [ATTR_DB_STATEMENT]: 'connect',
+        ...DEFAULT_STABLE_ATTRIBUTES,
+        [ATTR_DB_QUERY_TEXT]: 'connect',
       };
       const readyHandler = () => {
         const endedSpans = memoryExporter.getFinishedSpans();
+        try {
+          assert.strictEqual(trace.getSpan(context.active()), span);
+          // ioredis v6 defaults to RESP3 and sends a HELLO command during the
+          // handshake, producing an extra span between 'connect' and 'info'.
+          // v5: [connect, info]  v6: [connect, hello, info]
+          assert.ok(
+            endedSpans.length === 2 || endedSpans.length === 3,
+            `expected 2 or 3 handshake spans, got ${endedSpans.length}`
+          );
+          assert.strictEqual(endedSpans[0].name, 'connect');
+          assert.ok(
+            endedSpans.some(s => s.name === 'info'),
+            'expected an info span'
+          );
+          testUtils.assertPropagation(endedSpans[0], span);
 
-        assert.strictEqual(trace.getSpan(context.active()), span);
-        assert.strictEqual(endedSpans.length, 2);
-        assert.strictEqual(endedSpans[0].name, 'connect');
-        assert.strictEqual(endedSpans[1].name, 'info');
-        testUtils.assertPropagation(endedSpans[0], span);
+          testUtils.assertSpan(
+            endedSpans[0],
+            SpanKind.CLIENT,
+            attributes,
+            [],
+            unsetStatus
+          );
+          span.end();
+          // ioredis v6 defaults to RESP3 and sends a HELLO command during the
+          // handshake, producing an extra span.
+          const endedSpansAfterEnd = memoryExporter.getFinishedSpans();
+          assert.ok(
+            endedSpans.length === 3 || endedSpansAfterEnd.length === 4,
+            `expected 3 or 4 handshake spans, got ${endedSpansAfterEnd.length}`
+          );
 
-        testUtils.assertSpan(
-          endedSpans[0],
-          SpanKind.CLIENT,
-          attributes,
-          [],
-          unsetStatus
-        );
-        span.end();
-        assert.strictEqual(endedSpans.length, 3);
-        assert.strictEqual(endedSpans[2].name, 'test span');
+          assert.strictEqual(
+            endedSpansAfterEnd[endedSpansAfterEnd.length - 1].name,
+            'test span'
+          );
+        } finally {
+          client.quit(() => {
+            assert.ok(
+              endedSpans.length === 4 || endedSpans.length === 5,
+              `expected 4 or 5 handshake spans, got ${endedSpans.length}`
+            );
 
-        client.quit(() => {
-          assert.strictEqual(endedSpans.length, 4);
-          assert.strictEqual(endedSpans[3].name, 'quit');
-          done();
-        });
+            assert.strictEqual(endedSpans[endedSpans.length - 1].name, 'quit');
+            done();
+          });
+        }
       };
       const errorHandler = (err: Error) => {
         assert.ifError(err);
@@ -245,8 +255,9 @@ describe('ioredis', () => {
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
         it(`should create a child span for cb style ${command.description}`, done => {
           const attributes = {
-            ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: `${command.name} ${command.expectedDbStatement}`,
+            ...DEFAULT_STABLE_ATTRIBUTES,
+            [ATTR_DB_QUERY_TEXT]: `${command.name} ${command.expectedDbStatement}`,
+            [ATTR_DB_OPERATION_NAME]: `${command.name}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -275,8 +286,9 @@ describe('ioredis', () => {
 
       it('should create a child span for hset promise', async () => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: `hset ${hashKeyName} random [1 other arguments]`,
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: `hset ${hashKeyName} random [1 other arguments]`,
+          [ATTR_DB_OPERATION_NAME]: 'hset',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -335,8 +347,9 @@ describe('ioredis', () => {
 
       it('should create a child span for streamify scanning', done => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: 'scan 0 MATCH test-* COUNT 1000',
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'scan 0 MATCH test-* COUNT 1000',
+          [ATTR_DB_OPERATION_NAME]: 'scan',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         context.with(trace.setSpan(context.active(), span), () => {
@@ -411,8 +424,8 @@ describe('ioredis', () => {
             );
 
             const attributes = {
-              ...DEFAULT_ATTRIBUTES,
-              [ATTR_DB_STATEMENT]: 'subscribe news music',
+              ...DEFAULT_STABLE_ATTRIBUTES,
+              [ATTR_DB_QUERY_TEXT]: 'subscribe news music',
             };
             testUtils.assertSpan(
               endedSpans[4],
@@ -430,8 +443,9 @@ describe('ioredis', () => {
 
       it('should create a child span for multi/transaction', done => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: 'multi',
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'multi',
+          [ATTR_DB_OPERATION_NAME]: 'multi',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -451,6 +465,17 @@ describe('ioredis', () => {
               assert.strictEqual(endedSpans[1].name, 'set');
               assert.strictEqual(endedSpans[2].name, 'get');
               assert.strictEqual(endedSpans[3].name, 'exec');
+              assert.ok(
+                endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] ===
+                  'MULTI set' ||
+                  endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] === 'set'
+              );
+
+              assert.ok(
+                endedSpans[2].attributes[ATTR_DB_OPERATION_NAME] ===
+                  'MULTI get' ||
+                  endedSpans[2].attributes[ATTR_DB_OPERATION_NAME] === 'get'
+              );
               testUtils.assertSpan(
                 endedSpans[0],
                 SpanKind.CLIENT,
@@ -466,8 +491,9 @@ describe('ioredis', () => {
 
       it('should create a child span for pipeline', done => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: 'set foo [1 other arguments]',
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: 'set foo [1 other arguments]',
+          [ATTR_DB_OPERATION_NAME]: 'PIPELINE set',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -485,6 +511,20 @@ describe('ioredis', () => {
             assert.strictEqual(endedSpans[0].name, 'set');
             assert.strictEqual(endedSpans[1].name, 'del');
             assert.strictEqual(endedSpans[2].name, 'test span');
+            assert.ok(
+              endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] ===
+                'PIPELINE set' ||
+                endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] === 'set'
+            );
+
+            assert.ok(
+              endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] ===
+                'PIPELINE del' ||
+                endedSpans[1].attributes[ATTR_DB_OPERATION_NAME] === 'del'
+            );
+            attributes[ATTR_DB_OPERATION_NAME] =
+              endedSpans[0].attributes[ATTR_DB_OPERATION_NAME] || 'set';
+
             testUtils.assertSpan(
               endedSpans[0],
               SpanKind.CLIENT,
@@ -500,8 +540,9 @@ describe('ioredis', () => {
 
       it('should create a child span for get promise', async () => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: `get ${testKeyName}`,
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: `get ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'get',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -529,8 +570,9 @@ describe('ioredis', () => {
 
       it('should create a child span for del', async () => {
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: `del ${testKeyName}`,
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: `del ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'del',
         };
         const span = provider.getTracer('ioredis-test').startSpan('test span');
         await context.with(trace.setSpan(context.active(), span), async () => {
@@ -563,8 +605,9 @@ describe('ioredis', () => {
         instrumentation.setConfig(config);
 
         const attributes = {
-          ...DEFAULT_ATTRIBUTES,
-          [ATTR_DB_STATEMENT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          ...DEFAULT_STABLE_ATTRIBUTES,
+          [ATTR_DB_QUERY_TEXT]: `evalsha bfbf458525d6a0b19200bfd6db3af481156b367b 1 ${testKeyName}`,
+          [ATTR_DB_OPERATION_NAME]: 'evalsha',
         };
 
         const span = provider.getTracer('ioredis-test').startSpan('test span');
@@ -628,6 +671,91 @@ describe('ioredis', () => {
           });
         });
       });
+
+      describe('sensitive command sanitization', function () {
+        after(async () => {
+          // cleanup added user (ACL not available in older ioredis versions)
+          if (typeof (client as any).acl === 'function') {
+            await (client as any).acl('DELUSER', 'testuser');
+          }
+        });
+
+        it('should redact CONFIG SET arguments in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.config('SET', 'hz', '15');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'config SET [2 other arguments]'
+              );
+            }
+          );
+        });
+
+        it('should redact ACL SETUSER arguments in db.statement', async function () {
+          if (typeof (client as any).acl !== 'function') {
+            this.skip();
+          }
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await (client as any).acl('setuser', 'testuser');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'acl setuser [1 other arguments]'
+              );
+            }
+          );
+          await (client as any).acl('deluser', 'testuser'); // cleanup
+        });
+
+        it('should redact GETSET value in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.getset(testKeyName, 'secret-value');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                `getset ${testKeyName} [1 other arguments]`
+              );
+            }
+          );
+        });
+
+        it('should redact PSETEX value in db.statement', async function () {
+          const span = provider
+            .getTracer('ioredis-test')
+            .startSpan('test span');
+          await context.with(
+            trace.setSpan(context.active(), span),
+            async function () {
+              await client.psetex(testKeyName, 60000, 'secret-value');
+              span.end();
+              const endedSpans = memoryExporter.getFinishedSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                `psetex ${testKeyName} [2 other arguments]`
+              );
+            }
+          );
+        });
+      });
     });
 
     describe('Instrumenting without parent span', () => {
@@ -670,8 +798,9 @@ describe('ioredis', () => {
           endedSpans[0],
           SpanKind.CLIENT,
           {
-            ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: `set ${testKeyName} [1 other arguments]`,
+            ...DEFAULT_STABLE_ATTRIBUTES,
+            [ATTR_DB_QUERY_TEXT]: `set ${testKeyName} [1 other arguments]`,
+            [ATTR_DB_OPERATION_NAME]: 'set',
           },
           [],
           unsetStatus
@@ -696,8 +825,8 @@ describe('ioredis', () => {
           endedSpans[0],
           SpanKind.CLIENT,
           {
-            ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: 'connect',
+            ...DEFAULT_STABLE_ATTRIBUTES,
+            [ATTR_DB_QUERY_TEXT]: 'connect',
           },
           [],
           unsetStatus
@@ -744,12 +873,11 @@ describe('ioredis', () => {
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(command => {
         it(`should tag the span with a custom db.statement for cb style ${command.description}`, done => {
+          const dbQueryText = dbStatementSerializer(command.name, command.args);
           const attributes = {
-            ...DEFAULT_ATTRIBUTES,
-            [ATTR_DB_STATEMENT]: dbStatementSerializer(
-              command.name,
-              command.args
-            ),
+            ...DEFAULT_STABLE_ATTRIBUTES,
+            [ATTR_DB_QUERY_TEXT]: dbQueryText,
+            [ATTR_DB_OPERATION_NAME]: `${command.name}`,
           };
           const span = provider
             .getTracer('ioredis-test')
@@ -923,7 +1051,7 @@ describe('ioredis', () => {
           Span,
           string,
           unknown,
-          Buffer
+          Buffer,
         ];
         assert.strictEqual(cmdName, 'set');
         assert.strictEqual(response.toString(), 'OK');
@@ -972,6 +1100,9 @@ describe('ioredis', () => {
       before(() => {
         instrumentation.setConfig(config);
       });
+      after(() => {
+        instrumentation.setConfig();
+      });
 
       IOREDIS_CALLBACK_OPERATIONS.forEach(operation => {
         it(`should properly execute the db statement serializer for operation ${operation.description}`, done => {
@@ -989,7 +1120,7 @@ describe('ioredis', () => {
                 operation.args
               );
               assert.strictEqual(
-                endedSpans[0].attributes[ATTR_DB_STATEMENT],
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
                 expectedStatement
               );
               done();

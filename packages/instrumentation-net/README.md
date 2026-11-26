@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`net`](http://nodejs.org/dist/latest/docs/api/net.html) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`net`](http://nodejs.org/dist/latest/docs/api/net.html) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -24,35 +24,33 @@ npm install --save @opentelemetry/instrumentation-net
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { NetInstrumentation } = require('@opentelemetry/instrumentation-net');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new NetInstrumentation(),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation uses stable semantic conventions for networking attributes.
 
-Attributes added to `connect` spans:
+The `instrumentation-net` versions 0.64.0 and later emit the stable v1.23.0+ semantic conventions.
 
-| Attribute                 | Short Description                                                        |
-| ------------------------- | ------------------------------------------------------------------------ |
-| `net.transport`           | `IP.TCP`, `pipe` or `Unix`                                               |
-| `net.peer.name`           | Host name or the IPC file path                                           |
-| `net.peer.ip` (for TCP)   | Remote address of the peer (dotted decimal for IPv4 or RFC5952 for IPv6) |
-| `net.peer.port` (for TCP) | Remote port number                                                       |
-| `net.host.ip` (for TCP)   | Like net.peer.ip but for the host IP. Useful in case of a multi-IP host  |
-| `net.host.port` (for TCP) | Like net.peer.port but for the host port                                 |
+| Attribute               | Description                                                                      |
+| ----------------------- | -------------------------------------------------------------------------------- |
+| `network.transport`     | One of `tcp` or `pipe`                                                           |
+| `server.address`        | Host name or the IPC file path                                                   |
+| `server.port`           | Remote port number                                                               |
+| `network.peer.address`  | Peer address of the network connection - IP address or Unix domain socket name.  |
+| `network.local.address` | Local address of the network connection - IP address or Unix domain socket name. |
+| `network.local.port`    | Local port number of the network connection.                                     |
+
 
 ## Useful links
 

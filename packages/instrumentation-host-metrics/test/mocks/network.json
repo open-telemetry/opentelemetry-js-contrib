@@ -1,0 +1,14 @@
+[
+  {
+    "iface": "eth0",
+    "rx_bytes": 123123,
+    "rx_dropped": 1200,
+    "rx_errors": 3,
+    "tx_bytes": 321321,
+    "tx_dropped": 12,
+    "tx_errors": 15,
+    "rx_sec": -1,
+    "tx_sec": -1,
+    "ms": 0
+  }
+]

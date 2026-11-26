@@ -17,13 +17,15 @@ npm install --save @opentelemetry/instrumentation-web-exception
 
 ```typescript
 import { LoggerProvider, SimpleLogRecordProcessor, ConsoleLogRecordExporter } from '@opentelemetry/sdk-logs';
-import { logs } from '@opentelemetry/api-logs';
+import { logs } from '@opentelemetry/api';
 import { ExceptionInstrumentation } from '@opentelemetry/instrumentation-web-exception';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
 // Set up the logger provider with a processor
 const loggerProvider = new LoggerProvider({
-  processors: [new SimpleLogRecordProcessor(new ConsoleLogRecordExporter())]
+  processors: [
+    new SimpleLogRecordProcessor({ exporter: new ConsoleLogRecordExporter() })
+  ]
 });
 logs.setGlobalLoggerProvider(loggerProvider);
 

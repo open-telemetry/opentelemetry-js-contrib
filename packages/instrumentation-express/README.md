@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`express`](https://github.com/expressjs/express) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`express`](https://github.com/expressjs/express) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -25,24 +25,20 @@ npm install --save @opentelemetry/instrumentation-http @opentelemetry/instrument
 
 OpenTelemetry Express Instrumentation allows the user to automatically collect trace data and export them to their backend of choice, to give observability to distributed systems.
 
-To load the instrumentation, specify it in the Node Tracer's configuration:
-
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { HttpInstrumentation } = require('@opentelemetry/instrumentation-http');
 const { ExpressInstrumentation } = require('@opentelemetry/instrumentation-express');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
-    // Express instrumentation expects HTTP layer to be instrumented
+    // Express instrumentation expects HTTP layer to be instrumented.
     new HttpInstrumentation(),
     new ExpressInstrumentation(),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 See [examples/express](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/express) for a short example.
@@ -55,12 +51,12 @@ Because of the way express works, it's hard to correctly compute the time taken 
 
 Express instrumentation has few options available to choose from. You can set the following:
 
-| Options | Type | Example | Description |
-| ------- | ---- | ------- | ----------- |
-| `ignoreLayers` | `IgnoreMatcher[]` | `[/^\/_internal\//]` | Ignore layers that by match. |
-| `ignoreLayersType`| `ExpressLayerType[]` | `['request_handler']` | Ignore layers of specified type. |
-| `spanNameHook` | `SpanNameHook` | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook. |
-| `requestHook` | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}` | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
+| Options            | Type                                               | Example                | Description                                                                                            |
+|--------------------|----------------------------------------------------|------------------------|--------------------------------------------------------------------------------------------------------|
+| `ignoreLayers`     | `IgnoreMatcher[]`                                  | `[/^\/_internal\//]`   | Ignore layers that by match.                                                                           |
+| `ignoreLayersType` | `ExpressLayerType[]`                               | `['request_handler']`  | Ignore layers of specified type.                                                                       |
+| `spanNameHook`     | `SpanNameHook`                                     | `() => 'my-span-name'` | Can be used to customize span names by returning a new name from the hook.                             |
+| `requestHook`      | `ExpressRequestCustomAttributeFunction (function)` | `(span, info) => {}`   | Function for adding custom attributes on Express request. Receives params: `Span, ExpressRequestInfo`. |
 
 `ignoreLayers` accepts an array of elements of types:
 

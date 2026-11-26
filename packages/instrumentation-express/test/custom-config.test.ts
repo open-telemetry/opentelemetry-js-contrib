@@ -1,28 +1,18 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_HTTP_ROUTE } from '@opentelemetry/semantic-conventions';
 import * as assert from 'assert';
+import * as semver from 'semver';
 import { RPCMetadata, RPCType, setRPCMetadata } from '@opentelemetry/core';
 import { ExpressLayerType } from '../src/enums/ExpressLayerType';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -38,10 +28,13 @@ instrumentation.disable();
 import * as express from 'express';
 import * as http from 'http';
 
+const LIB_VERSION = require('express/package.json').version;
+const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
+
 describe('ExpressInstrumentation', () => {
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const tracer = provider.getTracer('default');
   const contextManager = new AsyncLocalStorageContextManager().enable();
@@ -111,6 +104,8 @@ describe('ExpressInstrumentation', () => {
 
     it('should not repeat middleware paths in the span name', async () => {
       let rpcMetadata: RPCMetadata;
+      const rootSpan = tracer.startSpan('rootSpan');
+
       app.use((req, res, next) => {
         rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
         return context.with(
@@ -130,7 +125,6 @@ describe('ExpressInstrumentation', () => {
         res.send('ok');
       });
 
-      const rootSpan = tracer.startSpan('rootSpan');
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
@@ -153,19 +147,21 @@ describe('ExpressInstrumentation', () => {
             requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
             'request_handler'
           );
-          assert.strictEqual(rpcMetadata.route, '/mw');
+          assert.strictEqual(rpcMetadata!.route, '/mw');
         }
       );
     });
 
     it('should correctly name http root path when its /', async () => {
       instrumentation.setConfig({
-        ignoreLayerTypes: [
+        ignoreLayersType: [
           ExpressLayerType.MIDDLEWARE,
           ExpressLayerType.REQUEST_HANDLER,
         ],
       } as ExpressInstrumentationConfig);
       let rpcMetadata: RPCMetadata;
+      const rootSpan = tracer.startSpan('rootSpan');
+
       app.use((req, res, next) => {
         rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
         return context.with(
@@ -181,7 +177,6 @@ describe('ExpressInstrumentation', () => {
         res.send('ok');
       });
 
-      const rootSpan = tracer.startSpan('rootSpan');
       assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
 
       await context.with(
@@ -191,22 +186,202 @@ describe('ExpressInstrumentation', () => {
           assert.strictEqual(response, 'ok');
           rootSpan.end();
 
+          // request handler spans are suppressed because REQUEST_HANDLER is in ignoreLayersType
           const requestHandlerSpan = memoryExporter
             .getFinishedSpans()
             .find(span => span.name.includes('request handler'));
-          assert.notStrictEqual(requestHandlerSpan, undefined);
-          assert.strictEqual(
-            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
-            '/'
-          );
-
-          assert.strictEqual(
-            requestHandlerSpan?.attributes[AttributeNames.EXPRESS_TYPE],
-            'request_handler'
-          );
-          assert.strictEqual(rpcMetadata?.route, '/');
+          assert.strictEqual(requestHandlerSpan, undefined);
+          assert.strictEqual(rpcMetadata!.route, '/');
         }
       );
+    });
+
+    // Regression test for https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3570
+    // A path-less middleware (router.use(fn)) must not pop an entry it never pushed onto the
+    // layers store. Before the fix, the ignored-middleware branch unconditionally popped from
+    // _LAYERS_STORE_PROPERTY even when isLayerPathStored was false, silently stripping the
+    // mount path contributed by the enclosing router and causing http.route to be missing for
+    // non-parameterized routes and prefix-stripped for parameterized routes.
+    it('should preserve http.route when ignoreLayersType includes middleware and a path-less middleware is present', async () => {
+      instrumentation.setConfig({
+        ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+      });
+      let rpcMetadata: RPCMetadata | undefined;
+      const rootSpan = tracer.startSpan('rootSpan');
+
+      app.use((req, res, next) => {
+        rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+        return context.with(
+          setRPCMetadata(
+            trace.setSpan(context.active(), rootSpan),
+            rpcMetadata
+          ),
+          next
+        );
+      });
+
+      const api = express.Router();
+      // path-less middleware — this is the trigger for the bug
+      api.use((req, res, next) => next());
+      api.get('/leaf', (req, res) => res.send('ok'));
+      api.get('/p/:id', (req, res) => res.send('ok'));
+
+      app.use('/api', api);
+
+      assert.strictEqual(memoryExporter.getFinishedSpans().length, 0);
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/api/leaf`);
+          await httpRequest.get(`http://localhost:${port}/api/p/123`);
+          rootSpan.end();
+
+          const spans = memoryExporter.getFinishedSpans();
+
+          const leafSpan = spans.find(
+            s =>
+              s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler' &&
+              String(s.attributes[ATTR_HTTP_ROUTE]).endsWith('/leaf')
+          );
+          assert.notStrictEqual(
+            leafSpan,
+            undefined,
+            'request handler span for /api/leaf not found'
+          );
+          assert.strictEqual(
+            leafSpan?.attributes[ATTR_HTTP_ROUTE],
+            '/api/leaf',
+            'non-parameterized route should have full http.route including mount prefix'
+          );
+
+          const paramSpan = spans.find(
+            s =>
+              s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler' &&
+              String(s.attributes[ATTR_HTTP_ROUTE]).includes(':id')
+          );
+          assert.notStrictEqual(
+            paramSpan,
+            undefined,
+            'request handler span for /api/p/:id not found'
+          );
+          assert.strictEqual(
+            paramSpan?.attributes[ATTR_HTTP_ROUTE],
+            '/api/p/:id',
+            'parameterized route should have full http.route including mount prefix'
+          );
+
+          assert.strictEqual(rpcMetadata!.route, '/api/p/:id');
+        }
+      );
+    });
+
+    describe('when ignoreLayers matches a layer that is not middleware', () => {
+      afterEach(() => {
+        instrumentation.setConfig({
+          ignoreLayersType: [ExpressLayerType.MIDDLEWARE],
+        });
+      });
+
+      // Express v5 mounts middleware that applies to every path as a catch-all
+      // route, `{/*splat}` (NestJS registers its app-wide middleware this way),
+      // so those layers are request handlers, not middleware. Ignoring them
+      // used to leave their path in the layers store, and http.route became
+      // `{/*splat}/users/:id`.
+      it('should not leave the path of an ignored request handler in http.route', async function () {
+        // `{/*splat}` is Express v5 syntax
+        if (!isExpressV5) {
+          this.skip();
+        }
+        instrumentation.setConfig({ ignoreLayers: [/\{\/\*splat\}$/] });
+        let rpcMetadata: RPCMetadata | undefined;
+        const rootSpan = tracer.startSpan('rootSpan');
+
+        app.use((req, res, next) => {
+          rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+          return context.with(
+            setRPCMetadata(
+              trace.setSpan(context.active(), rootSpan),
+              rpcMetadata
+            ),
+            next
+          );
+        });
+        app.all('{/*splat}', (req, res, next) => next());
+        app.get('/users/:id', (req, res) => res.send('ok'));
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/users/42`);
+            rootSpan.end();
+
+            const spans = memoryExporter.getFinishedSpans();
+            const handlerSpans = spans.filter(
+              s =>
+                s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler'
+            );
+            // only the route's own handler: the catch-all one is ignored
+            assert.strictEqual(handlerSpans.length, 1);
+            assert.strictEqual(
+              handlerSpans[0].attributes[ATTR_HTTP_ROUTE],
+              '/users/:id',
+              'the ignored handler path must not leak into http.route'
+            );
+            assert.strictEqual(
+              handlerSpans[0].name,
+              'request handler - /users/:id'
+            );
+            assert.strictEqual(rpcMetadata!.route, '/users/:id');
+          }
+        );
+      });
+
+      it('should keep the path of an ignored router for the routes it mounts', async () => {
+        instrumentation.setConfig({ ignoreLayers: [/^router - /] });
+        let rpcMetadata: RPCMetadata | undefined;
+        const rootSpan = tracer.startSpan('rootSpan');
+
+        app.use((req, res, next) => {
+          rpcMetadata = { type: RPCType.HTTP, span: rootSpan };
+          return context.with(
+            setRPCMetadata(
+              trace.setSpan(context.active(), rootSpan),
+              rpcMetadata
+            ),
+            next
+          );
+        });
+        const api = express.Router();
+        api.get('/users/:id', (req, res) => res.send('ok'));
+        app.use('/api', api);
+
+        await context.with(
+          trace.setSpan(context.active(), rootSpan),
+          async () => {
+            await httpRequest.get(`http://localhost:${port}/api/users/42`);
+            rootSpan.end();
+
+            const spans = memoryExporter.getFinishedSpans();
+            assert.deepStrictEqual(
+              spans.filter(
+                s => s.attributes[AttributeNames.EXPRESS_TYPE] === 'router'
+              ),
+              [],
+              'the ignored router should have no span'
+            );
+            const handlerSpan = spans.find(
+              s =>
+                s.attributes[AttributeNames.EXPRESS_TYPE] === 'request_handler'
+            );
+            assert.strictEqual(
+              handlerSpan?.attributes[ATTR_HTTP_ROUTE],
+              '/api/users/:id'
+            );
+            assert.strictEqual(rpcMetadata!.route, '/api/users/:id');
+          }
+        );
+      });
     });
   });
 });

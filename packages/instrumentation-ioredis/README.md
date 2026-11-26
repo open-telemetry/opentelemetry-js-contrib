@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`ioredis`](https://github.com/luin/ioredis) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`ioredis`](https://github.com/luin/ioredis) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,41 +17,38 @@ npm install --save @opentelemetry/instrumentation-ioredis
 
 ### Supported Versions
 
-- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <6`
+- [`ioredis`](https://www.npmjs.com/package/ioredis) versions `>=2.0.0 <7`
 
 ## Usage
 
-To load a specific instrumentation (**ioredis** in this case), specify it in the registerInstrumentations's configuration
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
 
-```javascript
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const {
-  IORedisInstrumentation,
-} = require('@opentelemetry/instrumentation-ioredis');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+```js
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { IORedisInstrumentation } = require('@opentelemetry/instrumentation-ioredis');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new IORedisInstrumentation({
-      // see under for available configuration
+      // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### IORedis Instrumentation Options
 
 IORedis instrumentation has few options available to choose from. You can set the following:
 
-| Options                 | Type                                              | Description                                                                                                       |
-| ----------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function.                                 |
+| Options                 | Type                                              | Description |
+| ----------------------- | ------------------------------------------------- | ----------- |
+| `dbStatementSerializer` | `DbStatementSerializer`                           | IORedis instrumentation will serialize db.statement using the specified function. |
 | `requestHook`           | `RedisRequestCustomAttributeFunction` (function)  | Function for adding custom attributes on db request. Receives params: `span, { moduleVersion, cmdName, cmdArgs }` |
-| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response                                                              |
-| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true                                                 |
+| `responseHook`          | `RedisResponseCustomAttributeFunction` (function) | Function for adding custom attributes on db response |
+| `requireParentSpan`     | `boolean`                                         | Require parent to create ioredis span, default when unset is true |
 
 #### Custom db.statement Serializer
 
@@ -100,17 +97,18 @@ requestHook: function (
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+The `instrumentation-ioredis` versions 0.68.0 and later emit the stable v1.33.0+ semantic conventions.
 
 Attributes collected:
 
-| Attribute              | Short Description                                                           |
-| ---------------------- | --------------------------------------------------------------------------- |
-| `db.connection_string` | The connection string used to connect to the database.                      |
-| `db.statement`         | The database statement being executed.                                      |
-| `db.system`            | An identifier for the database management system (DBMS) product being used. |
-| `net.peer.name`        | Remote hostname or similar.                                                 |
-| `net.peer.port`        | Remote port number.                                                         |
+| Attribute        | Description |
+| ---------------- | ----------- |
+| `db.system.name` | 'redis'     |
+| `db.query.text`  | The database query being executed. |
+| `db.operation.name` | The database operation name.    |
+| `server.port`    | Remote port number. |
+| `server.address` | Remote hostname or similar. |
+
 
 ## Useful links
 

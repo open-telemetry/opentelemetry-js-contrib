@@ -1,13 +1,13 @@
 # OpenTelemetry Long Task Instrumentation for web
 
+> **Deprecated:** This package is deprecated because the Long Tasks API is deprecated. Use `LongAnimationFrameInstrumentation` from [`@opentelemetry/browser-instrumentation`][loaf-instrumentation] instead (0.12.0 and later), which reports the same long frames as log records, with the script attribution that the [Long Animation Frames API][mdn-long-animation-frames] provides.
+
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for [Long Task API][mdn-long-task] which may be loaded using the [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) package. It creates spans from tasks that take more than 50 milliseconds, all of the data reported via [`PerformanceLongTaskTiming`][mdn-performance-long-task-timing] is included as span attributes.
-
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-web`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-web) bundle with [`@opentelemetry/sdk-trace-web`](https://www.npmjs.com/package/@opentelemetry/sdk-trace-web) for the most seamless instrumentation experience.
-
-Compatible with OpenTelemetry JS API and SDK `1.0+`.
+This module provides automatic instrumentation for the [Long Task API][mdn-long-task].
+It creates spans from tasks that take more than 50 milliseconds.
+All of the data reported via [`PerformanceLongTaskTiming`][mdn-performance-long-task-timing] is included as span attributes.
 
 ## Installation
 
@@ -18,14 +18,13 @@ npm install --save @opentelemetry/instrumentation-long-task
 ## Usage
 
 ```js
-import { ConsoleSpanExporter, SimpleSpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import { ConsoleSpanExporter, SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
 import { LongTaskInstrumentation } from '@opentelemetry/instrumentation-long-task';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 
-const provider = new WebTracerProvider({
+const provider = new TracerProvider({
   spanProcessors: [
-    new SimpleSpanProcessor(new ConsoleSpanExporter()),
+    new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() }),
   ],
 });
 
@@ -81,3 +80,5 @@ Apache 2.0 - See [LICENSE][license-url] for more information.
 [npm-img]: https://badge.fury.io/js/%40opentelemetry%2Finstrumentation-long-task.svg
 [mdn-long-task]: https://developer.mozilla.org/en-US/docs/Web/API/Long_Tasks_API
 [mdn-performance-long-task-timing]: https://developer.mozilla.org/en-US/docs/Web/API/PerformanceLongTaskTiming
+[mdn-long-animation-frames]: https://developer.mozilla.org/en-US/docs/Web/API/Performance_API/Long_animation_frame_timing
+[loaf-instrumentation]: https://github.com/open-telemetry/opentelemetry-browser/tree/main/packages/instrumentation#long-animation-frames

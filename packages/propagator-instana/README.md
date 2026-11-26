@@ -22,16 +22,12 @@ npm install --save @opentelemetry/propagator-instana
 In the [global tracer configuration file](https://opentelemetry.io/docs/instrumentation/js/getting-started/nodejs/#setup), configure the following:
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { propagation } = require('@opentelemetry/api');
 const { InstanaPropagator } = require('@opentelemetry/propagator-instana');
 // ...
 
-const provider = new NodeTracerProvider();
-
-// Set the global trace context propagator to use X-INSTANA-T/-S/-L trace headers.
-provider.register({
-  propagator: new InstanaPropagator()
-});
+// Set the global propagator to use X-INSTANA-T/-S/-L trace headers.
+propagation.setGlobalPropagator(new InstanaPropagator());
 ```
 
 ## Propagator Details

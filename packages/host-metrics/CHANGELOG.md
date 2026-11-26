@@ -1,6 +1,59 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.39.0...host-metrics-v0.40.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.3...host-metrics-v0.39.0) (2026-06-11)
+
+
+### Features
+
+* add @opentelemetry/instrumentation-host-metrics and integrate into auto-instrumentations-node ([#3492](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3492)) ([16bee31](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/16bee31051d92e8add717a798c967147a84eb7b6))
+
+
+### Bug Fixes
+
+* systeminformation vulnerability ([#3525](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3525)) ([714f6cf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/714f6cf6cd5f91cf89e6e3f2769978d4faa60c0d))
+
+## [0.38.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.2...host-metrics-v0.38.3) (2026-02-25)
+
+
+### Bug Fixes
+
+* **instrumentation-host-metrics:** unpin and update to systeminformation@^5.31.1 ([#3392](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3392)) ([e4ffdb4](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e4ffdb43d160ace57420978da9c1855be653abe1))
+
+## [0.38.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.1...host-metrics-v0.38.2) (2026-01-21)
+
+
+### Bug Fixes
+
+* **deps:** update dependency systeminformation to v5.30.3 ([#3335](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3335)) ([9af0086](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/9af008622326464fa3076127bbab34a1dc0d10aa))
+
+## [0.38.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.38.0...host-metrics-v0.38.1) (2026-01-14)
+
+
+### Bug Fixes
+
+* **deps:** update dependency systeminformation to v5.27.14 [security] ([#3308](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3308)) ([c2d0bc5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c2d0bc5b1928e2147fe44c1a5a8b826f30b8f7de))
+
+## [0.38.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.37.0...host-metrics-v0.38.0) (2025-12-17)
+
+
+### Features
+
+* apply rule @typescript-eslint/explicit-member-accessibility ([#3250](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3250)) ([d0f9491](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d0f94913cfd7fccc29053a0dc6f6aef6572235cc))
+
 ## [0.37.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/host-metrics-v0.36.2...host-metrics-v0.37.0) (2025-11-06)
 
 

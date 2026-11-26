@@ -1,19 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
+const path = require('path');
 const webpack = require('webpack');
 
 // This is the webpack configuration for browser Karma tests with coverage.
@@ -23,10 +13,19 @@ module.exports = {
   output: { filename: 'bundle.js' },
   resolve: {
     extensions: ['.ts', '.js', '.tsx'],
+    alias: {
+      // Some ESM packages (e.g., sinon-esm) import 'process/browser' directly and require full path resolution
+      'process/browser': require.resolve('process/browser'),
+    },
     fallback: {
       // Enable the assert library polyfill because that is used in tests
       assert: require.resolve('assert/'),
       util: require.resolve('util/'),
+      // Polyfill Node's process for browser bundles
+      process: require.resolve('process/browser'),
+      // Only node-only platform code uses `path`; browser code paths never reach
+      // it. If that breaks: `TypeError: path.normalize is not a function`.
+      path: false,
     },
   },
   devtool: 'eval-source-map',
@@ -36,11 +35,17 @@ module.exports = {
       // because the `util` package expects there to be a global variable named `process`.
       // Thanks to https://stackoverflow.com/a/65018686/14239942
       // NOTE: I wish there was a better way as this pollutes the tests with a defined 'process' global.
-      process: 'process/browser.js'
-    })
+      process: 'process/browser.js',
+    }),
   ],
   module: {
     rules: [
+      {
+        // #platform resolves to src for the package under test only; dependencies
+        // keep their dist, as a global condition would resolve them to their src too.
+        include: path.resolve('src'),
+        resolve: { conditionNames: ['otel', '...'] },
+      },
       { test: /\.tsx?$/, use: 'ts-loader' },
       {
         test: /\.js$/,

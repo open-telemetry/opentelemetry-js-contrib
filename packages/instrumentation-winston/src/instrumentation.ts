@@ -1,21 +1,15 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace, isSpanContextValid, Span } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import {
+  context,
+  trace,
+  isSpanContextValid,
+  Span,
+  SeverityNumber,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -33,9 +27,13 @@ import type {
 } from './internal-types';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
+import { otelLogLevels } from './otel-levels';
 
 const winston3Versions = ['>=3 <4'];
 const winstonPre3Versions = ['>=1 <3'];
+const OTEL_CONTEXT_SYMBOL = Symbol.for(
+  'opentelemetry.js.contrib.winston.context'
+);
 
 export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumentationConfig> {
   constructor(config: WinstonInstrumentationConfig = {}) {
@@ -139,6 +137,7 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
         ...args: Parameters<typeof original>
       ) {
         const record = args[0];
+        record[OTEL_CONTEXT_SYMBOL] = context.active();
         instrumentation._handleLogCorrelation(record);
         return original.apply(this, args);
       };
@@ -196,13 +195,21 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
               let newTransports = Array.isArray(originalTransports)
                 ? originalTransports
                 : [];
-              let transportOptions = {};
-              if (config.logSeverity) {
-                const winstonLevel = instrumentation._winstonLevelFromSeverity(
-                  config.logSeverity,
-                  args[0].levels
-                );
-                transportOptions = { level: winstonLevel };
+              const transportOptions: Record<string, any> = {};
+              if (config.severityMapping) {
+                transportOptions.severityMapping = config.severityMapping;
+              }
+              if (config.logSeverity != null) {
+                transportOptions.logSeverity = config.logSeverity;
+                const winstonLevel = !config.severityMapping
+                  ? instrumentation._winstonLevelFromSeverity(
+                      config.logSeverity,
+                      args[0].levels
+                    )
+                  : undefined;
+                transportOptions.level =
+                  winstonLevel ??
+                  instrumentation._getPermissiveLevel(args[0].levels);
               }
               const openTelemetryTransport = new OpenTelemetryTransportV3(
                 transportOptions
@@ -249,7 +256,31 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     winstonLevels: { [key: string]: number } | undefined
   ): string | undefined {
     if (winstonLevels) {
-      if (isNpmLevels(winstonLevels)) {
+      if (isOtelLevels(winstonLevels)) {
+        if (severity >= SeverityNumber.FATAL) {
+          return 'fatal';
+        } else if (severity > SeverityNumber.ERROR) {
+          return 'fatal';
+        } else if (severity >= SeverityNumber.ERROR) {
+          return 'error';
+        } else if (severity > SeverityNumber.WARN) {
+          return 'error';
+        } else if (severity >= SeverityNumber.WARN) {
+          return 'warn';
+        } else if (severity > SeverityNumber.INFO) {
+          return 'warn';
+        } else if (severity >= SeverityNumber.INFO) {
+          return 'info';
+        } else if (severity > SeverityNumber.DEBUG) {
+          return 'info';
+        } else if (severity >= SeverityNumber.DEBUG) {
+          return 'debug';
+        } else if (severity > SeverityNumber.TRACE) {
+          return 'debug';
+        } else if (severity >= SeverityNumber.TRACE) {
+          return 'trace';
+        }
+      } else if (isNpmLevels(winstonLevels)) {
         if (severity >= SeverityNumber.ERROR) {
           return 'error';
         } else if (severity >= SeverityNumber.WARN) {
@@ -312,6 +343,17 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
       );
     }
 
+    function isOtelLevels(arg: any): boolean {
+      if (!arg || typeof arg !== 'object') {
+        return false;
+      }
+      const keys = Object.keys(arg);
+      if (keys.length !== 6) {
+        return false;
+      }
+      return keys.every(key => arg[key] === otelLogLevels[key]);
+    }
+
     function isCliLevels(arg: any): boolean {
       return (
         arg &&
@@ -356,5 +398,22 @@ export class WinstonInstrumentation extends InstrumentationBase<WinstonInstrumen
     }
 
     return;
+  }
+
+  private _getPermissiveLevel(
+    winstonLevels?: Record<string, number>
+  ): string | undefined {
+    if (!winstonLevels) {
+      return 'silly';
+    }
+    let maxPriority = -Infinity;
+    let permissiveLevel: string | undefined;
+    for (const [levelName, levelPriority] of Object.entries(winstonLevels)) {
+      if (typeof levelPriority === 'number' && levelPriority > maxPriority) {
+        maxPriority = levelPriority;
+        permissiveLevel = levelName;
+      }
+    }
+    return permissiveLevel;
   }
 }

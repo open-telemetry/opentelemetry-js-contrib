@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the injection of trace context to [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver), which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the injection of trace context to [`cassandra-driver`](https://www.npmjs.com/package/cassandra-driver).
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -22,19 +22,16 @@ npm install --save @opentelemetry/instrumentation-cassandra-driver
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { CassandraDriverInstrumentation } = require('@opentelemetry/instrumentation-cassandra-driver');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new CassandraDriverInstrumentation(),
-    // other instrumentations
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 
 const cassandra = require('cassandra-driver');
 const client = new cassandra.Client({ ... });
@@ -51,18 +48,17 @@ await client.execute('select * from foo');
 
 ## Semantic Conventions
 
-This package uses `@opentelemetry/semantic-conventions` version `1.22+`, which implements Semantic Convention [Version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation creates spans with attributes from the stable [OpenTelemetry semantic conventions for database client calls](https://opentelemetry.io/docs/specs/semconv/database/database-spans/).
 
-Attributes collected:
+The `instrumentation-cassandra-driver` versions 0.65.0 and later emit the stable v1.33.0+ semantic conventions.
 
-| Attribute               | Short Description                                                              |
-| ----------------------- | ------------------------------------------------------------------------------ |
-| `db.name`               | This attribute is used to report the name of the database being accessed.      |
-| `db.statement`          | The database statement being executed.                                         |
-| `db.system`             | An identifier for the database management system (DBMS) product being used.    |
-| `db.user`               | Username for accessing the database.                                           |
-| `net.peer.name`         | Remote hostname or similar.                                                    |
-| `net.peer.port`         | Remote port number.                                                            |
+| Attribute        | Description                                                                                                                                                                            |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db.system.name` | Database system identifier (`cassandra`).                                                                                                                                              |
+| `db.query.text`  | The database query being executed. Only set when `enhancedDatabaseReporting` is enabled.                                                                                               |
+| `db.namespace`   | The keyspace being accessed.                                                                                                                                                           |
+| `server.address` | Remote hostname or similar.                                                                                                                                                            |
+| `server.port`    | Remote port number.                                                                                                                                                                    |
 
 ## Useful links
 

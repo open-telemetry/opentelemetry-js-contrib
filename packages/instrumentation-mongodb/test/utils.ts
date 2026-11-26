@@ -1,30 +1,19 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { SpanKind, SpanStatusCode } from '@opentelemetry/api';
-import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_OPERATION,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-} from '../src/semconv';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import type { MongoClient, MongoClientOptions, Collection } from 'mongodb';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+} from '@opentelemetry/semantic-conventions';
 
 export const DEFAULT_MONGO_HOST = '127.0.0.1';
 
@@ -70,20 +59,10 @@ export function accessCollection(
   });
 }
 
-/**
- * Asserts root spans attributes.
- * @param spans Readable spans that we need to assert.
- * @param expectedName The expected name of the first root span.
- * @param expectedKind The expected kind of the first root span.
- * @param log Whether should debug print the expected spans.
- * @param isEnhancedDatabaseReportingEnabled Is enhanced database reporting enabled: boolean.
- */
 export function assertSpans(
   spans: ReadableSpan[],
-  expectedName: string,
-  expectedKind: SpanKind,
   expectedOperation: string,
-  expectedConnString: string | undefined,
+  expectedCollection: string,
   log = false,
   isEnhancedDatabaseReportingEnabled = false
 ) {
@@ -96,29 +75,30 @@ export function assertSpans(
     assert(span.endTime.length === 2);
   });
   const [mongoSpan] = spans;
-  assert.strictEqual(mongoSpan.name, expectedName);
-  assert.strictEqual(mongoSpan.kind, expectedKind);
+  assert.strictEqual(mongoSpan.kind, SpanKind.CLIENT);
+  assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
+
   assert.strictEqual(
-    mongoSpan.attributes[ATTR_DB_OPERATION],
+    mongoSpan.name,
+    `${expectedOperation} ${expectedCollection}`
+  );
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_DB_OPERATION_NAME],
     expectedOperation
   );
-  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM], 'mongodb');
   assert.strictEqual(
-    mongoSpan.attributes[ATTR_NET_PEER_NAME],
+    mongoSpan.attributes[ATTR_DB_COLLECTION_NAME],
+    expectedCollection
+  );
+  assert.strictEqual(mongoSpan.attributes[ATTR_DB_SYSTEM_NAME], 'mongodb');
+  assert.strictEqual(
+    mongoSpan.attributes[ATTR_SERVER_ADDRESS],
     process.env.MONGODB_HOST || DEFAULT_MONGO_HOST
   );
-  assert.strictEqual(mongoSpan.status.code, SpanStatusCode.UNSET);
-  if (expectedConnString) {
-    assert.strictEqual(
-      mongoSpan.attributes[ATTR_DB_CONNECTION_STRING],
-      expectedConnString
-    );
-  }
 
   if (isEnhancedDatabaseReportingEnabled) {
-    const dbStatement = JSON.parse(
-      mongoSpan.attributes[ATTR_DB_STATEMENT] as string
-    );
+    const dbQueryText = mongoSpan.attributes[ATTR_DB_QUERY_TEXT];
+    const dbStatement = JSON.parse(dbQueryText as string);
     for (const key in dbStatement) {
       assert.notStrictEqual(dbStatement[key], '?');
     }

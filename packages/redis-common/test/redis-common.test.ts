@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import { defaultDbStatementSerializer } from '../src/index';
 import * as assert from 'assert';
@@ -42,6 +31,53 @@ describe('#defaultDbStatementSerializer()', () => {
       cmdName: 'INCRBY',
       cmdArgs: ['key', 5],
       expected: 'INCRBY key 5',
+    },
+    // ACL subcommands with sensitive data should be redacted
+    {
+      cmdName: 'ACL',
+      cmdArgs: [
+        'SETUSER',
+        'alice',
+        'on',
+        '>MySecretPass',
+        '~user:alice:*',
+        '+@read',
+        '+@write',
+      ],
+      expected: 'ACL SETUSER [6 other arguments]',
+    },
+    {
+      cmdName: 'ACL',
+      cmdArgs: ['WHOAMI'],
+      expected: 'ACL WHOAMI',
+    },
+    {
+      cmdName: 'ACL',
+      cmdArgs: ['LIST'],
+      expected: 'ACL LIST',
+    },
+    // CONFIG subcommands with sensitive data should be redacted
+    {
+      cmdName: 'CONFIG',
+      cmdArgs: ['SET', 'requirepass', 'MyNewPassword123'],
+      expected: 'CONFIG SET [2 other arguments]',
+    },
+    {
+      cmdName: 'CONFIG',
+      cmdArgs: ['GET', 'maxmemory'],
+      expected: 'CONFIG GET [1 other arguments]',
+    },
+    // GETSET (deprecated) args should be redacted since it can contain sensitive data
+    {
+      cmdName: 'GETSET',
+      cmdArgs: ['key', 'secret_value'],
+      expected: 'GETSET key [1 other arguments]',
+    },
+    // PSETEX (deprecated) can also contain sensitive data
+    {
+      cmdName: 'PSETEX',
+      cmdArgs: ['key', '100000', 'secret_value'],
+      expected: 'PSETEX key [2 other arguments]',
     },
   ].forEach(({ cmdName, cmdArgs, expected }) => {
     it(`should serialize the correct number of arguments for ${cmdName}`, () => {

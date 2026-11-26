@@ -1,21 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import { Schema, Document } from 'mongoose';
 import * as mongoose from 'mongoose';
-import * as crypto from 'node:crypto';
 
 export interface IUser extends Document {
   email: string;
@@ -24,15 +12,16 @@ export interface IUser extends Document {
   age: number;
 }
 
-const UserSchema: Schema = new Schema({
+const UserSchema = new Schema({
   email: { type: String, required: true, unique: true },
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
   age: { type: Number, required: false },
 });
 
-// Export the model and return your IUser interface
-const User = mongoose.model<IUser>(crypto.randomUUID() + 'User', UserSchema);
+// Export the model with type assertion to work around mongoose@9 type instantiation issues
+// @ts-expect-error - mongoose@9 has excessively deep type instantiation in model()
+const User = mongoose.model('User', UserSchema) as mongoose.Model<IUser>;
 export default User;
 
 export const loadUsers = async () => {

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // We access through node_modules to allow it to be patched.
@@ -22,22 +11,32 @@ import { AwsLambdaInstrumentation } from '../../src';
 import {
   BatchSpanProcessor,
   InMemorySpanExporter,
-} from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { Context } from 'aws-lambda';
 import * as assert from 'assert';
-import { ProxyTracerProvider, TracerProvider } from '@opentelemetry/api';
+import {
+  logs,
+  ProxyTracerProvider,
+  TracerProvider as ApiTracerProvider,
+} from '@opentelemetry/api';
 import {
   AggregationTemporality,
   InMemoryMetricExporter,
   MeterProvider,
   PeriodicExportingMetricReader,
 } from '@opentelemetry/sdk-metrics';
+import {
+  InMemoryLogRecordExporter,
+  LoggerProvider,
+  SimpleLogRecordProcessor,
+} from '@opentelemetry/sdk-logs';
 
 const traceMemoryExporter = new InMemorySpanExporter();
 const metricMemoryExporter = new InMemoryMetricExporter(
   AggregationTemporality.CUMULATIVE
 );
+const logMemoryExporter = new InMemoryLogRecordExporter();
 
 describe('force flush', () => {
   let instrumentation: AwsLambdaInstrumentation;
@@ -52,7 +51,7 @@ describe('force flush', () => {
 
   const initializeHandlerTracing = (
     handler: string,
-    provider: TracerProvider
+    provider: ApiTracerProvider
   ) => {
     process.env._HANDLER = handler;
 
@@ -70,6 +69,16 @@ describe('force flush', () => {
     instrumentation.setMeterProvider(provider);
   };
 
+  const initializeHandlerLogging = (
+    handler: string,
+    provider: LoggerProvider
+  ) => {
+    process.env._HANDLER = handler;
+
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setLoggerProvider(provider);
+  };
+
   const lambdaRequire = (module: string) =>
     require(path.resolve(__dirname, '..', module));
 
@@ -81,16 +90,20 @@ describe('force flush', () => {
   afterEach(() => {
     process.env = oldEnv;
     instrumentation.disable();
+    // Reset the global logger provider so the delegating-proxy test starts clean.
+    logs.disable();
 
     traceMemoryExporter.reset();
     metricMemoryExporter.reset();
+    logMemoryExporter.reset();
   });
 
-  it('should force flush NodeTracerProvider', async () => {
-    const provider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+  it('should force flush TracerProvider', async () => {
+    const provider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
-    provider.register();
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
@@ -100,52 +113,29 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should force flush ProxyTracerProvider with NodeTracerProvider', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+  it('should force flush ProxyTracerProvider with TracerProvider', async () => {
+    const tracerProvider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
     });
-    nodeTracerProvider.register();
     const provider = new ProxyTracerProvider();
-    provider.setDelegate(nodeTracerProvider);
+    provider.setDelegate(tracerProvider);
     let forceFlushed = false;
     const forceFlush = () =>
       new Promise<void>(resolve => {
         forceFlushed = true;
         resolve();
       });
-    nodeTracerProvider.forceFlush = forceFlush;
+    tracerProvider.forceFlush = forceFlush;
     initializeHandlerTracing('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
@@ -165,28 +155,68 @@ describe('force flush', () => {
     provider.forceFlush = forceFlush;
     initializeHandlerMetrics('lambda-test/sync.handler', provider);
 
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(forceFlushed, true);
   });
 
-  it('should callback once after force flush providers', async () => {
-    const nodeTracerProvider = new NodeTracerProvider({
-      spanProcessors: [new BatchSpanProcessor(traceMemoryExporter)],
+  it('should force flush LoggerProvider', async () => {
+    const provider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
     });
-    nodeTracerProvider.register();
+    let forceFlushed = false;
+    const forceFlush = () =>
+      new Promise<void>(resolve => {
+        forceFlushed = true;
+        resolve();
+      });
+    provider.forceFlush = forceFlush;
+    initializeHandlerLogging('lambda-test/sync.handler', provider);
+
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+
+    assert.strictEqual(forceFlushed, true);
+  });
+
+  it('should force flush a LoggerProvider obtained via the API (delegating proxy)', async () => {
+    // A LoggerProvider obtained from the logs API is a delegating
+    // ProxyLoggerProvider. We wire its delegate to a real LoggerProvider and
+    // then hand the proxy to the instrumentation, mirroring the
+    // ProxyTracerProvider test above. The delegate is wired before
+    // setLoggerProvider because the force-flusher is resolved at that point.
+    const provider = logs.getLoggerProvider();
+
+    const loggerProvider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
+    });
+    let forceFlushed = false;
+    const forceFlush = () =>
+      new Promise<void>(resolve => {
+        forceFlushed = true;
+        resolve();
+      });
+    loggerProvider.forceFlush = forceFlush;
+    logs.setGlobalLoggerProvider(loggerProvider);
+
+    process.env._HANDLER = 'lambda-test/sync.handler';
+    instrumentation = new AwsLambdaInstrumentation();
+    instrumentation.setLoggerProvider(provider);
+
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
+
+    assert.strictEqual(forceFlushed, true);
+  });
+
+  it('should complete handler after force flush providers', async () => {
+    const nodeTracerProvider = new TracerProvider({
+      spanProcessors: [
+        new BatchSpanProcessor({ exporter: traceMemoryExporter }),
+      ],
+    });
     const tracerProvider = new ProxyTracerProvider();
     tracerProvider.setDelegate(nodeTracerProvider);
     let tracerForceFlushed = false;
@@ -210,30 +240,30 @@ describe('force flush', () => {
       });
     meterProvider.forceFlush = meterForceFlush;
 
+    const loggerProvider = new LoggerProvider({
+      processors: [
+        new SimpleLogRecordProcessor({ exporter: logMemoryExporter }),
+      ],
+    });
+    let loggerForceFlushed = false;
+    const loggerForceFlush = () =>
+      new Promise<void>(resolve => {
+        loggerForceFlushed = true;
+        resolve();
+      });
+    loggerProvider.forceFlush = loggerForceFlush;
+
     process.env._HANDLER = 'lambda-test/sync.handler';
 
     instrumentation = new AwsLambdaInstrumentation();
     instrumentation.setTracerProvider(tracerProvider);
     instrumentation.setMeterProvider(meterProvider);
+    instrumentation.setLoggerProvider(loggerProvider);
 
-    let callbackCount = 0;
-    await new Promise((resolve, reject) => {
-      lambdaRequire('lambda-test/sync').handler(
-        'arg',
-        ctx,
-        (err: Error, res: any) => {
-          callbackCount++;
-          if (err) {
-            reject(err);
-          } else {
-            resolve(res);
-          }
-        }
-      );
-    });
+    await lambdaRequire('lambda-test/sync').handler('arg', ctx);
 
     assert.strictEqual(tracerForceFlushed, true);
     assert.strictEqual(meterForceFlushed, true);
-    assert.strictEqual(callbackCount, 1);
+    assert.strictEqual(loggerForceFlushed, true);
   });
 });

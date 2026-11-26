@@ -1,6 +1,24 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.39.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.3...redis-common-v0.39.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.38.3](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.2...redis-common-v0.38.3) (2026-04-17)
+
+
+### Bug Fixes
+
+* **redis-common:** expand redaction to include ACL, CONFIG, PSETEX, GETSET ([#3472](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3472)) ([39193ca](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/39193cac4124eedc9e8fa5ae16ba960b5ab7a36b))
+
 ## [0.38.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/redis-common-v0.38.1...redis-common-v0.38.2) (2025-09-29)
 
 

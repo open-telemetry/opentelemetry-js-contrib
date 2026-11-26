@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -33,17 +22,7 @@ import {
   ATTR_SERVER_ADDRESS,
   ATTR_SERVER_PORT,
 } from '@opentelemetry/semantic-conventions';
-import {
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-  DB_SYSTEM_VALUE_REDIS,
-} from '../../src/semconv';
-import { SemconvStability } from '@opentelemetry/instrumentation';
 
-process.env.OTEL_SEMCONV_STABILITY_OPT_IN = 'database/dup';
 const instrumentation = testUtils.registerInstrumentationTesting(
   new RedisInstrumentation()
 );
@@ -62,10 +41,6 @@ const DEFAULT_ATTRIBUTES = {
   [ATTR_DB_SYSTEM_NAME]: 'redis',
   [ATTR_SERVER_ADDRESS]: CONFIG.host,
   [ATTR_SERVER_PORT]: CONFIG.port,
-  [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-  [ATTR_NET_PEER_NAME]: CONFIG.host,
-  [ATTR_NET_PEER_PORT]: CONFIG.port,
-  [ATTR_DB_CONNECTION_STRING]: URL,
 };
 
 const unsetStatus: SpanStatus = {
@@ -117,7 +92,6 @@ describe('redis v2-v3', () => {
       description: string;
       command: string;
       args: string[];
-      expectedDbStatementOld: string;
       expectedDbStatementStable: string;
       method: (cb: Callback<unknown>) => unknown;
     }> = [
@@ -125,7 +99,6 @@ describe('redis v2-v3', () => {
         description: 'insert',
         command: 'hset',
         args: ['hash', 'random', 'random'],
-        expectedDbStatementOld: 'hash random [1 other arguments]',
         expectedDbStatementStable: 'hset hash random [1 other arguments]',
         method: (cb: Callback<number>) =>
           client.hset('hash', 'random', 'random', cb),
@@ -134,7 +107,6 @@ describe('redis v2-v3', () => {
         description: 'get',
         command: 'get',
         args: ['test'],
-        expectedDbStatementOld: 'test',
         expectedDbStatementStable: 'get test',
         method: (cb: Callback<string | null>) => client.get('test', cb),
       },
@@ -142,7 +114,6 @@ describe('redis v2-v3', () => {
         description: 'delete',
         command: 'del',
         args: ['test'],
-        expectedDbStatementOld: 'test',
         expectedDbStatementStable: 'del test',
         method: (cb: Callback<number>) => client.del('test', cb),
       },
@@ -185,41 +156,7 @@ describe('redis v2-v3', () => {
       describe('semconv stability with get operation', () => {
         const operation = REDIS_OPERATIONS.find(op => op.command === 'get')!;
 
-        it('should emit only old attributes when set to OLD', done => {
-          instrumentation.setConfig({ semconvStability: SemconvStability.OLD });
-
-          recordSpanForOperation(operation, span => {
-            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], 'redis');
-            assert.strictEqual(
-              span.attributes[ATTR_DB_STATEMENT],
-              `${operation.command} ${operation.expectedDbStatementOld}`
-            );
-
-            assert.ok(!(ATTR_DB_SYSTEM_NAME in span.attributes));
-            assert.ok(!(ATTR_DB_QUERY_TEXT in span.attributes));
-            assert.ok(!(ATTR_DB_OPERATION_NAME in span.attributes));
-
-            assert.strictEqual(
-              span.attributes[ATTR_NET_PEER_NAME],
-              CONFIG.host
-            );
-            assert.strictEqual(
-              span.attributes[ATTR_NET_PEER_PORT],
-              CONFIG.port
-            );
-            assert.strictEqual(span.attributes[ATTR_DB_CONNECTION_STRING], URL);
-
-            assert.ok(!(ATTR_SERVER_ADDRESS in span.attributes));
-            assert.ok(!(ATTR_SERVER_PORT in span.attributes));
-            done();
-          });
-        });
-
-        it('should emit only new attributes when set to STABLE', done => {
-          instrumentation.setConfig({
-            semconvStability: SemconvStability.STABLE,
-          });
-
+        it('should always emit stable attributes', done => {
           recordSpanForOperation(operation, span => {
             assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
             assert.strictEqual(
@@ -227,61 +164,14 @@ describe('redis v2-v3', () => {
               operation.expectedDbStatementStable
             );
             assert.strictEqual(
-              span.attributes[ATTR_DB_OPERATION_NAME],
-              operation.command
-            );
-
-            assert.ok(!(ATTR_DB_SYSTEM in span.attributes));
-            assert.ok(!(ATTR_DB_STATEMENT in span.attributes));
-
-            assert.strictEqual(
               span.attributes[ATTR_SERVER_ADDRESS],
               CONFIG.host
             );
             assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
 
-            assert.ok(!(ATTR_NET_PEER_NAME in span.attributes));
-            assert.ok(!(ATTR_NET_PEER_PORT in span.attributes));
-            assert.ok(!(ATTR_DB_CONNECTION_STRING in span.attributes));
-            done();
-          });
-        });
-
-        it('should emit both old and new attributes when set to DUPLICATE', done => {
-          instrumentation.setConfig({
-            semconvStability: SemconvStability.DUPLICATE,
-          });
-
-          recordSpanForOperation(operation, span => {
-            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], 'redis');
-            assert.strictEqual(
-              span.attributes[ATTR_DB_STATEMENT],
-              `${operation.command} ${operation.expectedDbStatementOld}`
-            );
-            assert.strictEqual(span.attributes[ATTR_DB_SYSTEM_NAME], 'redis');
-            assert.strictEqual(
-              span.attributes[ATTR_DB_QUERY_TEXT],
-              operation.expectedDbStatementStable
-            );
-            assert.strictEqual(
-              span.attributes[ATTR_DB_OPERATION_NAME],
-              operation.command
-            );
-
-            assert.strictEqual(
-              span.attributes[ATTR_NET_PEER_NAME],
-              CONFIG.host
-            );
-            assert.strictEqual(
-              span.attributes[ATTR_NET_PEER_PORT],
-              CONFIG.port
-            );
-            assert.strictEqual(
-              span.attributes[ATTR_SERVER_ADDRESS],
-              CONFIG.host
-            );
-            assert.strictEqual(span.attributes[ATTR_SERVER_PORT], CONFIG.port);
-            assert.strictEqual(span.attributes[ATTR_DB_CONNECTION_STRING], URL);
+            assert.ok(!('db.system' in span.attributes));
+            assert.ok(!('db.statement' in span.attributes));
+            assert.ok(!('net.peer.name' in span.attributes));
             done();
           });
         });
@@ -295,7 +185,6 @@ describe('redis v2-v3', () => {
             ...DEFAULT_ATTRIBUTES,
             [ATTR_DB_OPERATION_NAME]: operation.command,
             [ATTR_DB_QUERY_TEXT]: operation.expectedDbStatementStable,
-            [ATTR_DB_STATEMENT]: `${operation.command} ${operation.expectedDbStatementOld}`,
           };
           const span = tracer.startSpan('test span');
           context.with(trace.setSpan(context.active(), span), () => {
@@ -335,6 +224,68 @@ describe('redis v2-v3', () => {
       });
     });
 
+    describe('sensitive command sanitization', () => {
+      it('should redact CONFIG SET arguments in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.config('set', 'hz', '15', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'config set [2 other arguments]'
+              );
+              done();
+            } catch (error) {
+              done(error);
+            }
+          });
+        });
+      });
+
+      it('should redact GETSET value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.getset('test', 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'getset test [1 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+
+      it('should redact PSETEX value in db.statement', function (done) {
+        const span = tracer.startSpan('test span');
+        context.with(trace.setSpan(context.active(), span), () => {
+          client.psetex('test', 60000, 'secret-value', (err: unknown) => {
+            try {
+              assert.ifError(err);
+              span.end();
+              const endedSpans = testUtils.getTestSpans();
+              assert.strictEqual(
+                endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
+                'psetex test [2 other arguments]'
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+    });
+
     describe('dbStatementSerializer config', () => {
       const dbStatementSerializer = (
         cmdName: string,
@@ -362,11 +313,6 @@ describe('redis v2-v3', () => {
                 operation.command,
                 operation.args
               );
-              assert.strictEqual(
-                endedSpans[0].attributes[ATTR_DB_STATEMENT],
-                expectedStatement
-              );
-
               assert.strictEqual(
                 endedSpans[0].attributes[ATTR_DB_QUERY_TEXT],
                 expectedStatement

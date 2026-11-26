@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -36,7 +25,6 @@ process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 import 'mocha';
 import { SpanStatusCode, Span } from '@opentelemetry/api';
 import {
-  ATTR_HTTP_STATUS_CODE,
   ATTR_RPC_METHOD,
   ATTR_RPC_SERVICE,
   ATTR_RPC_SYSTEM,
@@ -77,11 +65,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
       expect(span.kind).toEqual(SpanKind.CLIENT);
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
-
-      // We also expect the stable `http.response.status_code` because
-      // `OTEL_SEMCONV_STABILITY_OPT_IN=http/dup` has been set before creating
-      // the instrumentation.
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
@@ -108,7 +91,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         );
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.name).toEqual('S3.PutObject');
-        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
         expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
         done();
       });
@@ -138,7 +120,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
       );
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
       expect(span.name).toEqual('S3.PutObject');
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
     });
 
@@ -173,7 +154,6 @@ describe('instrumentation-aws-sdk-v3 (client-s3)', () => {
         expect(span.attributes[AttributeNames.AWS_S3_BUCKET]).toEqual(
           'invalid-bucket-name'
         );
-        expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(403);
         expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(403);
         expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
         expect(span.attributes[AttributeNames.AWS_REQUEST_ID]).toEqual(

@@ -1,0 +1,86 @@
+[
+	{
+		"scope": "https://api.openai.com:443",
+		"method": "POST",
+		"path": "/v1/responses",
+		"body": {
+			"model": "gpt-4o-mini",
+			"tools": [{ "type": "web_search" }],
+			"input": "What was a positive news story from today?",
+			"include": ["web_search_call.action.sources"]
+		},
+		"status": 200,
+		"response": {
+			"id": "resp_67ca09c5efe0819096d0511c92b8c890096610f474011cc0",
+			"object": "response",
+			"created_at": 1741294021,
+			"status": "completed",
+			"error": null,
+			"incomplete_details": null,
+			"instructions": null,
+			"max_output_tokens": null,
+			"model": "gpt-4.1-2025-04-14",
+			"output": [
+				{
+					"type": "web_search_call",
+					"id": "ws_67c9fa0502748190b7dd390736892e100be649c1a5ff9609",
+					"action": "search",
+					"status": "completed"
+				},
+				{
+					"id": "msg_67c9fa077e288190af08fdffda2e34f20be649c1a5ff9609",
+					"type": "message",
+					"status": "completed",
+					"role": "assistant",
+					"content": [
+						{
+							"type": "output_text",
+							"text": "On March 6, 2025, several news...",
+							"annotations": [
+								{
+									"type": "url_citation",
+									"start_index": 2606,
+									"end_index": 2758,
+									"url": "https://...",
+									"title": "Title..."
+								}
+							]
+						}
+					]
+				}
+			],
+			"parallel_tool_calls": true,
+			"previous_response_id": null,
+			"reasoning": {
+				"effort": null,
+				"summary": null
+			},
+			"store": true,
+			"temperature": 1.0,
+			"text": {
+				"format": {
+					"type": "text"
+				}
+			},
+			"tool_choice": "auto",
+			"tools": [{ "type": "web_search" }],
+			"top_p": 1.0,
+			"truncation": "disabled",
+			"usage": {
+				"input_tokens": 291,
+				"output_tokens": 23,
+				"output_tokens_details": {
+					"reasoning_tokens": 0
+				},
+				"total_tokens": 314
+			},
+			"user": null,
+			"metadata": {}
+		},
+		"rawHeaders": {
+			"content-type": "application/json",
+			"date": "Fri, 11 Jul 2025 07:02:40 GMT"
+		},
+		"responseIsBinary": false
+	}
+]

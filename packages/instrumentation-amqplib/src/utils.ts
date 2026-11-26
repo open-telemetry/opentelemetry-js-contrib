@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import {
   Context,
@@ -23,10 +12,10 @@ import {
   AttributeValue,
 } from '@opentelemetry/api';
 import {
-  ATTR_MESSAGING_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import { ATTR_MESSAGING_SYSTEM } from './semconv';
 import {
   ATTR_MESSAGING_PROTOCOL,
   ATTR_MESSAGING_PROTOCOL_VERSION,
@@ -162,16 +151,17 @@ export const getConnectionAttributesFromUrl = (
     Object.assign(attributes, {
       ...extractConnectionAttributeOrLog(
         url,
-        ATTR_NET_PEER_NAME,
+        ATTR_SERVER_ADDRESS,
         hostname,
         'hostname'
       ),
     });
 
     const port = getPort(connectOptions.port, protocol);
-    Object.assign(attributes, {
-      ...extractConnectionAttributeOrLog(url, ATTR_NET_PEER_PORT, port, 'port'),
-    });
+    Object.assign(
+      attributes,
+      extractConnectionAttributeOrLog(url, ATTR_SERVER_PORT, port, 'port')
+    );
   } else {
     const censoredUrl = censorPassword(url);
     attributes[ATTR_MESSAGING_URL] = censoredUrl;
@@ -192,7 +182,7 @@ export const getConnectionAttributesFromUrl = (
       Object.assign(attributes, {
         ...extractConnectionAttributeOrLog(
           censoredUrl,
-          ATTR_NET_PEER_NAME,
+          ATTR_SERVER_ADDRESS,
           hostname,
           'hostname'
         ),
@@ -202,14 +192,15 @@ export const getConnectionAttributesFromUrl = (
         urlParts.port ? parseInt(urlParts.port) : undefined,
         protocol
       );
-      Object.assign(attributes, {
-        ...extractConnectionAttributeOrLog(
+      Object.assign(
+        attributes,
+        extractConnectionAttributeOrLog(
           censoredUrl,
-          ATTR_NET_PEER_PORT,
+          ATTR_SERVER_PORT,
           port,
           'port'
-        ),
-      });
+        )
+      );
     } catch (err) {
       diag.error(
         'amqplib instrumentation: error while extracting connection details from connection url',

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as perf_hooks from 'node:perf_hooks';
@@ -22,7 +11,9 @@ import { Histogram, ValueType } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import { ATTR_V8JS_GC_TYPE, METRIC_V8JS_GC_DURATION } from '../semconv';
 
-const DEFAULT_GC_DURATION_BUCKETS = [0.01, 0.1, 1, 10];
+const DEFAULT_GC_DURATION_BUCKETS = [
+  0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10,
+];
 
 const kinds: string[] = [];
 kinds[perf_hooks.constants.NODE_PERFORMANCE_GC_MAJOR] = 'major';
@@ -39,16 +30,17 @@ export class GCCollector extends BaseCollector {
     this._observer = new perf_hooks.PerformanceObserver(list => {
       if (!this._config.enabled) return;
 
-      const entry = list.getEntries()[0];
-      // Node < 16 uses entry.kind
-      // Node >= 16 uses entry.detail.kind
-      // See: https://nodejs.org/docs/latest-v16.x/api/deprecations.html#deprecations_dep0152_extension_performanceentry_properties
-      // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
-      // @ts-ignore
-      const kind = entry.detail ? kinds[entry.detail.kind] : kinds[entry.kind];
-      this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
-        [ATTR_V8JS_GC_TYPE]: kind,
-      });
+      for (const entry of list.getEntries()) {
+        // Node < 16 uses entry.kind
+        // Node >= 16 uses entry.detail.kind
+        // See: https://nodejs.org/docs/latest-v16.x/api/deprecations.html#deprecations_dep0152_extension_performanceentry_properties
+        // eslint-disable-next-line  @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        const kind = kinds[entry.detail ? entry.detail.kind : entry.kind];
+        this._gcDurationByKindHistogram?.record(entry.duration / 1000, {
+          [ATTR_V8JS_GC_TYPE]: kind,
+        });
+      }
     });
   }
 

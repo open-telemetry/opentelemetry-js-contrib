@@ -1,0 +1,108 @@
+[
+  {
+    "scope": "https://api.openai.com:443",
+    "method": "POST",
+    "path": "/v1/responses",
+    "body": {
+      "model": "gpt-4o-mini",
+      "tools": [
+        {
+          "type": "mcp",
+          "server_label": "dmcp",
+          "server_description": "A Dungeons and Dragons MCP server to assist with dice rolling.",
+          "server_url": "https://dmcp-server.deno.dev/sse",
+          "require_approval": "always",
+          "allowed_tools": [
+            "roll"
+          ]
+        }
+      ],
+      "input": "Roll 2d4+1"
+    },
+    "status": 200,
+    "response": {
+      "id": "resp_70c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5",
+      "object": "response",
+      "created_at": 1741294021,
+      "status": "completed",
+      "error": null,
+      "incomplete_details": null,
+      "instructions": null,
+      "max_output_tokens": null,
+      "model": "gpt-4.1-2025-04-14",
+      "output": [
+        {
+          "id": "mcpl_70c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7",
+          "type": "mcp_list_tools",
+          "server_label": "dmcp",
+          "tools": [
+            {
+              "annotations": null,
+              "description": "Given a string of text describing a dice roll expression, rolls the dice.",
+              "input_schema": {
+                "type": "object",
+                "properties": {
+                  "diceRollExpression": {
+                    "type": "string"
+                  }
+                },
+                "required": ["diceRollExpression"]
+              },
+              "name": "roll"
+            }
+          ]
+        },
+        {
+          "id": "mcpr_70c3d4e5f6a7b8c9d0e1f2a3b4c5d6e8",
+          "type": "mcp_approval_request",
+          "name": "roll",
+          "arguments": "{\"diceRollExpression\":\"2d4 + 1\"}",
+          "server_label": "dmcp"
+        }
+      ],
+      "parallel_tool_calls": true,
+      "previous_response_id": null,
+      "reasoning": {
+        "effort": null,
+        "summary": null
+      },
+      "store": true,
+      "temperature": 1.0,
+      "text": {
+        "format": {
+          "type": "text"
+        }
+      },
+      "tool_choice": "auto",
+      "tools": [
+        {
+          "type": "mcp",
+          "server_label": "dmcp",
+          "server_description": "A Dungeons and Dragons MCP server to assist with dice rolling.",
+          "server_url": "https://dmcp-server.deno.dev/sse",
+          "require_approval": "always",
+          "allowed_tools": [
+            "roll"
+          ]
+        }
+      ],
+      "top_p": 1.0,
+      "truncation": "disabled",
+      "usage": {
+        "input_tokens": 291,
+        "output_tokens": 23,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 314
+      },
+      "user": null,
+      "metadata": {}
+    },
+    "rawHeaders": {
+      "content-type": "application/json",
+      "date": "Fri, 11 Jul 2025 07:02:40 GMT"
+    },
+    "responseIsBinary": false
+  }
+]

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { ResourceDetector, DetectedResource } from '@opentelemetry/resources';
@@ -24,20 +13,16 @@ import { extractContainerIdFromLine } from './utils';
 import { ATTR_CONTAINER_ID } from '../semconv';
 
 export class ContainerDetector implements ResourceDetector {
-  readonly CONTAINER_ID_LENGTH = 64;
-  readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
-  readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
-  readonly UTF8_UNICODE = 'utf8';
-  readonly HOSTNAME = 'hostname';
-  readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
-  readonly CRIO = 'crio-';
-  readonly CRI_CONTAINERD = 'cri-containerd-';
-  readonly DOCKER = 'docker-';
-  readonly HEX_STRING_REGEX: RegExp = /^[a-f0-9]+$/i;
+  public readonly CONTAINER_ID_LENGTH = 64;
+  public readonly DEFAULT_CGROUP_V1_PATH = '/proc/self/cgroup';
+  public readonly DEFAULT_CGROUP_V2_PATH = '/proc/self/mountinfo';
+  public readonly UTF8_UNICODE = 'utf8';
+  public readonly HOSTNAME = 'hostname';
+  public readonly MARKING_PREFIX = ['containers', 'overlay-containers'];
 
   private static readFileAsync = util.promisify(fs.readFile);
 
-  detect(): DetectedResource {
+  public detect(): DetectedResource {
     const attributes = {
       [ATTR_CONTAINER_ID]: this._getContainerIdWithSuppressedTracing(),
     };

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -21,6 +10,7 @@ import {
   Span,
   SpanKind,
   SpanStatusCode,
+  type Attributes,
 } from '@opentelemetry/api';
 import {
   InstrumentationBase,
@@ -28,17 +18,26 @@ import {
   isWrapped,
 } from '@opentelemetry/instrumentation';
 import {
-  DB_SYSTEM_VALUE_MYSQL,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MYSQL,
+} from '@opentelemetry/semantic-conventions';
+import {
+  METRIC_DB_CLIENT_CONNECTION_COUNT,
+  ATTR_DB_CLIENT_CONNECTION_POOL_NAME,
+  ATTR_DB_CLIENT_CONNECTION_STATE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_IDLE,
+  DB_CLIENT_CONNECTION_STATE_VALUE_USED,
 } from './semconv';
 import type * as mysqlTypes from 'mysql';
 import { AttributeNames } from './AttributeNames';
 import { MySQLInstrumentationConfig } from './types';
 import {
-  getConnectionAttributes,
-  getDbStatement,
+  getConfig,
+  getDbQueryText,
   getDbValues,
   getSpanName,
   getPoolName,
@@ -53,24 +52,31 @@ type getConnectionCallbackType = (
 ) => void;
 
 export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentationConfig> {
-  static readonly COMMON_ATTRIBUTES = {
-    [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_MYSQL,
-  };
-  private declare _connectionsUsage: UpDownCounter;
+  declare private _connectionsCount: UpDownCounter;
 
   constructor(config: MySQLInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
   protected override _updateMetricInstruments() {
-    this._connectionsUsage = this.meter.createUpDownCounter(
-      METRIC_DB_CLIENT_CONNECTIONS_USAGE,
+    this._connectionsCount = this.meter.createUpDownCounter(
+      METRIC_DB_CLIENT_CONNECTION_COUNT,
       {
         description:
           'The number of connections that are currently in state described by the state attribute.',
         unit: '{connection}',
       }
     );
+  }
+
+  /**
+   * Convenience function for updating the `db.client.connection.count` metric.
+   */
+  private _connCountAdd(n: number, poolName: string, state: string) {
+    this._connectionsCount?.add(n, {
+      [ATTR_DB_CLIENT_CONNECTION_POOL_NAME]: poolName,
+      [ATTR_DB_CLIENT_CONNECTION_STATE]: state,
+    });
   }
 
   protected init() {
@@ -154,12 +160,13 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
           thisPlugin._patchGetConnection(pool)
         );
         thisPlugin._wrap(pool, 'end', thisPlugin._patchPoolEnd(pool));
-        thisPlugin._setPoolcallbacks(pool, thisPlugin, '');
+        thisPlugin._setPoolCallbacks(pool, '');
 
         return pool;
       };
     };
   }
+
   private _patchPoolEnd(pool: any) {
     return (originalPoolEnd: Function) => {
       const thisPlugin = this;
@@ -168,14 +175,16 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         const nFree = (pool as any)._freeConnections.length;
         const nUsed = nAll - nFree;
         const poolName = getPoolName(pool);
-        thisPlugin._connectionsUsage.add(-nUsed, {
-          state: 'used',
-          name: poolName,
-        });
-        thisPlugin._connectionsUsage.add(-nFree, {
-          state: 'idle',
-          name: poolName,
-        });
+        thisPlugin._connCountAdd(
+          -nUsed,
+          poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_USED
+        );
+        thisPlugin._connCountAdd(
+          -nFree,
+          poolName,
+          DB_CLIENT_CONNECTION_STATE_VALUE_IDLE
+        );
         originalPoolEnd.apply(pool, arguments);
       };
     };
@@ -205,7 +214,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
       const thisPlugin = this;
       return function add(id: string, config: unknown) {
         // Unwrap if unpatch has been called
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(cluster, 'add');
           return originalAdd.apply(cluster, arguments);
         }
@@ -218,7 +227,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
               : String(id);
 
           const pool = nodes[nodeId].pool;
-          thisPlugin._setPoolcallbacks(pool, thisPlugin, id);
+          thisPlugin._setPoolCallbacks(pool, id);
         }
       };
     };
@@ -235,7 +244,7 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         arg3?: unknown
       ) {
         // Unwrap if unpatch has been called
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(pool, 'getConnection');
           return originalGetConnection.apply(pool, arguments);
         }
@@ -298,20 +307,28 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
         _valuesOrCallback?: unknown[] | mysqlTypes.queryCallback,
         _callback?: mysqlTypes.queryCallback
       ) {
-        if (!thisPlugin['_enabled']) {
+        if (!thisPlugin.isEnabled()) {
           thisPlugin._unwrap(connection, 'query');
           return originalQuery.apply(connection, arguments);
         }
 
+        const attributes: Attributes = {};
+        const { host, port, database } = getConfig(connection.config);
+        const portNumber = parseInt(port, 10);
+        const dbQueryText = getDbQueryText(query);
+
+        attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_MYSQL;
+        attributes[ATTR_DB_NAMESPACE] = database;
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+        attributes[ATTR_SERVER_ADDRESS] = host;
+        if (!isNaN(portNumber)) {
+          attributes[ATTR_SERVER_PORT] = portNumber;
+        }
+
         const span = thisPlugin.tracer.startSpan(getSpanName(query), {
           kind: SpanKind.CLIENT,
-          attributes: {
-            ...MySQLInstrumentation.COMMON_ATTRIBUTES,
-            ...getConnectionAttributes(connection.config),
-          },
+          attributes,
         });
-
-        span.setAttribute(ATTR_DB_STATEMENT, getDbStatement(query));
 
         if (thisPlugin.getConfig().enhancedDatabaseReporting) {
           let values;
@@ -388,41 +405,22 @@ export class MySQLInstrumentation extends InstrumentationBase<MySQLInstrumentati
       };
     };
   }
-  private _setPoolcallbacks(
-    pool: mysqlTypes.Pool,
-    thisPlugin: MySQLInstrumentation,
-    id: string
-  ) {
-    //TODO:: use semantic convention
+
+  private _setPoolCallbacks(pool: mysqlTypes.Pool, id: string) {
     const poolName = id || getPoolName(pool);
 
-    pool.on('connection', connection => {
-      thisPlugin._connectionsUsage.add(1, {
-        state: 'idle',
-        name: poolName,
-      });
+    pool.on('connection', _connection => {
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
     });
 
-    pool.on('acquire', connection => {
-      thisPlugin._connectionsUsage.add(-1, {
-        state: 'idle',
-        name: poolName,
-      });
-      thisPlugin._connectionsUsage.add(1, {
-        state: 'used',
-        name: poolName,
-      });
+    pool.on('acquire', _connection => {
+      this._connCountAdd(-1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
     });
 
-    pool.on('release', connection => {
-      thisPlugin._connectionsUsage.add(-1, {
-        state: 'used',
-        name: poolName,
-      });
-      thisPlugin._connectionsUsage.add(1, {
-        state: 'idle',
-        name: poolName,
-      });
+    pool.on('release', _connection => {
+      this._connCountAdd(1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_IDLE);
+      this._connCountAdd(-1, poolName, DB_CLIENT_CONNECTION_STATE_VALUE_USED);
     });
   }
 }

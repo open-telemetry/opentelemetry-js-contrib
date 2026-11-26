@@ -1,48 +1,65 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { trace, SpanKind, Attributes } from '@opentelemetry/api';
+import {
+  trace,
+  SpanKind,
+  Attributes,
+  context,
+  propagation,
+} from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
 import {
   Sampler,
   AlwaysOnSampler,
-  SimpleSpanProcessor,
   SamplingDecision,
-} from '@opentelemetry/sdk-trace-base';
+  BatchSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import {
   ATTR_SERVICE_NAME,
   ATTR_HTTP_ROUTE,
 } from '@opentelemetry/semantic-conventions';
+import {
+  defaultResource,
+  resourceFromAttributes,
+} from '@opentelemetry/resources';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
+import {
+  CompositePropagator,
+  W3CBaggagePropagator,
+  W3CTraceContextPropagator,
+} from '@opentelemetry/core';
 import { ExpressInstrumentation } from '@opentelemetry/instrumentation-express';
 import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
-import { resourceFromAttributes } from '@opentelemetry/resources';
 
 export const setupTracing = (serviceName: string) => {
-  const exporter = new OTLPTraceExporter({});
-  const provider = new NodeTracerProvider({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: serviceName,
-    }),
-    spanProcessors: [new SimpleSpanProcessor(exporter)],
+  const exporter = new OTLPTraceExporter();
+  const tracerProvider = new TracerProvider({
+    resource: defaultResource().merge(
+      resourceFromAttributes({ [ATTR_SERVICE_NAME]: serviceName })
+    ),
+    spanProcessors: [new BatchSpanProcessor({ exporter })],
     sampler: filterSampler(ignoreHealthCheck, new AlwaysOnSampler()),
   });
+  trace.setGlobalTracerProvider(tracerProvider);
+  context.setGlobalContextManager(
+    new AsyncLocalStorageContextManager().enable()
+  );
+  propagation.setGlobalPropagator(
+    new CompositePropagator({
+      propagators: [
+        new W3CTraceContextPropagator(),
+        new W3CBaggagePropagator(),
+      ],
+    })
+  );
+
   registerInstrumentations({
-    tracerProvider: provider,
+    tracerProvider,
     instrumentations: [
       // Express instrumentation expects HTTP layer to be instrumented
       new HttpInstrumentation(),
@@ -50,8 +67,11 @@ export const setupTracing = (serviceName: string) => {
     ],
   });
 
-  // Initialize the OpenTelemetry APIs to use the NodeTracerProvider bindings
-  provider.register();
+  // This shutdown is important to ensure that buffered tracing data is
+  // flushed on process shutdown (e.g. for `npm run client`).
+  process.once('beforeExit', async () => {
+    await tracerProvider.shutdown();
+  });
 
   return trace.getTracer(serviceName);
 };

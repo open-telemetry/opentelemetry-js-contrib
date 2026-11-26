@@ -5,6 +5,9 @@ As of v0.25.1 (2022-01-24) changelog content has moved to separate CHANGELOG.md 
 
 ## Unreleased
 
+#### :rocket: Enhancement
+* **instrumentation-browser-navigation:** Add new browser navigation instrumentation package v0.1.0
+
 ## 0.25.0
 
 #### :bug: Bug Fix

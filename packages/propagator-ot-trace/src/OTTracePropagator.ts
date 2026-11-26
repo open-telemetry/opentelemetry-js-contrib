@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -63,7 +52,7 @@ function isValidHeaderValue(value: string): boolean {
  * Propagator for the ot-trace HTTP format from OpenTracing.
  */
 export class OTTracePropagator implements TextMapPropagator {
-  inject(context: Context, carrier: unknown, setter: TextMapSetter) {
+  public inject(context: Context, carrier: unknown, setter: TextMapSetter) {
     const spanContext = trace.getSpan(context)?.spanContext();
     if (!spanContext || !isSpanContextValid(spanContext)) return;
 
@@ -85,7 +74,11 @@ export class OTTracePropagator implements TextMapPropagator {
     });
   }
 
-  extract(context: Context, carrier: unknown, getter: TextMapGetter): Context {
+  public extract(
+    context: Context,
+    carrier: unknown,
+    getter: TextMapGetter
+  ): Context {
     let traceId = readHeader(carrier, getter, OT_TRACE_ID_HEADER);
     if (traceId.length === 16) traceId = `${PADDING}${traceId}`;
     const spanId = readHeader(carrier, getter, OT_SPAN_ID_HEADER);
@@ -128,7 +121,7 @@ export class OTTracePropagator implements TextMapPropagator {
    * carrier instance. Attempting to reuse a carrier by clearing fields could
    * result in a memory leak.
    */
-  fields(): string[] {
+  public fields(): string[] {
     return FIELDS.slice();
   }
 }

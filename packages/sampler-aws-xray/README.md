@@ -12,19 +12,17 @@ This module provides the remote/centralized sampler for AWS X-Ray.
 ## Usage
 
 ```js
-
 const { AWSXRayRemoteSampler } = require('@opentelemetry/sampler-aws-xray');
 const opentelemetry = require("@opentelemetry/sdk-node");
 const { Resource } = require("@opentelemetry/resources");
-const { BatchSpanProcessor} = require('@opentelemetry/sdk-trace-base');
+const { BatchSpanProcessor } = require('@opentelemetry/sdk-trace');
 const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-grpc');
 const { AWSXRayPropagator } = require("@opentelemetry/propagator-aws-xray");
 const { AWSXRayIdGenerator } = require("@opentelemetry/id-generator-aws-xray");
 
-
 // Initialize trace exporter, span processor, and ID generator
 const _traceExporter = new OTLPTraceExporter();
-const _spanProcessor = new BatchSpanProcessor(_traceExporter);
+const _spanProcessor = new BatchSpanProcessor({ exporter: _traceExporter });
 const _tracerConfig = {
     // add x-ray remote sampler
     sampler: new AWSXRayRemoteSampler(),
@@ -40,12 +38,10 @@ const sdk = new opentelemetry.NodeSDK({
             suppressInternalInstrumentation: true
         }),
     ],
-    spanProcessor: _spanProcessor,
-    traceExporter: _traceExporter,
+    spanProcessors: [_spanProcessor],
 });
 
 sdk.configureTracerProvider(_tracerConfig, _spanProcessor);
-
 ```
 
 For more details on setting up the global tracer provider to send traces to AWS X-Ray, refer to [this documentation](https://aws-otel.github.io/docs/getting-started/js-sdk/trace-manual-instr#setting-up-the-global-tracer).

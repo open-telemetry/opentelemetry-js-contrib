@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { Exception } from '@opentelemetry/api';
@@ -83,6 +72,49 @@ export const limitLength = (str: string, maxLength: number) => {
     return str.substring(0, maxLength) + '..';
   }
   return str;
+};
+
+/**
+ * Helpers to extract connection details from a Knex connectionString.
+ * When Knex is configured via `connection.connectionString` instead of
+ * explicit fields like `host`, `port`, and `database`, these values are
+ * embedded in the URL and must be parsed out.
+ * e.g. "postgres://user:pass@localhost:5432/mydb"
+ */
+
+export const extractDatabaseFromConnectionString = (
+  connectionString?: string
+): string | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    const db = new URL(connectionString).pathname?.replace(/^\//, '');
+    return db || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const extractHostFromConnectionString = (
+  connectionString?: string
+): string | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    return new URL(connectionString).hostname || undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export const extractPortFromConnectionString = (
+  connectionString?: string
+): number | undefined => {
+  if (!connectionString) return undefined;
+  try {
+    const port = new URL(connectionString).port;
+    return port ? parseInt(port, 10) : undefined;
+  } catch {
+    return undefined;
+  }
 };
 
 export const extractTableName = (builder: any): string => {

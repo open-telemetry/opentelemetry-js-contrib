@@ -1,20 +1,15 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { diag, trace, context, SpanKind } from '@opentelemetry/api';
+import {
+  diag,
+  trace,
+  context,
+  SpanKind,
+  type Attributes,
+} from '@opentelemetry/api';
 import {
   InstrumentationBase,
   InstrumentationNodeModuleDefinition,
@@ -23,13 +18,13 @@ import {
 import { IORedisInstrumentationConfig } from './types';
 import { IORedisCommand, RedisInterface } from './internal-types';
 import {
-  DB_SYSTEM_VALUE_REDIS,
-  ATTR_DB_CONNECTION_STRING,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
+import { DB_SYSTEM_NAME_VALUE_REDIS } from './semconv';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
 import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
@@ -53,7 +48,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'ioredis',
-        ['>=2.0.0 <6'],
+        ['>=2.0.0 <7'],
         (module, moduleVersion?: string) => {
           const moduleExports =
             module[Symbol.toStringTag] === 'Module'
@@ -120,12 +115,46 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         return original.apply(this, arguments);
       }
 
+      const attributes: Attributes = {};
+
+      let operationName = cmd.name;
+      const command = cmd as any;
+
+      /**
+       * ioredis sets metadata differently for MULTI/EXEC vs pipelines:
+       * - MULTI/EXEC: queued commands have inTransaction = true; pipelineIndex tracks order in the transaction.
+       * - Pipeline: commands have inTransaction = false; pipelineIndex increments per command (0, 1, 2…).
+       *
+       * Control commands ('multi'/'exec') are not prefixed.
+       * These flags are used to prefix operation names so spans reflect transactional or pipelined commands.
+       * Older ioredis versions (<=4.12.x) do not support prefixed operation names for multi/pipeline commands.
+       */
+      if (
+        command.inTransaction &&
+        cmd.name !== 'multi' &&
+        cmd.name !== 'exec'
+      ) {
+        operationName = `MULTI ${cmd.name}`;
+      } else if (
+        command.pipelineIndex != null &&
+        cmd.name !== 'multi' &&
+        cmd.name !== 'exec'
+      ) {
+        operationName = `PIPELINE ${cmd.name}`;
+      }
+
+      attributes[ATTR_DB_OPERATION_NAME] = operationName;
+
+      const { host, port } = this.options;
+
+      const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+      attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      attributes[ATTR_SERVER_ADDRESS] = host;
+      attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan(cmd.name, {
         kind: SpanKind.CLIENT,
-        attributes: {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-          [ATTR_DB_STATEMENT]: dbStatementSerializer(cmd.name, cmd.args),
-        },
+        attributes,
       });
 
       const { requestHook } = config;
@@ -145,14 +174,6 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
           true
         );
       }
-
-      const { host, port } = this.options;
-
-      span.setAttributes({
-        [ATTR_NET_PEER_NAME]: host,
-        [ATTR_NET_PEER_PORT]: port,
-        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
-      });
 
       try {
         const result = original.apply(this, arguments);
@@ -199,20 +220,17 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
         return original.apply(this, arguments);
       }
 
+      const attributes: Attributes = {};
+      const { host, port } = this.options;
+      attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
+      attributes[ATTR_DB_QUERY_TEXT] = 'connect';
+      attributes[ATTR_SERVER_ADDRESS] = host;
+      attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan('connect', {
         kind: SpanKind.CLIENT,
-        attributes: {
-          [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_REDIS,
-          [ATTR_DB_STATEMENT]: 'connect',
-        },
+        attributes,
       });
-      const { host, port } = this.options;
 
-      span.setAttributes({
-        [ATTR_NET_PEER_NAME]: host,
-        [ATTR_NET_PEER_PORT]: port,
-        [ATTR_DB_CONNECTION_STRING]: `redis://${host}:${port}`,
-      });
       try {
         const client = original.apply(this, arguments);
         endSpan(span, null);

@@ -2,6 +2,7 @@
 
 We'd love your help!
 
+- [OpenTelemetry JS SIG](#opentelemetry-js-sig)
 - [Development Quick Start](#development-quick-start)
 - [Report a bug or requesting feature](#report-a-bug-or-requesting-feature)
 - [How to contribute](#how-to-contribute)
@@ -12,7 +13,9 @@ We'd love your help!
   - [Tools used](#tools-used)
   - [General guidance](#general-guidance)
   - [CHANGELOG](#changelog)
+  - [Testing](#testing)
   - [Benchmarks](#benchmarks)
+- [Skills](#skills)
 - [Component Ownership](#component-ownership)
   - [Becoming a Component Owner](#becoming-a-component-owner)
 - [Component Lifecycle](#component-lifecycle)
@@ -29,6 +32,20 @@ We'd love your help!
   - [Removing Vendor Components](#removing-vendor-components)
 - [New Instrumentation](#new-instrumentation)
 
+## OpenTelemetry JS SIG
+
+The JavaScript special interest group (SIG) meets regularly. See the
+OpenTelemetry [community](https://github.com/open-telemetry/community#implementation-sigs)
+repo for information on this and other language SIGs.
+
+See the [public meeting notes](https://docs.google.com/document/d/1tCyoQK49WVcE-x8oryZOTTToFm7sIeUhxFPm9g-qL1k)
+for a summary description of past meetings.
+
+The meeting is open for all to join. We invite everyone to join our meeting,
+regardless of your experience level. Whether you're a seasoned OpenTelemetry
+developer, just starting your journey, or simply curious about the work we do,
+you're more than welcome to participate!
+
 ## Development Quick Start
 
 To get the project started quickly, you can follow these steps. For more
@@ -39,8 +56,13 @@ git clone https://github.com/open-telemetry/opentelemetry-js-contrib.git
 cd opentelemetry-js-contrib
 npm ci
 npm run compile
-npm test
+
+npm run test-services:start
+npm run test:with-services-env
+npm run test-services:stop
 ```
+
+See [Testing](#testing) below for more details on testing.
 
 ## Report a bug or requesting feature
 
@@ -61,7 +83,7 @@ for general practices for OpenTelemetry project.
 
 #### Conventional commit
 
-The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [here](https://www.conventionalcommits.org/en/v1.0.0/#examples).
+The Conventional Commits specification is a lightweight convention on top of commit messages. It provides an easy set of rules for creating an explicit commit history; which makes it easier to write automated tools on top of. This convention dovetails with SemVer, by describing the features, fixes, and breaking changes made in commit messages. You can see examples [in the conventional commits specification](https://www.conventionalcommits.org/en/v1.0.0/#examples).
 
 We use [the "pr-title" CI workflow](./.github/workflows/pr-title.yml) to ensure PR titles, and hence the commit message from those PRs, follow the Conventional Commits spec.
 
@@ -111,12 +133,12 @@ The `opentelemetry-js-contrib` project is written in TypeScript.
 As a general rule, installing from the root directory should always be done first before anything else.
 Packages within this repository might have dependencies between them. This means the dependencies should
 be built before if you want to `compile` or `test` the changes you've made in a package. Each package
-has a script to ensure these dependecies are ready.
+has a script to ensure these dependencies are ready.
 
-The required steps to start development on a pacakge are:
+The required steps to start development on a package are:
 
 - `npm ci` from root folder to install dependencies ([see npm-ci docs](https://docs.npmjs.com/cli/v10/commands/npm-ci))
-- `cd` into the pacakge you want to apply changes.
+- `cd` into the package you want to apply changes.
 - `npm run compile:with-dependencies` compiles the TypeScript files for this package and its dependencies within the repository.
 
 Then you can proceed to do apply the changes and use the scripts below for development workflow
@@ -151,7 +173,7 @@ npm run test:with-services-env # runs 'npm test' with envvars from test/test-ser
 npm run test-services:stop     # stops services in Docker
 ```
 
-If you only want to test a single package that dfepends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
+If you only want to test a single package that depends on a service (e.g. the `instrumentation-mongodb`) you can `cd` into it and
 use the same scripts for testing. In this case the script will only start the services needed to test the package.
 
 ```sh
@@ -161,11 +183,30 @@ npm run test:with-services-env      # runs 'npm test' with envvars from test/tes
 npm run test-services:stop          # stop MongoDB service in Docker
 ```
 
+**Browser** tests are run via:
+
+```sh
+npm run test:browser
+```
+
 ### Benchmarks
 
 When two or more approaches must be compared, please write a benchmark in the benchmark/index.js module so that we can keep track of the most efficient algorithm.
 
 - `npm run bench` to run your benchmark.
+
+## Skills
+
+This repository ships repeatable AI-assisted contribution workflows under
+[`.agents/skills`](.agents/skills). Trigger them deliberately when starting a
+matching task:
+
+- **`migrate-from-openinference`** - migrate a donated JavaScript or TypeScript
+  OpenInference package into this repository, or augment an existing package
+  with missing coverage.
+
+Please contribute back anything learned while using the skills that could
+improve them.
 
 ## Component Ownership
 
@@ -195,7 +236,7 @@ Ways do to so may be by providing proof of:
 - current or prior involvement with a community that develops systems with similar concepts
   - **Example:** A person previously working on a MySQL requesting ownership of a instrumentation package that instruments another database client library instrumentation.
 - current or prior extensive use of the instrumented package in other project they are involved in
-  - **Example:** A person working at a company that makes extensive use of the `fastify` library requesting ownership of the `@opentelemetry/instrumentation-fastify` package.
+  - **Example:** A person working at a company that makes extensive use of the `Pino` library requesting ownership of the `@opentelemetry/instrumentation-pino` package.
 - a vested interest in the telemetry being emitted from that instrumentation
   - **Example:** A person employed at an observability vendor that relies on the continued maintenance of the instrumentation
 
@@ -352,7 +393,7 @@ Review the guidelines for [Becoming a Component Owner](#becoming-a-component-own
 
 Regardless of where instrumentation is hosted, it needs to be discoverable.
 The [OpenTelemetry registry](https://opentelemetry.io/registry/) exists to ensure that instrumentation is discoverable.
-You can find out how to add instrumentation to the registry [here](https://github.com/open-telemetry/opentelemetry.io#adding-a-project-to-the-opentelemetry-registry).
+You can find out how to add instrumentation to the registry [over at opentelemetry.io](https://github.com/open-telemetry/opentelemetry.io#adding-a-project-to-the-opentelemetry-registry).
 
 ## Contributing Vendor Components
 

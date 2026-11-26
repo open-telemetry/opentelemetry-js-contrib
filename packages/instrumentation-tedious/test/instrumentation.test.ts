@@ -1,48 +1,45 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { context, trace, SpanStatusCode, SpanKind } from '@opentelemetry/api';
-import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
-  DB_SYSTEM_VALUE_MSSQL,
-  ATTR_DB_NAME,
-  ATTR_DB_SQL_TABLE,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from '../src/semconv';
-import * as util from 'util';
+  context,
+  trace,
+  SpanStatusCode,
+  SpanKind,
+  type Attributes,
+} from '@opentelemetry/api';
+import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import * as testUtils from '@opentelemetry/contrib-test-utils';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import { TediousInstrumentation } from '../src';
 import makeApi from './api';
 import type { Connection } from 'tedious';
 import * as semver from 'semver';
+import {
+  ATTR_DB_COLLECTION_NAME,
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_OPERATION_NAME,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_RESPONSE_STATUS_CODE,
+  ATTR_DB_STORED_PROCEDURE_NAME,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_ERROR_TYPE,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+  DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER,
+} from '@opentelemetry/semantic-conventions';
 
 const port = Number(process.env.MSSQL_PORT) || 1433;
 const database = process.env.MSSQL_DATABASE || 'master';
-const host = process.env.MSSQL_HOST || '127.0.0.1';
+const host = process.env.MSSQL_HOST || 'localhost';
 const user = process.env.MSSQL_USER || 'sa';
 const password = process.env.MSSQL_PASSWORD || 'mssql_passw0rd';
 
@@ -81,15 +78,17 @@ const incompatVersions =
     semver.gte(tediousVersion, '17.0.0')) ||
   // tedious@19 removed support for node <18.17.0 https://github.com/tediousjs/tedious/releases/tag/v19.0.0
   (semver.lt(processVersion, '18.17.0') &&
-    semver.gte(tediousVersion, '19.0.0'));
+    semver.gte(tediousVersion, '19.0.0')) ||
+  // tedious@20 removed support for node <22 https://github.com/tediousjs/tedious/releases/tag/v20.0.0
+  (semver.lt(processVersion, '22.0.0') && semver.gte(tediousVersion, '20.0.0'));
 
 describe('tedious', () => {
   let tedious: any;
   let contextManager: AsyncLocalStorageContextManager;
   let connection: Connection;
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new BasicTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
   const shouldTest = process.env.RUN_MSSQL_TESTS;
 
@@ -146,6 +145,7 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: queryString,
       parentSpan,
     });
@@ -165,8 +165,10 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: queryString,
       error: /incorrect syntax/i,
+      errorType: /^RequestError$/,
       statementCount: 0,
     });
   });
@@ -187,6 +189,7 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: queryString,
       procCount: 1,
       statementCount: 3,
@@ -204,6 +207,7 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSqlBatch master',
+      operationName: 'execSqlBatch',
       sql: queryString,
       procCount: 0,
       statementCount: 3,
@@ -220,11 +224,14 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: /create or alter procedure/i,
     });
     assertSpan(spans[1], {
-      name: `callProcedure ${tedious.storedProcedure.procedureName} master`,
+      name: `EXECUTE ${tedious.storedProcedure.procedureName}`,
+      operationName: 'EXECUTE',
       sql: tedious.storedProcedure.procedureName,
+      storedProcedureName: tedious.storedProcedure.procedureName,
     });
   });
 
@@ -240,15 +247,18 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
       name: 'prepare master',
+      operationName: 'prepare',
       sql: /INSERT INTO/,
     });
     assertSpan(spans[2], {
       name: 'execute master',
+      operationName: 'execute',
       sql: /INSERT INTO/,
     });
   });
@@ -271,14 +281,17 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: sql.create,
     });
     assertSpan(spans[1], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: sql.use,
     });
     assertSpan(spans[2], {
       name: 'execSql temp_otel_db',
+      operationName: 'execSql',
       sql: sql.select,
       database: 'temp_otel_db',
     });
@@ -292,16 +305,19 @@ describe('tedious', () => {
 
     assertSpan(spans[0], {
       name: 'execSql master',
+      operationName: 'execSql',
       sql: /create table/i,
       statementCount: 2,
     });
     assertSpan(spans[1], {
       name: 'execSqlBatch master',
+      operationName: 'execSqlBatch',
       sql: /insert bulk/,
       procCount: 0,
     });
     assertSpan(spans[2], {
-      name: 'execBulkLoad test_bulk master',
+      name: 'BULK INSERT test_bulk',
+      operationName: 'BULK INSERT',
       procCount: 0,
       table: 'test_bulk',
     });
@@ -370,13 +386,6 @@ describe('tedious', () => {
   });
 });
 
-const assertMatch = (actual: string | undefined, expected: RegExp) => {
-  assert(
-    actual && expected.test(actual),
-    `Expected ${util.inspect(actual)} to match ${expected}`
-  );
-};
-
 const assertRejects = (
   asyncFn: () => Promise<unknown>,
   expectedMessageRegexp: RegExp | undefined
@@ -392,52 +401,79 @@ const assertRejects = (
         throw error;
       }
       if (expectedMessageRegexp) {
-        assertMatch(err?.message || err, expectedMessageRegexp);
+        assert.match(err?.message || err, expectedMessageRegexp);
       }
     });
 };
 
 function assertSpan(span: ReadableSpan, expected: any) {
-  assert(span);
+  assert.ok(span);
   assert.strictEqual(span.name, expected.name);
   assert.strictEqual(span.kind, SpanKind.CLIENT);
-  assert.strictEqual(span.attributes[ATTR_DB_SYSTEM], DB_SYSTEM_VALUE_MSSQL);
-  assert.strictEqual(
-    span.attributes[ATTR_DB_NAME],
-    expected.database ?? database
-  );
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_PORT], port);
-  assert.strictEqual(span.attributes[ATTR_NET_PEER_NAME], host);
-  assert.strictEqual(span.attributes[ATTR_DB_USER], user);
-  assert.strictEqual(
-    span.attributes['tedious.procedure_count'],
-    expected.procCount ?? 1,
-    'Invalid procedure_count'
-  );
-  assert.strictEqual(
-    span.attributes['tedious.statement_count'],
-    expected.statementCount ?? 1,
-    'Invalid statement_count'
-  );
+
+  // Attributes
+  const actualAttrs = { ...span.attributes };
+  const expectedAttrs: Attributes = {
+    'tedious.procedure_count': expected.procCount ?? 1,
+    'tedious.statement_count': expected.statementCount ?? 1,
+  };
+
+  expectedAttrs[ATTR_DB_SYSTEM_NAME] =
+    DB_SYSTEM_NAME_VALUE_MICROSOFT_SQL_SERVER;
+  expectedAttrs[ATTR_DB_NAMESPACE] = expected.database ?? database;
+  expectedAttrs[ATTR_SERVER_ADDRESS] = host;
+  expectedAttrs[ATTR_SERVER_PORT] = port;
+  if (expected.table) {
+    expectedAttrs[ATTR_DB_COLLECTION_NAME] = expected.table;
+  }
+  if (expected.operationName) {
+    expectedAttrs[ATTR_DB_OPERATION_NAME] = expected.operationName;
+  }
+  if (expected.storedProcedureName) {
+    expectedAttrs[ATTR_DB_STORED_PROCEDURE_NAME] = expected.storedProcedureName;
+  }
+
+  // db.query.text
+  if (expected.sql) {
+    if (expected.sql instanceof RegExp) {
+      assert.match(span.attributes[ATTR_DB_QUERY_TEXT] as string, expected.sql);
+    } else {
+      assert.strictEqual(
+        span.attributes[ATTR_DB_QUERY_TEXT],
+        expected.sql,
+        ATTR_DB_QUERY_TEXT
+      );
+    }
+  } else {
+    assert.strictEqual(actualAttrs[ATTR_DB_QUERY_TEXT], undefined);
+  }
+  delete actualAttrs[ATTR_DB_QUERY_TEXT];
+
+  if (expected.errorType) {
+    assert.match(
+      span.attributes[ATTR_ERROR_TYPE] as string,
+      expected.errorType
+    );
+  }
+  delete actualAttrs[ATTR_ERROR_TYPE];
+
+  if (expected.statusCode) {
+    assert.match(
+      span.attributes[ATTR_DB_RESPONSE_STATUS_CODE] as string,
+      expected.statusCode
+    );
+  }
+  delete actualAttrs[ATTR_DB_RESPONSE_STATUS_CODE];
+
+  assert.deepEqual(actualAttrs, expectedAttrs);
+
   if (expected.parentSpan) {
     assert.strictEqual(
       span.parentSpanContext?.spanId,
       expected.parentSpan.spanContext().spanId
     );
   }
-  assert.strictEqual(span.attributes[ATTR_DB_SQL_TABLE], expected.table);
-  if (expected.sql) {
-    if (expected.sql instanceof RegExp) {
-      assertMatch(
-        span.attributes[ATTR_DB_STATEMENT] as string | undefined,
-        expected.sql
-      );
-    } else {
-      assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], expected.sql);
-    }
-  } else {
-    assert.strictEqual(span.attributes[ATTR_DB_STATEMENT], undefined);
-  }
+
   if (expected.error) {
     assert(
       expected.error.test(span.status.message),

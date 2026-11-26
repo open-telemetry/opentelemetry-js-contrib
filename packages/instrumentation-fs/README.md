@@ -17,25 +17,23 @@ npm install --save @opentelemetry/instrumentation-fs
 
 ## Supported Versions
 
-- Node.js `>=18`
+- Node.js `>=22.15.0`
 
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { FsInstrumentation } = require('@opentelemetry/instrumentation-fs');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new FsInstrumentation({
       // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Instrumentation Options

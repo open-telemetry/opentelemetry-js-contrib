@@ -1,33 +1,17 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 const originalSetTimeout = window.setTimeout;
-import { context, ROOT_CONTEXT, trace } from '@opentelemetry/api';
+import { context, diag, ROOT_CONTEXT, trace } from '@opentelemetry/api';
 import { ZoneContextManager } from '@opentelemetry/context-zone-peer-dep';
-import {
-  isWrapped,
-  registerInstrumentations,
-} from '@opentelemetry/instrumentation';
+import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { XMLHttpRequestInstrumentation } from '@opentelemetry/instrumentation-xml-http-request';
-import * as tracing from '@opentelemetry/sdk-trace-base';
-import { WebTracerProvider } from '@opentelemetry/sdk-trace-web';
+import * as tracing from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as sinon from 'sinon';
 import 'zone.js';
 import { UserInteractionInstrumentation } from '../src';
-import { WindowWithZone } from '../src/internal-types';
 import { UserInteractionInstrumentationConfig } from '../src/types';
 import {
   assertClickSpan,
@@ -43,6 +27,43 @@ const FILE_URL =
   'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json';
 
 describe('UserInteractionInstrumentation', () => {
+  describe('deprecation', () => {
+    let warn: sinon.SinonStub;
+    let instrumentation: UserInteractionInstrumentation | undefined;
+
+    beforeEach(() => {
+      warn = sinon.stub();
+      diag.setLogger({
+        debug: () => {},
+        error: () => {},
+        info: () => {},
+        verbose: () => {},
+        warn,
+      });
+    });
+
+    afterEach(() => {
+      instrumentation?.disable();
+      diag.disable();
+    });
+
+    for (const enabled of [true, false]) {
+      it(`warns once on construction when enabled is ${enabled}`, () => {
+        instrumentation = new UserInteractionInstrumentation({ enabled });
+
+        sinon.assert.calledOnce(warn);
+        sinon.assert.calledWith(
+          warn,
+          '@opentelemetry/instrumentation-user-interaction',
+          'UserInteractionInstrumentation is deprecated. Use UserActionInstrumentation from @opentelemetry/browser-instrumentation/experimental/user-action instead.'
+        );
+        instrumentation.disable();
+        instrumentation.enable();
+        sinon.assert.calledOnce(warn);
+      });
+    }
+  });
+
   afterEach(() => {
     // clear body from elements created by some tests to make sure they are independent
     while (document.body.lastChild) {
@@ -54,7 +75,7 @@ describe('UserInteractionInstrumentation', () => {
     let contextManager: ZoneContextManager;
     let userInteractionInstrumentation: UserInteractionInstrumentation;
     let sandbox: sinon.SinonSandbox;
-    let webTracerProvider: WebTracerProvider;
+    let tracerProvider: tracing.TracerProvider;
     let dummySpanExporter: DummySpanExporter;
     let exportSpy: sinon.SinonSpy;
     let requests: sinon.SinonFakeXMLHttpRequest[] = [];
@@ -69,7 +90,7 @@ describe('UserInteractionInstrumentation', () => {
       );
 
       registerInstrumentations({
-        tracerProvider: webTracerProvider,
+        tracerProvider,
         instrumentations: [
           userInteractionInstrumentation,
           new XMLHttpRequestInstrumentation(),
@@ -97,12 +118,14 @@ describe('UserInteractionInstrumentation', () => {
 
       dummySpanExporter = new DummySpanExporter();
       exportSpy = sandbox.stub(dummySpanExporter, 'export');
-      webTracerProvider = new WebTracerProvider({
-        spanProcessors: [new tracing.SimpleSpanProcessor(dummySpanExporter)],
+      tracerProvider = new tracing.TracerProvider({
+        spanProcessors: [
+          new tracing.SimpleSpanProcessor({ exporter: dummySpanExporter }),
+        ],
       });
-      webTracerProvider.register({
-        contextManager,
-      });
+      trace.setGlobalTracerProvider(tracerProvider);
+      context.setGlobalContextManager(contextManager);
+      // A global propagator is not necessary for tests in this file.
 
       registerTestInstrumentations();
 
@@ -125,6 +148,26 @@ describe('UserInteractionInstrumentation', () => {
       assert.equal(exportSpy.args.length, 1, 'should export one span');
       const spanClick = exportSpy.args[0][0][0];
       assertClickSpan(spanClick);
+    });
+
+    it('should redact sensitive information in url.full', () => {
+      const originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+      );
+      try {
+        fakeClickInteraction();
+      } finally {
+        history.replaceState(history.state, '', originalUrl);
+      }
+      assert.equal(exportSpy.args.length, 1, 'should export one span');
+      const spanClick: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      assert.equal(
+        spanClick.attributes['url.full'],
+        `${location.origin}${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+      );
     });
 
     it('should ignore timeout when nothing happens afterwards', done => {
@@ -196,6 +239,36 @@ describe('UserInteractionInstrumentation', () => {
       });
     });
 
+    it('should redact sensitive query string values in navigation span name', done => {
+      const originalUrl = location.href;
+      fakeClickInteraction(() => {
+        history.pushState(
+          { test: 'testing' },
+          '',
+          `${location.pathname}?sig=secret&X-Amz-Signature=secret&page=2`
+        );
+        getData(FILE_URL, () => {
+          sandbox.clock.tick(1000);
+        }).then(() => {
+          originalSetTimeout(() => {
+            history.replaceState(history.state, '', originalUrl);
+            try {
+              assert.equal(exportSpy.args.length, 2, 'should export 2 spans');
+
+              const spanClick: tracing.ReadableSpan = exportSpy.args[1][0][0];
+              assert.equal(
+                spanClick.name,
+                `Navigation: ${location.pathname}?sig=REDACTED&X-Amz-Signature=REDACTED&page=2`
+              );
+              done();
+            } catch (err) {
+              done(err);
+            }
+          });
+        });
+      });
+    });
+
     it('should handle task with timeout and async operation', done => {
       fakeClickInteraction(() => {
         getData(FILE_URL, () => {
@@ -215,7 +288,7 @@ describe('UserInteractionInstrumentation', () => {
 
             const attributes = spanXhr.attributes;
             assert.equal(
-              attributes['http.url'],
+              attributes['url.full'],
               'https://raw.githubusercontent.com/open-telemetry/opentelemetry-js/main/package.json'
             );
             // all other attributes are checked in xhr anyway
@@ -532,92 +605,6 @@ describe('UserInteractionInstrumentation', () => {
 
         done();
       });
-    });
-
-    it('should handle unpatch', () => {
-      const _window: WindowWithZone = window as unknown as WindowWithZone;
-      const ZoneWithPrototype = _window.Zone;
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        true,
-        'runTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        true,
-        'scheduleTask should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        true,
-        'cancelTask should be wrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        true,
-        'replaceState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        true,
-        'pushState should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        true,
-        'back should be wrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        true,
-        'forward should be wrapped'
-      );
-      assert.strictEqual(isWrapped(history.go), true, 'go should be wrapped');
-
-      userInteractionInstrumentation.disable();
-
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.runTask),
-        false,
-        'runTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.scheduleTask),
-        false,
-        'scheduleTask should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(ZoneWithPrototype.prototype.cancelTask),
-        false,
-        'cancelTask should be unwrapped'
-      );
-
-      assert.strictEqual(
-        isWrapped(history.replaceState),
-        false,
-        'replaceState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.pushState),
-        false,
-        'pushState should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.back),
-        false,
-        'back should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.forward),
-        false,
-        'forward should be unwrapped'
-      );
-      assert.strictEqual(
-        isWrapped(history.go),
-        false,
-        'go should be unwrapped'
-      );
     });
   });
 });

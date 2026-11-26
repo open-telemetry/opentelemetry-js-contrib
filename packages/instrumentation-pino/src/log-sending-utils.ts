@@ -1,25 +1,15 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import { Writable } from 'stream';
 
-import { logs, Logger, SeverityNumber } from '@opentelemetry/api-logs';
+import { logs, Logger, SeverityNumber } from '@opentelemetry/api';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { millisToHrTime } from '@opentelemetry/core';
+import { ATTR_OTEL_EVENT_NAME } from '@opentelemetry/semantic-conventions';
 
 // This block is a copy (modulo code style and TypeScript types) of the Pino
 // code that defines log level value and names. This file is part of
@@ -120,6 +110,7 @@ export function getTimeConverter(pinoLogger: any, pinoMod: any) {
 
 interface OTelPinoStreamOptions {
   messageKey: string;
+  errorKey: string;
   levels: any; // Pino.LevelMapping
   otelTimestampFromTime: (time: any) => number;
 }
@@ -131,10 +122,11 @@ interface OTelPinoStreamOptions {
  *   The event arguments are: `logLine: string`, `err: string | Error`.
  */
 export class OTelPinoStream extends Writable {
-  private declare _otelLogger: Logger;
-  private declare _messageKey: string;
-  private declare _levels;
-  private declare _otelTimestampFromTime;
+  declare private _otelLogger: Logger;
+  declare private _messageKey: string;
+  declare private _errorKey: string;
+  declare private _levels;
+  declare private _otelTimestampFromTime;
 
   constructor(options: OTelPinoStreamOptions) {
     super();
@@ -144,6 +136,7 @@ export class OTelPinoStream extends Writable {
     // for auto-configuration in newer pino versions. The event currently does
     // not include the `timeSym` value that is needed here, however.
     this._messageKey = options.messageKey;
+    this._errorKey = options.errorKey;
     this._levels = options.levels;
     this._otelTimestampFromTime = options.otelTimestampFromTime;
 
@@ -187,6 +180,7 @@ export class OTelPinoStream extends Writable {
     const {
       time,
       [this._messageKey]: body,
+      [this._errorKey]: exception,
       level, // eslint-disable-line @typescript-eslint/no-unused-vars
 
       // The typical Pino `hostname` and `pid` fields are removed because they
@@ -204,6 +198,8 @@ export class OTelPinoStream extends Writable {
       trace_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       span_id, // eslint-disable-line @typescript-eslint/no-unused-vars
       trace_flags, // eslint-disable-line @typescript-eslint/no-unused-vars
+
+      [ATTR_OTEL_EVENT_NAME]: eventName,
 
       ...attributes
     } = recObj;
@@ -227,6 +223,9 @@ export class OTelPinoStream extends Writable {
     // (https://getpino.io/#/docs/api?id=formatters-object).
     const lastLevel = (this as any).lastLevel;
 
+    const normalizedEventName =
+      typeof eventName === 'string' ? eventName : undefined;
+
     const otelRec = {
       timestamp: timestampHrTime,
       observedTimestamp: timestampHrTime,
@@ -234,9 +233,29 @@ export class OTelPinoStream extends Writable {
       severityText: this._levels.labels[lastLevel],
       body,
       attributes,
+      exception: normalizeException(exception),
+      ...(normalizedEventName !== undefined
+        ? { eventName: normalizedEventName }
+        : {}),
     };
 
     this._otelLogger.emit(otelRec);
     callback();
   }
+}
+
+function normalizeException(exception: unknown): unknown {
+  if (!exception || typeof exception !== 'object' || Array.isArray(exception)) {
+    return exception;
+  }
+
+  const exceptionObject = exception as Record<string, unknown>;
+  if (
+    typeof exceptionObject['type'] === 'string' &&
+    typeof exceptionObject['name'] !== 'string'
+  ) {
+    exceptionObject['name'] = exceptionObject['type'];
+  }
+
+  return exceptionObject;
 }

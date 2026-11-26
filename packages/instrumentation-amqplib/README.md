@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`amqplib`](https://www.npmjs.com/package/amqplib) (RabbitMQ) module, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`amqplib`](https://www.npmjs.com/package/amqplib) (RabbitMQ) module.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -17,7 +17,7 @@ npm install --save @opentelemetry/instrumentation-amqplib
 
 ## Supported Versions
 
-- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <1`
+- [`amqplib`](https://www.npmjs.com/package/amqplib) versions `>=0.5.5 <3`
 
 ## Usage
 
@@ -25,15 +25,14 @@ OpenTelemetry amqplib Instrumentation allows the user to automatically collect t
 
 To load a specific plugin, specify it in the registerInstrumentations's configuration:
 
+To enable a specific instrumentation, pass it to `registerInstrumentations()`.
+This is commonly done via `NodeSDK` for fully setting up all OpenTelemetry SDK components:
+
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
 const { AmqplibInstrumentation } = require('@opentelemetry/instrumentation-amqplib');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new AmqplibInstrumentation({
       // publishHook: (span: Span, publishInfo: PublishInfo) => { },
@@ -43,7 +42,9 @@ registerInstrumentations({
       // useLinksForConsume: boolean,
     }),
   ],
-})
+});
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### amqplib Instrumentation Options
@@ -89,7 +90,7 @@ By default, the tests that connect to RabbitMQ are skipped. To make sure these t
 
 ## Semantic Conventions
 
-This package emits telemetry using Semantic Convention [version 1.7.0](https://github.com/open-telemetry/opentelemetry-specification/blob/v1.7.0/semantic_conventions/README.md)
+This instrumentation uses Semantic Conventions for messaging spans. The `instrumentation-amqplib` versions 0.67.0 and later emit the stable `server.*` semantic conventions for network attributes.
 
 Attributes collected:
 
@@ -105,8 +106,8 @@ Attributes collected:
 | `messaging.protocol_version`     | The version of the transport protocol.                                 |
 | `messaging.system`               | A string identifying the messaging system.                             |
 | `messaging.url`                  | The connection string.                                                 |
-| `net.peer.name`                  | Remote hostname or similar.                                            |
-| `net.peer.port`                  | Remote port number.                                                    |
+| `server.address`                 | Remote hostname.                                                       |
+| `server.port`                    | Remote port number.                                                    |
 
 ## Useful links
 

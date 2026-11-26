@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -26,29 +15,27 @@ import {
   TRACE_PARENT_HEADER,
 } from '@opentelemetry/core';
 import {
-  BasicTracerProvider,
+  TracerProvider,
   InMemorySpanExporter,
   ReadableSpan,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
-import {
-  PerformanceTimingNames as PTN,
   StackContextManager,
-} from '@opentelemetry/sdk-trace-web';
+} from '@opentelemetry/sdk-trace';
+import { PerformanceTimingNames as PTN } from '@opentelemetry/web-common';
 
-// @ts-expect-error cjs still works
+// @ts-expect-error TS1479: chai v6 is ESM-only; the CJS build flags it, but browser tests load it as ESM
 import { assert } from 'chai';
 import * as sinon from 'sinon';
 import { DocumentLoadInstrumentation } from '../src';
 import {
-  ATTR_HTTP_RESPONSE_CONTENT_LENGTH,
-  ATTR_HTTP_URL,
-} from '../src/semconv';
+  ATTR_URL_FULL,
+  ATTR_USER_AGENT_ORIGINAL,
+} from '@opentelemetry/semantic-conventions';
 import { EventNames } from '../src/enums/EventNames';
 
 const exporter = new InMemorySpanExporter();
-const spanProcessor = new SimpleSpanProcessor(exporter);
-const provider = new BasicTracerProvider({
+const spanProcessor = new SimpleSpanProcessor({ exporter });
+const provider = new TracerProvider({
   spanProcessors: [spanProcessor],
 });
 trace.setGlobalTracerProvider(provider);
@@ -354,9 +341,6 @@ describe('DocumentLoad Instrumentation', () => {
         const fsEvents = fetchSpan.events;
 
         assert.strictEqual(rootSpan.name, 'documentFetch');
-        assert.ok(
-          (rootSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH] as number) > 0
-        );
         assert.strictEqual(fetchSpan.name, 'documentLoad');
         ensureNetworkEventsExists(rsEvents);
 
@@ -455,11 +439,11 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents2 = spanResource2.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
         assert.strictEqual(
-          spanResource2.attributes[ATTR_HTTP_URL],
+          spanResource2.attributes[ATTR_URL_FULL],
           'http://localhost:8090/sockjs-node/info?t=1572620894466'
         );
 
@@ -467,6 +451,54 @@ describe('DocumentLoad Instrumentation', () => {
         ensureNetworkEventsExists(srEvents2);
 
         assert.strictEqual(exporter.getFinishedSpans().length, 4);
+        done();
+      });
+    });
+  });
+
+  describe('when urls contain sensitive information', () => {
+    let spyEntries: any;
+    let originalUrl: string;
+    beforeEach(() => {
+      originalUrl = location.href;
+      history.replaceState(
+        history.state,
+        '',
+        `${location.pathname}${location.search}&sig=secret`
+      );
+      spyEntries = sandbox.stub(window.performance, 'getEntriesByType');
+      spyEntries.withArgs('navigation').returns([entries]);
+      spyEntries.withArgs('resource').returns([
+        {
+          ...resources[0],
+          name: 'https://user:pass@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=AKIA&X-Amz-Signature=secret&v=1',
+        },
+      ]);
+      spyEntries.withArgs('paint').returns([]);
+    });
+    afterEach(() => {
+      spyEntries.restore();
+      history.replaceState(history.state, '', originalUrl);
+    });
+
+    it('should redact url.full on document and resource spans', done => {
+      plugin.enable();
+      setTimeout(() => {
+        const spans = exporter.getFinishedSpans() as ReadableSpan[];
+        const fetchSpan = spans.find(s => s.name === 'documentFetch');
+        const rootSpan = spans.find(s => s.name === 'documentLoad');
+        const resourceSpan = spans.find(s => s.name === 'resourceFetch');
+        assert.ok(fetchSpan && rootSpan && resourceSpan);
+
+        for (const span of [fetchSpan, rootSpan]) {
+          const url = span.attributes[ATTR_URL_FULL] as string;
+          assert.isOk(url.endsWith('&sig=REDACTED'), url);
+          assert.notInclude(url, 'secret');
+        }
+        assert.strictEqual(
+          resourceSpan.attributes[ATTR_URL_FULL],
+          'https://REDACTED:REDACTED@bucket.s3.amazonaws.com/img.png?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&v=1'
+        );
         done();
       });
     });
@@ -491,7 +523,7 @@ describe('DocumentLoad Instrumentation', () => {
         const srEvents1 = spanResource1.events;
 
         assert.strictEqual(
-          spanResource1.attributes[ATTR_HTTP_URL],
+          spanResource1.attributes[ATTR_URL_FULL],
           'http://localhost:8090/bundle.js'
         );
 
@@ -546,17 +578,20 @@ describe('DocumentLoad Instrumentation', () => {
         assert.strictEqual(rootSpan.name, 'documentLoad');
 
         assert.isOk(
-          (fetchSpan.attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+          (fetchSpan.attributes[ATTR_URL_FULL] as string).startsWith(
+            `${location.origin}/?wtr-session-id=`
           )
         );
 
         assert.isOk(
-          (rootSpan.attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+          (rootSpan.attributes[ATTR_URL_FULL] as string).startsWith(
+            `${location.origin}/?wtr-session-id=`
           )
         );
-        assert.strictEqual(rootSpan.attributes['http.user_agent'], userAgent);
+        assert.strictEqual(
+          rootSpan.attributes[ATTR_USER_AGENT_ORIGINAL],
+          userAgent
+        );
 
         ensureNetworkEventsExists(fsEvents);
         assert.strictEqual(fsEvents.length, 9);
@@ -828,99 +863,18 @@ describe('DocumentLoad Instrumentation', () => {
         done();
       });
     });
-
-    it('should have http.response_content_length attribute even if ignoreNetworkEvents is true', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-        ignoreNetworkEvents: true,
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.exists(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          'http.response_content_length attribute should exist'
-        );
-        done();
-      });
-    });
-
-    it('should *not* have http.response_content_length attr if semconvStabilityOptIn=http', done => {
-      plugin = new DocumentLoadInstrumentation({
-        enabled: false,
-        semconvStabilityOptIn: 'http',
-      });
-      plugin.enable();
-
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        const resourceSpan = spans.find(
-          s => s.name === 'resourceFetch'
-        ) as ReadableSpan;
-        assert.isOk(resourceSpan, 'resourceFetch span should exist');
-        assert.equal(
-          resourceSpan.attributes[ATTR_HTTP_RESPONSE_CONTENT_LENGTH],
-          undefined,
-          'http.response_content_length attribute should *not* exist'
-        );
-        done();
-      });
-    });
   });
 
-  describe('semconvStabilityOptIn', () => {
-    it('(empty) should use old semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation();
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, 'documentFetch');
-        assert.isOk(
-          (spans[0].attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
-        assert.equal(spans[0].attributes['url.full'], undefined);
-        done();
-      });
-    });
-
-    it('"http" should use new semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation({
-        semconvStabilityOptIn: 'http',
-      });
+  describe('semantic conventions', () => {
+    it('should use stable semconv attributes', done => {
+      plugin.enable();
       setTimeout(() => {
         const spans = exporter.getFinishedSpans();
         assert.strictEqual(spans[0].name, 'documentFetch');
         assert.equal(spans[0].attributes['http.url'], undefined);
         assert.isOk(
           (spans[0].attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
-        done();
-      });
-    });
-
-    it('"http/dup" should use old and new semconv attributes', done => {
-      plugin = new DocumentLoadInstrumentation({
-        semconvStabilityOptIn: 'http/dup',
-      });
-      setTimeout(() => {
-        const spans = exporter.getFinishedSpans();
-        assert.strictEqual(spans[0].name, 'documentFetch');
-        assert.isOk(
-          (spans[0].attributes['http.url'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
-          )
-        );
-        assert.isOk(
-          (spans[0].attributes['url.full'] as string).startsWith(
-            'http://localhost:8000/?wtr-session-id='
+            `${location.origin}/?wtr-session-id=`
           )
         );
         done();

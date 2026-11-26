@@ -1,6 +1,164 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.35.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.35.0...instrumentation-undici-v0.35.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** redact sensitive URL query parameters ([#3908](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3908)) ([5101a95](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5101a9578c02347faaff0acdb97aa696032122a0))
+
+## [0.35.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.34.0...instrumentation-undici-v0.35.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
+## [0.34.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.33.0...instrumentation-undici-v0.34.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.33.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.32.0...instrumentation-undici-v0.33.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+* **instrumentation-undici:** set network.protocol.version on client spans ([#3737](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3737)) ([5bd1049](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/5bd1049ed3c3092b9bf9720b79660d427607b3f7))
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** add `error.type` span attribute for requests that fail without a server response ([#3736](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3736)) ([97d88a9](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/97d88a94f679d967eafb6fa0480464d0215366ba))
+* **instrumentation-undici:** add error.type to spans and metrics ([#3731](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3731)) ([914f249](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/914f249a07ba56b87d359b793340a3673acef32d))
+
+## [0.32.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.31.0...instrumentation-undici-v0.32.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** use low-cardinality error.type ([#3659](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3659)) ([3756dfa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3756dfa6b084f90ce81cf6be45d9deb8c72a9db6))
+
+## [0.31.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.30.0...instrumentation-undici-v0.31.0) (2026-07-23)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3629](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3629)) ([466d5de](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/466d5def474cf251217881322ed4db13fad96b86))
+
+## [0.30.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.29.0...instrumentation-undici-v0.30.0) (2026-07-03)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3593](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3593)) ([6dfb532](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/6dfb532ac16889c2f8656f2d9132a290e68cb570))
+
+## [0.29.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.28.0...instrumentation-undici-v0.29.0) (2026-06-11)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3567](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3567)) ([bd569b5](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/bd569b54fbdbf4e7bb915c43ff7c6e88ab451738))
+
+## [0.28.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.27.0...instrumentation-undici-v0.28.0) (2026-05-13)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3523](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3523)) ([e26a90a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e26a90af6e2fb4666b22388b770add7a60140c9b))
+
+## [0.27.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.26.0...instrumentation-undici-v0.27.0) (2026-05-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3507](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3507)) ([e1ef3d1](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/e1ef3d1b14f177afd738f1c967018c1dc6fc900e))
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** do not record aborted requests as errors ([#3488](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3488)) ([cdaefde](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cdaefde8f9bc436d9b591a721e2c554b6c24fcb5))
+
+## [0.26.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.25.0...instrumentation-undici-v0.26.0) (2026-04-29)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3497](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3497)) ([a91133a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a91133aa0aac9486eda26f3338d7673851b8bd69))
+
+## [0.25.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.24.0...instrumentation-undici-v0.25.0) (2026-04-17)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3479](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3479)) ([8891261](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/8891261cb590efcb661bd9f8afec4d1adf885ad8))
+
+## [0.24.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.23.0...instrumentation-undici-v0.24.0) (2026-03-25)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3450](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3450)) ([c8df394](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/c8df394f02d68ae48a79a50258682c09dac13b8b))
+
+## [0.23.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.22.0...instrumentation-undici-v0.23.0) (2026-03-04)
+
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3411](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3411)) ([7f4b776](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7f4b776abbe22aa38d2e9f36c22aa293a9e31687))
+
+## [0.22.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.21.0...instrumentation-undici-v0.22.0) (2026-02-16)
+
+
+### ⚠ BREAKING CHANGES
+
+* **instrumentation-undici:** fix header capture to match spec ([#3378](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3378))
+
+### Features
+
+* **deps:** update deps matching "@opentelemetry/*" ([#3383](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3383)) ([d3ac785](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/d3ac7851d69d0781c2c631012937a73998b744e1))
+* **instrumentation-undici:** support "QUERY" as a known HTTP method ([#3374](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3374)) ([4754713](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/47547133da08518bb0bcdcc79017d610d90f1d6f))
+
+
+### Bug Fixes
+
+* **instrumentation-undici:** fix header capture to match spec ([#3378](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3378)) ([f55d048](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f55d04836afeb4c6b0651194d50f56eef92a79a9))
+
+## [0.21.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.20.0...instrumentation-undici-v0.21.0) (2026-01-21)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3353](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3353)) ([a56bbdc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a56bbdc34a5015b0a5fdcb7522f168cfc90ba95c))
+
+## [0.20.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.19.0...instrumentation-undici-v0.20.0) (2026-01-14)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3332](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3332)) ([925a150](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/925a1501ce0d082c6845d36e7c964e625ee3de0c))
+* **deps:** update deps matching '@opentelemetry/*' ([#3340](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3340)) ([2954943](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/29549434e7204b03d58635eb20352efee0e797d4))
+
 ## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-undici-v0.18.0...instrumentation-undici-v0.19.0) (2025-11-06)
 
 

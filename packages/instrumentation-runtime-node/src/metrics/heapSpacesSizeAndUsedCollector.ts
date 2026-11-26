@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import * as v8 from 'node:v8';
@@ -22,7 +11,7 @@ import { Meter } from '@opentelemetry/api';
 import { BaseCollector } from './baseCollector';
 import {
   ATTR_V8JS_HEAP_SPACE_NAME,
-  METRIC_V8JS_MEMORY_HEAP_LIMIT,
+  METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_USED,
   METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE,
   METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE,
@@ -30,10 +19,10 @@ import {
 
 export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
   updateMetricInstruments(meter: Meter): void {
-    const heapLimit = meter.createObservableGauge(
-      METRIC_V8JS_MEMORY_HEAP_LIMIT,
+    const heapSpaceSize = meter.createObservableUpDownCounter(
+      METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE,
       {
-        description: 'Total heap memory size pre-allocated.',
+        description: 'Total heap memory size pre-allocated for a heap space.',
         unit: 'By',
       }
     );
@@ -68,7 +57,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
         for (const space of data) {
           const spaceName = space.space_name;
 
-          observableResult.observe(heapLimit, space.space_size, {
+          observableResult.observe(heapSpaceSize, space.space_size, {
             [ATTR_V8JS_HEAP_SPACE_NAME]: spaceName,
           });
 
@@ -93,7 +82,7 @@ export class HeapSpacesSizeAndUsedCollector extends BaseCollector {
           );
         }
       },
-      [heapLimit, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
+      [heapSpaceSize, heapSpaceUsed, heapSpaceAvailable, heapSpacePhysical]
     );
   }
 

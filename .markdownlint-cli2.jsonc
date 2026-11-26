@@ -9,7 +9,10 @@
     // MD004/ul-style. We prefer dash, but generated CHANGELOG.md files use
     // asterisk. The default "consistent" is a good compromise.
     "MD004": { "style": "consistent" },
-    "MD012": false // no-multiple-blanks; disabled because common in CHANGELOG.md files
+    // MD012/no-multiple-blanks: disabled because common in CHANGELOG.md files
+    "MD012": false,
+    // MD060/table-column-style: Disabled because a common case is a last column with longer prose. The current "aligned" style results is large trailing padding in the last column which makes reviews more difficult. TODO: re-evaluate after https://github.com/DavidAnson/markdownlint/issues/1818
+    "MD060": false
   },
   "gitignore": true,
   "noBanner": true,

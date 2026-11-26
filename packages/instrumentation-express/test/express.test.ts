@@ -1,26 +1,20 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SpanStatusCode, context, trace } from '@opentelemetry/api';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import * as assert from 'assert';
 import * as semver from 'semver';
 import { AttributeNames } from '../src/enums/AttributeNames';
@@ -35,15 +29,16 @@ instrumentation.disable();
 
 import * as express from 'express';
 import { RPCMetadata, getRPCMetadata } from '@opentelemetry/core';
-import { Server } from 'http';
+import { get as httpGet, type Server } from 'http';
 
 const LIB_VERSION = require('express/package.json').version;
 const isExpressV5 = semver.satisfies(LIB_VERSION, '>=5.0.0');
 
-describe('ExpressInstrumentation', () => {
+describe('ExpressInstrumentation', function () {
+  this.timeout(10000);
   const memoryExporter = new InMemorySpanExporter();
-  const spanProcessor = new SimpleSpanProcessor(memoryExporter);
-  const provider = new NodeTracerProvider({
+  const spanProcessor = new SimpleSpanProcessor({ exporter: memoryExporter });
+  const provider = new TracerProvider({
     spanProcessors: [spanProcessor],
   });
   const tracer = provider.getTracer('default');
@@ -119,14 +114,14 @@ describe('ExpressInstrumentation', () => {
         }
         return next();
       };
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       let rpcMetadata: RPCMetadata | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use(express.json());
         app.use((req, res, next) => {
           rpcMetadata = getRPCMetadata(context.active());
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -145,7 +140,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -177,11 +172,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports sync middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -207,7 +202,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'middleware');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -221,11 +216,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports async middlewares', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -250,7 +245,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'tata');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -264,11 +259,11 @@ describe('ExpressInstrumentation', () => {
 
     it('supports async middlewares directly responding', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -293,7 +288,7 @@ describe('ExpressInstrumentation', () => {
           );
           assert.strictEqual(response, 'middleware');
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
           assert.notStrictEqual(
             memoryExporter
               .getFinishedSpans()
@@ -307,11 +302,11 @@ describe('ExpressInstrumentation', () => {
 
     it('captures sync middleware errors', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -330,7 +325,7 @@ describe('ExpressInstrumentation', () => {
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 3);
+          assert.strictEqual(closeListenerCount, 2);
 
           const errorSpan = memoryExporter
             .getFinishedSpans()
@@ -351,11 +346,11 @@ describe('ExpressInstrumentation', () => {
 
     it('captures async middleware errors', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
-      let finishListenerCount: number | undefined;
+      let closeListenerCount: number | undefined;
       const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
         app.use((req, res, next) => {
-          res.on('finish', () => {
-            finishListenerCount = res.listenerCount('finish');
+          res.on('close', () => {
+            closeListenerCount = res.listenerCount('close');
           });
           next();
         });
@@ -374,7 +369,7 @@ describe('ExpressInstrumentation', () => {
         async () => {
           await httpRequest.get(`http://localhost:${port}/toto/tata`);
           rootSpan.end();
-          assert.strictEqual(finishListenerCount, 2);
+          assert.strictEqual(closeListenerCount, 1);
 
           const errorSpan = memoryExporter
             .getFinishedSpans()
@@ -603,6 +598,212 @@ describe('ExpressInstrumentation', () => {
           assert.ok(
             routerLayer.handle.stack.length === 1,
             'router layer stack is accessible'
+          );
+        }
+      );
+    });
+    it('should allow setting properties on patched layer handle', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let handlerRef: express.RequestHandler;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        handlerRef = (req: express.Request, res: express.Response) => {
+          res.status(200).end('ok');
+        };
+        (handlerRef as any).customProp = 'initial';
+        app.get('/test', handlerRef);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test`);
+
+          // set property AFTER request — handler is now patched by OTel
+          (handlerRef as any).customProp = 'updated';
+          assert.strictEqual((handlerRef as any).customProp, 'updated');
+
+          rootSpan.end();
+        }
+      );
+    });
+    it('should end spans when the client aborts the request', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let requestReceived: () => void;
+      const requestReceivedPromise = new Promise<void>(resolve => {
+        requestReceived = resolve;
+      });
+      let responseClosed: () => void;
+      const responseClosedPromise = new Promise<void>(resolve => {
+        responseClosed = resolve;
+      });
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.get('/slow', (req, res) => {
+          requestReceived!();
+          res.on('close', () => {
+            responseClosed!();
+          });
+          // Simulate slow handler - never sends response
+        });
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const clientReq = httpGet(`http://localhost:${port}/slow`);
+
+          // Resolves with the error from the aborted request, whether it
+          // arrives via 'error' (typical on Linux/Mac) or 'close' (can
+          // happen on Windows when 'error' is not emitted).
+          const clientErrorPromise = new Promise<Error | undefined>(resolve => {
+            clientReq.once('error', err => resolve(err));
+            clientReq.once('close', () =>
+              resolve(new Error('connection closed'))
+            );
+          });
+
+          await requestReceivedPromise;
+          clientReq.destroy();
+          await responseClosedPromise;
+
+          // Wait for the client-side 'error'/'close' event, capped at
+          // 200ms in case neither fires.
+          const clientError = await Promise.race([
+            clientErrorPromise,
+            new Promise<undefined>(resolve =>
+              setTimeout(() => resolve(undefined), 200)
+            ),
+          ]);
+
+          assert.ok(
+            clientError,
+            'client should have received an error from the aborted request'
+          );
+          rootSpan.end();
+          const spans = memoryExporter.getFinishedSpans();
+          const requestHandlerSpan = spans.find(span =>
+            span.name.includes('request handler')
+          );
+          assert.notStrictEqual(
+            requestHandlerSpan,
+            undefined,
+            'request handler span should be ended even when client aborts'
+          );
+        }
+      );
+    });
+    it('should not include Express v5 wildcard fragments in http.route', async () => {
+      // /{*path} syntax is Express v5 only, no point running this on v4
+      if (!isExpressV5) {
+        return;
+      }
+
+      const rootSpan = tracer.startSpan('rootSpan');
+      let rpcMetadata: RPCMetadata | undefined;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use((req, res, next) => {
+          rpcMetadata = getRPCMetadata(context.active());
+          next();
+        });
+
+        // mount a couple of catch-all wildcard middlewares using the new v5 syntax
+        // these should be stripped out when building the http.route, same as /* was in v4
+        const passthroughMiddleware: express.RequestHandler = (
+          _req,
+          _res,
+          next
+        ) => next();
+        app.use('/{*path}', passthroughMiddleware);
+        app.use('/{*wildcard}', passthroughMiddleware);
+      });
+
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/toto/tata`
+          );
+          assert.strictEqual(response, 'tata');
+          rootSpan.end();
+
+          // route should still resolve correctly despite the wildcard middlewares
+          const requestHandlerSpan = memoryExporter
+            .getFinishedSpans()
+            .find(span => span.name.includes('request handler'));
+          assert.strictEqual(
+            requestHandlerSpan?.attributes[ATTR_HTTP_ROUTE],
+            '/toto/:id'
+          );
+          assert.strictEqual(rpcMetadata?.route, '/toto/:id');
+
+          // double-check that no span ended up with a raw wildcard fragment as its route
+          for (const span of memoryExporter.getFinishedSpans()) {
+            const route = span.attributes[ATTR_HTTP_ROUTE] as
+              | string
+              | undefined;
+            assert.ok(
+              !route || !/\/\{[*][^}]*\}/.test(route),
+              `span "${span.name}" still has a wildcard fragment in http.route: ${route}`
+            );
+          }
+        }
+      );
+    });
+  });
+
+  describe('Baggage propagation through middleware', () => {
+    let server: Server, port: number;
+    afterEach(() => {
+      server?.close();
+    });
+
+    it('should preserve baggage set by middleware in downstream handlers', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      let capturedBaggage: string | undefined;
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use((req, res, next) => {
+          const baggage = propagation.createBaggage({
+            'test.key': { value: 'test-value' },
+          });
+          const ctxWithBaggage = propagation.setBaggage(
+            context.active(),
+            baggage
+          );
+          return context.with(ctxWithBaggage, next);
+        });
+
+        app.get('/test', (req, res) => {
+          const baggage = propagation.getBaggage(context.active());
+          capturedBaggage = baggage?.getEntry('test.key')?.value;
+          res.status(200).end('ok');
+        });
+      });
+
+      server = httpServer.server;
+      port = httpServer.port;
+
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          await httpRequest.get(`http://localhost:${port}/test`);
+          rootSpan.end();
+
+          assert.strictEqual(
+            capturedBaggage,
+            'test-value',
+            'Baggage set by middleware should be available in downstream handler'
           );
         }
       );
@@ -927,7 +1128,7 @@ describe('ExpressInstrumentation', () => {
     'arr/requiredpath/optionalPath/',
     'arr/requiredpath/optionalPath/lastParam',
   ]) {
-    it('should handle more complex regexes in route arrays correctly', async () => {
+    it(`should handle more complex regexes in route arrays correctly (segment: ${segment})`, async () => {
       await testUtils.runTestFixture({
         cwd: __dirname,
         argv: ['fixtures/use-express-regex.mjs'],

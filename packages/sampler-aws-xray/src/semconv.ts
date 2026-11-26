@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -65,52 +54,6 @@ export const ATTR_AWS_ECS_CONTAINER_ARN = 'aws.ecs.container.arn' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_AWS_EKS_CLUSTER_ARN = 'aws.eks.cluster.arn' as const;
-
-/**
- * Deprecated, use one of `server.address`, `client.address` or `http.request.header.host` instead, depending on the usage.
- *
- * @example www.example.org
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by one of `server.address`, `client.address` or `http.request.header.host`, depending on the usage.
- */
-export const ATTR_HTTP_HOST = 'http.host' as const;
-
-/**
- * Deprecated, use `http.request.method` instead.
- *
- * @example GET
- * @example POST
- * @example HEAD
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `http.request.method`.
- */
-export const ATTR_HTTP_METHOD = 'http.method' as const;
-
-/**
- * Deprecated, use `url.path` and `url.query` instead.
- *
- * @example /search?q=OpenTelemetry#SemConv
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Split to `url.path` and `url.query.
- */
-export const ATTR_HTTP_TARGET = 'http.target' as const;
-
-/**
- * Deprecated, use `url.full` instead.
- *
- * @example https://www.foo.bar/search?q=OpenTelemetry#SemConv
- *
- * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
- *
- * @deprecated Replaced by `url.full`.
- */
-export const ATTR_HTTP_URL = 'http.url' as const;
 
 /**
  * Enum value "aws_ec2" for attribute {@link ATTR_CLOUD_PLATFORM}.

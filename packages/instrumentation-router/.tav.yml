@@ -1,0 +1,5 @@
+router:
+  versions:
+    include: '>=1.0 <3'
+    mode: max-7
+  commands: npm run test

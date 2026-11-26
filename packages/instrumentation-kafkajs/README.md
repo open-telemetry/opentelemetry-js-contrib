@@ -3,9 +3,9 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for the [`kafkajs`](https://www.npmjs.com/package/kafkajs) package, which may be loaded using the [`@opentelemetry/sdk-trace-node`](https://github.com/open-telemetry/opentelemetry-js/tree/main/packages/opentelemetry-sdk-trace-node) package and is included in the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle.
+This module provides automatic instrumentation for the [`kafkajs`](https://www.npmjs.com/package/kafkajs) package.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -22,22 +22,18 @@ npm install --save @opentelemetry/instrumentation-kafkajs
 ## Usage
 
 ```js
-const { NodeTracerProvider } = require('@opentelemetry/sdk-trace-node');
-const {
-  KafkaJsInstrumentation,
-} = require('@opentelemetry/instrumentation-kafkajs');
-const { registerInstrumentations } = require('@opentelemetry/instrumentation');
+const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { KafkaJsInstrumentation } = require('@opentelemetry/instrumentation-kafkajs');
 
-const provider = new NodeTracerProvider();
-provider.register();
-
-registerInstrumentations({
+const sdk = new NodeSDK({
   instrumentations: [
     new KafkaJsInstrumentation({
       // see below for available configuration
     }),
   ],
 });
+sdk.start();
+process.once('beforeExit', async () => { await sdk.shutdown(); });
 ```
 
 ### Instrumentation Options
@@ -65,12 +61,12 @@ This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which i
 
 ### Metrics Emitted
 
-| KafkaJS Object        | Metric Name                           | Short Description                                            |
-| --------------------- | ------------------------------------- | ------------------------------------------------------------ |
-| Consumer              | `messaging.process.duration`          | Duration of processing operation. [1]                        |
-| Consumer              | `messaging.client.consumed.messages`  | Number of messages that were delivered to the application.   |
-| Consumer and Producer | `messaging.client.operation.duration` | Number of messages that were delivered to the application. (Only emitted for kafkajs@1.5.0 and later.)   |
-| Producer              | `messaging.client.sent.messages`      | Number of messages producer attempted to send to the broker. |
+| KafkaJS Object        | Metric Name                           | Short Description                                                                                      |
+| --------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Consumer              | `messaging.process.duration`          | Duration of processing operation. [1]                                                                  |
+| Consumer              | `messaging.client.consumed.messages`  | Number of messages that were delivered to the application.                                             |
+| Consumer and Producer | `messaging.client.operation.duration` | Number of messages that were delivered to the application. (Only emitted for kafkajs@1.5.0 and later.) |
+| Producer              | `messaging.client.sent.messages`      | Number of messages producer attempted to send to the broker.                                           |
 
 **[1] `messaging.process.duration`:** In the context of `eachBatch`, this metric will be emitted once for each message but the value reflects the duration of the entire batch.
 
@@ -78,17 +74,18 @@ This package uses `@opentelemetry/semantic-conventions` version `1.30+`, which i
 
 These attributes are added to both spans and metrics, where possible.
 
-| Attribute                            | Short Description                                                                                                                                                  |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `messaging.system`                   | An identifier for the messaging system being used (i.e. `"kafka"`).                                                                                                |
-| `messaging.destination.name`         | The message destination name.                                                                                                                                      |
-| `messaging.operation.type`           | A string identifying the type of messaging operation.                                                                                                              |
-| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                               |
-| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                               |
-| `messaging.kafka.message.key`        | A stringified value representing the key of the Kafka message (if present).                                                                                        |
-| `messaging.kafka.message.tombstone`  | A boolean that is true if the message is a tombstone.                                                                                                              |
-| `messaging.kafka.offset`             | The offset of a record in the corresponding Kafka partition.                                                                                                       |
-| `messaging.destination.partition.id` | The identifier of the partition messages are sent to or received from, unique within the `messaging.destination.name`. **Note:** only available on producer spans. |
+| Attribute                            | Short Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `messaging.system`                   | An identifier for the messaging system being used (i.e. `"kafka"`).                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `messaging.destination.name`         | The message destination name.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `messaging.operation.type`           | A string identifying the type of messaging operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `messaging.operation.name`           | The system-specific name of the messaging operation.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `messaging.kafka.message.key`        | A stringified value representing the key of the Kafka message (if present).                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `messaging.kafka.message.tombstone`  | A boolean that is true if the message is a tombstone.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `messaging.kafka.offset`             | The offset of a record in the corresponding Kafka partition.                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `messaging.kafka.cluster.id`         | The Kafka cluster id, read from the broker metadata kafkajs's own producer/consumer already fetch — no separate connection is opened. On consumer spans this is always present once messages are flowing, since kafkajs refreshes metadata before it can fetch any record. On producer spans it's best-effort: omitted on a freshly created producer's first `send`/`sendBatch` (metadata isn't fetched until then), present on every send after. Also omitted if the broker predates KIP-78 (cluster id support). |
+| `messaging.destination.partition.id` | The identifier of the partition messages are sent to or received from, unique within the `messaging.destination.name`. **Note:** only available on producer spans.                                                                                                                                                                                                                                                                                                                                                 |
 
 ## Useful links
 

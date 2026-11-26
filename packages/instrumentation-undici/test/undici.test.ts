@@ -1,19 +1,9 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 import * as assert from 'assert';
+import * as diagch from 'diagnostics_channel';
 import { Writable } from 'stream';
 
 import {
@@ -26,10 +16,15 @@ import {
 } from '@opentelemetry/api';
 import { AsyncLocalStorageContextManager } from '@opentelemetry/context-async-hooks';
 import {
+  ATTR_ERROR_TYPE,
+  ATTR_NETWORK_PROTOCOL_VERSION,
+  ATTR_URL_QUERY,
+} from '@opentelemetry/semantic-conventions';
+import {
   InMemorySpanExporter,
   SimpleSpanProcessor,
-} from '@opentelemetry/sdk-trace-base';
-import { NodeTracerProvider } from '@opentelemetry/sdk-trace-node';
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 
 import { UndiciInstrumentation } from '../src/undici';
 
@@ -68,8 +63,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
   const hostname = 'localhost';
   const mockServer = new MockServer();
   const memoryExporter = new InMemorySpanExporter();
-  const provider = new NodeTracerProvider({
-    spanProcessors: [new SimpleSpanProcessor(memoryExporter)],
+  const provider = new TracerProvider({
+    spanProcessors: [new SimpleSpanProcessor({ exporter: memoryExporter })],
   });
 
   before(function (done) {
@@ -93,6 +88,12 @@ describe('UndiciInstrumentation `undici` tests', function () {
       if (req.url === '/error') {
         // Simulate an error
         res.destroy();
+        return;
+      }
+      const status = req.url?.match(/^\/status\/(\d+)/);
+      if (status) {
+        res.statusCode = Number(status[1]);
+        res.end();
         return;
       }
       // There are some situations where there is no way to access headers
@@ -265,6 +266,14 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
       await consumeResponseBody(secondQueryResponse.body);
 
+      const thirdQueryResponse = await undici.request(queryRequestUrl, {
+        headers,
+        // QUERY from https://datatracker.ietf.org/doc/draft-ietf-httpbis-safe-method-w-body/
+        // @ts-expect-error undici `type HttpMethod` does not yet include 'QUERY'
+        method: 'QUERY',
+      });
+      await consumeResponseBody(thirdQueryResponse.body);
+
       assert.ok(
         firstQueryResponse!.headers['propagation-error'] === undefined,
         'propagation is set for instrumented requests'
@@ -275,15 +284,14 @@ describe('UndiciInstrumentation `undici` tests', function () {
       );
 
       spans = memoryExporter.getFinishedSpans();
-      assert.strictEqual(spans.length, 2);
+      assert.strictEqual(spans.length, 3);
       assertSpan(spans[0], {
         hostname: 'localhost',
         httpStatusCode: firstQueryResponse!.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: firstQueryResponse!.headers,
       });
       assert.strictEqual(
         spans[0].attributes['http.request.method_original'],
@@ -297,13 +305,27 @@ describe('UndiciInstrumentation `undici` tests', function () {
         spanName: 'HTTP',
         httpMethod: '_OTHER',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: secondQueryResponse!.headers,
       });
       assert.strictEqual(
         spans[1].attributes['http.request.method_original'],
         'custom',
+        'request original method is captured'
+      );
+
+      assertSpan(spans[2], {
+        hostname: 'localhost',
+        httpStatusCode: thirdQueryResponse!.statusCode,
+        spanName: 'QUERY',
+        httpMethod: 'QUERY',
+        path: '/',
+        query: 'query=test',
+        reqHeaders: headers,
+      });
+      assert.strictEqual(
+        spans[2].attributes['http.request.method_original'],
+        'QUERY',
         'request original method is captured'
       );
     });
@@ -347,23 +369,22 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -412,23 +433,22 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.status,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -485,23 +505,22 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -566,23 +585,22 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: queryResponse.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
+        query: 'query=test',
         reqHeaders: headers,
-        resHeaders: queryResponse.headers as unknown as Headers,
       });
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.foo-client'],
-        'bar',
+        ['bar'],
         'request headers from fetch options are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.request.header.x-requested-with'],
-        'undici',
+        ['undici'],
         'request headers from requestHook are captured'
       );
-      assert.strictEqual(
+      assert.deepStrictEqual(
         span.attributes['http.response.header.foo-server'],
-        'bar',
+        ['bar'],
         'response headers from the server are captured'
       );
       assert.strictEqual(
@@ -636,8 +654,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
-        resHeaders: headers,
+        query: 'query=test',
       });
     });
 
@@ -726,6 +743,63 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
     });
 
+    it('should set error.type to the status code for a failing response', async function () {
+      for (const statusCode of [404, 500]) {
+        memoryExporter.reset();
+
+        const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/${statusCode}`;
+        const response = await undici.request(requestUrl);
+        await response.body.dump();
+
+        const span = memoryExporter.getFinishedSpans()[0];
+        assert.ok(span, 'a span is present');
+        assertSpan(span, {
+          hostname,
+          httpMethod: 'GET',
+          path: `/status/${statusCode}`,
+          httpStatusCode: statusCode,
+        });
+        assert.strictEqual(span.status.code, SpanStatusCode.ERROR);
+        assert.strictEqual(
+          span.attributes[ATTR_ERROR_TYPE],
+          String(statusCode)
+        );
+      }
+    });
+
+    it('should not set error.type for a successful response', async function () {
+      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/status/204`;
+      const response = await undici.request(requestUrl);
+      await response.body.dump();
+
+      const span = memoryExporter.getFinishedSpans()[0];
+      assert.ok(span, 'a span is present');
+      assert.strictEqual(span.status.code, SpanStatusCode.UNSET);
+      assert.strictEqual(span.attributes[ATTR_ERROR_TYPE], undefined);
+    });
+
+    it('should set url.query without the leading "?" and only when present', async function () {
+      const withQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`
+      );
+      await withQuery.body.dump();
+      const withoutQuery = await undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/`
+      );
+      await withoutQuery.body.dump();
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 2);
+      assert.deepStrictEqual(
+        spans.map(span =>
+          ATTR_URL_QUERY in span.attributes
+            ? span.attributes[ATTR_URL_QUERY]
+            : '<not set>'
+        ),
+        ['query=test', '<not set>']
+      );
+    });
+
     it('should capture errors while doing request', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
@@ -748,6 +822,7 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpMethod: 'GET',
         path: '/error',
         error: fetchError,
+        errorType: 'UND_ERR_SOCKET',
         noNetPeer: true, // do not check network attribs
         forceStatus: {
           code: SpanStatusCode.ERROR,
@@ -756,52 +831,52 @@ describe('UndiciInstrumentation `undici` tests', function () {
       });
     });
 
-    it('should capture error if undici request is aborted', async function () {
-      // AbortController was added in: v15.0.0, v14.17.0
-      // but we still run tests for node v14
-      // https://nodejs.org/api/globals.html#class-abortcontroller
-      if (typeof AbortController === 'undefined') {
-        this.skip();
-      }
-
+    it('should not record abort as an error if undici request is aborted', async function () {
       let spans = memoryExporter.getFinishedSpans();
       assert.strictEqual(spans.length, 0);
 
-      let requestError;
       const controller = new AbortController();
-      const requestUrl = `${protocol}://${hostname}:${mockServer.port}/?query=test`;
-      const requestPromise = undici.request(requestUrl, {
-        signal: controller.signal,
-      });
+
+      const requestPromise = undici.request(
+        `${protocol}://${hostname}:${mockServer.port}/?query=test`,
+        { signal: controller.signal }
+      );
+
       controller.abort();
+
       try {
         await requestPromise;
       } catch (err) {
-        // Expected error
-        requestError = err as Error;
+        // Expected - request throws on abort
       }
 
-      // Let the error be published to diagnostics channel
-      await new Promise(r => setTimeout(r, 50));
+      // Allow async instrumentation to finish
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       spans = memoryExporter.getFinishedSpans();
       const span = spans[0];
+
       assert.ok(span, 'a span is present');
       assert.strictEqual(spans.length, 1);
-      assertSpan(span, {
-        hostname: 'localhost',
-        httpMethod: 'GET',
-        path: '/',
-        query: '?query=test',
-        error: requestError,
-        noNetPeer: true, // do not check network attribs
-        forceStatus: {
-          code: SpanStatusCode.ERROR,
-          message: requestError?.message,
-        },
-      });
-    });
 
+      assert.strictEqual(
+        span.status.code,
+        SpanStatusCode.UNSET,
+        'span status should be UNSET for aborted requests'
+      );
+
+      assert.strictEqual(
+        span.events.length,
+        0,
+        'no exception event should be recorded for aborted requests'
+      );
+
+      assert.strictEqual(
+        span.attributes['error.type'],
+        undefined,
+        'error.type should not be set for aborted requests'
+      );
+    });
     const userAgentRequests: Array<{
       name: string;
       headers: Record<string, string | string[] | undefined>;
@@ -873,9 +948,8 @@ describe('UndiciInstrumentation `undici` tests', function () {
           httpStatusCode: queryResponse.statusCode,
           httpMethod: 'GET',
           path: '/',
-          query: '?query=test',
+          query: 'query=test',
           reqHeaders: testCase.headers,
-          resHeaders: queryResponse.headers,
         });
         assert.strictEqual(
           span.attributes['user_agent.original'],
@@ -906,10 +980,57 @@ describe('UndiciInstrumentation `undici` tests', function () {
         httpStatusCode: res.statusCode,
         httpMethod: 'GET',
         path: '/',
-        query: '?query=test',
-        resHeaders: res.headers,
+        query: 'query=test',
       });
       assert.strictEqual(span.attributes['url.full'], fullUrl);
+    });
+
+    it('should redact sensitive query string values in url.full and url.query', async function () {
+      let spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 0);
+
+      const origin = `${protocol}://${hostname}:${mockServer.port}`;
+      const res = await undici.request(
+        `${origin}/presigned?X-Amz-Credential=AKIA&X-Amz-Signature=secret&foo=bar`
+      );
+      await consumeResponseBody(res.body);
+
+      spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      const span = spans[0];
+      assert.strictEqual(
+        span.attributes['url.full'],
+        `${origin}/presigned?X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar`
+      );
+      assert.strictEqual(
+        span.attributes['url.query'],
+        'X-Amz-Credential=REDACTED&X-Amz-Signature=REDACTED&foo=bar'
+      );
+    });
+
+    it('should set network.protocol.version to 2 when ALPN is h2', function () {
+      const request: any = {
+        method: 'GET',
+        origin: 'https://localhost:443',
+        path: '/',
+        headers: [],
+      };
+      const socket = {
+        remoteAddress: '127.0.0.1',
+        remotePort: 443,
+        alpnProtocol: 'h2',
+      };
+
+      diagch.channel('undici:request:create').publish({ request });
+      diagch.channel('undici:client:sendHeaders').publish({ request, socket });
+      diagch.channel('undici:request:trailers').publish({ request });
+
+      const spans = memoryExporter.getFinishedSpans();
+      assert.strictEqual(spans.length, 1);
+      assert.strictEqual(
+        spans[0].attributes[ATTR_NETWORK_PROTOCOL_VERSION],
+        '2'
+      );
     });
   });
 });

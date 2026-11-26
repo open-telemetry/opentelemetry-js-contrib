@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
@@ -44,13 +33,21 @@ export const ATTR_V8JS_GC_TYPE = 'v8js.gc.type' as const;
 export const ATTR_V8JS_HEAP_SPACE_NAME = 'v8js.heap.space.name' as const;
 
 /**
+ * The type of active resource.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_V8JS_RESOURCE_TYPE = 'v8js.resource.type' as const;
+
+/**
  * Event loop maximum delay.
  *
  * @note Value can be retrieved from value `histogram.max` of [`perf_hooks.monitorEventLoopDelay([options])`](https://nodejs.org/api/perf_hooks.html#perf_hooksmonitoreventloopdelayoptions)
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_MAX = 'nodejs.eventloop.delay.max' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_MAX =
+  'nodejs.eventloop.delay.max' as const;
 
 /**
  * Event loop mean delay.
@@ -59,7 +56,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_MAX = 'nodejs.eventloop.delay.max' as
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_MEAN = 'nodejs.eventloop.delay.mean' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_MEAN =
+  'nodejs.eventloop.delay.mean' as const;
 
 /**
  * Event loop minimum delay.
@@ -68,7 +66,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_MEAN = 'nodejs.eventloop.delay.mean' 
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_MIN = 'nodejs.eventloop.delay.min' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_MIN =
+  'nodejs.eventloop.delay.min' as const;
 
 /**
  * Event loop 50 percentile delay.
@@ -77,7 +76,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_MIN = 'nodejs.eventloop.delay.min' as
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_P50 = 'nodejs.eventloop.delay.p50' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_P50 =
+  'nodejs.eventloop.delay.p50' as const;
 
 /**
  * Event loop 90 percentile delay.
@@ -86,7 +86,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_P50 = 'nodejs.eventloop.delay.p50' as
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_P90 = 'nodejs.eventloop.delay.p90' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_P90 =
+  'nodejs.eventloop.delay.p90' as const;
 
 /**
  * Event loop 99 percentile delay.
@@ -95,7 +96,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_P90 = 'nodejs.eventloop.delay.p90' as
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_P99 = 'nodejs.eventloop.delay.p99' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_P99 =
+  'nodejs.eventloop.delay.p99' as const;
 
 /**
  * Event loop standard deviation delay.
@@ -104,7 +106,8 @@ export const METRIC_NODEJS_EVENTLOOP_DELAY_P99 = 'nodejs.eventloop.delay.p99' as
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_DELAY_STDDEV = 'nodejs.eventloop.delay.stddev' as const;
+export const METRIC_NODEJS_EVENTLOOP_DELAY_STDDEV =
+  'nodejs.eventloop.delay.stddev' as const;
 
 /**
  * Cumulative duration of time the event loop has been in each state.
@@ -122,7 +125,8 @@ export const METRIC_NODEJS_EVENTLOOP_TIME = 'nodejs.eventloop.time' as const;
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_NODEJS_EVENTLOOP_UTILIZATION = 'nodejs.eventloop.utilization' as const;
+export const METRIC_NODEJS_EVENTLOOP_UTILIZATION =
+  'nodejs.eventloop.utilization' as const;
 
 /**
  * Garbage collection duration.
@@ -134,11 +138,11 @@ export const METRIC_NODEJS_EVENTLOOP_UTILIZATION = 'nodejs.eventloop.utilization
 export const METRIC_V8JS_GC_DURATION = 'v8js.gc.duration' as const;
 
 /**
- * Total heap memory size pre-allocated.
- *
- * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ * Deprecated, use `v8js.memory.heap.space.size` instead.
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ *
+ * @deprecated Replaced by `v8js.memory.heap.space.size`.
  */
 export const METRIC_V8JS_MEMORY_HEAP_LIMIT = 'v8js.memory.heap.limit' as const;
 
@@ -149,7 +153,8 @@ export const METRIC_V8JS_MEMORY_HEAP_LIMIT = 'v8js.memory.heap.limit' as const;
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE = 'v8js.memory.heap.space.available_size' as const;
+export const METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE =
+  'v8js.memory.heap.space.available_size' as const;
 
 /**
  * Committed size of a heap space.
@@ -158,7 +163,8 @@ export const METRIC_V8JS_MEMORY_HEAP_SPACE_AVAILABLE_SIZE = 'v8js.memory.heap.sp
  *
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
-export const METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE = 'v8js.memory.heap.space.physical_size' as const;
+export const METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE =
+  'v8js.memory.heap.space.physical_size' as const;
 
 /**
  * Heap Memory size allocated.
@@ -168,6 +174,15 @@ export const METRIC_V8JS_MEMORY_HEAP_SPACE_PHYSICAL_SIZE = 'v8js.memory.heap.spa
  * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const METRIC_V8JS_MEMORY_HEAP_USED = 'v8js.memory.heap.used' as const;
+
+/**
+ * Types of the active resources that are currently keeping the event loop alive.
+ *
+ * @note The value can be retrieved from [`process.getActiveResourcesInfo()`](https://nodejs.org/api/process.html#processgetactiveresourcesinfo)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_RESOURCE_ACTIVE = 'v8js.resource.active' as const;
 
 /**
  * Enum value "active" for attribute {@link ATTR_NODEJS_EVENTLOOP_STATE}.
@@ -186,3 +201,13 @@ export const NODEJS_EVENTLOOP_STATE_VALUE_ACTIVE = 'active' as const;
  * @experimental This enum value is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const NODEJS_EVENTLOOP_STATE_VALUE_IDLE = 'idle' as const;
+
+/**
+ * Total heap memory size pre-allocated for a heap space.
+ *
+ * @note The value can be retrieved from value `space_size` of [`v8.getHeapSpaceStatistics()`](https://nodejs.org/api/v8.html#v8getheapspacestatistics)
+ *
+ * @experimental This metric is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const METRIC_V8JS_MEMORY_HEAP_SPACE_SIZE =
+  'v8js.memory.heap.space.size' as const;

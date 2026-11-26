@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // Tests in this file originated from an earlier aws-sdk-v3.test.ts that
@@ -28,14 +17,13 @@ process.env.AWS_ACCESS_KEY_ID = 'testing';
 process.env.AWS_SECRET_ACCESS_KEY = 'testing';
 
 import 'mocha';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 import { context, trace } from '@opentelemetry/api';
 import {
   ATTR_HTTP_RESPONSE_STATUS_CODE,
   ATTR_URL_FULL,
 } from '@opentelemetry/semantic-conventions';
 import {
-  ATTR_HTTP_STATUS_CODE,
   ATTR_MESSAGING_BATCH_MESSAGE_COUNT,
   ATTR_MESSAGING_DESTINATION_NAME,
   ATTR_MESSAGING_MESSAGE_ID,
@@ -97,7 +85,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
     expect(span.attributes[ATTR_MESSAGING_MESSAGE_ID]).toEqual(
       response.MessageId
     );
-    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
     expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
@@ -148,7 +135,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       'otel-demo-aws-sdk'
     );
     expect(span.attributes[ATTR_URL_FULL]).toEqual(params.QueueUrl);
-    expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
     expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
   });
 
@@ -182,7 +168,6 @@ describe('instrumentation-aws-sdk-v3 (client-sqs)', () => {
       expect(span.attributes[ATTR_RPC_METHOD]).toEqual('ReceiveMessage');
       expect(span.attributes[ATTR_RPC_SERVICE]).toEqual('SQS');
       expect(span.attributes[AttributeNames.CLOUD_REGION]).toEqual(region);
-      expect(span.attributes[ATTR_HTTP_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_HTTP_RESPONSE_STATUS_CODE]).toEqual(200);
       expect(span.attributes[ATTR_MESSAGING_BATCH_MESSAGE_COUNT]).toEqual(2);
       expect(span.links.length).toBe(2);

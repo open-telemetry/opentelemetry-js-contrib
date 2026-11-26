@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 import {
@@ -30,15 +19,14 @@ import {
   safeExecuteInTheMiddle,
 } from '@opentelemetry/instrumentation';
 import { CassandraDriverInstrumentationConfig, ResultSet } from './types';
+import { DB_SYSTEM_NAME_VALUE_CASSANDRA } from './semconv';
 import {
-  DB_SYSTEM_VALUE_CASSANDRA,
-  ATTR_DB_NAME,
-  ATTR_DB_STATEMENT,
-  ATTR_DB_SYSTEM,
-  ATTR_DB_USER,
-  ATTR_NET_PEER_NAME,
-  ATTR_NET_PEER_PORT,
-} from './semconv';
+  ATTR_DB_NAMESPACE,
+  ATTR_DB_QUERY_TEXT,
+  ATTR_DB_SYSTEM_NAME,
+  ATTR_SERVER_ADDRESS,
+  ATTR_SERVER_PORT,
+} from '@opentelemetry/semantic-conventions';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { EventEmitter } from 'events';
@@ -174,10 +162,9 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
         if (span !== undefined && conn !== undefined) {
           const port = parseInt(conn.port, 10);
 
-          span.setAttribute(ATTR_NET_PEER_NAME, conn.address);
-
+          span.setAttribute(ATTR_SERVER_ADDRESS, conn.address);
           if (!isNaN(port)) {
-            span.setAttribute(ATTR_NET_PEER_PORT, port);
+            span.setAttribute(ATTR_SERVER_PORT, port);
           }
         }
 
@@ -234,10 +221,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
 
         const batchPromise = safeExecuteInTheMiddle(
           () => {
-            return original.apply(
-              this,
-              args
-            ) as Promise<CassandraDriver.types.ResultSet>;
+            return context.with(batchContext, () => {
+              return original.apply(
+                this,
+                args
+              ) as Promise<CassandraDriver.types.ResultSet>;
+            });
           },
           error => {
             if (error) {
@@ -285,10 +274,12 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
           };
           args[3] = wrappedCallback;
         }
-
+        const streamContext = trace.setSpan(context.active(), span);
         return safeExecuteInTheMiddle(
           () => {
-            return original.apply(this, args);
+            return context.with(streamContext, () => {
+              return original.apply(this, args);
+            });
           },
           error => {
             if (error) {
@@ -304,24 +295,17 @@ export class CassandraDriverInstrumentation extends InstrumentationBase<Cassandr
     { op, query }: { op: string; query?: unknown },
     client: CassandraDriver.Client
   ): Span {
-    const attributes: Attributes = {
-      [ATTR_DB_SYSTEM]: DB_SYSTEM_VALUE_CASSANDRA,
-    };
+    const attributes: Attributes = {};
+
+    attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_CASSANDRA;
 
     if (this._shouldIncludeDbStatement() && query !== undefined) {
       const statement = truncateQuery(query, this._getMaxQueryLength());
-      attributes[ATTR_DB_STATEMENT] = statement;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const user = (client as any).options?.credentials?.username;
-
-    if (user) {
-      attributes[ATTR_DB_USER] = user;
+      attributes[ATTR_DB_QUERY_TEXT] = statement;
     }
 
     if (client.keyspace) {
-      attributes[ATTR_DB_NAME] = client.keyspace;
+      attributes[ATTR_DB_NAMESPACE] = client.keyspace;
     }
 
     return this.tracer.startSpan(`cassandra-driver.${op}`, {

@@ -1,17 +1,6 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 // Utilities for running test files out-of-process. See `runTestFixture()` below.
@@ -24,7 +13,11 @@ import type { AddressInfo } from 'net';
 import { URL } from 'url';
 import { createGunzip } from 'zlib';
 
-import { NodeSDK, tracing } from '@opentelemetry/sdk-node';
+import { NodeSDK } from '@opentelemetry/sdk-node';
+import {
+  ConsoleSpanExporter,
+  SimpleSpanProcessor,
+} from '@opentelemetry/sdk-trace';
 import type { Instrumentation } from '@opentelemetry/instrumentation';
 import { IInstrumentationScope, IResource, ISpan } from './otlp-types';
 
@@ -40,12 +33,12 @@ export function createTestNodeSdk(opts: {
   serviceName?: string;
   instrumentations: (Instrumentation | Instrumentation[])[];
 }) {
-  const spanProcessor = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+  const spanProcessors = process.env.OTEL_EXPORTER_OTLP_ENDPOINT
     ? undefined
-    : new tracing.SimpleSpanProcessor(new tracing.ConsoleSpanExporter());
+    : [new SimpleSpanProcessor({ exporter: new ConsoleSpanExporter() })];
   const sdk = new NodeSDK({
     serviceName: opts.serviceName || 'test-service',
-    spanProcessor,
+    spanProcessors,
     instrumentations: opts.instrumentations,
   });
   return sdk;
@@ -67,8 +60,8 @@ export type TestSpan = ISpan & {
  * There is little error checking here; we are assuming valid OTLP.
  */
 export class TestCollector {
-  endpointUrl?: string;
-  spans: Array<TestSpan> = [];
+  public endpointUrl?: string;
+  public spans: Array<TestSpan> = [];
   private _http;
 
   constructor() {
@@ -76,12 +69,12 @@ export class TestCollector {
     this._http = createServer(this._onRequest.bind(this));
   }
 
-  clear(): void {
+  public clear(): void {
     this.spans = [];
   }
 
   // Start listening and set address to `endpointUrl`.
-  async start(): Promise<void> {
+  public async start(): Promise<void> {
     return new Promise(resolve => {
       this._http.listen(() => {
         this.endpointUrl = `http://localhost:${
@@ -92,7 +85,7 @@ export class TestCollector {
     });
   }
 
-  close() {
+  public close() {
     this.endpointUrl = undefined;
     return this._http.close();
   }
@@ -100,39 +93,46 @@ export class TestCollector {
   /**
    * Return the spans sorted by which started first, for testing convenience.
    *
-   * Note: This sorting is a *best effort*. `span.startTimeUnixNano` has
-   * millisecond accuracy, so if multiple spans start in the same millisecond
-   * then this cannot know the start ordering. If `startTimeUnixNano` are the
-   * same, this attempts to get the correct ordering using `parentSpanId` -- a
-   * parent span starts before any of its direct children. This isn't perfect.
+   * This sorting is a *best effort*.
+   * `span.startTimeUnixNano` has millisecond accuracy, so spans that start in
+   * the same millisecond are additionally ordered so that every span follows
+   * its ancestors. Unrelated spans with the same start time keep the order in
+   * which they were received.
    */
-  get sortedSpans(): Array<TestSpan> {
-    return this.spans.slice().sort((a, b) => {
-      assert(typeof a.startTimeUnixNano === 'string');
-      assert(typeof b.startTimeUnixNano === 'string');
+  public get sortedSpans(): Array<TestSpan> {
+    const byStart = this.spans.slice().sort((a, b) => {
+      assert.ok(typeof a.startTimeUnixNano === 'string');
+      assert.ok(typeof b.startTimeUnixNano === 'string');
       const aStartInt = BigInt(a.startTimeUnixNano);
       const bStartInt = BigInt(b.startTimeUnixNano);
-      if (aStartInt < bStartInt) {
-        return -1;
-      } else if (aStartInt > bStartInt) {
-        return 1;
-      } else {
-        // Same startTimeUnixNano, which has millisecond accuracy. This is
-        // common for Express middleware spans on a fast enough dev machine.
-        // Attempt to use spanId/parentSpanId to decide on span ordering.
-        if (a.traceId === b.traceId) {
-          if (a.spanId === b.parentSpanId) {
-            return -1;
-          } else if (a.parentSpanId === b.spanId) {
-            return 1;
-          }
-        }
-        return 0;
-      }
+      return aStartInt < bStartInt ? -1 : aStartInt > bStartInt ? 1 : 0;
     });
+
+    // A pairwise parent/child tie-break is not transitive (a grandchild compares
+    // equal to its grandparent), so ancestors are placed in a second pass.
+    const spanIds = new Set(byStart.map(span => span.spanId));
+    const placed = new Set<TestSpan['spanId']>();
+    const waiting = new Map<TestSpan['spanId'], Array<TestSpan>>();
+    const sorted: Array<TestSpan> = [];
+    const place = (span: TestSpan) => {
+      sorted.push(span);
+      placed.add(span.spanId);
+      const children = waiting.get(span.spanId) ?? [];
+      waiting.delete(span.spanId);
+      children.forEach(place);
+    };
+    for (const span of byStart) {
+      const parentId = span.parentSpanId;
+      if (parentId && spanIds.has(parentId) && !placed.has(parentId)) {
+        waiting.set(parentId, [...(waiting.get(parentId) ?? []), span]);
+      } else {
+        place(span);
+      }
+    }
+    return sorted;
   }
 
-  _onRequest(req: IncomingMessage, res: ServerResponse) {
+  private _onRequest(req: IncomingMessage, res: ServerResponse) {
     const parsedUrl = new URL(req.url as string, this.endpointUrl);
     let instream: EventEmitter;
     if (req.headers['content-encoding'] === 'gzip') {
@@ -171,7 +171,7 @@ export class TestCollector {
     });
   }
 
-  _ingestTraces(body: string) {
+  private _ingestTraces(body: string) {
     const data = JSON.parse(body);
     // Read an OTLP `resourceSpans` body into `this.spans`.
     for (const resourceSpan of data.resourceSpans) {

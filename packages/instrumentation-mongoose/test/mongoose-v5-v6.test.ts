@@ -1,27 +1,17 @@
 /*
  * Copyright The OpenTelemetry Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * SPDX-License-Identifier: Apache-2.0
  */
+
 import 'mocha';
 import { expect } from 'expect';
-import { ATTR_DB_OPERATION } from '../src/semconv';
 import { MongooseInstrumentation } from '../src';
+import { ATTR_DB_OPERATION_NAME } from '@opentelemetry/semantic-conventions';
 import {
   getTestSpans,
   registerInstrumentationTesting,
 } from '@opentelemetry/contrib-test-utils';
-import type { ReadableSpan } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan } from '@opentelemetry/sdk-trace';
 
 const instrumentation = registerInstrumentationTesting(
   new MongooseInstrumentation()
@@ -125,7 +115,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         expect(statement.options.wtimeout).toEqual(42);
@@ -153,7 +143,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
@@ -174,7 +164,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
 
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('save');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('save');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.document).toEqual(expect.objectContaining(document));
         done();
@@ -202,7 +192,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('insertMany');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('insertMany');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.documents).toEqual(documents);
         expect(statement.options.ordered).toEqual(true);
@@ -229,7 +219,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('insertMany');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('insertMany');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.documents).toEqual(documents);
         done();
@@ -247,7 +237,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
       const spans = getTestSpans();
       expect(spans.length).toBe(2);
       assertSpan(spans[1] as ReadableSpan);
-      expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('remove');
+      expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('remove');
     });
 
     it('instrumenting remove operation with callbacks [deprecated]', done => {
@@ -258,7 +248,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
           const spans = getTestSpans();
           expect(spans.length).toBe(2);
           assertSpan(spans[1] as ReadableSpan);
-          expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('remove');
+          expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe('remove');
           expect(getStatement(spans[1] as ReadableSpan).options).toEqual({
             overwrite: true,
           });
@@ -276,7 +266,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('count');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('count');
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({});
@@ -293,7 +283,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('update');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('update');
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
@@ -310,8 +300,10 @@ describe('mongoose instrumentation [v5/v6]', () => {
     expect(spans.length).toBe(2);
     assertSpan(spans[0] as ReadableSpan);
     assertSpan(spans[1] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOne');
-    expect(spans[1].attributes[ATTR_DB_OPERATION]).toBe('findOneAndUpdate');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('findOne');
+    expect(spans[1].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndUpdate'
+    );
     const statement = getStatement(spans[1] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
@@ -326,7 +318,9 @@ describe('mongoose instrumentation [v5/v6]', () => {
     const spans = getTestSpans();
     expect(spans.length).toBe(1);
     assertSpan(spans[0] as ReadableSpan);
-    expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('findOneAndRemove');
+    expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe(
+      'findOneAndRemove'
+    );
     const statement = getStatement(spans[0] as ReadableSpan);
     expect(statement.options).toEqual({});
     expect(statement.condition).toEqual({ email: 'john.doe@example.com' });
@@ -342,7 +336,7 @@ describe('mongoose instrumentation [v5/v6]', () => {
         const spans = getTestSpans();
         expect(spans.length).toBe(1);
         assertSpan(spans[0] as ReadableSpan);
-        expect(spans[0].attributes[ATTR_DB_OPERATION]).toBe('aggregate');
+        expect(spans[0].attributes[ATTR_DB_OPERATION_NAME]).toBe('aggregate');
         const statement = getStatement(spans[0] as ReadableSpan);
         expect(statement.aggregatePipeline).toEqual([
           { $match: { firstName: 'John' } },
