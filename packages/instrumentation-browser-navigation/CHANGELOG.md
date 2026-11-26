@@ -1,6 +1,47 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.19.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.18.0...instrumentation-browser-navigation-v0.19.0) (2026-11-12)
+
+
+### Features
+
+* **instrumentation-browser-navigation:** redact sensitive URL query parameters ([#3905](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3905)) ([3aeca30](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/3aeca307a3f4dd756f11b9f4d463bd8c9b9e2fb1))
+
+## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.17.0...instrumentation-browser-navigation-v0.18.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+## [0.17.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.16.0...instrumentation-browser-navigation-v0.17.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+## [0.16.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.15.0...instrumentation-browser-navigation-v0.16.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+## [0.15.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.14.0...instrumentation-browser-navigation-v0.15.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+
 ## [0.14.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-browser-navigation-v0.13.0...instrumentation-browser-navigation-v0.14.0) (2026-07-23)
 
 

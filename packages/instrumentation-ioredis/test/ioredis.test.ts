@@ -124,9 +124,18 @@ describe('ioredis', () => {
         const endedSpans = memoryExporter.getFinishedSpans();
         try {
           assert.strictEqual(trace.getSpan(context.active()), span);
-          assert.strictEqual(endedSpans.length, 2);
+          // ioredis v6 defaults to RESP3 and sends a HELLO command during the
+          // handshake, producing an extra span between 'connect' and 'info'.
+          // v5: [connect, info]  v6: [connect, hello, info]
+          assert.ok(
+            endedSpans.length === 2 || endedSpans.length === 3,
+            `expected 2 or 3 handshake spans, got ${endedSpans.length}`
+          );
           assert.strictEqual(endedSpans[0].name, 'connect');
-          assert.strictEqual(endedSpans[1].name, 'info');
+          assert.ok(
+            endedSpans.some(s => s.name === 'info'),
+            'expected an info span'
+          );
           testUtils.assertPropagation(endedSpans[0], span);
 
           testUtils.assertSpan(
@@ -137,12 +146,26 @@ describe('ioredis', () => {
             unsetStatus
           );
           span.end();
-          assert.strictEqual(endedSpans.length, 3);
-          assert.strictEqual(endedSpans[2].name, 'test span');
+          // ioredis v6 defaults to RESP3 and sends a HELLO command during the
+          // handshake, producing an extra span.
+          const endedSpansAfterEnd = memoryExporter.getFinishedSpans();
+          assert.ok(
+            endedSpans.length === 3 || endedSpansAfterEnd.length === 4,
+            `expected 3 or 4 handshake spans, got ${endedSpansAfterEnd.length}`
+          );
+
+          assert.strictEqual(
+            endedSpansAfterEnd[endedSpansAfterEnd.length - 1].name,
+            'test span'
+          );
         } finally {
           client.quit(() => {
-            assert.strictEqual(endedSpans.length, 4);
-            assert.strictEqual(endedSpans[3].name, 'quit');
+            assert.ok(
+              endedSpans.length === 4 || endedSpans.length === 5,
+              `expected 4 or 5 handshake spans, got ${endedSpans.length}`
+            );
+
+            assert.strictEqual(endedSpans[endedSpans.length - 1].name, 'quit');
             done();
           });
         }

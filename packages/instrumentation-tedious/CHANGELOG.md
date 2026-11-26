@@ -1,6 +1,79 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.44.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.43.0...instrumentation-tedious-v0.44.0) (2026-11-05)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3884](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3884)) ([a869573](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/a8695736b5c93aec499c75124b4a2a8e2f349dd0))
+
+
+### Bug Fixes
+
+* align peer-api range with package dependency peer-api ranges ([#3883](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3883)) ([7401ffa](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/7401ffacd867de521577b681a8bdd2ac0d45b353))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.71.0 to ^0.72.0
+
+## [0.43.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.42.0...instrumentation-tedious-v0.43.0) (2026-10-20)
+
+
+### ⚠ BREAKING CHANGES
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847))
+
+### Miscellaneous Chores
+
+* bump versions to SDK 3.0/API 1.10.0 ([#3839](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3839)) ([cfdbfcc](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/cfdbfcc67f724eee24feedd8d930104cc587deb3))
+* raise minimum supported Node.js to 22.15.0, dropping 18 and 20 support ([#3847](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3847)) ([79dc211](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/79dc2114b5a819d8b541c0744e5f49abde8f9b8c))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.70.0 to ^0.71.0
+
+## [0.42.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.41.0...instrumentation-tedious-v0.42.0) (2026-10-06)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3804](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3804)) ([36fcb9c](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/36fcb9cd8f83e0a1c1fdc0fbff795612215b10b7))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.69.0 to ^0.70.0
+
+## [0.41.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.40.0...instrumentation-tedious-v0.41.0) (2026-08-31)
+
+
+### Features
+
+* **deps:** update deps matching '@opentelemetry/*' ([#3716](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3716)) ([015582a](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/015582a5b839b942c7a6a0aa8a60d1665b16663f))
+* **instrumentation-tedious:** add missing stable SemConv attributes ([#3627](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3627)) ([645a624](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/645a62417def7187fe031e526cd9ee6e74e0df5c))
+
+
+### Bug Fixes
+
+* **deps:** move unused [@types](https://github.com/types) packages out of runtime dependencies ([#3702](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3702)) ([49ebdaf](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/49ebdaf9cac16d74ed748ae15a5bc573a82e4a0e))
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * devDependencies
+    * @opentelemetry/contrib-test-utils bumped from ^0.68.0 to ^0.69.0
+
 ## [0.40.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-tedious-v0.39.0...instrumentation-tedious-v0.40.0) (2026-07-23)
 
 

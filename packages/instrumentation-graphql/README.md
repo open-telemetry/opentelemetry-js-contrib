@@ -7,7 +7,7 @@
 
 This module provides automatic instrumentation and tracing for GraphQL in Node.js applications.
 
-If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](`https://www.npmjs.com/package/@opentelemetry/sdk-node`) for the most seamless instrumentation experience.
+If total installation size is not constrained, it is recommended to use the [`@opentelemetry/auto-instrumentations-node`](https://www.npmjs.com/package/@opentelemetry/auto-instrumentations-node) bundle with [@opentelemetry/sdk-node](https://www.npmjs.com/package/@opentelemetry/sdk-node) for the most seamless instrumentation experience.
 
 Compatible with OpenTelemetry JS API and SDK `1.0+`.
 
@@ -102,10 +102,6 @@ When setting mergeItems to `true` it will only record a span for the first invoc
 Notice that all span data only reflects the invocation on the first element. That includes timing, events and status.
 
 Downstream spans in the context of all resolvers will be child of the first span.
-
-## Examples
-
-Can be found [in the examples directory](https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/examples/graphql)
 
 ## Semantic Conventions
 

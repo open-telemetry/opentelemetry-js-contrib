@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Span } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { Span, SeverityNumber } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

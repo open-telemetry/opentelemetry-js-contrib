@@ -198,7 +198,10 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
 
         // verify against the config if the layer should be ignored
         if (isLayerIgnored(metadata.name, type, instrumentation.getConfig())) {
-          if (type === ExpressLayerType.MIDDLEWARE && isLayerPathStored) {
+          // An ignored layer gets no `next` wrapper to remove its path later,
+          // so remove it now. Not for routers: the routes they mount still
+          // need the router's path while they run.
+          if (type !== ExpressLayerType.ROUTER && isLayerPathStored) {
             (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
           }
           return original.apply(this, arguments);

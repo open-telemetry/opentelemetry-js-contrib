@@ -3,8 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Span } from '@opentelemetry/api';
-import { SeverityNumber } from '@opentelemetry/api-logs';
+import { Span, SeverityNumber } from '@opentelemetry/api';
 import { InstrumentationConfig } from '@opentelemetry/instrumentation';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -22,6 +21,11 @@ export interface WinstonInstrumentationConfig extends InstrumentationConfig {
    * Control Log sending severity level, logs will be sent for  specified severity and higher.
    */
   logSeverity?: SeverityNumber;
+
+  /**
+   * Custom mapping of winston log level names to OpenTelemetry SeverityNumber.
+   */
+  severityMapping?: Record<string, SeverityNumber>;
 
   /**
    * Whether to disable the injection trace-context fields, and possibly other

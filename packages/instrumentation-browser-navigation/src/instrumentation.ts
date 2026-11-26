@@ -4,7 +4,7 @@
  */
 
 import { InstrumentationBase } from '@opentelemetry/instrumentation';
-import type { LogRecord } from '@opentelemetry/api-logs';
+import { type LogRecord } from '@opentelemetry/api';
 import { ATTR_URL_FULL } from '@opentelemetry/semantic-conventions';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
@@ -15,6 +15,7 @@ import {
   SanitizeUrlFunction,
 } from './types';
 import { isHashChange } from './utils';
+import { redactUrl } from './redact-url';
 
 /**
  * This class represents a browser navigation instrumentation plugin
@@ -26,6 +27,15 @@ export const ATTR_BROWSER_NAVIGATION_HASH_CHANGE =
   'browser.navigation.hash_change';
 export const ATTR_BROWSER_NAVIGATION_TYPE = 'browser.navigation.type';
 
+/**
+ * Instrumentation that emits `browser.navigation` log records for hard and
+ * soft navigations.
+ *
+ * @deprecated This instrumentation is deprecated in favor of
+ * `@opentelemetry/browser-instrumentation/experimental/navigation`, which
+ * exports it as `NavigationInstrumentation`. See
+ * https://github.com/open-telemetry/opentelemetry-browser/blob/main/docs/migration-guide.md
+ */
 export class BrowserNavigationInstrumentation extends InstrumentationBase<BrowserNavigationInstrumentationConfig> {
   applyCustomLogRecordData: ApplyCustomLogRecordDataFunction | undefined =
     undefined;
@@ -55,15 +65,22 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
   init() {}
 
   /**
+   * Returns the value to record as `url.full`. A configured `sanitizeUrl`
+   * callback fully replaces the default redaction of credentials and
+   * sensitive query string values.
+   */
+  private _getUrlFull(url: string): string {
+    return this.sanitizeUrl ? this.sanitizeUrl(url) : redactUrl(url);
+  }
+
+  /**
    * callback to be executed when using hard navigation
    */
   private _onHardNavigation() {
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this.sanitizeUrl
-          ? this.sanitizeUrl(document.documentURI)
-          : document.documentURI,
+        [ATTR_URL_FULL]: this._getUrlFull(document.documentURI),
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: false,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: false,
       },
@@ -106,9 +123,7 @@ export class BrowserNavigationInstrumentation extends InstrumentationBase<Browse
     const navLogRecord: LogRecord = {
       eventName: EVENT_NAME,
       attributes: {
-        [ATTR_URL_FULL]: this.sanitizeUrl
-          ? this.sanitizeUrl(currentUrl)
-          : currentUrl,
+        [ATTR_URL_FULL]: this._getUrlFull(currentUrl),
         [ATTR_BROWSER_NAVIGATION_SAME_DOCUMENT]: sameDocument,
         [ATTR_BROWSER_NAVIGATION_HASH_CHANGE]: hashChange,
         ...(navType ? { [ATTR_BROWSER_NAVIGATION_TYPE]: navType } : {}),

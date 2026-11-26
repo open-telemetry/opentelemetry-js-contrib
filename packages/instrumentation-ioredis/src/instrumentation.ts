@@ -48,7 +48,7 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
     return [
       new InstrumentationNodeModuleDefinition(
         'ioredis',
-        ['>=2.0.0 <6'],
+        ['>=2.0.0 <7'],
         (module, moduleVersion?: string) => {
           const moduleExports =
             module[Symbol.toStringTag] === 'Module'
