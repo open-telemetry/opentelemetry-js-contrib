@@ -4,7 +4,8 @@
  */
 
 import type * as graphqlTypes from 'graphql';
-import * as api from '@opentelemetry/api';
+import type { Span, SpanAttributes, Tracer } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { AllowedOperationTypes, SpanNames, TokenKind } from './enum';
 import { AttributeNames } from './enums/AttributeNames';
 import { OTEL_GRAPHQL_DATA_SYMBOL, OTEL_PATCHED_SYMBOL } from './symbols';
@@ -30,7 +31,7 @@ const isObjectLike = (value: unknown): value is { [key: string]: unknown } => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
+function addInputVariableAttribute(span: Span, key: string, variable: any) {
   if (Array.isArray(variable)) {
     variable.forEach((value, idx) => {
       addInputVariableAttribute(span, `${key}.${idx}`, value);
@@ -45,7 +46,7 @@ function addInputVariableAttribute(span: api.Span, key: string, variable: any) {
 }
 
 export function addInputVariableAttributes(
-  span: api.Span,
+  span: Span,
   variableValues: { [key: string]: any }
 ) {
   Object.entries(variableValues).forEach(([key, value]) => {
@@ -54,7 +55,7 @@ export function addInputVariableAttributes(
 }
 
 export function addSpanSource(
-  span: api.Span,
+  span: Span,
   loc?: graphqlTypes.Location,
   allowValues?: boolean,
   start?: number,
@@ -65,7 +66,7 @@ export function addSpanSource(
 }
 
 function createFieldIfNotExists(
-  tracer: api.Tracer,
+  tracer: Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig,
   contextValue: any,
   info: graphqlTypes.GraphQLResolveInfo,
@@ -101,14 +102,14 @@ function createFieldIfNotExists(
 }
 
 function createResolverSpan(
-  tracer: api.Tracer,
+  tracer: Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig,
   contextValue: any,
   info: graphqlTypes.GraphQLResolveInfo,
   path: string[],
-  parentSpan?: api.Span
-): api.Span {
-  const attributes: api.SpanAttributes = {
+  parentSpan?: Span
+): Span {
+  const attributes: SpanAttributes = {
     [AttributeNames.FIELD_NAME]: info.fieldName,
     [AttributeNames.FIELD_PATH]: path.join('.'),
     [AttributeNames.FIELD_TYPE]: info.returnType.toString(),
@@ -120,7 +121,7 @@ function createResolverSpan(
     {
       attributes,
     },
-    parentSpan ? api.trace.setSpan(api.context.active(), parentSpan) : undefined
+    parentSpan ? trace.setSpan(context.active(), parentSpan) : undefined
   );
 
   const document = contextValue[OTEL_GRAPHQL_DATA_SYMBOL].source;
@@ -141,7 +142,7 @@ function createResolverSpan(
   return span;
 }
 
-export function endSpan(span: api.Span, error?: Error): void {
+export function endSpan(span: Span, error?: Error): void {
   if (error) {
     span.recordException(error);
   }
@@ -180,7 +181,7 @@ function getField(contextValue: any, path: string[]): GraphQLField {
   return contextValue[OTEL_GRAPHQL_DATA_SYMBOL].fields[path.join('.')];
 }
 
-function getParentFieldSpan(contextValue: any, path: string[]): api.Span {
+function getParentFieldSpan(contextValue: any, path: string[]): Span {
   for (let i = path.length - 1; i > 0; i--) {
     const field = getField(contextValue, path.slice(0, i));
 
@@ -192,7 +193,7 @@ function getParentFieldSpan(contextValue: any, path: string[]): api.Span {
   return getRootSpan(contextValue);
 }
 
-function getRootSpan(contextValue: any): api.Span {
+function getRootSpan(contextValue: any): Span {
   return contextValue[OTEL_GRAPHQL_DATA_SYMBOL].span;
 }
 
@@ -292,7 +293,7 @@ export function getSourceFromLocation(
 
 export function wrapFields(
   type: Maybe<graphqlTypes.GraphQLObjectType & OtelPatched>,
-  tracer: api.Tracer,
+  tracer: Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig
 ): void {
   if (!type || type[OTEL_PATCHED_SYMBOL]) {
@@ -356,7 +357,7 @@ function isGraphQLObjectType(
 }
 
 const handleResolveSpanError = (
-  resolveSpan: api.Span,
+  resolveSpan: Span,
   err: any,
   shouldEndSpan: boolean
 ) => {
@@ -365,14 +366,14 @@ const handleResolveSpanError = (
   }
   resolveSpan.recordException(err);
   resolveSpan.setStatus({
-    code: api.SpanStatusCode.ERROR,
+    code: SpanStatusCode.ERROR,
     message: err.message,
   });
   resolveSpan.end();
 };
 
 const handleResolveSpanSuccess = (
-  resolveSpan: api.Span,
+  resolveSpan: Span,
   shouldEndSpan: boolean
 ) => {
   if (!shouldEndSpan) {
@@ -382,7 +383,7 @@ const handleResolveSpanSuccess = (
 };
 
 export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
-  tracer: api.Tracer,
+  tracer: Tracer,
   getConfig: () => GraphQLInstrumentationParsedConfig,
   fieldResolver: Maybe<
     graphqlTypes.GraphQLFieldResolver<TSource, TContext, TArgs> & OtelPatched
@@ -434,7 +435,7 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
     const path = pathToArray(config.mergeItems, info && info.path);
     const depth = path.filter((item: any) => typeof item === 'string').length;
 
-    let span: api.Span;
+    let span: Span;
     let shouldEndSpan = false;
     if (config.depth >= 0 && config.depth < depth) {
       span = getParentFieldSpan(contextValue, path);
@@ -450,38 +451,29 @@ export function wrapFieldResolver<TSource = any, TContext = any, TArgs = any>(
       shouldEndSpan = spanAdded;
     }
 
-    return api.context.with(
-      api.trace.setSpan(api.context.active(), span),
-      () => {
-        try {
-          const res = fieldResolver.call(
-            this,
-            source,
-            args,
-            contextValue,
-            info
+    return context.with(trace.setSpan(context.active(), span), () => {
+      try {
+        const res = fieldResolver.call(this, source, args, contextValue, info);
+        if (isPromise(res)) {
+          return res.then(
+            (r: any) => {
+              handleResolveSpanSuccess(span, shouldEndSpan);
+              return r;
+            },
+            (err: Error) => {
+              handleResolveSpanError(span, err, shouldEndSpan);
+              throw err;
+            }
           );
-          if (isPromise(res)) {
-            return res.then(
-              (r: any) => {
-                handleResolveSpanSuccess(span, shouldEndSpan);
-                return r;
-              },
-              (err: Error) => {
-                handleResolveSpanError(span, err, shouldEndSpan);
-                throw err;
-              }
-            );
-          } else {
-            handleResolveSpanSuccess(span, shouldEndSpan);
-            return res;
-          }
-        } catch (err: any) {
-          handleResolveSpanError(span, err, shouldEndSpan);
-          throw err;
+        } else {
+          handleResolveSpanSuccess(span, shouldEndSpan);
+          return res;
         }
+      } catch (err: any) {
+        handleResolveSpanError(span, err, shouldEndSpan);
+        throw err;
       }
-    );
+    });
   }
 
   (wrappedFieldResolver as OtelPatched)[OTEL_PATCHED_SYMBOL] = true;
