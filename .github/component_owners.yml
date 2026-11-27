@@ -59,6 +59,9 @@ components:
   packages/instrumentation-anthropic:
     - eternalcuriouslearner
     - jacksonweber
+  packages/instrumentation-beeai:
+    - psx95
+    - JacksonWeber
   packages/instrumentation-cucumber:
     - Ugzuzg
   packages/instrumentation-dataloader:
