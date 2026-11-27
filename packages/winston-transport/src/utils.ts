@@ -124,7 +124,7 @@ function serializeError(error: Error, ancestors: Set<object>): Attributes {
 
 function normalizeAttributeValue(
   value: unknown,
-  ancestors = new Set<object>(),
+  ancestors?: Set<object>,
   stringifyUnsupported = false
 ): AnyValue {
   if (
@@ -141,7 +141,9 @@ function normalizeAttributeValue(
     return stringifyUnsupported ? String(value) : (value as AnyValue);
   }
 
-  if (ancestors.has(value)) {
+  if (ancestors === undefined) {
+    ancestors = new Set<object>();
+  } else if (ancestors.has(value)) {
     return CIRCULAR_REFERENCE_VALUE;
   }
 
@@ -345,23 +347,25 @@ export function emitLogRecord(
     return;
   }
 
-  const { message, level, ...splat } = record;
-  const { [ATTR_OTEL_EVENT_NAME]: eventName, ...rest } = splat;
+  const message = record.message;
+  const eventName = record[ATTR_OTEL_EVENT_NAME];
   const attributes: Attributes = {};
   // Ensures the log level is read from a symbol property, avoiding any
   // accidental inclusion of ANSI color codes that may be present in the string
   // property.
   const exceptionPayload = getExceptionPayload(record);
-  const excludedAttributes = new Set(
-    exceptionPayload?.excludedAttributes ?? []
-  );
-  for (const key in rest) {
+  const excludedAttributes = exceptionPayload?.excludedAttributes;
+  const keys = Object.keys(record);
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
     if (
-      Object.prototype.hasOwnProperty.call(rest, key) &&
-      !excludedAttributes.has(key) &&
-      !LOG_CORRELATION_FIELDS.has(key)
+      key !== 'message' &&
+      key !== 'level' &&
+      key !== ATTR_OTEL_EVENT_NAME &&
+      !LOG_CORRELATION_FIELDS.has(key) &&
+      !excludedAttributes?.includes(key)
     ) {
-      attributes[key] = normalizeAttributeValue(rest[key]);
+      attributes[key] = normalizeAttributeValue(record[key]);
     }
   }
   if (exceptionPayload?.additionalAttributes) {
@@ -385,11 +389,15 @@ export function emitLogRecord(
     severityText: levelSym,
     body: message,
     attributes: attributes,
-    ...(context ? { context } : {}),
-    ...(exceptionPayload ? { exception: exceptionPayload.exception } : {}),
-    ...(normalizedEventName !== undefined
-      ? { eventName: normalizedEventName }
-      : {}),
   };
+  if (context) {
+    logRecord.context = context;
+  }
+  if (exceptionPayload) {
+    logRecord.exception = exceptionPayload.exception;
+  }
+  if (normalizedEventName !== undefined) {
+    logRecord.eventName = normalizedEventName;
+  }
   logger.emit(logRecord);
 }
