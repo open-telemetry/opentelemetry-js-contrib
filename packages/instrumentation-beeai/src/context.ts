@@ -7,6 +7,7 @@ import {
   createContextKey,
   isSpanContextValid,
   trace,
+  TraceFlags,
   type Context,
   type Span,
 } from '@opentelemetry/api';
@@ -41,8 +42,9 @@ export function isActiveAgentRun(value: unknown): value is ActiveAgentRun {
 
 /**
  * Returns whether `span` is usable as a live OpenTelemetry parent: either a
- * local recording span (not yet ended) or a valid propagated remote span
- * context (whose `isRecording()` is always `false`).
+ * local recording span (not yet ended), a valid propagated remote span
+ * context, or a valid unsampled local span context (whose `isRecording()` is
+ * `false` and `TraceFlags.SAMPLED` bit is unset).
  *
  * @param span - OpenTelemetry {@link Span} extracted from a context, or
  *   `undefined` when no span is bound to that context.
@@ -55,7 +57,15 @@ export function isUsableCallerSpan(span: Span | undefined): span is Span {
     return true;
   }
   const spanContext = span.spanContext();
-  return spanContext.isRemote === true && isSpanContextValid(spanContext);
+  if (!isSpanContextValid(spanContext)) {
+    return false;
+  }
+  const isLocal = spanContext.isRemote !== true;
+  const isSampled = (spanContext.traceFlags & TraceFlags.SAMPLED) !== 0;
+  // Remote parents and unsampled local parents are non-recording by design;
+  // a non-recording, sampled local span has already ended.
+  const isEndedSampledLocalSpan = isLocal && isSampled;
+  return !isEndedSampledLocalSpan;
 }
 
 /**

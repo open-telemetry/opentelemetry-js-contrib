@@ -7,6 +7,7 @@ import {
   context,
   diag,
   DiagLogLevel,
+  INVALID_SPAN_CONTEXT,
   ROOT_CONTEXT,
   SpanStatusCode,
   trace,
@@ -17,6 +18,14 @@ import {
   resetMemoryExporter,
 } from '@opentelemetry/contrib-test-utils';
 import { suppressTracing } from '@opentelemetry/core';
+import {
+  AlwaysOffSampler,
+  AlwaysOnSampler,
+  InMemorySpanExporter,
+  ParentBasedSampler,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { ATTR_ERROR_TYPE } from '@opentelemetry/semantic-conventions';
 import { expect } from 'expect';
 import * as sinon from 'sinon';
@@ -343,6 +352,120 @@ describe('BeeAIInstrumentation - Context and lifecycle', () => {
       expect(toolSpans[1].parentSpanContext?.spanId).toBe(
         req2Span.spanContext().spanId
       );
+    });
+
+    it('preserves a valid unsampled local parent span on initial await and clears it on re-execution', async () => {
+      const exporter = new InMemorySpanExporter();
+      const parentBasedProvider = new TracerProvider({
+        sampler: new ParentBasedSampler({ root: new AlwaysOnSampler() }),
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
+      });
+      const unsampledProvider = new TracerProvider({
+        sampler: new AlwaysOffSampler(),
+      });
+      const customInst = new BeeAIInstrumentation();
+      customInst.setTracerProvider(parentBasedProvider);
+      customInst.manuallyInstrument(bee);
+
+      try {
+        const observedSpanContexts: Array<{
+          traceId: string;
+          traceFlags: number;
+        }> = [];
+        const tool = new DynamicTool({
+          name: 'unsampled_parent_tool',
+          description: 'Tests unsampled local parent context propagation',
+          inputSchema: z.object({ value: z.string() }),
+          handler: async input => {
+            const activeSpanContext = trace
+              .getSpan(context.active())
+              ?.spanContext();
+            if (activeSpanContext) {
+              observedSpanContexts.push({
+                traceId: activeSpanContext.traceId,
+                traceFlags: activeSpanContext.traceFlags,
+              });
+            }
+            return new StringToolOutput(input.value);
+          },
+        });
+
+        const unsampledSpan = unsampledProvider
+          .getTracer('test-unsampled-parent')
+          .startSpan('unsampled-local-parent', undefined, ROOT_CONTEXT);
+        expect(unsampledSpan.isRecording()).toBe(false);
+        expect(unsampledSpan.spanContext().isRemote).toBeFalsy();
+        const unsampledCtx = trace.setSpan(ROOT_CONTEXT, unsampledSpan);
+
+        // 1. Create Run under the unsampled local span and await it outside that context.
+        const run = context.with(unsampledCtx, () =>
+          tool.run({ value: 'unsampled' })
+        );
+        await context.with(ROOT_CONTEXT, async () => await run);
+
+        expect(exporter.getFinishedSpans()).toHaveLength(0);
+        expect(observedSpanContexts).toHaveLength(1);
+        expect(observedSpanContexts[0]).toEqual({
+          traceId: unsampledSpan.spanContext().traceId,
+          traceFlags: TraceFlags.NONE,
+        });
+
+        // 2. Re-awaiting the same cold Run outside the unsampled context starts a fresh sampled trace.
+        await context.with(ROOT_CONTEXT, async () => await run);
+        const sampledAfterReuse = exporter.getFinishedSpans();
+        expect(sampledAfterReuse).toHaveLength(1);
+        expect(sampledAfterReuse[0].name).toBe(
+          'execute_tool unsampled_parent_tool'
+        );
+        expect(sampledAfterReuse[0].parentSpanContext).toBeUndefined();
+        expect(sampledAfterReuse[0].spanContext().traceId).not.toBe(
+          unsampledSpan.spanContext().traceId
+        );
+
+        // 3. First-awaiting inside a different sampled trace switches to that active trace.
+        exporter.reset();
+        const crossTraceRun = context.with(unsampledCtx, () =>
+          tool.run({ value: 'cross-trace' })
+        );
+        const sampledParent = parentBasedProvider
+          .getTracer('test-sampled-parent')
+          .startSpan('sampled-req', undefined, ROOT_CONTEXT);
+        await context.with(
+          trace.setSpan(ROOT_CONTEXT, sampledParent),
+          async () => await crossTraceRun
+        );
+        sampledParent.end();
+
+        const crossTraceToolSpans = exporter
+          .getFinishedSpans()
+          .filter(s => s.name === 'execute_tool unsampled_parent_tool');
+        expect(crossTraceToolSpans).toHaveLength(1);
+        expect(crossTraceToolSpans[0].spanContext().traceId).toBe(
+          sampledParent.spanContext().traceId
+        );
+        expect(crossTraceToolSpans[0].parentSpanContext?.spanId).toBe(
+          sampledParent.spanContext().spanId
+        );
+
+        // 4. An invalid local SpanContext is still ignored rather than treated as a parent.
+        exporter.reset();
+        const invalidCtx = trace.setSpan(
+          ROOT_CONTEXT,
+          trace.wrapSpanContext(INVALID_SPAN_CONTEXT)
+        );
+        const invalidParentRun = context.with(invalidCtx, () =>
+          tool.run({ value: 'invalid-parent' })
+        );
+        await context.with(ROOT_CONTEXT, async () => await invalidParentRun);
+
+        const invalidParentSpans = exporter.getFinishedSpans();
+        expect(invalidParentSpans).toHaveLength(1);
+        expect(invalidParentSpans[0].parentSpanContext).toBeUndefined();
+      } finally {
+        customInst.disable();
+        await parentBasedProvider.shutdown();
+        await unsampledProvider.shutdown();
+      }
     });
 
     it('propagates inline suppressTracing to nested calls without permanently muting reusable cold Runs', async () => {
