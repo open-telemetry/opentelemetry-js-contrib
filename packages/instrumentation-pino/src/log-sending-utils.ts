@@ -129,7 +129,9 @@ export class OTelPinoStream extends Writable {
   declare private _otelTimestampFromTime;
 
   constructor(options: OTelPinoStreamOptions) {
-    super();
+    // Pino writes strings, which are parsed as JSON: don't convert them to
+    // Buffers first.
+    super({ decodeStrings: false });
 
     // Note: A PINO_CONFIG event was added to pino (2024-04-04) to send config
     // to transports. Eventually OTelPinoStream might be able to use this
