@@ -39,7 +39,7 @@ import {
 
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
-import * as api from '@opentelemetry/api';
+import type { Span } from '@opentelemetry/api';
 import type { PromiseOrValue } from 'graphql/jsutils/PromiseOrValue';
 import {
   GraphQLInstrumentationConfig,
@@ -218,7 +218,7 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
   }
 
   private _handleExecutionResult(
-    span: api.Span,
+    span: Span,
     err?: Error,
     result?: PromiseOrValue<graphqlTypes.ExecutionResult>
   ) {
@@ -251,7 +251,7 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
   }
 
   private _executeResponseHook(
-    span: api.Span,
+    span: Span,
     result: graphqlTypes.ExecutionResult
   ) {
     const { responseHook } = this.getConfig();
@@ -384,7 +384,7 @@ export class GraphQLInstrumentation extends InstrumentationBase<GraphQLInstrumen
   private _createExecuteSpan(
     operation: graphqlTypes.DefinitionNode | undefined,
     processedArgs: graphqlTypes.ExecutionArgs
-  ): api.Span {
+  ): Span {
     const config = this.getConfig();
 
     const span = this.tracer.startSpan(SpanNames.EXECUTE, {});
