@@ -15,7 +15,14 @@ import * as metadata from 'gcp-metadata';
 const MACHINE_TYPE_METADATA_ATTR = 'machine-type';
 const ID_METADATA_ATTR = 'id';
 const HOST_NAME_METADATA_ATTR = 'name';
+const INSTANCE_HOSTNAME_METADATA_ATTR = 'hostname';
 const ZONE_METADATA_ATTR = 'zone';
+const CREATED_BY_METADATA_ATTR = 'attributes/created-by';
+
+// Format described in:
+// https://cloud.google.com/compute/docs/instance-groups/getting-info-about-migs#checking_if_a_vm_instance_is_part_of_a_mig
+const CREATED_BY_MIG_RE =
+  /^projects\/[^/]+\/(?<type>zones|regions)\/(?<location>[^/]+)\/instanceGroupManagers\/(?<name>[^/]+)$/;
 
 export async function onGce(): Promise<boolean> {
   try {
@@ -56,6 +63,66 @@ export async function hostId(): Promise<string> {
  */
 export async function hostName(): Promise<string> {
   return metadata.instance<string>(HOST_NAME_METADATA_ATTR);
+}
+
+/**
+ * The full hostname of the GCE instance on which this program is running, or
+ * undefined if the metadata attribute is unavailable.
+ */
+export async function instanceHostname(): Promise<string | undefined> {
+  try {
+    const hostname = await metadata.instance<string>(
+      INSTANCE_HOSTNAME_METADATA_ATTR
+    );
+    return hostname || undefined;
+  } catch (err) {
+    diag.debug(
+      'Could not fetch metadata attribute %s. Error was %s',
+      INSTANCE_HOSTNAME_METADATA_ATTR,
+      err
+    );
+    return undefined;
+  }
+}
+
+export interface ManagedInstanceGroup {
+  name: string;
+  location: string;
+  type: 'zone' | 'region';
+}
+
+/**
+ * The Managed Instance Group (MIG) that created this GCE instance, if any.
+ * Returns undefined if the instance is not part of a MIG or the metadata
+ * attribute is unavailable or unrecognized.
+ */
+export async function managedInstanceGroup(): Promise<
+  ManagedInstanceGroup | undefined
+> {
+  let createdBy: string | undefined;
+  try {
+    createdBy = await metadata.instance<string>(CREATED_BY_METADATA_ATTR);
+  } catch (err) {
+    diag.debug(
+      'Could not fetch metadata attribute %s, assuming not in a MIG. Error was %s',
+      CREATED_BY_METADATA_ATTR,
+      err
+    );
+    return undefined;
+  }
+  if (typeof createdBy !== 'string') {
+    return undefined;
+  }
+  const match = CREATED_BY_MIG_RE.exec(createdBy.trim());
+  if (!match?.groups) {
+    return undefined;
+  }
+  const { type, location, name } = match.groups;
+  return {
+    name,
+    location,
+    type: type === 'zones' ? 'zone' : 'region',
+  };
 }
 
 /**
