@@ -15,6 +15,13 @@ import { getOracleTelemetryTraceHandlerClass } from './OracleTelemetryTraceHandl
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractModuleExports(module: any) {
+  return module[Symbol.toStringTag] === 'Module'
+    ? module.default // ESM
+    : module; // CommonJS
+}
+
 export class OracleInstrumentation extends InstrumentationBase {
   private _tmHandler: any;
 
@@ -34,26 +41,28 @@ export class OracleInstrumentation extends InstrumentationBase {
         if (!moduleExports) {
           return;
         }
+        const oracledbMod = extractModuleExports(moduleExports);
         if (this._tmHandler) {
           // Already registered, so unregister it.
-          (moduleExports as any).traceHandler.setTraceInstance();
+          oracledbMod.traceHandler.setTraceInstance();
           this._tmHandler = null;
         }
         const config = this.getConfig();
-        const thClass = getOracleTelemetryTraceHandlerClass(moduleExports);
+        const thClass = getOracleTelemetryTraceHandlerClass(oracledbMod);
         if (thClass) {
           const obj = new thClass(() => this.tracer, config);
           obj.enable();
 
           // Register the instance with oracledb.
-          (moduleExports as any).traceHandler.setTraceInstance(obj);
+          oracledbMod.traceHandler.setTraceInstance(obj);
           this._tmHandler = obj;
         }
         return moduleExports;
       },
       moduleExports => {
         if (this._tmHandler) {
-          (moduleExports as any).traceHandler.setTraceInstance();
+          const oracledbMod = extractModuleExports(moduleExports);
+          oracledbMod.traceHandler.setTraceInstance();
           this._tmHandler = null;
         }
       }
