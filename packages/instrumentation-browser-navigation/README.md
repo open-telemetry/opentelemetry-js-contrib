@@ -76,7 +76,7 @@ registerInstrumentations({
     new BrowserNavigationInstrumentation({
       // Enable the instrumentation (default: true)
       enabled: true,
-      // Use Navigation API when available for better accuracy (default: true)
+      // Use Navigation API when available for better accuracy (default: false)
       useNavigationApiIfAvailable: true,
     }),
   ],
@@ -90,16 +90,16 @@ The instrumentation accepts the following configuration options:
 | Option | Type | Default | Description |
 | ------ | ---- | ------- | ----------- |
 | `enabled` | `boolean` | `true` | Enable/disable the instrumentation |
-| `useNavigationApiIfAvailable` | `boolean` | `true` | Use the Navigation API when available for better accuracy |
+| `useNavigationApiIfAvailable` | `boolean` | `false` | Use the Navigation API when available for better accuracy |
 | `sanitizeUrl` | `function` | `undefined` | Callback to sanitize URLs before adding to log records. **Replaces the default redaction** of credentials and sensitive query parameters, see [URL Sanitization](#url-sanitization) |
 | `applyCustomLogRecordData` | `function` | `undefined` | Callback to add custom attributes to log records |
 
 ## Navigation API vs Traditional APIs
 
-When `useNavigationApiIfAvailable` is `true` (default), the instrumentation will:
+By default, the instrumentation patches `history.pushState` and `history.replaceState` and listens for `popstate`. When `useNavigationApiIfAvailable` is `true`, it will:
 
 - **Use Navigation API** when available (modern browsers) for single, accurate navigation events
-- **Fall back to traditional APIs** (history patching, popstate, etc.) in older browsers
+- **Fall back to traditional APIs** (history patching and `popstate`) in older browsers
 - **Prevent duplicate events** by using only one API set at a time
 
 ## URL Sanitization
@@ -116,7 +116,7 @@ URLs often carry other application-specific secrets (session ids, tokens, OAuth 
 >
 > To keep the default redaction and only redact more, build on `defaultSanitizeUrl`, for example `url => defaultSanitizeUrl(url).replace(...)`.
 
-### Using the Default Sanitizer
+### Using `defaultSanitizeUrl`
 
 The package exports a `defaultSanitizeUrl` function that redacts credentials, the keys from the semantic conventions, and a list of other common sensitive query parameters:
 
@@ -132,7 +132,7 @@ registerInstrumentations({
 });
 ```
 
-The default sanitizer redacts:
+`defaultSanitizeUrl` redacts:
 
 - **Credentials**: `https://user:pass@example.com` → `https://REDACTED:REDACTED@example.com`
 - **Sensitive parameters**: `password`, `token`, `api_key`, `secret`, `auth`, etc., plus the keys from the semantic conventions listed above
