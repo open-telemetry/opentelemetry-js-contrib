@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-pg",
-  "version": "0.78.0",
+  "version": "0.78.1",
   "description": "OpenTelemetry instrumentation for `pg` and `pg-pool` database client for PostgreSQL",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",
