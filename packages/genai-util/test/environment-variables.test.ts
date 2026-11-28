@@ -56,6 +56,36 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('   '), 'none');
     });
 
+    it('should warn when downgrading or ignoring unsupported values', () => {
+      const warnings: string[] = [];
+      const mockDiag = {
+        error() {},
+        warn(msg: string) {
+          warnings.push(msg);
+        },
+        info() {},
+        debug() {},
+        verbose() {},
+      };
+
+      assert.strictEqual(
+        parseContentCaptureMode('span_and_event', mockDiag),
+        'span_only'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('event_only', mockDiag),
+        'none'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('unknown_mode', mockDiag),
+        'none'
+      );
+      assert.strictEqual(warnings.length, 3);
+      assert.match(warnings[0], /span_and_event/);
+      assert.match(warnings[1], /event_only/);
+      assert.match(warnings[2], /unknown_mode/);
+    });
+
     it('should fall back to "none" for unknown or unsupported values', () => {
       assert.strictEqual(parseContentCaptureMode('1'), 'none');
       assert.strictEqual(parseContentCaptureMode('0'), 'none');

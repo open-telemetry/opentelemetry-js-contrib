@@ -370,23 +370,24 @@ describe('ToolInvocation', () => {
       })
       .stop();
 
-    const inv = handler.startTool({ toolName: 'ask_specialist' });
+    const inv = handler.startTool({ toolName: '  ask_specialist  ' });
     inv.setToolName('   ');
     inv.setToolName('  transfer_to_specialist  ');
-    inv.setToolCallId('call_xyz');
-    inv.setToolDescription('Delegates to specialist');
+    inv.setToolCallId('   ');
+    inv.setToolCallId('  call_xyz  ');
+    inv.setToolDescription('   ');
+    inv.setToolDescription('  Delegates to specialist  ');
     inv.setTransfer(GEN_AI_TRANSFER_MODE_VALUE_RETURN_TO_CALLER, 'specialist');
     inv.stop();
 
-    const clearedTarget = handler.startTool({
-      toolName: 'handoff',
-      transferMode: GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL,
-      transferTargetName: 'stale_target',
+    const targetWithoutMode = handler.startTool({
+      toolName: 'regular_tool',
+      transferTargetName: 'ignored_target',
     });
-    clearedTarget.setTransfer(GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL);
-    clearedTarget.stop();
+    targetWithoutMode.setTransfer('   ' as never, 'also_ignored');
+    targetWithoutMode.stop();
 
-    const [handoffSpan, asToolSpan, clearedSpan] =
+    const [handoffSpan, asToolSpan, regularSpan] =
       ctx.memoryExporter.getFinishedSpans();
     assert.strictEqual(
       handoffSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
@@ -418,11 +419,11 @@ describe('ToolInvocation', () => {
       'specialist'
     );
     assert.strictEqual(
-      clearedSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
-      GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL
+      regularSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
+      undefined
     );
     assert.strictEqual(
-      clearedSpan.attributes[ATTR_GEN_AI_TRANSFER_TARGET_NAME],
+      regularSpan.attributes[ATTR_GEN_AI_TRANSFER_TARGET_NAME],
       undefined
     );
   });

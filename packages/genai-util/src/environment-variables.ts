@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { diag, type DiagLogger } from '@opentelemetry/api';
 import { getStringFromEnv } from '@opentelemetry/core';
 import type { ContentCaptureMode } from './types';
 
@@ -21,11 +22,14 @@ export const ENV_GENAI_CAPTURE_MESSAGE_CONTENT =
  *
  * Maps `'span_only'`, `'span'`, `'span_and_event'`, and `'true'` (case-insensitive)
  * to `'span_only'`, and `'none'`, `'no_content'`, `'false'`, or any other value to `'none'`.
+ * Logs a warning via `diagLogger` when a value is downgraded (`'span_and_event'`, `'event_only'`)
+ * or unrecognized.
  *
  * @experimental This function is experimental and subject to change.
  */
 export function parseContentCaptureMode(
-  value: string | undefined | null
+  value: string | undefined | null,
+  diagLogger: DiagLogger = diag
 ): ContentCaptureMode {
   if (value === undefined || value === null) {
     return 'none';
@@ -35,14 +39,27 @@ export function parseContentCaptureMode(
   switch (strVal) {
     case 'span_only':
     case 'span':
-    case 'span_and_event':
     case 'true':
+      return 'span_only';
+    case 'span_and_event':
+      diagLogger.warn(
+        "Content capture mode 'span_and_event' is not fully supported yet; downgrading to 'span_only' (events are not emitted)"
+      );
       return 'span_only';
     case 'none':
     case 'no_content':
     case 'false':
     case '':
+      return 'none';
+    case 'event_only':
+      diagLogger.warn(
+        "Content capture mode 'event_only' is not supported yet; falling back to 'none'"
+      );
+      return 'none';
     default:
+      diagLogger.warn(
+        `Unrecognized content capture mode '${value}'; falling back to 'none'`
+      );
       return 'none';
   }
 }
@@ -58,11 +75,12 @@ export function parseContentCaptureMode(
  */
 export function getContentCaptureMode(
   configVal?: ContentCaptureMode,
-  envVarName: string = ENV_GENAI_CAPTURE_MESSAGE_CONTENT
+  envVarName: string = ENV_GENAI_CAPTURE_MESSAGE_CONTENT,
+  diagLogger: DiagLogger = diag
 ): ContentCaptureMode {
   const envVal = getStringFromEnv(envVarName);
   if (envVal !== undefined) {
-    return parseContentCaptureMode(envVal);
+    return parseContentCaptureMode(envVal, diagLogger);
   }
-  return parseContentCaptureMode(configVal);
+  return parseContentCaptureMode(configVal, diagLogger);
 }
