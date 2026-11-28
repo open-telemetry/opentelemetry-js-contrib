@@ -268,6 +268,81 @@ describe('utils.ts', () => {
         'host_name:1234/database_name'
       );
     });
+
+    it('creation of pool name based on connectionString', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://user:pass@db.example.com:6543/users_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/users_db'
+      );
+    });
+
+    it('falls back to discrete fields when connectionString is malformed', () => {
+      const dummyPool = {
+        connectionString: 'invalid-url',
+        host: 'backup_host',
+        port: 5432,
+        database: 'backup_db',
+      } as unknown as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'backup_host:5432/backup_db'
+      );
+    });
+
+    it('prefers discrete options over conflicting connectionString values matching pg-pool precedence', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543/users_db',
+        host: 'other_host',
+        port: 9999,
+        database: 'other_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'other_host:9999/other_db'
+      );
+    });
+
+    it('derives port and database from connectionString when discrete options only supply host', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543/users_db',
+        host: 'other_host',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'other_host:6543/users_db'
+      );
+    });
+
+    it('falls back to discrete port when connectionString omits port', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com/users_db',
+        port: 5432,
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:5432/users_db'
+      );
+    });
+
+    it('falls back to discrete database when connectionString omits database', () => {
+      const dummyPool = {
+        connectionString: 'postgresql://db.example.com:6543',
+        database: 'users_db',
+      } as PgPoolOptionsParams;
+
+      assert.strictEqual(
+        utils.getPoolName(dummyPool),
+        'db.example.com:6543/users_db'
+      );
+    });
   });
 
   describe('.parseAndMaskConnectionString()', () => {
