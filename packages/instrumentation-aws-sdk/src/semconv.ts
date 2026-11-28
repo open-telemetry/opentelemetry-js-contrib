@@ -216,6 +216,32 @@ export const ATTR_AWS_DYNAMODB_TOTAL_SEGMENTS =
   'aws.dynamodb.total_segments' as const;
 
 /**
+ * The S3 object key the request refers to. Corresponds to the `--key` parameter of the [S3 API](https://docs.aws.amazon.com/cli/latest/reference/s3api/index.html) operations.
+ *
+ * @example someFile.yml
+ *
+ * @note The `key` attribute is applicable to all object-related S3 operations, i.e. that require the object key as a mandatory parameter.
+ * This applies in particular to the following operations:
+ *
+ *   - [copy-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/copy-object.html)
+ *   - [delete-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/delete-object.html)
+ *   - [get-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/get-object.html)
+ *   - [head-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/head-object.html)
+ *   - [put-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/put-object.html)
+ *   - [restore-object](https://docs.aws.amazon.com/cli/latest/reference/s3api/restore-object.html)
+ *   - [select-object-content](https://docs.aws.amazon.com/cli/latest/reference/s3api/select-object-content.html)
+ *   - [abort-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/abort-multipart-upload.html)
+ *   - [complete-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/complete-multipart-upload.html)
+ *   - [create-multipart-upload](https://docs.aws.amazon.com/cli/latest/reference/s3api/create-multipart-upload.html)
+ *   - [list-parts](https://docs.aws.amazon.com/cli/latest/reference/s3api/list-parts.html)
+ *   - [upload-part](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part.html)
+ *   - [upload-part-copy](https://docs.aws.amazon.com/cli/latest/reference/s3api/upload-part-copy.html)
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_AWS_S3_KEY = 'aws.s3.key' as const;
+
+/**
  * The ARN of the Secret stored in the Secrets Mangger
  *
  * @example arn:aws:secretsmanager:us-east-1:123456789012:secret:SecretName-6RandomCharacters
