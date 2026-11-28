@@ -37,6 +37,7 @@ import {
   ExpressLayer,
   ExpressRouter,
   kLayerPatched,
+  kWrappedBy,
   PatchedRequest,
   _LAYERS_STORE_PROPERTY,
 } from './internal-types';
@@ -345,6 +346,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
           },
         });
       }
+      Object.defineProperty(patched, kWrappedBy, { value: PACKAGE_NAME });
       return patched;
     });
   }
