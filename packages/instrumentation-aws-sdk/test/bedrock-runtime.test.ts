@@ -745,7 +745,7 @@ describe('Bedrock', () => {
         [ATTR_GEN_AI_REQUEST_TOP_P]: 1,
         [ATTR_GEN_AI_REQUEST_STOP_SEQUENCES]: ['|'],
         [ATTR_GEN_AI_USAGE_INPUT_TOKENS]: 22,
-        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 1,
+        [ATTR_GEN_AI_USAGE_OUTPUT_TOKENS]: 12,
         [ATTR_GEN_AI_RESPONSE_FINISH_REASONS]: ['max_tokens'],
       });
     });
