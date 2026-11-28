@@ -5,6 +5,7 @@
 import { trace } from '@opentelemetry/api';
 import { registerInstrumentations } from '@opentelemetry/instrumentation';
 import { SimpleSpanProcessor, TracerProvider } from '@opentelemetry/sdk-trace';
+import * as assert from 'assert';
 import { LongTaskInstrumentation } from '../src';
 import { DummySpanExporter } from './util';
 
@@ -69,6 +70,7 @@ describe("LongTaskInstrumentation doesn't throw in unsupported environments", ()
     const deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],
     });
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), false);
 
     deregister();
   });
@@ -84,6 +86,7 @@ describe("LongTaskInstrumentation doesn't throw in unsupported environments", ()
     const deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],
     });
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), false);
 
     deregister();
   });
@@ -104,6 +107,7 @@ describe("LongTaskInstrumentation doesn't throw in unsupported environments", ()
     const deregister = registerInstrumentations({
       instrumentations: [longTaskInstrumentation],
     });
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), false);
 
     deregister();
   });

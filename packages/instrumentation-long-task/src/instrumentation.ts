@@ -22,7 +22,10 @@ const LONGTASK_PERFORMANCE_TYPE = 'longtask';
 export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrumentationConfig> {
   readonly version: string = PACKAGE_VERSION;
 
-  private _observer?: PerformanceObserver;
+  // `declare` so no class field is emitted: with target es2022 the field is
+  // reset to undefined after super() returns, orphaning the observer that the
+  // constructor-time enable() created.
+  declare private _observer?: PerformanceObserver;
 
   constructor(config: LongtaskInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
@@ -110,6 +113,7 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
       type: LONGTASK_PERFORMANCE_TYPE,
       buffered: true,
     });
+    this._enabled = true;
   }
 
   override disable() {
@@ -119,5 +123,6 @@ export class LongTaskInstrumentation extends InstrumentationBase<LongtaskInstrum
 
     this._observer.disconnect();
     this._observer = undefined;
+    this._enabled = false;
   }
 }

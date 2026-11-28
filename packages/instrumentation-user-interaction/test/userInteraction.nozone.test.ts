@@ -104,6 +104,27 @@ describe('UserInteractionInstrumentation', () => {
       userInteractionInstrumentation.disable();
     });
 
+    it('should report isEnabled() following enable() and disable()', () => {
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
+      userInteractionInstrumentation.disable();
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), false);
+      userInteractionInstrumentation.enable();
+      assert.strictEqual(userInteractionInstrumentation.isEnabled(), true);
+    });
+
+    it('should not rename the active span on history changes after disable()', () => {
+      userInteractionInstrumentation.disable();
+      const span = tracerProvider.getTracer('test').startSpan('original');
+      context.with(trace.setSpan(context.active(), span), () => {
+        history.pushState({}, '', `${location.pathname}#disabled`);
+      });
+      span.end();
+
+      assert.strictEqual(exportSpy.args.length, 1, 'should export one span');
+      const exported: tracing.ReadableSpan = exportSpy.args[0][0][0];
+      assert.strictEqual(exported.name, 'original');
+    });
+
     it('should not break removeEventListener', () => {
       let called = false;
       const listener = function () {

@@ -258,6 +258,23 @@ describe('DocumentLoad Instrumentation', () => {
     });
   });
 
+  describe('isEnabled', () => {
+    it('should follow enable() and disable()', () => {
+      // Not 'complete': enable() then only adds a 'load' listener that
+      // disable() removes, instead of scheduling a collection that outlives
+      // the test.
+      Object.defineProperty(window.document, 'readyState', {
+        writable: true,
+        value: 'loading',
+      });
+      assert.strictEqual(plugin.isEnabled(), false);
+      plugin.enable();
+      assert.strictEqual(plugin.isEnabled(), true);
+      plugin.disable();
+      assert.strictEqual(plugin.isEnabled(), false);
+    });
+  });
+
   describe('when document readyState is complete', () => {
     let spyEntries: any;
     beforeEach(() => {

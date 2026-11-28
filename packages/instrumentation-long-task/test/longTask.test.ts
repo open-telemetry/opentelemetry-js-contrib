@@ -99,6 +99,23 @@ describe('LongTaskInstrumentation', () => {
     instrumentation.disable();
   });
 
+  it('should report isEnabled() following enable() and disable()', () => {
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), true);
+    longTaskInstrumentation.disable();
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), false);
+    longTaskInstrumentation.enable();
+    assert.strictEqual(longTaskInstrumentation.isEnabled(), true);
+  });
+
+  it('should disconnect the observer created at construction on disable()', () => {
+    const disconnect = sandbox.spy(PerformanceObserver.prototype, 'disconnect');
+    const instrumentation = new LongTaskInstrumentation();
+    assert.strictEqual(instrumentation.isEnabled(), true);
+    instrumentation.disable();
+    assert.strictEqual(instrumentation.isEnabled(), false);
+    assert.strictEqual(disconnect.callCount, 1);
+  });
+
   it('should report long taking tasks', async () => {
     const taskStart = await waitForLongTask(exportSpy);
 
