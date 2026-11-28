@@ -38,6 +38,27 @@ If your Node application is encapsulated in a complex run script, you can also s
 env NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 ```
 
+### Loading `register` by file path
+
+Tools that inject instrumentation into a process they do not own, such as the
+[OpenTelemetry injector][injector-url], cannot use the specifier above: Node applies the
+`exports` map only to bare specifiers, so an absolute path to this package plus `/register`
+does not resolve. Those tools point `--require` at a file inside the installed package
+instead.
+
+Before version 0.82.0 that file was `build/src/register.js`. The 0.82.0 build moved the
+compiled output to `dist/register.cjs`, so the supported file path is now:
+
+```shell
+node --require '<prefix>/node_modules/@opentelemetry/auto-instrumentations-node/dist/register.cjs' app.js
+```
+
+A stub is still published at the old `build/src/register.js` path, forwarding to the new
+one, so that injectors configured on already-provisioned hosts keep working across the
+upgrade. It is deprecated, and will be removed once a supported injection entrypoint
+exists; see [opentelemetry-injector#451][injector-issue-url]. Do not depend on it in new
+configuration.
+
 The module is highly configurable using environment variables.
 Many aspects of the auto instrumentation's behavior can be configured for your needs, such as resource detectors, exporter choice, exporter configuration, trace context propagation headers, and much more.
 Instrumentation configuration is not yet supported through environment variables. Users that require instrumentation configuration must initialize OpenTelemetry programmatically.
@@ -214,3 +235,5 @@ APACHE 2.0 - See [LICENSE][license-url] for more information.
 [env-var-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#general-sdk-configuration
 [exporter-url]: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/configuration/sdk-environment-variables.md#otlp-exporter
 [require-url]: https://nodejs.org/api/cli.html#-r---require-module
+[injector-url]: https://github.com/open-telemetry/opentelemetry-injector
+[injector-issue-url]: https://github.com/open-telemetry/opentelemetry-injector/issues/451

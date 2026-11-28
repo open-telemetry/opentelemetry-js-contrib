@@ -30,7 +30,16 @@ const REPO_ROOT = path.resolve(
 const SKIP_PACKAGES = ['@opentelemetry/genai-util'];
 // Exempt from the empty-module check: these entries register at load and export nothing.
 const SIDE_EFFECT_ENTRIES = {
-  '@opentelemetry/auto-instrumentations-node': ['./register'],
+  '@opentelemetry/auto-instrumentations-node': [
+    './register',
+    'build/src/register.js',
+  ],
+};
+// Paths outside the `exports` map that must keep resolving, because injectors
+// hardcode them in on-host configuration that an upgrade cannot rewrite. Kept
+// in step with scripts/legacy-entrypoints.mjs, which generates them.
+const LEGACY_ENTRYPOINTS = {
+  '@opentelemetry/auto-instrumentations-node': ['build/src/register.js'],
 };
 
 const failures = [];
@@ -63,6 +72,11 @@ for (const { dir, pkg } of targets) {
 
     const failuresBefore = failures.length;
     const entries = collectEntries(pkg);
+    // Reuse the existence check and the require below: a stub that is missing
+    // from `files`, or that points at a target the build renamed, fails here.
+    for (const legacy of LEGACY_ENTRYPOINTS[pkg.name] ?? []) {
+      entries.push({ kind: 'require', subpath: legacy, file: legacy });
+    }
     for (const { kind, subpath, file } of entries) {
       const filePath = path.resolve(extracted, file);
       if (!existsSync(filePath)) {
