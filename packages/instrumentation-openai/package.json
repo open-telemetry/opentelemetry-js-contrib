@@ -29,6 +29,7 @@
     "prepublishOnly": "npm run compile",
     "tdd": "npm test -- --watch --watch-files \"**/*.ts\"",
     "test": "nyc --no-clean mocha --require '@opentelemetry/contrib-test-utils' 'test/**/*.test.ts'",
+    "test:conformance": "otel-conformance test/conformance --report-dir coverage/conformance --data-file coverage/conformance-data.json",
     "test-all-versions": "tav",
     "version:update": "node ../../scripts/version-update.js",
     "watch": "tsdown --watch --no-clean"
@@ -60,13 +61,17 @@
   "devDependencies": {
     "@opentelemetry/api": "^1.10.0",
     "@opentelemetry/contrib-test-utils": "^0.72.0",
-    "@opentelemetry/sdk-logs": "^3.0.0",
+    "@opentelemetry/exporter-metrics-otlp-grpc": "^0.301.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.301.0",
+    "@opentelemetry/sdk-metrics": "^3.0.0",
     "@opentelemetry/sdk-trace": "^3.0.0",
+    "@opentelemetry/semantic-conventions": "^1.36.0",
     "openai": "^6.2.0"
   },
   "dependencies": {
-    "@opentelemetry/instrumentation": "^0.301.0",
-    "@opentelemetry/semantic-conventions": "^1.36.0"
+    "@opentelemetry/core": "^3.1.0",
+    "@opentelemetry/genai-util": "^0.5.0",
+    "@opentelemetry/instrumentation": "^0.301.0"
   },
   "homepage": "https://github.com/open-telemetry/opentelemetry-js-contrib/tree/main/packages/instrumentation-openai#readme"
 }

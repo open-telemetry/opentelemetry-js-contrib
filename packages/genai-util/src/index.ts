@@ -32,10 +32,15 @@ export type { LocalAgentInvocation } from './invocations/agent';
 export type { EmbeddingInvocation } from './invocations/embedding';
 export type { InferenceInvocation } from './invocations/inference';
 export type { ToolInvocation } from './invocations/tool';
+export type { AsyncStreamWrapperOptions } from './stream';
 export type {
+  BlobPart,
   ChatMessage,
+  CompactionPart,
+  FilePart,
   FinishReason,
   GenAIInstrumentationConfig,
+  GenericPart,
   InferenceRequestOptions,
   InputMessages,
   LocalAgentRequestOptions,
@@ -43,12 +48,24 @@ export type {
   Modality,
   OutputMessage,
   OutputMessages,
+  ReasoningPart,
+  ServerToolCallPart,
+  ServerToolCallResponsePart,
   SystemInstructions,
+  TextPart,
+  TokenUsageByModality,
   TokenUsageDetails,
+  ToolCallRequestPart,
+  ToolCallResponsePart,
+  UriPart,
 } from './types';
 export {
+  ATTR_GEN_AI_CONVERSATION_COMPACTED,
+  ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_OUTPUT_TYPE,
+  ATTR_GEN_AI_RESPONSE_STATUS,
   ATTR_GEN_AI_TOOL_CALL_ID,
+  GEN_AI_FINISH_REASON_VALUE_COMPACTION,
   GEN_AI_FINISH_REASON_VALUE_CONTENT_FILTER,
   GEN_AI_FINISH_REASON_VALUE_ERROR,
   GEN_AI_FINISH_REASON_VALUE_LENGTH,
@@ -59,6 +76,7 @@ export {
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
   GEN_AI_OPERATION_NAME_VALUE_INVOKE_AGENT,
   GEN_AI_OUTPUT_TYPE_VALUE_JSON,
+  GEN_AI_OUTPUT_TYPE_VALUE_TEXT,
   GEN_AI_PROVIDER_NAME_VALUE_ANTHROPIC,
   GEN_AI_PROVIDER_NAME_VALUE_AWS_BEDROCK,
   GEN_AI_PROVIDER_NAME_VALUE_AZURE_AI_INFERENCE,
