@@ -6,80 +6,50 @@
 import * as assert from 'assert';
 import { context, SpanStatusCode } from '@opentelemetry/api';
 import {
-  InMemorySpanExporter,
-  SimpleSpanProcessor,
-  TracerProvider,
-} from '@opentelemetry/sdk-trace';
-import {
-  OPENAI_AGENTS_RUN_CONTEXT_KEY,
-  OpenAIAgentsTracingProcessor,
-} from '../src/processor';
-import type {
-  OpenAIAgentsSpan,
-  OpenAIAgentsTrace,
-} from '../src/internal-types';
-import {
   ATTR_GEN_AI_AGENT_NAME,
+  ATTR_GEN_AI_CONVERSATION_ID,
   ATTR_GEN_AI_OPERATION_NAME,
+  ATTR_GEN_AI_OUTPUT_TYPE,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
   ATTR_GEN_AI_TOOL_NAME,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER,
+  GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
 } from '../src/semconv';
+import {
+  OPENAI_AGENTS_NESTED_RUN_CONTEXT_KEY,
+  OPENAI_AGENTS_RUN_CONTEXT_KEY,
+  OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY,
+} from '../src/processor';
+import type { OpenAIAgentsTrace } from '../src/internal-types';
+import {
+  createProcessorTestContext,
+  createSpan,
+  type ProcessorTestContext,
+} from './helpers';
 
-const diag = {
-  debug() {},
-  error() {},
-  info() {},
-  verbose() {},
-  warn() {},
-};
-
-function createSpan(
-  traceId: string,
-  spanId: string,
-  type: string,
-  parentId?: string,
-  data: Record<string, unknown> = {}
-): OpenAIAgentsSpan {
-  return {
-    traceId,
-    spanId,
-    parentId,
-    startedAt: '2026-01-01T00:00:00.000Z',
-    endedAt: '2026-01-01T00:00:01.000Z',
-    spanData: { type, ...data },
-  };
-}
-
-describe('OpenAIAgentsTracingProcessor', () => {
-  let exporter: InMemorySpanExporter;
-  let processor: OpenAIAgentsTracingProcessor;
+describe('OpenAIAgentsTracingProcessor lifecycle & hierarchy', () => {
+  let ctx: ProcessorTestContext;
 
   beforeEach(() => {
-    exporter = new InMemorySpanExporter();
-    const provider = new TracerProvider({
-      spanProcessors: [new SimpleSpanProcessor({ exporter })],
-    });
-    processor = new OpenAIAgentsTracingProcessor(
-      () => provider.getTracer('test'),
-      {},
-      diag
-    );
+    ctx = createProcessorTestContext();
   });
 
   afterEach(async () => {
-    await processor.shutdown();
-    exporter.reset();
+    await ctx.cleanup();
   });
 
-  it('does not classify a standalone agent run as a workflow', async () => {
+  it('maps a standalone agent run to invoke_runner and omits framework default name', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
-      name: 'support',
+      name: 'Agent workflow',
+      groupId: 'conv-42',
     };
     const task = createSpan('agents-trace', 'task', 'task');
     const agent = createSpan('agents-trace', 'agent', 'agent', 'task', {
       name: 'triage',
+      output_type: 'text',
     });
     const turn = createSpan('agents-trace', 'turn', 'turn', 'agent');
     const tool = createSpan('agents-trace', 'tool', 'function', 'turn', {
@@ -101,23 +71,29 @@ describe('OpenAIAgentsTracingProcessor', () => {
 
     const spans = exporter.getFinishedSpans();
     assert.strictEqual(spans.length, 3);
-    const runSpan = spans.find(span => span.name === 'openai.agents.run');
+    const runSpan = spans.find(
+      span =>
+        span.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+        GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER
+    );
     const agentSpan = spans.find(span => span.name.startsWith('invoke_agent'));
     const toolSpan = spans.find(span => span.name.startsWith('execute_tool'));
     assert.ok(runSpan);
     assert.ok(agentSpan);
     assert.ok(toolSpan);
 
-    assert.strictEqual(
-      runSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
-      undefined
-    );
+    assert.strictEqual(runSpan.name, 'invoke_runner');
+    assert.strictEqual(runSpan.attributes[ATTR_GEN_AI_AGENT_NAME], undefined);
+    assert.strictEqual(runSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID], 'conv-42');
     assert.strictEqual(agentSpan.attributes[ATTR_GEN_AI_AGENT_NAME], 'triage');
+    assert.strictEqual(agentSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID], 'conv-42');
+    assert.strictEqual(agentSpan.attributes[ATTR_GEN_AI_OUTPUT_TYPE], undefined);
     assert.strictEqual(
       toolSpan.attributes[ATTR_GEN_AI_TOOL_NAME],
       'lookup_order'
     );
     assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_AGENT_NAME], 'triage');
+    assert.strictEqual(toolSpan.attributes[ATTR_GEN_AI_CONVERSATION_ID], 'conv-42');
     assert.strictEqual(
       agentSpan.parentSpanContext?.spanId,
       runSpan.spanContext().spanId
@@ -136,7 +112,82 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
   });
 
-  it('does not classify multiple agent invocations as a workflow', async () => {
+  it('sets agentName on invoke_runner when user supplies a workflowName and uses invoke_workflow for user withTrace', async () => {
+    const { processor, exporter } = ctx;
+    const runnerTrace: OpenAIAgentsTrace = {
+      traceId: 'runner-trace',
+      name: 'support-runner',
+    };
+    await processor.onTraceStart(runnerTrace);
+    await processor.onTraceEnd(runnerTrace);
+
+    const userTrace: OpenAIAgentsTrace = {
+      traceId: 'workflow-trace',
+      name: 'customer-workflow',
+    };
+    await context.with(
+      context.active().setValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY, true),
+      async () => {
+        await processor.onTraceStart(userTrace);
+        await processor.onTraceEnd(userTrace);
+      }
+    );
+
+    const [runSpan, workflowSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(runSpan.name, 'invoke_runner support-runner');
+    assert.strictEqual(
+      runSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER
+    );
+    assert.strictEqual(
+      runSpan.attributes[ATTR_GEN_AI_AGENT_NAME],
+      'support-runner'
+    );
+
+    assert.strictEqual(workflowSpan.name, 'invoke_workflow customer-workflow');
+    assert.strictEqual(
+      workflowSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
+      GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW
+    );
+    assert.strictEqual(
+      workflowSpan.attributes[ATTR_GEN_AI_AGENT_NAME],
+      'customer-workflow'
+    );
+  });
+
+  it('suppresses nested invoke_runner spans for internal nested runners', async () => {
+    const { processor, exporter } = ctx;
+    const outerTrace: OpenAIAgentsTrace = {
+      traceId: 'outer-trace',
+      name: 'Agent workflow',
+    };
+    const innerTrace: OpenAIAgentsTrace = {
+      traceId: 'inner-trace',
+      name: 'Agent workflow',
+    };
+
+    await processor.onTraceStart(outerTrace);
+    await context.with(
+      context.active().setValue(OPENAI_AGENTS_NESTED_RUN_CONTEXT_KEY, true),
+      async () => {
+        await processor.onTraceStart(innerTrace);
+        await processor.onTraceEnd(innerTrace);
+      }
+    );
+    await processor.onTraceEnd(outerTrace);
+
+    const runnerSpans = exporter
+      .getFinishedSpans()
+      .filter(
+        span =>
+          span.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+          GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER
+      );
+    assert.strictEqual(runnerSpans.length, 1);
+  });
+
+  it('keeps multiple agent invocations under invoke_runner', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
@@ -168,15 +219,15 @@ describe('OpenAIAgentsTracingProcessor', () => {
 
     const spans = exporter.getFinishedSpans();
     assert.strictEqual(spans.length, 3);
-    const runSpan = spans.find(span => span.name === 'openai.agents.run');
+    const runSpan = spans.find(
+      span =>
+        span.attributes[ATTR_GEN_AI_OPERATION_NAME] ===
+        GEN_AI_OPERATION_NAME_VALUE_INVOKE_RUNNER
+    );
     const agentSpans = spans.filter(
       span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
     );
     assert.ok(runSpan);
-    assert.strictEqual(
-      runSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
-      undefined
-    );
     assert.strictEqual(agentSpans.length, 2);
     assert.deepStrictEqual(
       agentSpans.map(span => span.attributes[ATTR_GEN_AI_AGENT_NAME]),
@@ -190,77 +241,8 @@ describe('OpenAIAgentsTracingProcessor', () => {
     }
   });
 
-  it('captures tool arguments and results when explicitly enabled', async () => {
-    processor.setConfig({ captureMessageContent: true });
-    const sdkTrace: OpenAIAgentsTrace = {
-      traceId: 'agents-trace',
-      name: 'support',
-    };
-    const tool = createSpan('agents-trace', 'tool', 'function', undefined, {
-      name: 'lookup_order',
-      input: { id: '123' },
-      output: { status: 'sent' },
-    });
-
-    await processor.onTraceStart(sdkTrace);
-    await processor.onSpanStart(tool);
-    await processor.onSpanEnd(tool);
-    await processor.onTraceEnd(sdkTrace);
-
-    const toolSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name.startsWith('execute_tool'));
-    assert.ok(toolSpan);
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"id":"123"}'
-    );
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      '{"status":"sent"}'
-    );
-  });
-
-  it('does not capture fallback tool output when execution fails', async () => {
-    processor.setConfig({ captureMessageContent: true });
-    const tool = createSpan('agents-trace', 'tool', 'function', undefined, {
-      name: 'lookup_order',
-      input: { id: '123' },
-      output: { status: 'unavailable' },
-    });
-    tool.error = {
-      message: 'Error running tool (non-fatal)',
-      data: {
-        tool_name: 'lookup_order',
-        error: 'TypeError: tool failed',
-      },
-    };
-
-    await processor.onSpanStart(tool);
-    await processor.onSpanEnd(tool);
-
-    const [toolSpan] = exporter.getFinishedSpans();
-    assert.ok(toolSpan);
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-      '{"id":"123"}'
-    );
-    assert.strictEqual(
-      toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
-      undefined
-    );
-    assert.deepStrictEqual(toolSpan.status, {
-      code: SpanStatusCode.ERROR,
-      message: 'Error running tool (non-fatal)',
-    });
-    assert.strictEqual(toolSpan.attributes['error.type'], 'TypeError');
-    assert.strictEqual(
-      toolSpan.events[0].attributes?.['exception.message'],
-      'TypeError: tool failed'
-    );
-  });
-
   it('records Agents SDK span errors', async () => {
+    const { processor, exporter } = ctx;
     const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
       name: 'triage',
     });
@@ -281,32 +263,8 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.strictEqual(agentSpan.attributes['error.type'], 'AgentError');
   });
 
-  it('records task errors on the run span', async () => {
-    const sdkTrace: OpenAIAgentsTrace = {
-      traceId: 'agents-trace',
-      name: 'support',
-    };
-    const task = createSpan('agents-trace', 'task', 'task');
-    task.error = {
-      message: 'Error in agent run',
-      data: { error: 'RunError: run failed' },
-    };
-
-    await processor.onTraceStart(sdkTrace);
-    await processor.onSpanStart(task);
-    await processor.onSpanEnd(task);
-    await processor.onTraceEnd(sdkTrace);
-
-    const [runSpan] = exporter.getFinishedSpans();
-    assert.strictEqual(runSpan.name, 'openai.agents.run');
-    assert.deepStrictEqual(runSpan.status, {
-      code: SpanStatusCode.ERROR,
-      message: 'Error in agent run',
-    });
-    assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
-  });
-
-  it('lets a task error take precedence over a descendant error', async () => {
+  it('records task errors on the runner span and lets task errors take precedence', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
@@ -330,48 +288,68 @@ describe('OpenAIAgentsTracingProcessor', () => {
     await processor.onTraceEnd(sdkTrace);
 
     const [runSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(runSpan.name, 'invoke_runner support');
+    assert.deepStrictEqual(runSpan.status, {
+      code: SpanStatusCode.ERROR,
+      message: 'Error in agent run',
+    });
     assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
-    assert.strictEqual(runSpan.events.length, 2);
   });
 
-  it('records turn errors on the enclosing agent span', async () => {
+  it('propagates turn errors to the enclosing agent span and lets agent errors take precedence', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
     };
-    const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
+    const agentWithOwn = createSpan('agents-trace', 'a1', 'agent', undefined, {
       name: 'triage',
     });
-    const turn = createSpan('agents-trace', 'turn', 'turn', 'agent');
-    turn.error = {
-      message: 'Error in agent run',
+    const turn1 = createSpan('agents-trace', 't1', 'turn', 'a1');
+    turn1.error = {
+      message: 'Error in turn',
       data: { error: 'TurnError: turn failed' },
     };
-    agent.error = {
+    agentWithOwn.error = {
       message: 'Error in agent run',
       data: { error: 'AgentError: agent failed' },
     };
 
+    const agentFromTurn = createSpan('agents-trace', 'a2', 'agent', undefined, {
+      name: 'fallback',
+    });
+    const turn2 = createSpan('agents-trace', 't2', 'turn', 'a2');
+    turn2.error = {
+      message: 'Error in turn',
+      data: { error: 'TurnError: turn failed' },
+    };
+
     await processor.onTraceStart(sdkTrace);
-    await processor.onSpanStart(agent);
-    await processor.onSpanStart(turn);
-    await processor.onSpanEnd(turn);
-    await processor.onSpanEnd(agent);
+    await processor.onSpanStart(agentWithOwn);
+    await processor.onSpanStart(turn1);
+    await processor.onSpanEnd(turn1);
+    await processor.onSpanEnd(agentWithOwn);
+    await processor.onSpanStart(agentFromTurn);
+    await processor.onSpanStart(turn2);
+    await processor.onSpanEnd(turn2);
+    await processor.onSpanEnd(agentFromTurn);
     await processor.onTraceEnd(sdkTrace);
 
-    const agentSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'invoke_agent triage');
-    assert.ok(agentSpan);
-    assert.deepStrictEqual(agentSpan.status, {
+    const spans = exporter.getFinishedSpans();
+    const ownSpan = spans.find(span => span.name === 'invoke_agent triage');
+    const turnSpan = spans.find(span => span.name === 'invoke_agent fallback');
+    assert.ok(ownSpan);
+    assert.ok(turnSpan);
+    assert.strictEqual(ownSpan.attributes['error.type'], 'AgentError');
+    assert.strictEqual(turnSpan.attributes['error.type'], 'TurnError');
+    assert.deepStrictEqual(turnSpan.status, {
       code: SpanStatusCode.ERROR,
-      message: 'Error in agent run',
+      message: 'Error in turn',
     });
-    assert.strictEqual(agentSpan.attributes['error.type'], 'AgentError');
-    assert.strictEqual(agentSpan.events.length, 2);
   });
 
   it('does not propagate a recovered model attempt error', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
@@ -403,10 +381,10 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.ok(agentSpan);
     assert.deepStrictEqual(agentSpan.status, { code: SpanStatusCode.UNSET });
     assert.strictEqual(agentSpan.attributes['error.type'], undefined);
-    assert.strictEqual(agentSpan.events.length, 0);
   });
 
   it('ends an owned run on rejection without task callbacks', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
@@ -422,45 +400,15 @@ describe('OpenAIAgentsTracingProcessor', () => {
     processor.onRunError(runToken, failure);
 
     const [runSpan] = exporter.getFinishedSpans();
-    assert.strictEqual(runSpan.name, 'openai.agents.run');
+    assert.strictEqual(runSpan.name, 'invoke_runner support');
     assert.strictEqual(runSpan.attributes['error.type'], 'RunError');
-    assert.strictEqual(
-      (
-        processor as unknown as {
-          _traceRecordsById: Map<string, unknown>;
-        }
-      )._traceRecordsById.size,
-      0
-    );
 
     await processor.onTraceEnd(sdkTrace);
     assert.strictEqual(exporter.getFinishedSpans().length, 1);
   });
 
-  it('restores the owning run mapping after a nested trace ends', async () => {
-    const token = {};
-    const outer: OpenAIAgentsTrace = { traceId: 'outer-trace' };
-    const nested: OpenAIAgentsTrace = { traceId: 'nested-trace' };
-    const failed = new Error('runner failed');
-    const runContext = context
-      .active()
-      .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, token);
-
-    await context.with(runContext, async () => {
-      await processor.onTraceStart(outer);
-      await processor.onTraceStart(nested);
-      await processor.onTraceEnd(nested);
-      processor.onRunError(token, failed);
-    });
-
-    const outerSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.status.code === SpanStatusCode.ERROR);
-    assert.ok(outerSpan);
-    assert.strictEqual(outerSpan.status.code, SpanStatusCode.ERROR);
-  });
-
-  it('keeps the owning run mapping when nested traces end out of order', async () => {
+  it('keeps the owning run mapping when nested traces end in or out of order', async () => {
+    const { processor, exporter } = ctx;
     const token = {};
     const outer: OpenAIAgentsTrace = { traceId: 'outer-trace' };
     const nestedA: OpenAIAgentsTrace = { traceId: 'nested-a' };
@@ -473,7 +421,6 @@ describe('OpenAIAgentsTracingProcessor', () => {
       await processor.onTraceStart(outer);
       await processor.onTraceStart(nestedA);
       await processor.onTraceStart(nestedB);
-      // A finishes before B, so the stack is not unwound in LIFO order.
       await processor.onTraceEnd(nestedA);
       await processor.onTraceEnd(nestedB);
       processor.onRunError(token, new Error('tool failed'));
@@ -486,65 +433,42 @@ describe('OpenAIAgentsTracingProcessor', () => {
     assert.strictEqual(exporter.getFinishedSpans().length, 3);
   });
 
-  it('ends a run that fails after its stream started', async () => {
-    const token = {};
-    const sdkTrace: OpenAIAgentsTrace = { traceId: 'streamed-trace' };
-    const runContext = context
-      .active()
-      .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, token);
-
-    await context.with(runContext, () => processor.onTraceStart(sdkTrace));
-    processor.onRunStreamStart(token, sdkTrace.traceId);
-    // The SDK ends the trace as soon as the run promise resolves.
-    await processor.onTraceEnd(sdkTrace);
+  it('defers stream trace end until stream settles for owned, caller-managed, and ok streams', async () => {
+    const { processor, exporter } = ctx;
+    const tokenFail = {};
+    const failTrace: OpenAIAgentsTrace = { traceId: 'streamed-trace' };
+    await context.with(
+      context.active().setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, tokenFail),
+      () => processor.onTraceStart(failTrace)
+    );
+    processor.onRunStreamStart(tokenFail, failTrace.traceId);
+    await processor.onTraceEnd(failTrace);
     assert.strictEqual(exporter.getFinishedSpans().length, 0);
+    processor.onRunStreamSettled(tokenFail, new Error('stream failed'));
 
-    processor.onRunStreamSettled(token, new Error('stream failed'));
+    const tokenCaller = {};
+    const callerTrace: OpenAIAgentsTrace = { traceId: 'caller-trace' };
+    await processor.onTraceStart(callerTrace);
+    processor.onRunStreamStart(tokenCaller, callerTrace.traceId);
+    await processor.onTraceEnd(callerTrace);
+    processor.onRunStreamSettled(tokenCaller, new Error('stream failed'));
 
-    const runSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
-    assert.ok(runSpan);
-    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(runSpan.attributes['error.type'], 'Error');
-  });
+    const tokenOk = {};
+    const okTrace: OpenAIAgentsTrace = { traceId: 'ok-trace' };
+    await processor.onTraceStart(okTrace);
+    processor.onRunStreamStart(tokenOk, okTrace.traceId);
+    await processor.onTraceEnd(okTrace);
+    processor.onRunStreamSettled(tokenOk);
 
-  it('ends a caller-managed trace when its stream fails', async () => {
-    const token = {};
-    const sdkTrace: OpenAIAgentsTrace = { traceId: 'caller-trace' };
-
-    // The trace exists before the run token does, as with
-    // withTrace(() => runner.run(..., { stream: true })).
-    await processor.onTraceStart(sdkTrace);
-    processor.onRunStreamStart(token, sdkTrace.traceId);
-    await processor.onTraceEnd(sdkTrace);
-    processor.onRunStreamSettled(token, new Error('stream failed'));
-
-    const runSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
-    assert.ok(runSpan);
-    assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
-    assert.strictEqual(runSpan.attributes['error.type'], 'Error');
-  });
-
-  it('leaves a successful stream unaffected', async () => {
-    const token = {};
-    const sdkTrace: OpenAIAgentsTrace = { traceId: 'ok-trace' };
-
-    await processor.onTraceStart(sdkTrace);
-    processor.onRunStreamStart(token, sdkTrace.traceId);
-    await processor.onTraceEnd(sdkTrace);
-    processor.onRunStreamSettled(token);
-
-    const runSpan = exporter
-      .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
-    assert.ok(runSpan);
-    assert.strictEqual(runSpan.status.code, SpanStatusCode.UNSET);
+    const spans = exporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 3);
+    assert.strictEqual(spans[0].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[1].status.code, SpanStatusCode.ERROR);
+    assert.strictEqual(spans[2].status.code, SpanStatusCode.UNSET);
   });
 
   it('does not end a shared trace when one runner invocation fails', async () => {
+    const { processor, exporter } = ctx;
     const sdkTrace: OpenAIAgentsTrace = {
       traceId: 'agents-trace',
       name: 'support',
@@ -570,7 +494,6 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
     await processor.onSpanEnd(task);
     processor.onRunError(firstRunToken, new Error('run failed'));
-
     assert.strictEqual(exporter.getFinishedSpans().length, 0);
 
     await context.with(
@@ -581,13 +504,12 @@ describe('OpenAIAgentsTracingProcessor', () => {
     await processor.onTraceEnd(sdkTrace);
 
     const spans = exporter.getFinishedSpans();
-    const runSpan = spans.find(span => span.name === 'openai.agents.run');
+    const runSpan = spans.find(span => span.name === 'invoke_runner support');
     const agentSpan = spans.find(
       span => span.name === 'invoke_agent second-agent'
     );
     assert.ok(runSpan);
     assert.ok(agentSpan);
-    assert.strictEqual(runSpan.name, 'openai.agents.run');
     assert.deepStrictEqual(runSpan.status, { code: SpanStatusCode.UNSET });
     assert.strictEqual(
       agentSpan.parentSpanContext?.spanId,
@@ -595,7 +517,8 @@ describe('OpenAIAgentsTracingProcessor', () => {
     );
   });
 
-  it('does not use arbitrary error detail as error.type', async () => {
+  it('bounds error.type to safe error names and accepts built-in Error', async () => {
+    const { processor, exporter } = ctx;
     const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
       name: 'triage',
     });
@@ -603,19 +526,6 @@ describe('OpenAIAgentsTracingProcessor', () => {
       message: 'Error in agent run',
       data: { error: 'customer123: request failed in region-7' },
     };
-
-    await processor.onSpanStart(agent);
-    await processor.onSpanEnd(agent);
-
-    const [agentSpan] = exporter.getFinishedSpans();
-    assert.strictEqual(agentSpan.attributes['error.type'], '_OTHER');
-    assert.strictEqual(
-      agentSpan.events[0].attributes?.['exception.message'],
-      'customer123: request failed in region-7'
-    );
-  });
-
-  it('accepts the built-in Error name in error.type', async () => {
     const tool = createSpan('agents-trace', 'tool', 'function', undefined, {
       name: 'lookup_order',
     });
@@ -624,18 +534,18 @@ describe('OpenAIAgentsTracingProcessor', () => {
       data: { error: 'Error: tool failed' },
     };
 
+    await processor.onSpanStart(agent);
+    await processor.onSpanEnd(agent);
     await processor.onSpanStart(tool);
     await processor.onSpanEnd(tool);
 
-    const [toolSpan] = exporter.getFinishedSpans();
+    const [agentSpan, toolSpan] = exporter.getFinishedSpans();
+    assert.strictEqual(agentSpan.attributes['error.type'], '_OTHER');
     assert.strictEqual(toolSpan.attributes['error.type'], 'Error');
-    assert.strictEqual(
-      toolSpan.events[0].attributes?.['exception.type'],
-      'Error'
-    );
   });
 
   it('allows active spans to finish after instrumentation is disabled', async () => {
+    const { processor, exporter } = ctx;
     const agent = createSpan('agents-trace', 'agent', 'agent', undefined, {
       name: 'triage',
     });

@@ -155,7 +155,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await agents.run(agent, 'go');
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent solo',
       ]);
     });
@@ -173,7 +173,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await agents.run(agent, 'go');
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent helper',
         '    execute_tool lookup_order',
       ]);
@@ -194,7 +194,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await agents.run(agent, 'go');
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent researcher',
         '    execute_tool lookup_order',
         '    execute_tool check_inventory',
@@ -223,7 +223,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await agents.run(outer, 'go');
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent outer',
         '    execute_tool ask_inner',
         '      invoke_agent inner',
@@ -252,16 +252,19 @@ describe('OpenAI Agents end-to-end scenarios', function () {
 
       await agents.run(first, 'go');
 
-      // A handoff does not nest: every agent sits directly under the run.
+      // A handoff does not nest: every agent sits directly under the run,
+      // and each sending agent records an execute_tool transfer span.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent first',
+        '    execute_tool handoff',
         '  invoke_agent second',
+        '    execute_tool handoff',
         '  invoke_agent third',
       ]);
     });
 
-    it('HO3: does not report a handoff call as a tool execution', async () => {
+    it('HO3: reports a handoff call as a transfer tool execution', async () => {
       const receiver = new agents.Agent({
         name: 'receiver',
         model: scriptedModel([[message('done')]]),
@@ -275,14 +278,20 @@ describe('OpenAI Agents end-to-end scenarios', function () {
 
       await agents.run(sender, 'go');
 
-      // The model really did call transfer_to_receiver, but the SDK models it
-      // as a handoff span, which this instrumentation deliberately leaves
-      // unmapped rather than reporting as a tool execution.
       assert.match(toReceiver.toolName, /^transfer_to_/);
       const toolSpans = exporter
         .getFinishedSpans()
         .filter(span => span.name.startsWith('execute_tool'));
-      assert.deepStrictEqual(toolSpans, []);
+      assert.strictEqual(toolSpans.length, 1);
+      assert.strictEqual(toolSpans[0].name, 'execute_tool handoff');
+      assert.strictEqual(
+        toolSpans[0].attributes['gen_ai.transfer.mode'],
+        'pass_control'
+      );
+      assert.strictEqual(
+        toolSpans[0].attributes['gen_ai.transfer.target.name'],
+        'receiver'
+      );
     });
 
     it('HO4: records a post-handoff failure on the receiving agent only', async () => {
@@ -302,8 +311,9 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // The sender finished its work before handing off, so the error belongs
       // to the agent that was active when it happened.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent sender',
+        '    execute_tool handoff',
         '  invoke_agent receiver [ERROR Error]',
       ]);
     });
@@ -328,8 +338,9 @@ describe('OpenAI Agents end-to-end scenarios', function () {
 
       // The receiver never started, so it must not leave an orphan span.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent sender [ERROR Error]',
+        '    execute_tool handoff [ERROR Error]',
       ]);
     });
 
@@ -363,10 +374,11 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // Both nesting mechanisms at once: the sub-run's handoff chain stays
       // inside the tool span that started it.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent outer',
         '    execute_tool ask_second',
         '      invoke_agent second',
+        '        execute_tool handoff',
         '      invoke_agent third',
       ]);
     });
@@ -382,7 +394,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await assert.rejects(agents.run(agent, 'go'));
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent solo [ERROR Error]',
       ]);
     });
@@ -411,7 +423,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await agents.run(agent, 'go');
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent helper',
         `    execute_tool boom [ERROR ${TOOL_ERROR}]`,
       ]);
@@ -441,7 +453,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // The failure surfaces on the inner agent and the tool that called it,
       // but the outer agent recovers and the run succeeds.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent outer',
         `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',
@@ -471,7 +483,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await assert.rejects(agents.run(outer, 'go'));
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent outer [ERROR Error]',
         `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',
@@ -512,7 +524,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // instrumented" section. If context propagation is ever implemented,
       // this test should fail and be replaced by one asserting the nesting.
       const spans = exporter.getFinishedSpans();
-      const runSpan = spans.find(span => span.name === 'openai.agents.run');
+      const runSpan = spans.find(span => span.name === 'invoke_runner');
       const unrelated = spans.find(span => span.name === 'unrelated.work');
       assert.ok(runSpan);
       assert.ok(unrelated);
@@ -522,7 +534,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       assert.deepStrictEqual(
         spanTree(spans.filter(span => span !== unrelated)),
         [
-          'openai.agents.run',
+          'invoke_runner',
           '  invoke_agent helper',
           '    execute_tool record_note',
         ]
@@ -551,7 +563,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await drain(await agents.run(agent, 'go', { stream: true }));
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent helper',
         '    execute_tool lookup_order',
       ]);
@@ -568,7 +580,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       );
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent solo [ERROR Error]',
       ]);
     });
@@ -586,7 +598,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       );
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent solo [ERROR Error]',
       ]);
     });
@@ -607,7 +619,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       // Without task spans there is no intermediate span to carry the error,
       // so the run span itself must record it.
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run [ERROR Error]',
+        'invoke_runner [ERROR Error]',
         '  invoke_agent solo [ERROR Error]',
       ]);
     });
@@ -634,7 +646,7 @@ describe('OpenAI Agents end-to-end scenarios', function () {
       await drain(await agents.run(outer, 'go', { stream: true }));
 
       assert.deepStrictEqual(tree(), [
-        'openai.agents.run',
+        'invoke_runner',
         '  invoke_agent outer',
         `    execute_tool ask_inner [ERROR ${TOOL_ERROR}]`,
         '      invoke_agent inner [ERROR Error]',

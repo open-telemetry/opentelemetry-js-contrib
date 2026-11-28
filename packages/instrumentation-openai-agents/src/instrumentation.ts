@@ -8,14 +8,28 @@ import {
   InstrumentationNodeModuleDefinition,
   isWrapped,
 } from '@opentelemetry/instrumentation';
-import { context } from '@opentelemetry/api';
-import type { OpenAIAgentsModule, OpenAIAgentsTrace } from './internal-types';
 import {
+  context,
+  type MeterProvider,
+  type TracerProvider,
+} from '@opentelemetry/api';
+import { TelemetryHandler } from '@opentelemetry/genai-util';
+import type {
+  OpenAIAgentsAgentLike,
+  OpenAIAgentsModule,
+  OpenAIAgentsRunnerInstance,
+  OpenAIAgentsToolCallDetails,
+  OpenAIAgentsToolLike,
+  OpenAIAgentsTrace,
+} from './internal-types';
+import { asObject } from './extractors';
+import {
+  OPENAI_AGENTS_NESTED_RUN_CONTEXT_KEY,
   OPENAI_AGENTS_RUN_CONTEXT_KEY,
+  OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY,
   OpenAIAgentsTracingProcessor,
 } from './processor';
 import type { OpenAIAgentsInstrumentationConfig } from './types';
-import { getEnvBool } from './utils';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -24,29 +38,25 @@ type RegistrationMode = 'add' | 'replace';
 /**
  * Instruments the OpenAI Agents SDK tracing lifecycle with OpenTelemetry.
  *
- * The SDK trace processor callbacks create the run, agent, and function-tool
+ * The SDK trace processor callbacks create the runner, agent, and tool
  * span hierarchy. Narrow wrappers around `Runner.run`, `withTrace`, and
- * `getOrCreateTrace` only cover rejected or streamed lifecycles where the SDK
- * does not emit a corresponding trace-end callback.
+ * `getOrCreateTrace` capture agent/tool metadata from runner lifecycle events
+ * and cover rejected or streamed lifecycles where the SDK does not emit a
+ * corresponding trace-end callback.
  */
 export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgentsInstrumentationConfig> {
   private _processor?: OpenAIAgentsTracingProcessor;
+  declare private _telemetryHandler: TelemetryHandler | undefined;
+  declare private _tracerProvider: TracerProvider | undefined;
+  declare private _meterProvider: MeterProvider | undefined;
   private _module?: OpenAIAgentsModule;
   private _registeredModule?: OpenAIAgentsModule;
   private _registered = false;
   private _registrationMode?: RegistrationMode;
-  private _captureMessageContentFromEnv?: boolean;
+  private readonly _attachedRunners = new WeakSet<object>();
 
   constructor(config: OpenAIAgentsInstrumentationConfig = {}) {
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
-
-    this._captureMessageContentFromEnv = getEnvBool(
-      'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT',
-      this._diag
-    );
-    if (this._captureMessageContentFromEnv !== undefined) {
-      this.setConfig(this.getConfig());
-    }
   }
 
   override setConfig(config: OpenAIAgentsInstrumentationConfig = {}): void {
@@ -61,17 +71,27 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
       );
       disableOpenAITraceExport = this._registrationMode === 'replace';
     }
-    const normalizedConfig = {
+    const normalizedConfig: OpenAIAgentsInstrumentationConfig = {
       ...config,
-      captureMessageContent:
-        this._captureMessageContentFromEnv ?? !!config.captureMessageContent,
       disableOpenAITraceExport,
     };
     super.setConfig(normalizedConfig);
-    this._processor?.setConfig(normalizedConfig);
+    this._telemetryHandler = undefined;
     if (this._module && this.isEnabled()) {
       this._registerProcessor(this._module);
     }
+  }
+
+  override setTracerProvider(tracerProvider: TracerProvider): void {
+    super.setTracerProvider(tracerProvider);
+    this._tracerProvider = tracerProvider;
+    this._telemetryHandler = undefined;
+  }
+
+  override setMeterProvider(meterProvider: MeterProvider): void {
+    super.setMeterProvider(meterProvider);
+    this._meterProvider = meterProvider;
+    this._telemetryHandler = undefined;
   }
 
   protected init(): InstrumentationNodeModuleDefinition[] {
@@ -118,11 +138,21 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
     ];
   }
 
+  private _getTelemetryHandler(): TelemetryHandler {
+    return (this._telemetryHandler ??= new TelemetryHandler({
+      instrumentationName: PACKAGE_NAME,
+      instrumentationVersion: PACKAGE_VERSION,
+      tracerProvider: this._tracerProvider,
+      meterProvider: this._meterProvider,
+      diag: this._diag,
+      config: this.getConfig(),
+    }));
+  }
+
   private _getProcessor(): OpenAIAgentsTracingProcessor {
     if (!this._processor) {
       this._processor = new OpenAIAgentsTracingProcessor(
-        () => this.tracer,
-        this.getConfig(),
+        () => this._getTelemetryHandler(),
         this._diag
       );
     }
@@ -131,7 +161,6 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
 
   private _registerProcessor(agents: OpenAIAgentsModule): void {
     const processor = this._getProcessor();
-    processor.setConfig(this.getConfig());
     const desiredMode: RegistrationMode = this.getConfig()
       .disableOpenAITraceExport
       ? 'replace'
@@ -156,18 +185,32 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
       this._unwrap(agents.Runner.prototype, 'run');
     }
     const processor = this._getProcessor();
+    const instrumentation = this;
     this._wrap(agents.Runner.prototype, 'run', original => {
-      return function patchedRun(this: unknown, ...args: unknown[]) {
-        // Trace processor callbacks remain the primary instrumentation path.
-        // This token only supplies the missing failure boundary: the SDK can
-        // skip onTraceEnd when Runner.run rejects, and task callbacks cannot
-        // be used as a fallback because they are optional and may belong to a
-        // caller-managed withTrace() scope.
+      return function patchedRun(
+        this: OpenAIAgentsRunnerInstance,
+        ...args: unknown[]
+      ) {
+        const active = context.active();
+        const isNested = active.getValue(OPENAI_AGENTS_RUN_CONTEXT_KEY) != null;
         const runToken = {};
-        const runContext = context
-          .active()
+        let runContext = active
+          .deleteValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY)
           .setValue(OPENAI_AGENTS_RUN_CONTEXT_KEY, runToken);
+        if (isNested) {
+          runContext = runContext.setValue(
+            OPENAI_AGENTS_NESTED_RUN_CONTEXT_KEY,
+            true
+          );
+        }
+
+        instrumentation._attachRunnerEventsOnce(this, agents, processor);
+
         return context.with(runContext, async () => {
+          const firstAgent = asObject<OpenAIAgentsAgentLike>(args[0]);
+          if (firstAgent) {
+            processor.onAgentMetadata(firstAgent);
+          }
           try {
             const result = await original.apply(this, args);
             OpenAIAgentsInstrumentation._watchStreamCompletion(
@@ -186,6 +229,60 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
         });
       };
     });
+  }
+
+  private _attachRunnerEventsOnce(
+    runner: OpenAIAgentsRunnerInstance | undefined,
+    agents: OpenAIAgentsModule,
+    processor: OpenAIAgentsTracingProcessor
+  ): void {
+    if (
+      !runner ||
+      typeof runner !== 'object' ||
+      typeof runner.on !== 'function' ||
+      this._attachedRunners.has(runner)
+    ) {
+      return;
+    }
+    this._attachedRunners.add(runner);
+    runner.on('agent_start', (_ctx: unknown, agent: unknown) => {
+      if (!this.isEnabled()) {
+        return;
+      }
+      const parsedAgent = asObject<OpenAIAgentsAgentLike>(agent);
+      if (parsedAgent) {
+        processor.onAgentMetadata(parsedAgent);
+      }
+    });
+    runner.on(
+      'agent_handoff',
+      (_ctx: unknown, _fromAgent: unknown, toAgent: unknown) => {
+        if (!this.isEnabled()) {
+          return;
+        }
+        const parsedAgent = asObject<OpenAIAgentsAgentLike>(toAgent);
+        if (parsedAgent) {
+          processor.onAgentMetadata(parsedAgent);
+        }
+      }
+    );
+    runner.on(
+      'agent_tool_start',
+      (_ctx: unknown, _agent: unknown, tool: unknown, details: unknown) => {
+        if (!this.isEnabled()) {
+          return;
+        }
+        const currentSpanId =
+          typeof agents.getCurrentSpan === 'function'
+            ? agents.getCurrentSpan()?.spanId
+            : undefined;
+        processor.onToolCallMetadata(
+          currentSpanId,
+          asObject<OpenAIAgentsToolLike>(tool),
+          asObject<OpenAIAgentsToolCallDetails>(details)
+        );
+      }
+    );
   }
 
   private static _watchStreamCompletion(
@@ -232,15 +329,24 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
         if (typeof callback !== 'function') {
           return original.apply(this, args as Parameters<typeof original>);
         }
+        const active = context.active();
         args[1] = async (trace: unknown) => {
-          try {
-            return await callback(trace);
-          } catch (error) {
-            processor.onTraceError(trace as OpenAIAgentsTrace, error);
-            throw error;
-          }
+          return context.with(
+            context.active().deleteValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY),
+            async () => {
+              try {
+                return await callback(trace);
+              } catch (error) {
+                processor.onTraceError(trace as OpenAIAgentsTrace, error);
+                throw error;
+              }
+            }
+          );
         };
-        return original.apply(this, args as Parameters<typeof original>);
+        return context.with(
+          active.setValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY, true),
+          () => original.apply(this, args as Parameters<typeof original>)
+        );
       };
     });
   }
@@ -262,18 +368,30 @@ export class OpenAIAgentsInstrumentation extends InstrumentationBase<OpenAIAgent
         // A reused outer trace stays under its owner's lifecycle: the caller
         // may catch this rejection and keep the trace going, so only a trace
         // this call creates is ended here.
+        const active = context.active();
         const outerTrace = agents.getCurrentTrace();
         args[0] = async () => {
-          try {
-            return await callback();
-          } catch (error) {
-            const trace = agents.getCurrentTrace();
-            if (trace && trace !== outerTrace) {
-              processor.onTraceError(trace, error);
+          return context.with(
+            context.active().deleteValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY),
+            async () => {
+              try {
+                return await callback();
+              } catch (error) {
+                const trace = agents.getCurrentTrace();
+                if (trace && trace !== outerTrace) {
+                  processor.onTraceError(trace, error);
+                }
+                throw error;
+              }
             }
-            throw error;
-          }
+          );
         };
+        if (!outerTrace) {
+          return context.with(
+            active.setValue(OPENAI_AGENTS_USER_TRACE_CONTEXT_KEY, true),
+            () => original.apply(this, args as Parameters<typeof original>)
+          );
+        }
         return original.apply(this, args as Parameters<typeof original>);
       };
     });

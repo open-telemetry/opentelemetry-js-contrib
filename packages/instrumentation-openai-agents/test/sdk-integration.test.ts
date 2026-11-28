@@ -85,7 +85,11 @@ describe('OpenAI Agents SDK integration', () => {
     const spans = exporter.getFinishedSpans();
     assert.deepStrictEqual(
       spans.map(span => span.name),
-      ['execute_tool real-tool', 'invoke_agent real-agent', 'openai.agents.run']
+      [
+        'execute_tool real-tool',
+        'invoke_agent real-agent',
+        'invoke_runner real-workflow',
+      ]
     );
   });
 
@@ -108,7 +112,7 @@ describe('OpenAI Agents SDK integration', () => {
 
     const runSpan = exporter
       .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
+      .find(span => span.name === 'invoke_runner');
     assert.ok(runSpan);
     assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
   });
@@ -133,7 +137,7 @@ describe('OpenAI Agents SDK integration', () => {
       assert.strictEqual(
         exporter
           .getFinishedSpans()
-          .filter(span => span.name === 'openai.agents.run').length,
+          .filter(span => span.name.startsWith('invoke_workflow')).length,
         0
       );
     });
@@ -141,7 +145,7 @@ describe('OpenAI Agents SDK integration', () => {
     assert.strictEqual(
       exporter
         .getFinishedSpans()
-        .filter(span => span.name === 'openai.agents.run').length,
+        .filter(span => span.name.startsWith('invoke_workflow')).length,
       1
     );
   });
@@ -170,7 +174,7 @@ describe('OpenAI Agents SDK integration', () => {
 
     const runSpan = exporter
       .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
+      .find(span => span.name === 'invoke_workflow failed-workflow');
     assert.ok(runSpan);
     assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
   });
@@ -187,7 +191,7 @@ describe('OpenAI Agents SDK integration', () => {
 
     const runSpan = exporter
       .getFinishedSpans()
-      .find(span => span.name === 'openai.agents.run');
+      .find(span => span.name === 'invoke_runner');
     assert.ok(runSpan);
     assert.strictEqual(runSpan.status.code, SpanStatusCode.ERROR);
   });
@@ -207,14 +211,14 @@ describe('OpenAI Agents SDK integration', () => {
       assert.strictEqual(
         exporter
           .getFinishedSpans()
-          .filter(span => span.name === 'openai.agents.run').length,
+          .filter(span => span.name === 'invoke_workflow outer-workflow').length,
         0
       );
     });
 
     const runSpans = exporter
       .getFinishedSpans()
-      .filter(span => span.name === 'openai.agents.run');
+      .filter(span => span.name === 'invoke_workflow outer-workflow');
     assert.strictEqual(runSpans.length, 1);
     assert.strictEqual(runSpans[0].status.code, SpanStatusCode.UNSET);
   });
@@ -287,7 +291,7 @@ describe('OpenAI Agents SDK integration', () => {
       await agents.run(triageAgent, 'Please refund order A-1.');
 
       const spans = exporter.getFinishedSpans();
-      const runSpans = spans.filter(span => span.name === 'openai.agents.run');
+      const runSpans = spans.filter(span => span.name === 'invoke_runner');
       const agentSpans = spans.filter(
         span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
       );
@@ -333,10 +337,12 @@ describe('OpenAI Agents SDK integration', () => {
           toolSpan.attributes[ATTR_GEN_AI_AGENT_NAME],
           parent.attributes[ATTR_GEN_AI_AGENT_NAME]
         );
-        assert.strictEqual(
-          typeof toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
-          'string'
-        );
+        if (toolSpan.attributes['gen_ai.transfer.mode'] === undefined) {
+          assert.strictEqual(
+            typeof toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+            'string'
+          );
+        }
       }
 
       const toolsByAgent = new Map<string, string[]>();
@@ -376,7 +382,7 @@ describe('OpenAI Agents SDK integration', () => {
 
       assert.strictEqual(result.finalOutput, 'hello from agent');
       const spans = exporter.getFinishedSpans();
-      const runSpan = spans.find(span => span.name === 'openai.agents.run');
+      const runSpan = spans.find(span => span.name === 'invoke_runner');
       const agentSpan = spans.find(
         span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
       );
@@ -384,7 +390,7 @@ describe('OpenAI Agents SDK integration', () => {
       assert.ok(agentSpan);
       assert.strictEqual(
         runSpan.attributes[ATTR_GEN_AI_OPERATION_NAME],
-        undefined
+        'invoke_runner'
       );
       assert.strictEqual(
         agentSpan.attributes[ATTR_GEN_AI_AGENT_NAME],
@@ -420,7 +426,7 @@ describe('OpenAI Agents SDK integration', () => {
       const agentSpan = spans.find(
         span => span.attributes[ATTR_GEN_AI_OPERATION_NAME] === 'invoke_agent'
       );
-      const runSpan = spans.find(span => span.name === 'openai.agents.run');
+      const runSpan = spans.find(span => span.name === 'invoke_runner');
       assert.ok(toolSpan);
       assert.ok(agentSpan);
       assert.ok(runSpan);

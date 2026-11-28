@@ -6,6 +6,7 @@
 export interface OpenAIAgentsTrace {
   traceId: string;
   name?: string;
+  groupId?: string | null;
 }
 
 export interface OpenAIAgentsSpanError {
@@ -13,11 +14,24 @@ export interface OpenAIAgentsSpanError {
   data?: Record<string, unknown>;
 }
 
+export interface OpenAIAgentsUsageData {
+  input_tokens?: number;
+  output_tokens?: number;
+}
+
 export interface OpenAIAgentsSpanData {
   type: string;
   name?: string;
   input?: unknown;
   output?: unknown;
+  output_type?: string;
+  usage?: OpenAIAgentsUsageData;
+  model?: string;
+  model_config?: Record<string, unknown>;
+  from_agent?: string;
+  to_agent?: string;
+  _input?: unknown;
+  _response?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -29,6 +43,28 @@ export interface OpenAIAgentsSpan {
   endedAt?: string | null;
   error?: OpenAIAgentsSpanError | null;
   spanData: OpenAIAgentsSpanData;
+}
+
+export interface OpenAIAgentsToolLike {
+  type?: string;
+  name?: string;
+  description?: string;
+  parameters?: unknown;
+}
+
+export interface OpenAIAgentsAgentLike {
+  name?: string;
+  handoffDescription?: string;
+  model?: unknown;
+  tools?: unknown[];
+}
+
+export interface OpenAIAgentsToolCallDetails {
+  toolCall?: {
+    callId?: string;
+    id?: string;
+    name?: string;
+  };
 }
 
 export type OpenAIAgentsWithTrace = (
@@ -43,6 +79,7 @@ export type OpenAIAgentsGetOrCreateTrace = (
 ) => Promise<unknown>;
 
 export type OpenAIAgentsGetCurrentTrace = () => OpenAIAgentsTrace | null;
+export type OpenAIAgentsGetCurrentSpan = () => { spanId?: string } | null;
 
 export interface OpenAIAgentsTracingProcessor {
   onTraceStart(trace: OpenAIAgentsTrace): Promise<void>;
@@ -54,6 +91,10 @@ export interface OpenAIAgentsTracingProcessor {
 }
 
 export type OpenAIAgentsRun = (...args: unknown[]) => Promise<unknown>;
+
+export interface OpenAIAgentsRunnerInstance {
+  on?(event: string, listener: (...args: unknown[]) => void): unknown;
+}
 
 export interface OpenAIAgentsRunnerConstructor {
   new (...args: never[]): unknown;
@@ -67,6 +108,7 @@ export interface OpenAIAgentsModule {
   withTrace: OpenAIAgentsWithTrace;
   getOrCreateTrace: OpenAIAgentsGetOrCreateTrace;
   getCurrentTrace: OpenAIAgentsGetCurrentTrace;
+  getCurrentSpan?: OpenAIAgentsGetCurrentSpan;
   addTraceProcessor(processor: OpenAIAgentsTracingProcessor): void;
   setTraceProcessors(processors: OpenAIAgentsTracingProcessor[]): void;
   setDefaultOpenAITracingExporter?(): void;
