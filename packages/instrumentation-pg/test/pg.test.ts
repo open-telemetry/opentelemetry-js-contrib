@@ -1600,6 +1600,43 @@ describe('pg', () => {
       });
     });
 
+    it('should separate failed and successful Promise query duration metrics', async () => {
+      create();
+      await assert.rejects(
+        client.query('SELECT foo FROM nonexistent_table'),
+        (error: Error & { code: string }) => error.code === '42P01'
+      );
+      await client.query('SELECT NOW()');
+
+      const { resourceMetrics, errors } = await metricReader.collect();
+      assert.deepEqual(
+        errors,
+        [],
+        'expected no errors during metric collection'
+      );
+      const metric = resourceMetrics.scopeMetrics
+        .flatMap(scope => scope.metrics)
+        .find(
+          metric =>
+            metric.descriptor.name === METRIC_DB_CLIENT_OPERATION_DURATION
+        );
+      assert.ok(metric, 'expected query duration metric');
+      assert.strictEqual(metric.dataPoints.length, 2);
+      for (const errorType of ['42P01', undefined]) {
+        const dataPoint: DataPoint<Histogram> | undefined = (
+          metric.dataPoints as DataPoint<Histogram>[]
+        ).find(point => point.attributes[ATTR_ERROR_TYPE] === errorType);
+        assert.ok(dataPoint, `expected metric with error.type=${errorType}`);
+        assert.deepStrictEqual(dataPoint.attributes, {
+          ...DEFAULT_ATTRIBUTES,
+          [ATTR_DB_OPERATION_NAME]: 'SELECT',
+          ...(errorType ? { [ATTR_ERROR_TYPE]: errorType } : {}),
+        });
+        assert.strictEqual(dataPoint.value.count, 1);
+      }
+      assert.strictEqual(getExecutedQueries().length, 2);
+    });
+
     it('should generate db.client.operation.duration metric with error attribute', done => {
       client.query('SELECT foo from bar', async (err, ret) => {
         try {
