@@ -32,8 +32,18 @@ server.listen(0, () => {
 // Make sure there is work on the event loop
 const handle = setInterval(() => {}, 1);
 
-// Gracefully shut down
-process.on('SIGTERM', () => {
-  clearInterval(handle);
-  server.close();
-});
+if (process.env.OTEL_NODE_REGISTER_TEST_NO_SIGTERM_HANDLER === 'true') {
+  // nyc adds a signal-exit listener to child processes; remove it so this
+  // fixture exercises the register script as the only SIGTERM handler.
+  for (const listener of process.listeners('SIGTERM')) {
+    if (listener.name === 'listener') {
+      process.removeListener('SIGTERM', listener);
+    }
+  }
+} else {
+  // Gracefully shut down like a real server application.
+  process.on('SIGTERM', () => {
+    clearInterval(handle);
+    server.close();
+  });
+}
