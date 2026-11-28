@@ -3,7 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { Span, Tracer, SpanKind, Attributes } from '@opentelemetry/api';
-import { ATTR_AWS_SNS_TOPIC_ARN, ATTR_MESSAGING_SYSTEM } from '../semconv';
+import {
+  ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER,
+  ATTR_AWS_SNS_TOPIC_ARN,
+  ATTR_MESSAGING_DESTINATION_NAME,
+  ATTR_MESSAGING_SYSTEM,
+} from '../semconv';
 import {
   ATTR_MESSAGING_DESTINATION,
   ATTR_MESSAGING_DESTINATION_KIND,
@@ -17,10 +22,29 @@ import {
 import { injectPropagationContext } from './MessageAttributes';
 import { RequestMetadata, ServiceExtension } from './ServiceExtension';
 
+const PHONE_NUMBER_DESTINATION = 'phone_number';
+const PHONE_NUMBER_VISIBLE_CHARACTERS = 3;
+const PHONE_NUMBER_MASK = '******';
+const MINIMUM_MASKED_PHONE_NUMBER_LENGTH = 10;
+
+function maskPhoneNumber(phoneNumber: unknown): string {
+  const normalizedPhoneNumber = String(phoneNumber);
+  if (normalizedPhoneNumber.length < MINIMUM_MASKED_PHONE_NUMBER_LENGTH) {
+    return PHONE_NUMBER_MASK;
+  }
+
+  return `${normalizedPhoneNumber.slice(
+    0,
+    PHONE_NUMBER_VISIBLE_CHARACTERS
+  )}${PHONE_NUMBER_MASK}${normalizedPhoneNumber.slice(
+    -PHONE_NUMBER_VISIBLE_CHARACTERS
+  )}`;
+}
+
 export class SnsServiceExtension implements ServiceExtension {
   requestPreSpanHook(
     request: NormalizedRequest,
-    _config: AwsSdkInstrumentationConfig
+    config: AwsSdkInstrumentationConfig
   ): RequestMetadata {
     let spanKind: SpanKind = SpanKind.CLIENT;
     let spanName = `SNS ${request.commandName}`;
@@ -34,19 +58,21 @@ export class SnsServiceExtension implements ServiceExtension {
       spanAttributes[ATTR_MESSAGING_DESTINATION_KIND] =
         MESSAGING_DESTINATION_KIND_VALUE_TOPIC;
       const { TopicArn, TargetArn, PhoneNumber } = request.commandInput;
-      spanAttributes[ATTR_MESSAGING_DESTINATION] = this.extractDestinationName(
+      const destinationName = this.extractDestinationName(
         TopicArn,
         TargetArn,
         PhoneNumber
       );
-      // ToDO: Use ATTR_MESSAGING_DESTINATION_NAME when implemented
-      spanAttributes['messaging.destination.name'] =
-        TopicArn || TargetArn || PhoneNumber || 'unknown';
+      spanAttributes[ATTR_MESSAGING_DESTINATION] = destinationName;
+      spanAttributes[ATTR_MESSAGING_DESTINATION_NAME] =
+        TopicArn || TargetArn || destinationName;
+      if (PhoneNumber && config.snsCaptureFullPhoneNumber === true) {
+        spanAttributes[ATTR_AWS_SNS_DESTINATION_PHONE_NUMBER] =
+          String(PhoneNumber);
+      }
 
       spanName = `${
-        PhoneNumber
-          ? 'phone_number'
-          : spanAttributes[ATTR_MESSAGING_DESTINATION]
+        PhoneNumber ? PHONE_NUMBER_DESTINATION : destinationName
       } send`;
     }
 
@@ -90,7 +116,7 @@ export class SnsServiceExtension implements ServiceExtension {
   extractDestinationName(
     topicArn: string,
     targetArn: string,
-    phoneNumber: string
+    phoneNumber: unknown
   ): string {
     if (topicArn || targetArn) {
       const arn = topicArn ?? targetArn;
@@ -100,7 +126,7 @@ export class SnsServiceExtension implements ServiceExtension {
         return arn;
       }
     } else if (phoneNumber) {
-      return phoneNumber;
+      return maskPhoneNumber(phoneNumber);
     } else {
       return 'unknown';
     }
