@@ -26,10 +26,10 @@ import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 export interface GlobalErrorsInstrumentationConfig
   extends InstrumentationConfig {
   /**
-   * A callback function for adding custom attributes to the log event when an error is recorded.
+   * A callback function for adding custom attributes to the log record when an error is recorded.
    *
-   * @param {Error} error - The error object that is being recorded.
-   * @returns {Attributes} - The attributes to add to the span.
+   * @param error - The error or string that is being recorded.
+   * @returns The attributes to add to the log record.
    */
   applyCustomAttributes?: (error: Error | string) => Attributes;
 }
