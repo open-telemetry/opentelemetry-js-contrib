@@ -471,6 +471,57 @@ describe('ExpressInstrumentation', function () {
       );
     });
 
+    it('should create spans for multiple middlewares registered in a single router.use or app.use call', async () => {
+      const rootSpan = tracer.startSpan('rootSpan');
+      const firstMiddleware: express.RequestHandler = (_req, _res, next) =>
+        next();
+      const secondMiddleware: express.RequestHandler = (_req, _res, next) =>
+        next();
+      const thirdMiddleware: express.RequestHandler = (_req, _res, next) =>
+        next();
+      const appFirstMiddleware: express.RequestHandler = (_req, _res, next) =>
+        next();
+      const appSecondMiddleware: express.RequestHandler = (_req, _res, next) =>
+        next();
+
+      const httpServer = await serverWithMiddleware(tracer, rootSpan, app => {
+        app.use(express.json());
+        app.use(appFirstMiddleware, appSecondMiddleware);
+
+        const router = express.Router();
+        router.use(firstMiddleware, [secondMiddleware, thirdMiddleware]);
+        router.get('/multi', (_req, res) => res.status(200).end('ok'));
+
+        app.use('/api', router);
+      });
+      server = httpServer.server;
+      port = httpServer.port;
+      await context.with(
+        trace.setSpan(context.active(), rootSpan),
+        async () => {
+          const response = await httpRequest.get(
+            `http://localhost:${port}/api/multi`
+          );
+          assert.strictEqual(response, 'ok');
+          rootSpan.end();
+          const spans = memoryExporter.getFinishedSpans();
+          for (const mwName of [
+            'appFirstMiddleware',
+            'appSecondMiddleware',
+            'firstMiddleware',
+            'secondMiddleware',
+            'thirdMiddleware',
+          ]) {
+            assert.notStrictEqual(
+              spans.find(span => span.name === `middleware - ${mwName}`),
+              undefined,
+              `Expected span for ${mwName}`
+            );
+          }
+        }
+      );
+    });
+
     it('should update rpcMetadata.route with the bare request handler layer', async () => {
       const rootSpan = tracer.startSpan('rootSpan');
       let rpcMetadata: RPCMetadata | undefined;
