@@ -278,11 +278,12 @@ export class AwsEcsDetector implements ResourceDetector {
       AwsEcsDetector._getRegionFromArn(containerArn);
 
     const awsAccount = AwsEcsDetector._getAccountFromArn(containerArn);
+    const awsPartition = AwsEcsDetector._getPartitionFromArn(containerArn);
 
     const logsGroupName = logOptions['awslogs-group']!;
-    const logsGroupArn = `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}`;
+    const logsGroupArn = `arn:${awsPartition}:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}`;
     const logsStreamName = logOptions['awslogs-stream']!;
-    const logsStreamArn = `arn:aws:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}:log-stream:${logsStreamName}`;
+    const logsStreamArn = `arn:${awsPartition}:logs:${logsRegion}:${awsAccount}:log-group:${logsGroupName}:log-stream:${logsStreamName}`;
 
     data[ATTR_AWS_LOG_GROUP_NAMES] = [logsGroupName];
     data[ATTR_AWS_LOG_GROUP_ARNS] = [logsGroupArn];
@@ -291,12 +292,17 @@ export class AwsEcsDetector implements ResourceDetector {
   }
 
   private static _getAccountFromArn(containerArn: string): string {
-    const match = /arn:aws:ecs:[^:]+:([^:]+):.*/.exec(containerArn);
+    const match = /arn:[^:]+:ecs:[^:]+:([^:]+):.*/.exec(containerArn);
     return match![1];
   }
 
   private static _getRegionFromArn(containerArn: string): string {
-    const match = /arn:aws:ecs:([^:]+):.*/.exec(containerArn);
+    const match = /arn:[^:]+:ecs:([^:]+):.*/.exec(containerArn);
+    return match![1];
+  }
+
+  private static _getPartitionFromArn(containerArn: string): string {
+    const match = /arn:([^:]+):ecs:.*/.exec(containerArn);
     return match![1];
   }
 
