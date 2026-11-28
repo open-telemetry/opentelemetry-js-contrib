@@ -33,6 +33,16 @@
         "types": "./dist/register.d.mts",
         "default": "./dist/register.mjs"
       }
+    },
+    "./register2": {
+      "require": {
+        "types": "./dist/register2.d.cts",
+        "default": "./dist/register2.cjs"
+      },
+      "default": {
+        "types": "./dist/register2.d.mts",
+        "default": "./dist/register2.mjs"
+      }
     }
   },
   "repository": {

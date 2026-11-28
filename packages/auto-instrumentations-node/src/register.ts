@@ -2,7 +2,8 @@
  * Copyright The OpenTelemetry Authors
  * SPDX-License-Identifier: Apache-2.0
  */
-import * as opentelemetry from '@opentelemetry/sdk-node';
+
+import { NodeSDK } from '@opentelemetry/sdk-node';
 import { diag, DiagConsoleLogger } from '@opentelemetry/api';
 import { getStringFromEnv, diagLogLevelFromString } from '@opentelemetry/core';
 import {
@@ -27,7 +28,7 @@ if (logLevel != null) {
   diag.disable();
 }
 
-const sdk = new opentelemetry.NodeSDK({
+const sdk = new NodeSDK({
   instrumentations,
   resourceDetectors,
 });

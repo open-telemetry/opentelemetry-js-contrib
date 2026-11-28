@@ -71,6 +71,7 @@ import {
   azureFunctionsDetector,
   azureVmDetector,
 } from '@opentelemetry/resource-detector-azure';
+import type { ComponentProviderRegistry } from '@opentelemetry/sdk-node';
 
 const RESOURCE_DETECTOR_CONTAINER = 'container';
 const RESOURCE_DETECTOR_ENVIRONMENT = 'env';
@@ -330,4 +331,17 @@ export function getResourceDetectorsFromEnv(): Array<ResourceDetector> {
     }
     return resourceDetector || [];
   });
+}
+
+export function getComponentProviderRegistry(): ComponentProviderRegistry {
+  return {
+    ExperimentalResourceDetector: {
+      container: () => containerDetector,
+// XXX the rest
+// const RESOURCE_DETECTOR_ALIBABA = 'alibaba';
+// const RESOURCE_DETECTOR_AWS = 'aws';  // Need same CompositeResourceDetector used in sdk-node here? Perhaps add to resources package.
+// const RESOURCE_DETECTOR_AZURE = 'azure';
+// const RESOURCE_DETECTOR_GCP = 'gcp';
+    }
+  };
 }
