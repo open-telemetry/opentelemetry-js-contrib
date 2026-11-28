@@ -4,15 +4,21 @@
  */
 
 import type { InstrumentationConfig } from '@opentelemetry/instrumentation';
+import type { GenAIInstrumentationConfig } from './semconv';
 
 export interface OpenAIAgentsInstrumentationConfig
-  extends InstrumentationConfig {
+  extends InstrumentationConfig,
+    GenAIInstrumentationConfig {
   /**
-   * Capture function tool arguments and results. This is disabled by default
-   * because the values may contain sensitive information. It can also be set
-   * with OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT.
+   * Controls capturing of prompts, completions, system instructions, tool
+   * definitions, and function tool arguments and results.
+   * - `'none'`: no content captured (default).
+   * - `'span_only'`: content captured on span attributes.
+   *
+   * Can also be set with the `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT`
+   * environment variable (`span_only` or `none`).
    */
-  captureMessageContent?: boolean;
+  captureMessageContent?: GenAIInstrumentationConfig['captureMessageContent'];
 
   /**
    * Replace the OpenAI Agents SDK trace processors with the OpenTelemetry

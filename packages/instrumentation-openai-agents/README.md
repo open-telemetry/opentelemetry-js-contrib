@@ -89,7 +89,7 @@ flowchart TD
   D --> F
   E --> F
   F --> G[OpenAIAgentsTracingProcessor]
-  G --> H[openai.agents.run]
+  G --> H[invoke_runner / invoke_workflow]
   G --> I[invoke_agent]
   G --> J[execute_tool]
   C -->|rejected run| K[Record error and end owned trace]
@@ -113,12 +113,10 @@ This package intentionally does not instrument:
   for those calls.
 - The SDK's native OpenAI trace exporter, unless
   `disableOpenAITraceExport` is enabled.
-- `invoke_workflow` spans. The neutral `openai.agents.run` span is a container;
-  standalone agent runs are not reported as workflows.
-- Separate OpenTelemetry spans for task, turn, generation, response, handoff,
-  guardrail, custom, transcription, speech, or MCP callback types. Unsupported
-  SDK callback types are retained only as hierarchy/error context where
-  applicable.
+- Separate OpenTelemetry spans for task, turn, generation, response, guardrail,
+  custom, transcription, speech, or MCP list-tools callback types. Unsupported
+  SDK callback types are retained only as hierarchy, usage, model-metadata, or
+  error context where applicable.
 - Realtime/voice tracing APIs exposed outside the core `Runner` and trace
   lifecycle covered above.
 - Parentage between agent spans and spans produced by other instrumentations,
@@ -139,31 +137,31 @@ This package intentionally does not instrument:
 
 ### Options
 
-| Option                     | Type      | Default | Description                                                                                                                                                                                                                                                                                 |
-| -------------------------- | --------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `captureMessageContent`    | `boolean` | `false` | Capture function tool arguments and results. This may expose sensitive data. The `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` environment variable can also set this option.                                                                                                        |
-| `disableOpenAITraceExport` | `boolean` | `false` | Replace the Agents SDK trace processors with the OpenTelemetry processor, disabling its native OpenAI trace export. By default both processors run. Set this before the Agents SDK is loaded; changing it after processor registration is ignored to avoid removing application processors. |
+| Option                     | Type                    | Default  | Description                                                                                                                                                                                                                                                                                                     |
+| -------------------------- | ----------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `captureMessageContent`    | `'none' \| 'span_only'` | `'none'` | Controls capturing of message content, system instructions, tool definitions, and function tool arguments/results. Set to `'span_only'` to capture them on span attributes (this may expose sensitive data). Can also be set with `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=span_only`. Note that SDK message capture also requires the SDK's `traceIncludeSensitiveData: true` (default). |
+| `disableOpenAITraceExport` | `boolean`               | `false`  | Replace the Agents SDK trace processors with the OpenTelemetry processor, disabling its native OpenAI trace export. By default both processors run. Set this before the Agents SDK is loaded; changing it after processor registration is ignored to avoid removing application processors.                       |
 
 The OpenAI client instrumentation remains responsible for model-call spans.
 This package emits the agent orchestration spans and preserves the SDK's task
-and turn spans as hierarchy-only callbacks, avoiding duplicate LLM spans. Each
-run uses a neutral `openai.agents.run` container span for correlation; it is not
-classified as a GenAI workflow.
+and turn spans as hierarchy and usage callbacks, avoiding duplicate LLM spans.
 
 The JavaScript tracing callbacks are lifecycle notifications; they do not keep
 an OpenTelemetry context active between start and end. This instrumentation
-therefore constructs the run, agent, and tool hierarchy explicitly, but
+therefore constructs the runner, agent, and tool hierarchy explicitly, but
 model-call spans from separate client instrumentation are not guaranteed to be
 children of the agent span. Guaranteeing that relationship would require an
 additional runner-boundary context hook.
 
 ## Spans
 
-| Agents SDK callback | OpenTelemetry span    | `gen_ai.operation.name` |
-| ------------------- | --------------------- | ----------------------- |
-| Trace               | `openai.agents.run`   | _not set_               |
-| Agent span          | `invoke_agent <name>` | `invoke_agent`          |
-| Function span       | `execute_tool <name>` | `execute_tool`          |
+| Agents SDK callback          | OpenTelemetry span                 | `gen_ai.operation.name` |
+| ---------------------------- | ---------------------------------- | ----------------------- |
+| Runner trace                 | `invoke_runner [<workflowName>]`   | `invoke_runner`         |
+| User `withTrace(...)` trace  | `invoke_workflow [<name>]`         | `invoke_workflow`       |
+| Agent span                   | `invoke_agent <name>`              | `invoke_agent`          |
+| Function span                | `execute_tool <name>`              | `execute_tool`          |
+| Handoff span                 | `execute_tool transfer_to_<agent>` | `execute_tool`          |
 
 ## Useful links
 

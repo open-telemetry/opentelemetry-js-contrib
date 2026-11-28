@@ -30,7 +30,7 @@ const provider = new TracerProvider({
 
 export const instrumentation = new OpenAIAgentsInstrumentation({
   disableOpenAITraceExport: true,
-  captureMessageContent: true,
+  captureMessageContent: 'span_only',
 });
 instrumentation.setTracerProvider(provider);
 

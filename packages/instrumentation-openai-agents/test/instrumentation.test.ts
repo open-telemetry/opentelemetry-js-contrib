@@ -4,7 +4,16 @@
  */
 
 import * as assert from 'assert';
+import {
+  ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
+  ATTR_GEN_AI_TOOL_CALL_RESULT,
+} from '../src/semconv';
 import type { InstrumentationNodeModuleDefinition } from '@opentelemetry/instrumentation';
+import {
+  InMemorySpanExporter,
+  SimpleSpanProcessor,
+  TracerProvider,
+} from '@opentelemetry/sdk-trace';
 import { OpenAIAgentsInstrumentation } from '../src';
 import type {
   OpenAIAgentsModule,
@@ -178,24 +187,49 @@ describe('OpenAIAgentsInstrumentation', () => {
     instrumentation.disable();
   });
 
-  it('preserves the environment capture override across setConfig', () => {
+  it('preserves the environment capture override across setConfig', async () => {
     const key = 'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT';
     const previous = process.env[key];
-    process.env[key] = 'true';
+    process.env[key] = 'span_only';
 
     try {
-      const instrumentation = new OpenAIAgentsInstrumentation({
-        captureMessageContent: false,
+      const exporter = new InMemorySpanExporter();
+      const provider = new TracerProvider({
+        spanProcessors: [new SimpleSpanProcessor({ exporter })],
       });
-      assert.strictEqual(
-        instrumentation.getConfig().captureMessageContent,
-        true
-      );
-
+      const instrumentation = new OpenAIAgentsInstrumentation({
+        captureMessageContent: 'none',
+      });
+      instrumentation.setTracerProvider(provider);
       instrumentation.setConfig({ enabled: true });
+
+      const module = createMockModule();
+      const definition = getDefinition(instrumentation);
+      definition.patch!(module, '0.14.3');
+
+      const processor = module.processors[0];
+      const tool = {
+        traceId: 'agents-trace',
+        spanId: 'tool-1',
+        spanData: {
+          type: 'function',
+          name: 'lookup_order',
+          input: '{"id":"123"}',
+          output: '{"status":"sent"}',
+        },
+      };
+      await processor.onSpanStart(tool);
+      await processor.onSpanEnd(tool);
+
+      const [toolSpan] = exporter.getFinishedSpans();
+      assert.ok(toolSpan);
       assert.strictEqual(
-        instrumentation.getConfig().captureMessageContent,
-        true
+        toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"id":"123"}'
+      );
+      assert.strictEqual(
+        toolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_RESULT],
+        '{"status":"sent"}'
       );
       instrumentation.disable();
     } finally {
@@ -205,5 +239,29 @@ describe('OpenAIAgentsInstrumentation', () => {
         process.env[key] = previous;
       }
     }
+  });
+
+  it('attaches runner lifecycle listeners only once per runner instance', async () => {
+    const instrumentation = new OpenAIAgentsInstrumentation();
+    const module = createMockModule();
+    let onCalls = 0;
+    const sharedRunner = {
+      on() {
+        onCalls++;
+      },
+    };
+    const definition = getDefinition(instrumentation);
+    definition.patch!(module, '0.14.3');
+
+    await Promise.all([
+      module.Runner.prototype.run.call(sharedRunner),
+      module.Runner.prototype.run.call(sharedRunner),
+      module.Runner.prototype.run.call(sharedRunner),
+    ]);
+
+    // 3 events ('agent_start', 'agent_handoff', 'agent_tool_start') attached once across 3 concurrent runs.
+    assert.strictEqual(onCalls, 3);
+    definition.unpatch!(module, '0.14.3');
+    instrumentation.disable();
   });
 });
