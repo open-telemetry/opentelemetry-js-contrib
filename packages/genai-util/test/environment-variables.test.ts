@@ -33,6 +33,14 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('span'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('SPAN'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('  span  '), 'span_only');
+      assert.strictEqual(
+        parseContentCaptureMode('span_and_event'),
+        'span_only'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('SPAN_AND_EVENT'),
+        'span_only'
+      );
       assert.strictEqual(parseContentCaptureMode('true'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('TRUE'), 'span_only');
     });
@@ -52,7 +60,6 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('1'), 'none');
       assert.strictEqual(parseContentCaptureMode('0'), 'none');
       assert.strictEqual(parseContentCaptureMode('event_only'), 'none');
-      assert.strictEqual(parseContentCaptureMode('span_and_event'), 'none');
       assert.strictEqual(parseContentCaptureMode('unknown_mode'), 'none');
     });
   });

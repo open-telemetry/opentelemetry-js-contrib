@@ -8,12 +8,19 @@ import type { ContentCaptureMode } from './types';
 
 /**
  * Environment variable controlling capture of message content (prompt/completion).
+ *
+ * Accepted values (case-insensitive):
+ * - `'span_only'`, `'span'`, `'span_and_event'`, `'true'` → `'span_only'`
+ * - `'none'`, `'no_content'`, `'false'`, `''` (or any other value) → `'none'`
  */
 export const ENV_GENAI_CAPTURE_MESSAGE_CONTENT =
   'OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT' as const;
 
 /**
  * Parse an arbitrary input value into a valid ContentCaptureMode.
+ *
+ * Maps `'span_only'`, `'span'`, `'span_and_event'`, and `'true'` (case-insensitive)
+ * to `'span_only'`, and `'none'`, `'no_content'`, `'false'`, or any other value to `'none'`.
  *
  * @experimental This function is experimental and subject to change.
  */
@@ -28,6 +35,7 @@ export function parseContentCaptureMode(
   switch (strVal) {
     case 'span_only':
     case 'span':
+    case 'span_and_event':
     case 'true':
       return 'span_only';
     case 'none':

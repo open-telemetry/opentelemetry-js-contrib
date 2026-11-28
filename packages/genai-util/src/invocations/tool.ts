@@ -28,6 +28,16 @@ import { serializeContent } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
 
+function serializeArguments(
+  args: unknown,
+  contentCaptureMode: ContentCaptureMode
+): string | undefined {
+  if (args === undefined || contentCaptureMode !== 'span_only') {
+    return undefined;
+  }
+  return serializeContent(args);
+}
+
 /**
  * Build the span attributes that are known when the tool span is started.
  *
@@ -66,20 +76,12 @@ function buildInitialAttributes(
   if (options.toolType) {
     attrs[ATTR_GEN_AI_TOOL_TYPE] = options.toolType;
   }
-  if (options.transferMode) {
-    attrs[ATTR_GEN_AI_TRANSFER_MODE] = options.transferMode;
-  }
-  if (options.transferTargetName) {
-    attrs[ATTR_GEN_AI_TRANSFER_TARGET_NAME] = options.transferTargetName;
-  }
-  if (
-    options.toolArguments !== undefined &&
-    contentCaptureMode === 'span_only'
-  ) {
-    const formatted = serializeContent(options.toolArguments);
-    if (formatted) {
-      attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = formatted;
-    }
+  const formattedArgs = serializeArguments(
+    options.toolArguments,
+    contentCaptureMode
+  );
+  if (formattedArgs) {
+    attrs[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS] = formattedArgs;
   }
 
   return attrs;
@@ -96,6 +98,8 @@ export class ToolInvocation extends BaseInvocation {
   private _toolName: string;
   private readonly _toolType?: ToolType;
   private readonly _agentName?: string;
+  private _transferMode?: TransferMode;
+  private _transferTargetName?: string;
   private _arguments?: unknown;
   private _result?: unknown;
 
@@ -132,16 +136,23 @@ export class ToolInvocation extends BaseInvocation {
     this._toolName = options.toolName;
     this._toolType = options.toolType;
     this._agentName = options.agentName;
+    this._transferMode = options.transferMode;
+    this._transferTargetName = options.transferTargetName?.trim() || undefined;
   }
 
   /**
    * Update the tool name (`gen_ai.tool.name`), span name, and duration metric
    * dimension when the final tool name is only known after span start.
+   * Empty or whitespace-only names are ignored.
    */
   public setToolName(name: string): this {
-    this._toolName = name;
-    this._span.setAttribute(ATTR_GEN_AI_TOOL_NAME, name);
-    this._span.updateName(`${this._operationName} ${name}`);
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return this;
+    }
+    this._toolName = trimmed;
+    this._span.setAttribute(ATTR_GEN_AI_TOOL_NAME, trimmed);
+    this._span.updateName(`${this._operationName} ${trimmed}`);
     return this;
   }
 
@@ -169,7 +180,9 @@ export class ToolInvocation extends BaseInvocation {
    * if `contentCaptureMode` is `'span_only'`.
    */
   public setArguments(args: unknown): this {
-    this._arguments = args;
+    if (this._contentCaptureMode === 'span_only') {
+      this._arguments = args;
+    }
     return this;
   }
 
@@ -187,13 +200,12 @@ export class ToolInvocation extends BaseInvocation {
 
   /**
    * Mark this tool invocation as an agent transfer (`gen_ai.transfer.mode` and
-   * optionally `gen_ai.transfer.target.name`).
+   * optionally `gen_ai.transfer.target.name`). Calling without a target clears
+   * any previously set transfer target name.
    */
   public setTransfer(mode: TransferMode, targetName?: string): this {
-    this._span.setAttribute(ATTR_GEN_AI_TRANSFER_MODE, mode);
-    if (targetName) {
-      this._span.setAttribute(ATTR_GEN_AI_TRANSFER_TARGET_NAME, targetName);
-    }
+    this._transferMode = mode;
+    this._transferTargetName = targetName?.trim() || undefined;
     return this;
   }
 
@@ -242,14 +254,22 @@ export class ToolInvocation extends BaseInvocation {
     _endTime: HrTime,
     _errorType?: string
   ): void {
-    if (
-      this._arguments !== undefined &&
-      this._contentCaptureMode === 'span_only'
-    ) {
-      const formatted = serializeContent(this._arguments);
-      if (formatted) {
-        this._span.setAttribute(ATTR_GEN_AI_TOOL_CALL_ARGUMENTS, formatted);
-      }
+    if (this._transferMode) {
+      this._span.setAttribute(ATTR_GEN_AI_TRANSFER_MODE, this._transferMode);
+    }
+    if (this._transferTargetName) {
+      this._span.setAttribute(
+        ATTR_GEN_AI_TRANSFER_TARGET_NAME,
+        this._transferTargetName
+      );
+    }
+
+    const formattedArgs = serializeArguments(
+      this._arguments,
+      this._contentCaptureMode
+    );
+    if (formattedArgs) {
+      this._span.setAttribute(ATTR_GEN_AI_TOOL_CALL_ARGUMENTS, formattedArgs);
     }
 
     // Set the result if it is set and invocation completed successfully

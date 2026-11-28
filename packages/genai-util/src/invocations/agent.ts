@@ -277,19 +277,6 @@ export abstract class AgentInvocation extends BaseInvocation {
   }
 
   /**
-   * Set request parameters (`gen_ai.request.*`) discovered after the agent span started.
-   */
-  public setRequestOptions(options: LocalAgentRequestOptions): this {
-    if (this._supportsModelAttributes) {
-      const attrs = getAgentRequestOptionsAttributes(options, false);
-      if (Object.keys(attrs).length > 0) {
-        this._span.setAttributes(attrs);
-      }
-    }
-    return this;
-  }
-
-  /**
    * Set finish reasons for the agent response (`gen_ai.response.finish_reasons`).
    *
    * Finalized onto `gen_ai.response.finish_reasons` when the invocation ends.
@@ -526,6 +513,19 @@ export class LocalAgentInvocation extends AgentInvocation {
    */
   public recordInferenceCall(count = 1): this {
     this._inferenceCalls = (this._inferenceCalls ?? 0) + count;
+    return this;
+  }
+
+  /**
+   * Set request parameters (`gen_ai.request.*`) discovered after the local agent span started.
+   */
+  public setRequestOptions(options: LocalAgentRequestOptions): this {
+    if (this._supportsModelAttributes) {
+      const attrs = getAgentRequestOptionsAttributes(options, false);
+      if (Object.keys(attrs).length > 0) {
+        this._span.setAttributes(attrs);
+      }
+    }
     return this;
   }
 

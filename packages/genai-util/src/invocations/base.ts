@@ -329,9 +329,6 @@ export abstract class BaseInvocation {
         const statusDescription: string | undefined = error.statusDescription;
         errorType = error.errorType ?? getErrorType(error.exception);
 
-        if (error.recordException && error.exception) {
-          this._span.recordException(error.exception, endHr);
-        }
         this._span.setAttribute(ATTR_ERROR_TYPE, errorType);
         this._span.setStatus(
           statusDescription !== undefined
@@ -341,6 +338,9 @@ export abstract class BaseInvocation {
               }
             : { code: SpanStatusCode.ERROR }
         );
+        if (error.recordException && error.exception) {
+          this._span.recordException(error.exception, endHr);
+        }
       }
 
       this._onInvocationEnd(endHr, errorType);
