@@ -46,10 +46,7 @@ export class FsInstrumentation extends InstrumentationBase<FsInstrumentationConf
     super(PACKAGE_NAME, PACKAGE_VERSION, config);
   }
 
-  init(): (
-    | InstrumentationNodeModuleDefinition
-    | InstrumentationNodeModuleDefinition
-  )[] {
+  init(): [InstrumentationNodeModuleDefinition, InstrumentationNodeModuleDefinition] {
     return [
       new InstrumentationNodeModuleDefinition(
         'fs',
