@@ -69,6 +69,11 @@ export type TokenCountsByModality = Partial<Record<TokenModality, number>>;
 export type ToolType = 'function' | 'extension' | 'datastore' | (string & {});
 
 /**
+ * Transfer mode for an agent-to-agent transfer tool call (`gen_ai.transfer.mode`).
+ */
+export type TransferMode = 'pass_control' | 'return_to_caller' | (string & {});
+
+/**
  * Represents the content type requested by the client or produced by the operation.
  *
  * Corresponds to `gen_ai.output.type`.
@@ -555,6 +560,10 @@ export interface ToolInvocationOptions extends CommonInvocationOptions {
   conversationId?: string;
   /** Human-readable name of the agent executing the tool (`gen_ai.agent.name`). */
   agentName?: string;
+  /** Transfer mode when the tool transfers control to another agent (`gen_ai.transfer.mode`). */
+  transferMode?: TransferMode;
+  /** Target agent name when the tool transfers control (`gen_ai.transfer.target.name`). */
+  transferTargetName?: string;
 }
 
 /**
@@ -587,9 +596,8 @@ interface CommonAgentInvocationOptions extends CommonInvocationOptions {
   /**
    * Tool definitions available to the agent (`gen_ai.tool.definitions`).
    *
-   * Per GenAI semantic conventions, schema attributes are opt-in and are not
-   * governed by `contentCaptureMode`; supply them only when tool definition
-   * capture is enabled.
+   * Per GenAI semantic conventions (PR #722), tool definitions are opt-in content
+   * and are only recorded when `contentCaptureMode` is `'span_only'`.
    */
   toolDefinitions?: ToolDefinitions;
 }
@@ -672,6 +680,15 @@ export interface InvocationError {
    * If omitted, defaults to the error type derived from {@link exception}, or `'_OTHER'`.
    */
   errorType?: string;
+
+  /**
+   * When `true` and {@link exception} is provided, records an `exception` span event
+   * (`Span.recordException(exception, endTime)`) when the invocation fails.
+   *
+   * Defaults to `false` to prevent leaking sensitive or high-cardinality error messages
+   * and stack traces onto spans.
+   */
+  recordException?: boolean;
 
   /**
    * Human readable additional information about the error which is not expected to contain

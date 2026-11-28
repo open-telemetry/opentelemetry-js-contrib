@@ -466,11 +466,29 @@ describe('AgentInvocation', () => {
       );
       assert.strictEqual(
         spanNone.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
-        JSON.stringify(toolDefinitions)
+        undefined
       );
       assert.strictEqual(
         spanNoneNoTools.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
         undefined
+      );
+
+      const invWithOpts = handlerNone.startLocalAgent({
+        agentName: 'OptsAgent',
+      });
+      invWithOpts.setRequestOptions({ temperature: 0.3, maxTokens: 128 });
+      invWithOpts.stop();
+      const optsSpan = ctx.memoryExporter
+        .getFinishedSpans()
+        .find(s => s.name === 'invoke_agent OptsAgent');
+      assert.ok(optsSpan);
+      assert.strictEqual(
+        optsSpan.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE],
+        0.3
+      );
+      assert.strictEqual(
+        optsSpan.attributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS],
+        128
       );
 
       ctx.reset();

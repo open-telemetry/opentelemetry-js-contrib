@@ -332,6 +332,32 @@ describe('BaseInvocation', () => {
     assert.strictEqual(spans[0].events.length, 0);
   });
 
+  it('should record an exception event at endTime when recordException is true', () => {
+    const inv = new CustomInvocation('exception-event-span', handler);
+    const endTime = [1700000000, 123456000] as [number, number];
+    inv.fail(
+      {
+        exception: new TypeError('Invalid parameter'),
+        recordException: true,
+      },
+      endTime
+    );
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 1);
+    assert.strictEqual(spans[0].events.length, 1);
+    assert.strictEqual(spans[0].events[0].name, 'exception');
+    assert.deepStrictEqual(spans[0].events[0].time, endTime);
+    assert.strictEqual(
+      spans[0].events[0].attributes?.['exception.type'],
+      'TypeError'
+    );
+    assert.strictEqual(
+      spans[0].events[0].attributes?.['exception.message'],
+      'Invalid parameter'
+    );
+  });
+
   it('should prioritize explicit errorType over exception in InvocationError', () => {
     const inv = new CustomInvocation('error-type-precedence-span', handler);
     inv.fail({

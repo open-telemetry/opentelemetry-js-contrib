@@ -33,6 +33,8 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('span'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('SPAN'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('  span  '), 'span_only');
+      assert.strictEqual(parseContentCaptureMode('true'), 'span_only');
+      assert.strictEqual(parseContentCaptureMode('TRUE'), 'span_only');
     });
 
     it('should parse explicit none / no content modes', () => {
@@ -40,13 +42,13 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('NONE'), 'none');
       assert.strictEqual(parseContentCaptureMode('no_content'), 'none');
       assert.strictEqual(parseContentCaptureMode('NO_CONTENT'), 'none');
+      assert.strictEqual(parseContentCaptureMode('false'), 'none');
+      assert.strictEqual(parseContentCaptureMode('FALSE'), 'none');
       assert.strictEqual(parseContentCaptureMode(''), 'none');
       assert.strictEqual(parseContentCaptureMode('   '), 'none');
     });
 
     it('should fall back to "none" for unknown or unsupported values', () => {
-      assert.strictEqual(parseContentCaptureMode('true'), 'none');
-      assert.strictEqual(parseContentCaptureMode('false'), 'none');
       assert.strictEqual(parseContentCaptureMode('1'), 'none');
       assert.strictEqual(parseContentCaptureMode('0'), 'none');
       assert.strictEqual(parseContentCaptureMode('event_only'), 'none');

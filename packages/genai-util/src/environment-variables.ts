@@ -28,9 +28,11 @@ export function parseContentCaptureMode(
   switch (strVal) {
     case 'span_only':
     case 'span':
+    case 'true':
       return 'span_only';
     case 'none':
     case 'no_content':
+    case 'false':
     case '':
     default:
       return 'none';

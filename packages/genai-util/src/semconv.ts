@@ -425,6 +425,20 @@ export const ATTR_GEN_AI_TOOL_CALL_ARGUMENTS =
 export const ATTR_GEN_AI_TOOL_CALL_RESULT = 'gen_ai.tool.call.result' as const;
 
 /**
+ * The transfer mode for an agent-to-agent transfer tool call.
+ *
+ * @example pass_control
+ * @example return_to_caller
+ */
+export const ATTR_GEN_AI_TRANSFER_MODE = 'gen_ai.transfer.mode' as const;
+
+/**
+ * The name of the target agent receiving a transfer.
+ */
+export const ATTR_GEN_AI_TRANSFER_TARGET_NAME =
+  'gen_ai.transfer.target.name' as const;
+
+/**
  * Whether the request was streamed.
  */
 export const ATTR_GEN_AI_REQUEST_STREAM = 'gen_ai.request.stream' as const;
@@ -570,6 +584,11 @@ export const GEN_AI_OUTPUT_TYPE_VALUE_SPEECH = 'speech' as const;
 export const GEN_AI_TOOL_TYPE_VALUE_FUNCTION = 'function' as const;
 export const GEN_AI_TOOL_TYPE_VALUE_EXTENSION = 'extension' as const;
 export const GEN_AI_TOOL_TYPE_VALUE_DATASTORE = 'datastore' as const;
+
+// Transfer Modes
+export const GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL = 'pass_control' as const;
+export const GEN_AI_TRANSFER_MODE_VALUE_RETURN_TO_CALLER =
+  'return_to_caller' as const;
 
 // ============================================================================
 // Metrics
