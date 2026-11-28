@@ -9,11 +9,15 @@
  * https://github.com/GoogleCloudPlatform/opentelemetry-operations-go/blob/v1.8.0/detectors/gcp/faas.go
  */
 
+import { diag } from '@opentelemetry/api';
 import * as metadata from 'gcp-metadata';
 
 const ID_METADATA_ATTR = 'id';
 const CLOUD_RUN_CONFIG_ENV = 'K_CONFIGURATION';
 const CLOUD_FUNCTION_TARGET_ENV = 'FUNCTION_TARGET';
+const CLOUD_RUN_JOB_ENV = 'CLOUD_RUN_JOB';
+const CLOUD_RUN_EXECUTION_ENV = 'CLOUD_RUN_EXECUTION';
+const CLOUD_RUN_TASK_INDEX_ENV = 'CLOUD_RUN_TASK_INDEX';
 const FAAS_SERVICE_ENV = 'K_SERVICE';
 const FAAS_REVISION_ENV = 'K_REVISION';
 const REGION_METADATA_ATTR = 'region';
@@ -24,6 +28,10 @@ export async function onCloudRun(): Promise<boolean> {
 
 export async function onCloudFunctions(): Promise<boolean> {
   return process.env[CLOUD_FUNCTION_TARGET_ENV] !== undefined;
+}
+
+export async function onCloudRunJob(): Promise<boolean> {
+  return process.env[CLOUD_RUN_JOB_ENV] !== undefined;
 }
 
 /**
@@ -40,6 +48,50 @@ export async function faasName(): Promise<string> {
  */
 export async function faasVersion(): Promise<string> {
   return lookupEnv(FAAS_REVISION_ENV);
+}
+
+/**
+ * The name of the Cloud Run job. Check that {@link onCloudRunJob()} is true before calling this,
+ * or it may throw exceptions.
+ */
+export async function cloudRunJobName(): Promise<string> {
+  return lookupEnv(CLOUD_RUN_JOB_ENV);
+}
+
+/**
+ * The execution name of the Cloud Run job, or undefined if unset or empty.
+ */
+export async function cloudRunJobExecution(): Promise<string | undefined> {
+  return process.env[CLOUD_RUN_EXECUTION_ENV] || undefined;
+}
+
+/**
+ * The task index of the Cloud Run job, or undefined if unset, empty, or not an integer.
+ */
+export async function cloudRunJobTaskIndex(): Promise<number | undefined> {
+  const val = process.env[CLOUD_RUN_TASK_INDEX_ENV];
+  if (!val) {
+    return undefined;
+  }
+  const trimmed = val.trim();
+  if (!/^-?\d+$/.test(trimmed)) {
+    diag.warn(
+      'Environment variable %s is not a valid integer: %s',
+      CLOUD_RUN_TASK_INDEX_ENV,
+      val
+    );
+    return undefined;
+  }
+  const parsed = Number.parseInt(trimmed, 10);
+  if (!Number.isSafeInteger(parsed)) {
+    diag.warn(
+      'Environment variable %s is out of safe integer range: %s',
+      CLOUD_RUN_TASK_INDEX_ENV,
+      val
+    );
+    return undefined;
+  }
+  return parsed;
 }
 
 /**

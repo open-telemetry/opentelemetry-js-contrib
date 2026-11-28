@@ -43,6 +43,57 @@ describe('FaaS (Cloud Run/Functions)', () => {
     assert(!onCloudFunctions);
   });
 
+  it('detects when running on Cloud Run Job', async () => {
+    envStub.CLOUD_RUN_JOB = 'fake-job';
+    const onCloudRunJob = await faas.onCloudRunJob();
+    assert(onCloudRunJob);
+  });
+
+  it('detects when not running on Cloud Run Job', async () => {
+    const onCloudRunJob = await faas.onCloudRunJob();
+    assert(!onCloudRunJob);
+  });
+
+  it('detects Cloud Run job name', async () => {
+    envStub.CLOUD_RUN_JOB = 'fake-job';
+    const jobName = await faas.cloudRunJobName();
+    assert.strictEqual(jobName, 'fake-job');
+  });
+
+  it('detects Cloud Run job execution', async () => {
+    envStub.CLOUD_RUN_EXECUTION = 'fake-execution';
+    assert.strictEqual(await faas.cloudRunJobExecution(), 'fake-execution');
+  });
+
+  it('returns undefined when Cloud Run job execution is unset or empty', async () => {
+    assert.strictEqual(await faas.cloudRunJobExecution(), undefined);
+    envStub.CLOUD_RUN_EXECUTION = '';
+    assert.strictEqual(await faas.cloudRunJobExecution(), undefined);
+  });
+
+  describe('detects Cloud Run job task index', () => {
+    it('as a valid integer', async () => {
+      envStub.CLOUD_RUN_TASK_INDEX = '0';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), 0);
+      envStub.CLOUD_RUN_TASK_INDEX = '2';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), 2);
+    });
+
+    it('returns undefined when unset, empty, or invalid', async () => {
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+      envStub.CLOUD_RUN_TASK_INDEX = '';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+      envStub.CLOUD_RUN_TASK_INDEX = 'not-an-int';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+      envStub.CLOUD_RUN_TASK_INDEX = '1.5';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+      envStub.CLOUD_RUN_TASK_INDEX = '0abc';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+      envStub.CLOUD_RUN_TASK_INDEX = '99999999999999999999';
+      assert.strictEqual(await faas.cloudRunJobTaskIndex(), undefined);
+    });
+  });
+
   it('detects FaaS name', async () => {
     envStub.K_SERVICE = 'fake-service';
     const faasName = await faas.faasName();

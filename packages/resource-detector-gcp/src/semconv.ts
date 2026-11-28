@@ -59,6 +59,35 @@ export const ATTR_CLOUD_PROVIDER = 'cloud.provider' as const;
 export const ATTR_CLOUD_REGION = 'cloud.region' as const;
 
 /**
+ * Cloud provider-specific native identifier of the monitored cloud resource (e.g. an [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html) on AWS, a [fully qualified resource ID](https://learn.microsoft.com/rest/api/resources/resources/get-by-id) on Azure, a [full resource name](https://google.aip.dev/122#full-resource-names) on GCP)
+ *
+ * @example arn:aws:lambda:REGION:ACCOUNT_ID:function:my-function
+ * @example //run.googleapis.com/projects/PROJECT_ID/locations/LOCATION_ID/services/SERVICE_ID
+ * @example /subscriptions/<SUBSCRIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>
+ *
+ * @note On some cloud providers, it may not be possible to determine the full ID at startup,
+ * so it may be necessary to set `cloud.resource_id` as a span attribute instead.
+ *
+ * The exact value to use for `cloud.resource_id` depends on the cloud provider.
+ * The following well-known definitions **MUST** be used if you set this attribute and they apply:
+ *
+ *   - **AWS Lambda:** The function [ARN](https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html).
+ *     Take care not to use the "invoked ARN" directly but replace any
+ *     [alias suffix](https://docs.aws.amazon.com/lambda/latest/dg/configuration-aliases.html)
+ *     with the resolved function version, as the same runtime instance may be invocable with
+ *     multiple different aliases.
+ *   - **GCP:** The [URI of the resource](https://cloud.google.com/iam/docs/full-resource-names)
+ *   - **Azure:** The [Fully Qualified Resource ID](https://learn.microsoft.com/rest/api/resources/resources/get-by-id) of the invoked function,
+ *     *not* the function app, having the form
+ *     `/subscriptions/<SUBSCRIPTION_GUID>/resourceGroups/<RG>/providers/Microsoft.Web/sites/<FUNCAPP>/functions/<FUNC>`.
+ *     This means that a span attribute **MUST** be used, as an Azure function app can host multiple functions that would usually share
+ *     a TracerProvider.
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_CLOUD_RESOURCE_ID = 'cloud.resource_id' as const;
+
+/**
  * The execution environment ID as a string, that will be potentially reused for other invocations to the same function/function version.
  *
  * @example 2021/06/28/[$LATEST]2f399eb14537447da05ab2a2e39309de
@@ -115,6 +144,28 @@ export const ATTR_FAAS_NAME = 'faas.name' as const;
  * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
  */
 export const ATTR_FAAS_VERSION = 'faas.version' as const;
+
+/**
+ * The name of the Cloud Run [execution](https://cloud.google.com/run/docs/managing/job-executions) being run for the Job, as set by the [`CLOUD_RUN_EXECUTION`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
+ *
+ * @example job-name-xxxx
+ * @example sample-job-mdw84
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_CLOUD_RUN_JOB_EXECUTION =
+  'gcp.cloud_run.job.execution' as const;
+
+/**
+ * The index for a task within an execution as provided by the [`CLOUD_RUN_TASK_INDEX`](https://cloud.google.com/run/docs/container-contract#jobs-env-vars) environment variable.
+ *
+ * @example 0
+ * @example 1
+ *
+ * @experimental This attribute is experimental and is subject to breaking changes in minor releases of `@opentelemetry/semantic-conventions`.
+ */
+export const ATTR_GCP_CLOUD_RUN_JOB_TASK_INDEX =
+  'gcp.cloud_run.job.task_index' as const;
 
 /**
  * Unique host ID. For Cloud, this must be the instance_id assigned by the cloud provider. For non-containerized systems, this should be the `machine-id`. See the table below for the sources to use to determine the `machine-id` based on operating system.
