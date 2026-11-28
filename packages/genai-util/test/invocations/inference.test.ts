@@ -541,6 +541,47 @@ describe('InferenceInvocation', () => {
     );
   });
 
+  it('should default finish_reasons to error only once a requested stream has been observed', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+    const startStreaming = () =>
+      handler.startInference({
+        providerName: 'openai',
+        requestOptions: { stream: true },
+      });
+
+    // The caller took the raw response and never read the stream, so there is
+    // no finish reason to report.
+    startStreaming().stop();
+
+    const observed = startStreaming();
+    observed.recordStreamChunk();
+    observed.stop();
+
+    const explicit = startStreaming();
+    explicit.setStreaming();
+    explicit.stop();
+
+    startStreaming().fail({ errorType: 'TimeoutError' });
+
+    const spans = ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(spans.length, 4);
+    assert.strictEqual(spans[0].attributes[ATTR_GEN_AI_REQUEST_STREAM], true);
+    assert.strictEqual(
+      spans[0].attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+      undefined
+    );
+    for (const span of spans.slice(1)) {
+      assert.deepStrictEqual(
+        span.attributes[ATTR_GEN_AI_RESPONSE_FINISH_REASONS],
+        ['error']
+      );
+    }
+  });
+
   it('should record time to first chunk once and time per output chunk for each later chunk', async () => {
     const handler = new TelemetryHandler({
       instrumentationName: 'test-instrumentation',

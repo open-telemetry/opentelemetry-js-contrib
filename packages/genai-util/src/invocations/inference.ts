@@ -127,7 +127,13 @@ export class InferenceInvocation extends BaseInvocation {
   private readonly _serverAddress?: string;
   private readonly _serverPort?: number;
   private readonly _contentCaptureMode: ContentCaptureMode;
-  private _isStreaming: boolean;
+  /**
+   * Whether the response was observed as a stream, through {@link setStreaming}
+   * (called by the stream wrapper and {@link recordStreamChunk}). Requesting a
+   * stream alone does not set it: a caller that never reads the stream has no
+   * finish reason to report, missing or otherwise.
+   */
+  private _isStreaming = false;
   private _responseModel?: string;
   private _finishReasons?: FinishReason[];
   private _usage?: TokenUsageDetails;
@@ -159,7 +165,6 @@ export class InferenceInvocation extends BaseInvocation {
     this._requestModel = options.requestModel;
     this._serverAddress = options.serverAddress;
     this._serverPort = options.serverPort;
-    this._isStreaming = options.requestOptions?.stream === true;
     this._contentCaptureMode = handler.getContentCaptureMode();
     this._inputMessages = options.inputMessages
       ? [...options.inputMessages]
@@ -171,6 +176,7 @@ export class InferenceInvocation extends BaseInvocation {
    * Set the request streaming attribute to true.
    *
    * This is a convenience method for the case when the user is streaming the response.
+   * Once called, a stream that ends without a finish reason reports `'error'`.
    */
   public setStreaming(): this {
     this.setAttribute(ATTR_GEN_AI_REQUEST_STREAM, true);
@@ -360,9 +366,10 @@ export class InferenceInvocation extends BaseInvocation {
     _endTime: HrTime,
     errorType?: string
   ): void {
-    // Avoids putting ['error'] on a successful non-streaming span when
-    // setFinishReasons() wasn't called, while still defaulting to ['error'] if
-    // a stream ends early (e.g. break before the final chunk) or if fail() is called.
+    // Avoids putting ['error'] on a successful span when setFinishReasons()
+    // wasn't called and no stream was observed, while still defaulting to
+    // ['error'] if an observed stream ends early (e.g. break before the final
+    // chunk) or if fail() is called.
     if (
       this._finishReasons !== undefined ||
       errorType !== undefined ||
