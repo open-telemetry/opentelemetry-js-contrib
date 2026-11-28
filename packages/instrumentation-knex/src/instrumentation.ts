@@ -127,6 +127,19 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
           connectionSettings?.filename ||
           connectionSettings?.database ||
           utils.extractDatabaseFromConnectionString(connectionString);
+        const system = utils.mapSystem(this.client.driverName);
+        // Fall back to parsing host and port from connectionString if not explicitly set.
+        const host =
+          connectionSettings?.host ??
+          utils.extractHostFromConnectionString(connectionString);
+        const port =
+          connectionSettings?.port ??
+          utils.extractPortFromConnectionString(connectionString);
+        const server = host
+          ? port
+            ? `${host}:${port}`
+            : String(host)
+          : undefined;
         const { maxQueryLength } = instrumentation.getConfig();
 
         const attributes: api.Attributes = {
@@ -134,17 +147,12 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         };
 
         Object.assign(attributes, {
-          [ATTR_DB_SYSTEM_NAME]: utils.mapSystem(this.client.driverName),
+          [ATTR_DB_SYSTEM_NAME]: system,
           [ATTR_DB_COLLECTION_NAME]: table,
           [ATTR_DB_OPERATION_NAME]: operation,
           [ATTR_DB_NAMESPACE]: name,
-          // Fall back to parsing host and port from connectionString if not explicitly set.
-          [ATTR_SERVER_ADDRESS]:
-            connectionSettings?.host ??
-            utils.extractHostFromConnectionString(connectionString),
-          [ATTR_SERVER_PORT]:
-            connectionSettings?.port ??
-            utils.extractPortFromConnectionString(connectionString),
+          [ATTR_SERVER_ADDRESS]: host,
+          [ATTR_SERVER_PORT]: port,
         });
 
         if (maxQueryLength) {
@@ -163,7 +171,7 @@ export class KnexInstrumentation extends InstrumentationBase<KnexInstrumentation
         }
 
         const span = instrumentation.tracer.startSpan(
-          utils.getName(name, operation, table),
+          utils.getName(name, operation, table, system, server),
           {
             kind: api.SpanKind.CLIENT,
             attributes,
