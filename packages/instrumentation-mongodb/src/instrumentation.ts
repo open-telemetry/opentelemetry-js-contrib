@@ -834,6 +834,28 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
       return MongodbCommandType.UNKNOWN;
     }
   }
+  /**
+   * Some commands (e.g. `findAndModify`, `distinct`, `createIndexes`) are sent
+   * against the virtual `<db>.$cmd` namespace. For those, the target collection
+   * is the value of the command's first key, e.g. `{ findAndModify: 'users' }`.
+   * Returns `undefined` when there is no collection (e.g. `{ dropDatabase: 1 }`),
+   * so `$cmd` is never reported as a collection name.
+   */
+  private static _resolveCollectionName(
+    collection: string | undefined,
+    command?: object
+  ): string | undefined {
+    if (collection && collection !== '$cmd') {
+      return collection;
+    }
+    if (!command || typeof command !== 'object') {
+      return undefined;
+    }
+    const firstValue = Object.values(command)[0];
+    return typeof firstValue === 'string' && firstValue.length > 0
+      ? firstValue
+      : undefined;
+  }
 
   /**
    * Determine a span's attributes by fetching related metadata from the context
@@ -870,7 +892,7 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
 
     return this._getSpanAttributes(
       ns.db,
-      ns.collection,
+      MongoDBInstrumentation._resolveCollectionName(ns.collection, command),
       host,
       port,
       commandObj,
@@ -910,7 +932,12 @@ export class MongoDBInstrumentation extends InstrumentationBase<MongoDBInstrumen
     // collection or index, like so: [database-name].[collection-or-index-name].
     // It could be a string or an instance of MongoDBNamespace, as such we
     // always coerce to a string to extract db and collection.
-    const [dbName, dbCollection] = ns.toString().split('.');
+    const [dbName, rawCollection] = ns.toString().split('.');
+    const dbCollection = MongoDBInstrumentation._resolveCollectionName(
+      rawCollection,
+      command
+    );
+
     // capture parameters within the query as well if enhancedDatabaseReporting is enabled.
     const commandObj = command?.query ?? command?.q ?? command;
 

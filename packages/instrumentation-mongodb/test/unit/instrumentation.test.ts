@@ -426,3 +426,146 @@ describe('_patchEnd', () => {
     });
   });
 });
+
+describe('collection name for commands sent to the $cmd namespace', () => {
+  let instrumentation: MongoDBInstrumentation;
+  const connectionCtx = { address: '127.0.0.1:27017' };
+  const cmdNs = { db: 'app', collection: '$cmd' };
+
+  beforeEach(() => {
+    instrumentation = new MongoDBInstrumentation();
+  });
+
+  afterEach(() => {
+    instrumentation.disable();
+  });
+
+  const getV4Attributes = (ns: any, cmd: any, operation: string) =>
+    (instrumentation as any)._getV4SpanAttributes(
+      connectionCtx,
+      ns,
+      cmd,
+      operation
+    );
+
+  const getV3Attributes = (ns: string, cmd: any, operation?: string) =>
+    (instrumentation as any)._getV3SpanAttributes(
+      ns,
+      { s: { host: 'localhost', port: 27017 } },
+      cmd,
+      operation
+    );
+
+  const getSpanName = (attributes: any) =>
+    (instrumentation as any)._spanNameFromAttrs(attributes);
+
+  describe('v4', () => {
+    it('should resolve the collection for findAndModify', () => {
+      const attributes = getV4Attributes(
+        cmdNs,
+        {
+          findAndModify: 'users',
+          query: { userId: '123' },
+          update: { $set: { name: 'Alice' } },
+        },
+        'findAndModify'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], 'users');
+      assert.strictEqual(attributes['db.operation.name'], 'findAndModify');
+      assert.strictEqual(attributes['db.namespace'], 'app');
+      assert.strictEqual(getSpanName(attributes), 'findAndModify users');
+    });
+
+    it('should resolve the collection for aggregate, distinct and count', () => {
+      const aggregate = getV4Attributes(
+        cmdNs,
+        { aggregate: 'orders', pipeline: [] },
+        'aggregate'
+      );
+      assert.strictEqual(aggregate['db.collection.name'], 'orders');
+      assert.strictEqual(getSpanName(aggregate), 'aggregate orders');
+
+      const distinct = getV4Attributes(
+        cmdNs,
+        { distinct: 'products', key: 'sku' },
+        'distinct'
+      );
+      assert.strictEqual(distinct['db.collection.name'], 'products');
+
+      const count = getV4Attributes(
+        cmdNs,
+        { count: 'logs', query: {} },
+        'count'
+      );
+      assert.strictEqual(count['db.collection.name'], 'logs');
+    });
+
+    it('should not report $cmd for database-level commands', () => {
+      const attributes = getV4Attributes(
+        cmdNs,
+        { dropDatabase: 1 },
+        'dropDatabase'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], undefined);
+      assert.strictEqual(getSpanName(attributes), 'dropDatabase');
+    });
+
+    it('should not report $cmd for database-level aggregate (aggregate: 1)', () => {
+      const attributes = getV4Attributes(
+        cmdNs,
+        { aggregate: 1, pipeline: [] },
+        'aggregate'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], undefined);
+      assert.strictEqual(getSpanName(attributes), 'aggregate');
+    });
+
+    it('should keep the namespace collection when it is not $cmd', () => {
+      const attributes = getV4Attributes(
+        { db: 'app', collection: 'users' },
+        { insert: 'users', documents: [{ a: 1 }] },
+        'insert'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], 'users');
+      assert.strictEqual(getSpanName(attributes), 'insert users');
+    });
+  });
+
+  describe('v3', () => {
+    it('should resolve the collection for findandmodify (lowercase key)', () => {
+      const attributes = getV3Attributes(
+        'app.$cmd',
+        { findandmodify: 'users', query: {} },
+        'findAndModify'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], 'users');
+      assert.strictEqual(getSpanName(attributes), 'findAndModify users');
+    });
+
+    it('should not report $cmd for database-level commands', () => {
+      const attributes = getV3Attributes(
+        'app.$cmd',
+        { dropDatabase: 1 },
+        undefined
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], undefined);
+    });
+
+    it('should keep the namespace collection when it is not $cmd', () => {
+      const attributes = getV3Attributes(
+        'app.users',
+        { q: { a: 1 } },
+        'update'
+      );
+
+      assert.strictEqual(attributes['db.collection.name'], 'users');
+      assert.strictEqual(getSpanName(attributes), 'update users');
+    });
+  });
+});

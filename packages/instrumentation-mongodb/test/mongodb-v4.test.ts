@@ -248,7 +248,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
           .createIndex({ a: 1 })
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'createIndexes', '$cmd');
+            assertSpans(getTestSpans(), 'createIndexes', COLLECTION_NAME);
             done();
           })
           .catch(err => {
@@ -268,7 +268,12 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
           .toArray()
           .then(() => {
             span.end();
-            assertSpans(getTestSpans(), 'aggregate', '$cmd', undefined);
+            assertSpans(
+              getTestSpans(),
+              'aggregate',
+              COLLECTION_NAME,
+              undefined
+            );
             done();
           })
           .catch(err => {
@@ -327,7 +332,7 @@ describe('MongoDBInstrumentation-Tracing-v4', () => {
           .then(() => {
             span.end();
             const spans = getTestSpans();
-            assertSpans(spans, 'aggregate', '$cmd', false, false);
+            assertSpans(spans, 'aggregate', COLLECTION_NAME, false, false);
             const mongoSpan = spans.find(
               s =>
                 s.instrumentationScope.name ===
