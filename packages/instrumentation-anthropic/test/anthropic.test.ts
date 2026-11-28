@@ -6,9 +6,11 @@
 import { instrumentation } from './load-instrumentation';
 import {
   getTestSpans,
+  initMeterProvider,
   resetMemoryExporter,
   runTestFixture,
   TestCollector,
+  type TestMetricReader,
 } from '@opentelemetry/contrib-test-utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { context, SpanKind, SpanStatusCode } from '@opentelemetry/api';
@@ -127,6 +129,24 @@ async function withCassette<T>(
   }
 }
 
+/**
+ * Run `fn` and resolve with the next unhandled rejection, which mocha would
+ * otherwise report as a test failure.
+ */
+async function captureUnhandledRejection(fn: () => void): Promise<unknown> {
+  const listeners = process.listeners('unhandledRejection');
+  process.removeAllListeners('unhandledRejection');
+  try {
+    return await new Promise(resolve => {
+      process.once('unhandledRejection', resolve);
+      fn();
+    });
+  } finally {
+    process.removeAllListeners('unhandledRejection');
+    listeners.forEach(listener => process.on('unhandledRejection', listener));
+  }
+}
+
 describe('Anthropic instrumentation', function () {
   this.timeout(30000);
   nockBack.fixtures = path.join(__dirname, 'mock-responses');
@@ -153,8 +173,23 @@ describe('Anthropic instrumentation', function () {
   });
   nockBack.setMode(missingKey ? 'lockdown' : (requestedMode ?? 'lockdown'));
 
+  let metricReader: TestMetricReader;
+
+  /** Collect the metrics recorded since the last collection, keyed by name. */
+  async function collectMetrics() {
+    const { resourceMetrics, errors } = await metricReader.collect();
+    expect(errors).toEqual([]);
+    return new Map(
+      resourceMetrics.scopeMetrics
+        .flatMap(scope => scope.metrics)
+        .map(metric => [metric.descriptor.name, metric.dataPoints])
+    );
+  }
+
   beforeEach(() => {
     resetMemoryExporter();
+    // A fresh provider per test, so cumulative metrics start from zero.
+    metricReader = initMeterProvider(instrumentation);
     instrumentation.enable();
   });
 
@@ -187,6 +222,12 @@ describe('Anthropic instrumentation', function () {
       'gen_ai.operation.name': 'chat',
       'gen_ai.provider.name': 'anthropic',
       'gen_ai.request.model': model,
+      'gen_ai.request.max_tokens': 16,
+      'gen_ai.response.id': expect.stringMatching(/^msg_/),
+      'gen_ai.response.model': model,
+      'gen_ai.response.finish_reasons': ['end_turn'],
+      'gen_ai.usage.input_tokens': 17,
+      'gen_ai.usage.output_tokens': 7,
     });
   });
 
@@ -528,6 +569,10 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].name).toBe(`chat ${model}`);
     expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    // The body was never read, so there is no finish reason to report.
+    expect(
+      spans[0].attributes['gen_ai.response.finish_reasons']
+    ).toBeUndefined();
   });
 
   it('leaves the SDK untouched when tracing is suppressed', async () => {
@@ -560,6 +605,29 @@ describe('Anthropic instrumentation', function () {
     }
 
     expect(getTestSpans()).toHaveLength(0);
+  });
+
+  it('records an SSE error raised during concurrent reads rather than an abort', async () => {
+    await withCassette('anthropic-messages-stream-sse-error.json', async () => {
+      const stream = await mockClient.messages.create({
+        ...requestBody,
+        stream: true,
+      });
+
+      // The first read settling must not hide that the second is still
+      // pending when the SDK aborts its controller for the SSE error.
+      const iterator = stream[Symbol.asyncIterator]();
+      const results = await Promise.allSettled([
+        iterator.next(),
+        iterator.next(),
+      ]);
+      expect(results.map(result => result.status)).toContain('rejected');
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes['error.type']).not.toBe('APIUserAbortError');
   });
 
   it('records an SSE error rather than the abort the SDK raises for it', async () => {
@@ -757,6 +825,27 @@ describe('Anthropic instrumentation', function () {
     expect(spans[0].attributes['error.type']).toBe('APIUserAbortError');
   });
 
+  for (const event of ['end', 'finalMessage'] as const) {
+    it(`ends the messages.stream span when a '${event}' listener throws`, async () => {
+      // The listener's error escapes `_emit` inside the helper's own promise
+      // chain, so the SDK surfaces it as an unhandled rejection.
+      const rejection = await withCassette(
+        'anthropic-messages-stream-complete.json',
+        () =>
+          captureUnhandledRejection(() => {
+            mockClient.messages.stream(requestBody).on(event, () => {
+              throw new Error('listener failed');
+            });
+          })
+      );
+      expect(rejection).toEqual(new Error('listener failed'));
+
+      const spans = getTestSpans();
+      expect(spans).toHaveLength(1);
+      expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    });
+  }
+
   it('creates no telemetry for a suppressed messages.stream', async () => {
     await withCassette('anthropic-messages-stream.json', async () => {
       const client = createRecordingClient();
@@ -838,5 +927,121 @@ describe('Anthropic instrumentation', function () {
     expect(spans).toHaveLength(1);
     expect(spans[0].status.code).toBe(SpanStatusCode.ERROR);
     expect(spans[0].attributes['error.type']).toBe('RateLimitError');
+  });
+
+  it('records response attributes for a raw stream', async () => {
+    await withCassette('anthropic-messages-create-streaming.json', async () => {
+      const stream = await createRecordingClient().messages.create({
+        ...requestBody,
+        stream: true,
+      });
+      for await (const event of stream) {
+        void event;
+      }
+    });
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes).toMatchObject({
+      'gen_ai.operation.name': 'chat',
+      'gen_ai.provider.name': 'anthropic',
+      'gen_ai.request.model': model,
+      'gen_ai.request.max_tokens': 16,
+      'gen_ai.request.stream': true,
+      'gen_ai.response.id': expect.stringMatching(/^msg_/),
+      'gen_ai.response.model': model,
+      'gen_ai.response.finish_reasons': [expect.any(String)],
+      'gen_ai.usage.input_tokens': expect.any(Number),
+      'gen_ai.usage.output_tokens': expect.any(Number),
+      'gen_ai.response.time_to_first_chunk': expect.any(Number),
+    });
+    expect(spans[0].attributes['gen_ai.response.finish_reasons']).not.toEqual([
+      'error',
+    ]);
+  });
+
+  it('records response attributes for messages.stream', async () => {
+    await withCassette('anthropic-messages-stream.json', () =>
+      createRecordingClient().messages.stream(requestBody).finalMessage()
+    );
+
+    const spans = getTestSpans();
+    expect(spans).toHaveLength(1);
+    expect(spans[0].status.code).not.toBe(SpanStatusCode.ERROR);
+    expect(spans[0].attributes).toMatchObject({
+      'gen_ai.request.stream': true,
+      'gen_ai.response.id': expect.stringMatching(/^msg_/),
+      'gen_ai.response.model': model,
+      'gen_ai.response.finish_reasons': [expect.any(String)],
+      'gen_ai.usage.input_tokens': expect.any(Number),
+      'gen_ai.usage.output_tokens': expect.any(Number),
+      'gen_ai.response.time_to_first_chunk': expect.any(Number),
+    });
+  });
+
+  it('records duration and token usage metrics', async () => {
+    await withCassette('anthropic-messages-create.json', () =>
+      createRecordingClient().messages.create(requestBody)
+    );
+
+    const metrics = await collectMetrics();
+    const attributes = {
+      'gen_ai.operation.name': 'chat',
+      'gen_ai.provider.name': 'anthropic',
+      'gen_ai.request.model': model,
+      'gen_ai.response.model': model,
+    };
+    const [duration] = metrics.get('gen_ai.client.operation.duration') ?? [];
+    expect(duration.attributes).toEqual(attributes);
+    expect(
+      metrics.get('gen_ai.client.inference.operation.input_tokens')
+    ).toMatchObject([{ attributes, value: { sum: 17, count: 1 } }]);
+    expect(
+      metrics.get('gen_ai.client.inference.operation.output_tokens')
+    ).toMatchObject([{ attributes, value: { sum: 7, count: 1 } }]);
+    expect(
+      metrics.get('gen_ai.client.inference.usage.input_tokens')
+    ).toMatchObject([
+      {
+        attributes: { ...attributes, 'gen_ai.token.modality': 'unknown' },
+        value: 17,
+      },
+    ]);
+  });
+
+  it('records error.type on the duration metric of a failed call', async () => {
+    await withCassette('anthropic-messages-create-rate-limited.json', () =>
+      expect(mockClient.messages.create(requestBody)).rejects.toThrow()
+    );
+
+    const metrics = await collectMetrics();
+    const [duration] = metrics.get('gen_ai.client.operation.duration') ?? [];
+    expect(duration.attributes).toEqual({
+      'gen_ai.operation.name': 'chat',
+      'gen_ai.provider.name': 'anthropic',
+      'gen_ai.request.model': model,
+      'error.type': 'RateLimitError',
+    });
+  });
+
+  it('records streaming chunk metrics', async () => {
+    await withCassette('anthropic-messages-create-streaming.json', async () => {
+      const stream = await mockClient.messages.create({
+        ...requestBody,
+        stream: true,
+      });
+      for await (const event of stream) {
+        void event;
+      }
+    });
+
+    const metrics = await collectMetrics();
+    expect(
+      metrics.get('gen_ai.client.operation.time_to_first_chunk')
+    ).toMatchObject([{ value: { count: 1 } }]);
+    expect(
+      metrics.get('gen_ai.client.operation.time_per_output_chunk')?.length
+    ).toBe(1);
   });
 });
