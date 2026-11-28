@@ -181,7 +181,7 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         const { isLayerPathStored } = storeLayerPath(req, layerPath);
 
         const constructedRoute = getConstructedRoute(req);
-        const actualMatchedRoute = getActualMatchedRoute(req);
+        const actualMatchedRoute = getActualMatchedRoute(req, constructedRoute);
 
         const attributes: Attributes = {
           [ATTR_HTTP_ROUTE]: actualMatchedRoute,
@@ -264,16 +264,24 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
         };
 
         // verify we have a callback
-        const args = Array.from(arguments);
-        const callbackIdx = args.findIndex(arg => typeof arg === 'function');
+        let callbackIdx = -1;
+        for (let i = 0; i < arguments.length; i++) {
+          if (typeof arguments[i] === 'function') {
+            callbackIdx = i;
+            break;
+          }
+        }
         if (callbackIdx >= 0) {
-          arguments[callbackIdx] = function () {
+          const callback = arguments[callbackIdx] as Function;
+          arguments[callbackIdx] = function (this: unknown) {
             // express considers anything but an empty value, "route" or "router"
             // passed to its callback to be an error
             const maybeError = arguments[0];
-            const isError = ![undefined, null, 'route', 'router'].includes(
-              maybeError
-            );
+            const isError =
+              maybeError !== undefined &&
+              maybeError !== null &&
+              maybeError !== 'route' &&
+              maybeError !== 'router';
             if (!spanHasEnded && isError) {
               const [error, message] = asErrorAndMessage(maybeError);
               span.recordException(error);
@@ -291,7 +299,6 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
             if (!(req.route && isError) && isLayerPathStored) {
               (req[_LAYERS_STORE_PROPERTY] as string[]).pop();
             }
-            const callback = args[callbackIdx] as Function;
             // Preserve the active context (which may include baggage set by middleware)
             // but restore the parent span to prevent sibling middleware spans
             // from nesting under each other
@@ -300,12 +307,15 @@ export class ExpressInstrumentation extends InstrumentationBase<ExpressInstrumen
             const nextContext = parentSpan
               ? trace.setSpan(activeContext, parentSpan)
               : activeContext;
-            return context.bind(nextContext, callback).apply(this, arguments);
+            return context.with(nextContext, () =>
+              callback.apply(this, arguments)
+            );
           };
         }
 
         try {
-          return context.bind(currentContext, original).apply(this, arguments);
+          const args = arguments;
+          return context.with(currentContext, () => original.apply(this, args));
         } catch (anyError) {
           const [error, message] = asErrorAndMessage(anyError);
           span.recordException(error);

@@ -232,10 +232,13 @@ export function getConstructedRoute(req: {
  * @param layersStoreProperty - The property name where layer paths are stored
  * @returns The matched route string or undefined if no valid route is found
  */
-export function getActualMatchedRoute(req: {
-  originalUrl: PatchedRequest['originalUrl'];
-  [_LAYERS_STORE_PROPERTY]?: string[];
-}): string | undefined {
+export function getActualMatchedRoute(
+  req: {
+    originalUrl: PatchedRequest['originalUrl'];
+    [_LAYERS_STORE_PROPERTY]?: string[];
+  },
+  constructedRoute?: string
+): string | undefined {
   const layersStore: string[] = Array.isArray(req[_LAYERS_STORE_PROPERTY])
     ? (req[_LAYERS_STORE_PROPERTY] as string[])
     : [];
@@ -251,7 +254,7 @@ export function getActualMatchedRoute(req: {
     return req.originalUrl === '/' ? '/' : undefined;
   }
 
-  const constructedRoute = getConstructedRoute(req);
+  constructedRoute ??= getConstructedRoute(req);
   if (constructedRoute === '*') {
     return constructedRoute;
   }
