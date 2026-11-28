@@ -11,6 +11,7 @@ import { isRecord } from './content';
 const internalWorkflows = new WeakSet<object>();
 const trackingWrappers = new WeakSet<object>();
 const agentPrompts = new WeakSet<object>();
+const agentGraphs = new WeakMap<object, object>();
 
 export function isInternalWorkflow(value: object): boolean {
   return internalWorkflows.has(value);
@@ -45,7 +46,15 @@ export function markWorkflow(value: unknown): void {
 export function markAgentGraph(value: unknown): void {
   markWorkflow(value);
   // Newer createAgent returns ReactAgent, with a public SDK graph getter.
-  if (isRecord(value)) markWorkflow(value.graph);
+  if (isRecord(value)) {
+    const graph = value.graph;
+    markWorkflow(graph);
+    if (isRecord(graph)) agentGraphs.set(value, graph);
+  }
+}
+
+export function getAgentGraph(agent: object): object | undefined {
+  return agentGraphs.get(agent);
 }
 
 export function markAgentPrompt(value: unknown): void {

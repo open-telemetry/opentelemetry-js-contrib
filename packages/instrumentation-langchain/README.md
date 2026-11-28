@@ -3,7 +3,8 @@
 [![NPM Published Version][npm-img]][npm-url]
 [![Apache License][license-image]][license-image]
 
-This module provides automatic instrumentation for composed workflows and tool execution in
+This module provides automatic instrumentation for local agent invocations in
+[`langchain`](https://www.npmjs.com/package/langchain), composed workflows and tool execution in
 [`@langchain/core`](https://www.npmjs.com/package/@langchain/core), and application-defined
 workflows in [`@langchain/langgraph`](https://www.npmjs.com/package/@langchain/langgraph).
 
@@ -17,6 +18,7 @@ npm install --save @opentelemetry/instrumentation-langchain
 
 ## Supported Versions
 
+- [`langchain`](https://www.npmjs.com/package/langchain) versions `>=1.0.0 <2` for `createAgent().invoke()`
 - [`@langchain/core`](https://www.npmjs.com/package/@langchain/core) versions `>=1.0.0 <2`
 - [`@langchain/langgraph`](https://www.npmjs.com/package/@langchain/langgraph) versions `>=1.0.0 <2`,
   with a Core version satisfying the graph SDK's peer dependencies.
@@ -183,6 +185,27 @@ skipped runs are ignored even if their run IDs or callback managers are reused.
 Runnable `.asTool()` adapters
 that emit only chain callbacks do not gain tool spans from this slice.
 
+### Local agent invocation
+
+`createAgent(...).invoke(state, config)` creates one `INTERNAL` `invoke_agent`
+span, named `invoke_agent {name}` when the agent has a name. Like the
+[donated LangChain tracer](https://github.com/open-telemetry/donation-openinference/blob/6cdd644d79fccf50aedcb614187f924ddfcafb7b/js/packages/openinference-instrumentation-langchain/src/tracer.ts),
+this observes SDK start, end, and error callbacks. Only callbacks for the
+agent's own graph run drive its span. Tool calls nest beneath it, and provider
+instrumentation remains responsible for model calls.
+
+With `captureMessageContent: 'span_only'`, the span records messages explicitly
+passed in `state.messages`. It records the final assistant message only when
+the same message was observed in a model completion callback for that run.
+Custom state fields, retained replies, and unverified output are omitted. No message
+content is captured by default. The shared `genai-util` local agent handler
+records the span and `gen_ai.invoke_agent.duration`. This requires the
+workspace build of `genai-util` containing `TelemetryHandler.startLocalAgent`,
+which is not in the published `0.5.0` release.
+
+Agent streaming, prebuilt `createReactAgent`, token aggregation, and failures
+before the graph start callback are not instrumented by this integration.
+
 ### LangGraph workflows
 
 Application-defined compiled graphs create `INTERNAL` `invoke_workflow` spans
@@ -217,9 +240,9 @@ diagnostic is emitted.
 
 Only application graph boundaries are reported, including nested subgraphs.
 Internal node/writer sequences and graphs created by `createAgent` or
-`createReactAgent` are not reported as workflows. Their actual agent operations
-remain outside this migration. Factory tracking identifies these objects rather
-than guessing from names.
+`createReactAgent` are not reported as workflows. Only the public `createAgent`
+invocation described above is reported as an agent. Factory tracking identifies
+these objects rather than guessing from names.
 
 Prebuilt `createReactAgent` model pipelines and inline agent-name adapters are
 also excluded. The private model node is tracked only while constructing its
@@ -384,9 +407,9 @@ Tool spans additionally use `gen_ai.tool.name`, `gen_ai.tool.description`,
 by `@opentelemetry/genai-util`. The late ToolMessage call-ID mapping also uses
 that package's shared `ATTR_GEN_AI_TOOL_CALL_ID` constant.
 
-### Tool and graph conformance
+### Tool, graph, and agent conformance
 
-The tool and graph scenarios use the upstream
+The tool, graph, and agent scenarios use the upstream
 [semantic-conventions-conformance runner](https://github.com/open-telemetry/semantic-conventions-conformance/tree/main/tools/gen-ai/runner),
 not a package-specific validation framework. Install that runner and its
 pinned Weaver executable, build this package, then run:
@@ -396,7 +419,7 @@ npm run test:conformance --workspace @opentelemetry/instrumentation-langchain
 ```
 
 The scenario registry is pinned in `test/conformance/conformance.yaml`.
-The scenarios execute real offline tools and graphs and export spans and metrics through
+The scenarios execute real offline tools, graphs, and agents and export spans and metrics through
 OTLP/gRPC to Weaver. They cover capture disabled, capture enabled and execution
 failure, graph streaming, and tool results whose JSON serialization is not an object. Reports are
 written under the package's ignored `coverage` directory.

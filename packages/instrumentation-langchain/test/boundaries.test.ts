@@ -540,7 +540,7 @@ describe('LangChain application workflow boundaries', () => {
 
   for (const includeAgentName of [undefined, 'inline'] as const) {
     for (const applicationWorkflow of [false, true]) {
-      it(`excludes agent model adapters but preserves application workflows (inline=${includeAgentName === 'inline'}, application=${applicationWorkflow})`, async function () {
+      it(`excludes createAgent model adapters but preserves application workflows (inline=${includeAgentName === 'inline'}, application=${applicationWorkflow})`, async function () {
         try {
           require.resolve('@langchain/core/utils/uuid');
         } catch (error) {
@@ -557,6 +557,7 @@ describe('LangChain application workflow boundaries', () => {
         }
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { createAgent }: typeof LangChain = require('langchain');
+        let applicationRunName: string | undefined;
         class AgentModel extends LocalModel {
           override bindTools(): Runnable<
             BaseLanguageModelInput,
@@ -566,7 +567,26 @@ describe('LangChain application workflow boundaries', () => {
             return RunnableSequence.from([
               RunnableLambda.from((input: BaseLanguageModelInput) => input),
               this,
-            ]).withConfig({ runName: 'application-model' });
+            ]).withConfig({
+              runName: 'application-model',
+              callbacks: [
+                {
+                  handleChainStart(
+                    serialized,
+                    _input,
+                    _id,
+                    _parent,
+                    _tags,
+                    _metadata,
+                    _type,
+                    name
+                  ) {
+                    if (serialized.id.at(-1) === 'RunnableSequence')
+                      applicationRunName = name;
+                  },
+                },
+              ],
+            });
           }
           override async _generate() {
             return {
@@ -586,8 +606,15 @@ describe('LangChain application workflow boundaries', () => {
           messages: [new HumanMessage('question')],
         });
         assert.equal(result.messages.at(-1)?.content, 'answer');
+        // Some agent versions replace the model pipeline's configured run name.
+        if (applicationWorkflow) assert.ok(applicationRunName);
         await expectWorkflows(
-          applicationWorkflow ? ['invoke_workflow model_request'] : []
+          applicationWorkflow
+            ? [
+                'invoke_agent local-agent',
+                `invoke_workflow ${applicationRunName}`,
+              ]
+            : ['invoke_agent local-agent']
         );
       });
     }

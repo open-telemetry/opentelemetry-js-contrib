@@ -20,3 +20,15 @@
     include: '>=1.0.0 <2'
     mode: max-5
   commands: npm test
+
+langchain:
+  node: '>=22.15.0'
+  peerDependencies:
+    - '@langchain/core@^1'
+    - '@langchain/langgraph@^1'
+  versions:
+    # Test the public agent boundary at both ends. The lockfile covers 1.2.x,
+    # whose releases can require exact, release-specific Core peers.
+    include: '>=1.0.0 <2'
+    mode: max-2
+  commands: npm test -- --grep createAgent

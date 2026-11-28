@@ -78,6 +78,7 @@ describe('LangChainInstrumentation', () => {
     ]);
     expect(instance.definitions[0].files.map(file => file.name)).toEqual([
       normalize('@langchain/core/dist/runnables/base.cjs'),
+      normalize('@langchain/core/dist/runnables/config.cjs'),
       normalize('@langchain/core/dist/runnables/history.cjs'),
       normalize('@langchain/core/dist/runnables/passthrough.cjs'),
       normalize('@langchain/core/dist/language_models/chat_models.cjs'),
@@ -85,6 +86,7 @@ describe('LangChainInstrumentation', () => {
       normalize('@langchain/core/dist/tools/index.cjs'),
       normalize('@langchain/core/dist/callbacks/manager.cjs'),
       normalize('@langchain/core/dist/runnables/base.js'),
+      normalize('@langchain/core/dist/runnables/config.js'),
       normalize('@langchain/core/dist/runnables/history.js'),
       normalize('@langchain/core/dist/runnables/passthrough.js'),
       normalize('@langchain/core/dist/language_models/chat_models.js'),

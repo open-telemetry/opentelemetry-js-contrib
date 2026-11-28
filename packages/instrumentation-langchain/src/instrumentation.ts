@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { AsyncLocalStorage } from 'node:async_hooks';
 import {
   context,
   createContextKey,
@@ -51,7 +52,13 @@ import type * as PregelModule from '@langchain/langgraph/pregel';
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 import { LangChainInstrumentationConfig } from './types';
-import { batchOutputMessages, isRecord, messages } from './content';
+import {
+  batchOutputMessages,
+  isRecord,
+  messages,
+  parseInputMessages,
+  parseOutputMessages,
+} from './content';
 import { addToolCallbacks, getToolContext } from './tool-callbacks';
 import { addGraphCallbacks, getGraphContext } from './graph-callbacks';
 import {
@@ -59,6 +66,7 @@ import {
   trackReactAgentFactory,
 } from './internal-react-agent';
 import {
+  getAgentGraph,
   isInternalWorkflow,
   isTrackingFactory,
   markAgentGraph,
@@ -83,6 +91,28 @@ interface WorkflowPatch {
 
 const workflowPatches = new WeakMap<object, Map<PropertyKey, WorkflowPatch>>();
 const graphConfigurations = new WeakMap<object, (config: unknown) => void>();
+interface AgentCall {
+  graph: object;
+  input: unknown;
+  options: object;
+  resolved?: object;
+}
+
+const agentCalls = new AsyncLocalStorage<{
+  preparing?: AgentCall;
+  delegated?: AgentCall;
+}>();
+
+interface AgentModule {
+  ReactAgent: {
+    prototype: Pick<
+      ReturnType<typeof import('langchain').createAgent>,
+      'invoke'
+    > & {
+      withConfig: (...args: never[]) => unknown;
+    };
+  };
+}
 
 interface ToolExecutor {
   _call(
@@ -149,9 +179,9 @@ function createTrackedModuleFile<T extends object>(
 
 export class LangChainInstrumentation extends InstrumentationBase<LangChainInstrumentationConfig> {
   declare private _workflowDuration: Histogram | undefined;
-  declare private _toolTelemetry: TelemetryHandler | undefined;
-  declare private _toolTracerProvider: TracerProvider | undefined;
-  declare private _toolMeterProvider: MeterProvider | undefined;
+  declare private _telemetry: TelemetryHandler | undefined;
+  declare private _telemetryTracerProvider: TracerProvider | undefined;
+  declare private _telemetryMeterProvider: MeterProvider | undefined;
   declare private _toolExecutors: Set<WeakRef<ToolExecutor>> | undefined;
   declare private _callbackManager: typeof CallbackManager | undefined;
   declare private _getGraphConfig:
@@ -175,19 +205,19 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       ...config,
       captureMessageContent: this._captureMode(config.captureMessageContent),
     });
-    this._toolTelemetry = undefined;
+    this._telemetry = undefined;
   }
 
   override setTracerProvider(provider: TracerProvider) {
     super.setTracerProvider(provider);
-    this._toolTracerProvider = provider;
-    this._toolTelemetry = undefined;
+    this._telemetryTracerProvider = provider;
+    this._telemetry = undefined;
   }
 
   override setMeterProvider(provider: MeterProvider) {
     super.setMeterProvider(provider);
-    this._toolMeterProvider = provider;
-    this._toolTelemetry = undefined;
+    this._telemetryMeterProvider = provider;
+    this._telemetry = undefined;
   }
 
   override disable() {
@@ -199,12 +229,12 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     this._toolExecutors?.clear();
   }
 
-  private _getToolTelemetry(): TelemetryHandler {
-    return (this._toolTelemetry ??= new TelemetryHandler({
+  private _getTelemetry(): TelemetryHandler {
+    return (this._telemetry ??= new TelemetryHandler({
       instrumentationName: PACKAGE_NAME,
       instrumentationVersion: PACKAGE_VERSION,
-      tracerProvider: this._toolTracerProvider,
-      meterProvider: this._toolMeterProvider,
+      tracerProvider: this._telemetryTracerProvider,
+      meterProvider: this._telemetryMeterProvider,
       diag: this._diag,
       contentCaptureMode: this.getConfig().captureMessageContent ?? 'none',
     }));
@@ -257,6 +287,25 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
         (module: typeof Runnables) => this._patchRunnables(module),
         (module: typeof Runnables) => this._unpatchRunnables(module),
         (module: typeof Runnables) => this._trackRunnableFactories(module)
+      ),
+      createTrackedModuleFile(
+        `${MODULE_NAME}/dist/runnables/config.${extension}`,
+        (module: Pick<typeof Runnables, 'mergeConfigs'>) => {
+          this._patchMethod(
+            module,
+            'mergeConfigs',
+            () => original =>
+              new Proxy(original, {
+                apply(target, receiver, args: Parameters<typeof original>) {
+                  const result = Reflect.apply(target, receiver, args);
+                  const call = agentCalls.getStore()?.preparing;
+                  if (call && args[1] === call.options) call.resolved = result;
+                  return result;
+                },
+              })
+          );
+        },
+        module => this._unpatchMethod(module, 'mergeConfigs')
       ),
       createTrackedModuleFile(
         `${MODULE_NAME}/dist/runnables/history.${extension}`,
@@ -376,13 +425,37 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
           ),
           createTrackedModuleFile(
             `langchain/dist/agents/ReactAgent.${extension}`,
-            () => {},
-            () => {},
-            (module: {
-              ReactAgent: {
-                prototype: { withConfig: (...args: never[]) => unknown };
-              };
-            }) => {
+            (module: AgentModule) => {
+              this._patchMethod(
+                module.ReactAgent.prototype,
+                'invoke',
+                () => original =>
+                  function (this: object, ...args) {
+                    const graph = getAgentGraph(this);
+                    if (!graph || isTracingSuppressed(context.active()))
+                      return original.apply(this, args);
+                    // Older agents forward the config, newer ones merge it with
+                    // defaults first. Give this call its own observable identity.
+                    if (args[1] != null && !isRecord(args[1]))
+                      return original.apply(this, args);
+                    const options =
+                      args[1] == null
+                        ? {}
+                        : new Proxy(args[1], {
+                            get: (target, key) =>
+                              Reflect.get(target, key, target),
+                          });
+                    args[1] = options;
+                    return agentCalls.run(
+                      { preparing: { graph, input: args[0], options } },
+                      () => original.apply(this, args)
+                    );
+                  }
+              );
+            },
+            module =>
+              this._unpatchMethod(module.ReactAgent.prototype, 'invoke'),
+            module => {
               if (
                 typeof module.ReactAgent.prototype.withConfig === 'function' &&
                 !isTrackingFactory(module.ReactAgent.prototype.withConfig)
@@ -474,6 +547,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
             (module: typeof PregelModule) => this._patchGraphs(module),
             (module: typeof PregelModule) => {
               this._unpatchMethod(module.Pregel.prototype, '_streamIterator');
+              this._unpatchMethod(module.Pregel.prototype, 'invoke');
+              this._unpatchMethod(module.Pregel.prototype, 'getState');
             },
             (module: typeof PregelModule) => {
               if (!isTrackingFactory(module.Pregel.prototype.withConfig))
@@ -573,6 +648,43 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
   }
 
   private _patchGraphs(module: typeof PregelModule) {
+    const prototype = module.Pregel.prototype;
+    this._patchMethod(
+      prototype,
+      'getState',
+      () => original =>
+        new Proxy(original, {
+          apply(target, receiver, args) {
+            const invoke = () => Reflect.apply(target, receiver, args);
+            // Checkpointers receive the agent's resolved config and can reuse
+            // even that exact object for an independent graph call.
+            return agentCalls.getStore()?.preparing
+              ? agentCalls.exit(invoke)
+              : invoke();
+          },
+        })
+    );
+    this._patchMethod(
+      prototype,
+      'invoke',
+      () => original =>
+        new Proxy(original, {
+          apply(target, receiver, args) {
+            const scope = agentCalls.getStore();
+            const call = scope?.preparing;
+            const invoke = () => Reflect.apply(target, receiver, args);
+            if (
+              call &&
+              receiver === call.graph &&
+              args[1] &&
+              (args[1] === call.options || args[1] === call.resolved)
+            ) {
+              return agentCalls.run({ delegated: call }, invoke);
+            }
+            return scope ? agentCalls.exit(invoke) : invoke();
+          },
+        })
+    );
     // Observe the SDK's resolved configuration instead of duplicating its
     // version-dependent merging of callbacks, metadata and configurable.
     this._patchMethod(
@@ -590,12 +702,18 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               .find(instance => instance.isEnabled());
             if (!owner) restore();
             const active = context.active();
+            const entry = agentCalls.getStore();
+            const agent =
+              entry?.delegated?.graph === receiver
+                ? entry.delegated
+                : undefined;
             if (
               !owner ||
               isTracingSuppressed(active) ||
-              isInternalWorkflow(receiver)
+              (isInternalWorkflow(receiver) && !agent)
             )
               return Reflect.apply(target, receiver, args);
+            if (agent && entry) entry.delegated = undefined;
             const manager = owner._callbackManager;
             if (!manager) {
               owner._diag.warn(
@@ -603,7 +721,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               );
               return Reflect.apply(target, receiver, args);
             }
-            let state: WorkflowState | undefined;
+            let end:
+              | ((output: unknown, failure?: { error: unknown }) => void)
+              | undefined;
             try {
               const inherited = owner._getGraphConfig?.();
               const inheritedParent = getGraphContext(
@@ -640,6 +760,11 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                 const configurable = ownValue(config, 'configurable');
                 const configured = manager._configureSync(callbacks ?? []);
                 if (!configured) return;
+                const generatedMessages =
+                  agent &&
+                  owner.getConfig().captureMessageContent === 'span_only'
+                    ? new WeakSet<object>()
+                    : undefined;
                 const graphCallbacks = addGraphCallbacks(
                   configured,
                   manager,
@@ -650,15 +775,30 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                     )
                       return undefined;
                     try {
-                      state = owner._startWorkflow(
+                      const parentContext = trace.getSpan(active)
+                        ? active
+                        : (parent ?? inheritedParent ?? active);
+                      const runConfig = { runName, configurable, metadata };
+                      if (agent) {
+                        const run = owner._startAgent(
+                          receiver,
+                          agent.input,
+                          runConfig,
+                          parentContext,
+                          generatedMessages
+                        );
+                        end = run.end;
+                        return run.context;
+                      }
+                      const state = owner._startWorkflow(
                         receiver,
                         input,
-                        { runName, configurable, metadata },
+                        runConfig,
                         false,
-                        trace.getSpan(active)
-                          ? active
-                          : (parent ?? inheritedParent ?? active)
+                        parentContext
                       );
+                      end = (output, failure) =>
+                        owner._end(state, output, failure);
                       return state.context;
                     } catch {
                       owner._diag.warn(
@@ -667,10 +807,9 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
                       return undefined;
                     }
                   },
-                  (output, failure) => {
-                    if (state) owner._end(state, output, failure);
-                  },
-                  owner._diag
+                  (output, failure) => end?.(output, failure),
+                  owner._diag,
+                  generatedMessages
                 );
                 config.callbacks = graphCallbacks;
               });
@@ -791,7 +930,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
               invocation = addToolCallbacks(
                 this.copy(),
                 manager,
-                () => currentOwner()?._getToolTelemetry(),
+                () => currentOwner()?._getTelemetry(),
                 () => currentOwner()?._diag ?? diag,
                 () =>
                   trace.getSpan(context.active())
@@ -952,6 +1091,8 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
       | '_call'
       | 'handleToolStart'
       | '_streamIterator'
+      | 'mergeConfigs'
+      | 'getState'
   ) {
     const patches = workflowPatches.get(target);
     if (!patches) return;
@@ -1098,19 +1239,64 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     };
   }
 
-  /**
-   * Builds workflow and conversation attributes from the runnable and options,
-   * adding input messages only when content capture is enabled.
-   */
-  private _generateWorkflowAttributes(
-    target: object,
+  private _startAgent(
+    graph: object,
     input: unknown,
     options: unknown,
-    capture: boolean
-  ): Attributes {
+    parentContext: Context,
+    generatedMessages?: WeakSet<object>
+  ) {
+    const telemetry = this._getTelemetry();
+    const inputHistory = telemetry.shouldCaptureContent()
+      ? ownValue(input, 'messages')
+      : undefined;
+    const invocation = telemetry.startLocalAgent({
+      agentName: this._name(graph),
+      conversationId: this._conversationId(options),
+      inputMessages:
+        inputHistory != null
+          ? parseInputMessages(
+              Array.isArray(inputHistory) ? inputHistory : [inputHistory],
+              this._diag
+            )
+          : undefined,
+      parentContext,
+    });
+    return {
+      context: invocation.getContext(),
+      end: (output: unknown, failure?: { error: unknown }) => {
+        if (failure) {
+          invocation.fail({ errorType: this._errorType(failure.error) });
+          return;
+        }
+        try {
+          if (invocation.shouldCaptureContent()) {
+            // The final agent state also contains input and intermediate tool
+            // messages. Only its final answer is agent output.
+            const history = ownValue(output, 'messages');
+            const message: unknown = Array.isArray(history)
+              ? history.at(-1)
+              : undefined;
+            const last =
+              isRecord(message) && generatedMessages?.has(message)
+                ? parseOutputMessages([message], this._diag)?.[0]
+                : undefined;
+            if (last?.role === 'assistant')
+              invocation.addOutputMessages([last]);
+          }
+        } catch {
+          this._diag.warn('LangChain: could not extract agent output');
+        } finally {
+          invocation.stop();
+        }
+      },
+    };
+  }
+
+  private _conversationId(options: unknown): string | undefined {
     const configurable = this._configValue(options, 'configurable');
     const metadata = this._configValue(options, 'metadata');
-    const conversation = [
+    return [
       this._configValue(configurable, 'thread_id'),
       this._configValue(configurable, 'session_id'),
       this._configValue(configurable, 'conversation_id'),
@@ -1120,14 +1306,25 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     ].find(
       (value): value is string => typeof value === 'string' && value.length > 0
     );
-    let name = this._configValue(options, 'runName');
-    if (typeof name !== 'string' || name.trim().length === 0)
-      name = this._configValue(target, 'name');
+  }
+
+  private _name(target: unknown, key = 'name'): string | undefined {
+    const name = this._configValue(target, key);
+    return typeof name === 'string' && name.trim() ? name : undefined;
+  }
+
+  private _generateWorkflowAttributes(
+    target: object,
+    input: unknown,
+    options: unknown,
+    capture: boolean
+  ): Attributes {
+    const conversation = this._conversationId(options);
+    const name = this._name(options, 'runName') ?? this._name(target);
     const attributes: Attributes = {
       [ATTR_GEN_AI_OPERATION_NAME]: GEN_AI_OPERATION_NAME_VALUE_INVOKE_WORKFLOW,
     };
-    if (typeof name === 'string' && name.trim().length > 0)
-      attributes[ATTR_GEN_AI_AGENT_NAME] = name;
+    if (name !== undefined) attributes[ATTR_GEN_AI_AGENT_NAME] = name;
     if (conversation !== undefined)
       attributes[ATTR_GEN_AI_CONVERSATION_ID] = conversation;
     if (capture) {
@@ -1156,6 +1353,16 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     return descriptor?.value;
   }
 
+  private _errorType(error: unknown): string {
+    try {
+      const name = error instanceof Error ? error.name : undefined;
+      if (typeof name === 'string' && name) return name;
+    } catch {
+      this._diag.warn('LangChain: could not classify operation failure');
+    }
+    return '_OTHER';
+  }
+
   /**
    * Ends a workflow span once, recording failure details or opt-in output
    * content and logging telemetry errors without disrupting the application.
@@ -1171,14 +1378,7 @@ export class LangChainInstrumentation extends InstrumentationBase<LangChainInstr
     state.ended = true;
     try {
       if (failure) {
-        let name = '_OTHER';
-        try {
-          const errorName =
-            failure.error instanceof Error ? failure.error.name : undefined;
-          if (typeof errorName === 'string' && errorName) name = errorName;
-        } catch {
-          this._diag.warn('LangChain: could not classify operation failure');
-        }
+        const name = this._errorType(failure.error);
         state.metricAttributes[ATTR_ERROR_TYPE] = name;
         state.span.setStatus({ code: SpanStatusCode.ERROR });
         state.span.setAttribute(ATTR_ERROR_TYPE, name);
