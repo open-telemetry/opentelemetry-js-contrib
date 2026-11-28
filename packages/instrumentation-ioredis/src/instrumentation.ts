@@ -27,7 +27,14 @@ import {
 import { DB_SYSTEM_NAME_VALUE_REDIS } from './semconv';
 import { safeExecuteInTheMiddle } from '@opentelemetry/instrumentation';
 import { endSpan } from './utils';
-import { defaultDbStatementSerializer } from '@opentelemetry/redis-common';
+import {
+  createDbStatementSerializer,
+  defaultDbStatementMaskingHook,
+  defaultDbStatementSerializer,
+} from '@opentelemetry/redis-common';
+
+// built once, the option is read per command but the serializer is stateless
+const keySerializer = createDbStatementSerializer({ serializeKeys: true });
 /** @knipignore */
 import { PACKAGE_NAME, PACKAGE_VERSION } from './version';
 
@@ -108,7 +115,8 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
       }
       const config = instrumentation.getConfig();
       const dbStatementSerializer =
-        config.dbStatementSerializer || defaultDbStatementSerializer;
+        config.dbStatementSerializer ||
+        (config.serializeKeys ? keySerializer : defaultDbStatementSerializer);
 
       const hasNoParentSpan = trace.getSpan(context.active()) === undefined;
       if (config.requireParentSpan === true && hasNoParentSpan) {
@@ -147,9 +155,31 @@ export class IORedisInstrumentation extends InstrumentationBase<IORedisInstrumen
 
       const { host, port } = this.options;
 
-      const dbQueryText = dbStatementSerializer(cmd.name, cmd.args);
+      let dbQueryText: string | undefined = dbStatementSerializer(
+        cmd.name,
+        cmd.args
+      );
+      if (config.serializeKeys) {
+        try {
+          dbQueryText = (
+            config.maskStatementHook || defaultDbStatementMaskingHook
+          )(dbQueryText);
+        } catch (e) {
+          // do not export the unmasked statement
+          dbQueryText = undefined;
+          instrumentation._diag.error(
+            'maskStatementHook threw an exception',
+            e,
+            {
+              commandName: cmd.name,
+            }
+          );
+        }
+      }
       attributes[ATTR_DB_SYSTEM_NAME] = DB_SYSTEM_NAME_VALUE_REDIS;
-      attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      if (dbQueryText != null) {
+        attributes[ATTR_DB_QUERY_TEXT] = dbQueryText;
+      }
       attributes[ATTR_SERVER_ADDRESS] = host;
       attributes[ATTR_SERVER_PORT] = port;
       const span = instrumentation.tracer.startSpan(cmd.name, {

@@ -1017,6 +1017,26 @@ describe('ioredis', () => {
         sinon.assert.threw(requestHook);
       });
 
+      it('should ignore maskStatementHook which throws exception', async () => {
+        const maskStatementHook = sinon.spy((_statement: string): string => {
+          throw Error('error thrown in maskStatementHook');
+        });
+        instrumentation.setConfig(<IORedisInstrumentationConfig>{
+          serializeKeys: true,
+          maskStatementHook,
+        });
+
+        const span = provider.getTracer('ioredis-test').startSpan('test span');
+        await context.with(trace.setSpan(context.active(), span), async () => {
+          await client.incr('mask-hook-throw-test');
+          const endedSpans = memoryExporter.getFinishedSpans();
+          assert.strictEqual(endedSpans.length, 1);
+          assert.ok(!(ATTR_DB_QUERY_TEXT in endedSpans[0].attributes));
+        });
+
+        sinon.assert.threw(maskStatementHook);
+      });
+
       it('should call responseHook when set in config', async () => {
         const responseHook = sinon.spy(
           (
