@@ -47,6 +47,7 @@ import type {
   FinishReason,
   InputMessages,
   LocalAgentInvocationOptions,
+  LocalAgentRequestOptions,
   OutputMessages,
   OutputType,
   RemoteAgentInvocationOptions,
@@ -342,9 +343,7 @@ export abstract class AgentInvocation extends BaseInvocation {
   /**
    * Set tool definitions available to the agent (`gen_ai.tool.definitions`), replacing any previously set value.
    *
-   * Per GenAI semantic conventions, schema attributes are opt-in and are not governed by
-   * `contentCaptureMode`; call this method only when tool definition capture is enabled.
-   * Serialized once when the invocation ends.
+   * Serialized once when the invocation ends if `contentCaptureMode` is `'span_only'`.
    */
   public setToolDefinitions(definitions: ToolDefinitions): this {
     this._toolDefinitions = [...definitions];
@@ -367,13 +366,13 @@ export abstract class AgentInvocation extends BaseInvocation {
       this._setUsageAttributes(this._usage);
     }
 
+    if (this._contentCaptureMode !== 'span_only') {
+      return;
+    }
+
     const toolDefinitions = formatToolDefinitions(this._toolDefinitions);
     if (toolDefinitions) {
       this._span.setAttribute(ATTR_GEN_AI_TOOL_DEFINITIONS, toolDefinitions);
-    }
-
-    if (this._contentCaptureMode !== 'span_only') {
-      return;
     }
 
     const systemInstructions = formatSystemInstructions(
@@ -514,6 +513,19 @@ export class LocalAgentInvocation extends AgentInvocation {
    */
   public recordInferenceCall(count = 1): this {
     this._inferenceCalls = (this._inferenceCalls ?? 0) + count;
+    return this;
+  }
+
+  /**
+   * Set request parameters (`gen_ai.request.*`) discovered after the local agent span started.
+   */
+  public setRequestOptions(options: LocalAgentRequestOptions): this {
+    if (this._supportsModelAttributes) {
+      const attrs = getAgentRequestOptionsAttributes(options, false);
+      if (Object.keys(attrs).length > 0) {
+        this._span.setAttributes(attrs);
+      }
+    }
     return this;
   }
 

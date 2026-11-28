@@ -401,7 +401,7 @@ describe('AgentInvocation', () => {
       );
     });
 
-    it('should respect content capture mode (none vs span_only) for messages and system instructions, while recording opt-in tool definitions independently', () => {
+    it('should respect content capture mode (none vs span_only) for messages, system instructions, and tool definitions', () => {
       const inputMessages = [
         {
           role: 'user' as const,
@@ -429,7 +429,7 @@ describe('AgentInvocation', () => {
         },
       ];
 
-      // 1. Mode: none — message/instruction payload content is omitted, while opt-in tool schemas are still recorded when supplied
+      // 1. Mode: none — messages, system instructions, and tool definitions are omitted
       const handlerNone = new TelemetryHandler({
         instrumentationName: 'test-instrumentation',
         instrumentationVersion: '1.0.0',
@@ -466,7 +466,7 @@ describe('AgentInvocation', () => {
       );
       assert.strictEqual(
         spanNone.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
-        JSON.stringify(toolDefinitions)
+        undefined
       );
       assert.strictEqual(
         spanNoneNoTools.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
@@ -520,6 +520,21 @@ describe('AgentInvocation', () => {
         spanCaptured.attributes[ATTR_GEN_AI_TOOL_DEFINITIONS],
         JSON.stringify(toolDefinitions)
       );
+    });
+
+    it('should set request options after span start via setRequestOptions', () => {
+      const handler = new TelemetryHandler({
+        instrumentationName: 'test-instrumentation',
+        instrumentationVersion: '1.0.0',
+        tracerProvider: ctx.tracerProvider,
+      });
+      const inv = handler.startLocalAgent({ agentName: 'OptsAgent' });
+      inv.setRequestOptions({ temperature: 0.3, maxTokens: 128 });
+      inv.stop();
+
+      const [span] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_TEMPERATURE], 0.3);
+      assert.strictEqual(span.attributes[ATTR_GEN_AI_REQUEST_MAX_TOKENS], 128);
     });
 
     it('should record gen_ai.invoke_agent.duration, inference_calls, and tool_calls metrics', async () => {

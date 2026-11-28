@@ -14,16 +14,24 @@ import {
   ATTR_GEN_AI_TOOL_DESCRIPTION,
   ATTR_GEN_AI_TOOL_NAME,
   ATTR_GEN_AI_TOOL_TYPE,
+  ATTR_GEN_AI_TRANSFER_MODE,
+  ATTR_GEN_AI_TRANSFER_TARGET_NAME,
   GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL,
 } from '../semconv';
 import type {
   ContentCaptureMode,
   ToolInvocationOptions,
   ToolType,
+  TransferMode,
 } from '../types';
 import { serializeContent } from '../utils';
 import type { TelemetryHandler } from '../handler';
 import { BaseInvocation } from './base';
+
+function nonEmptyString(value: string | undefined): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}
 
 /**
  * Build the span attributes that are known when the tool span is started.
@@ -40,12 +48,13 @@ import { BaseInvocation } from './base';
 function buildInitialAttributes(
   options: ToolInvocationOptions,
   operationName: string,
+  toolName: string,
   contentCaptureMode: ContentCaptureMode
 ): Attributes {
   const attrs: Attributes = {
     ...options.attributes,
     [ATTR_GEN_AI_OPERATION_NAME]: operationName,
-    [ATTR_GEN_AI_TOOL_NAME]: options.toolName,
+    [ATTR_GEN_AI_TOOL_NAME]: toolName,
   };
 
   if (options.agentName) {
@@ -54,14 +63,24 @@ function buildInitialAttributes(
   if (options.conversationId) {
     attrs[ATTR_GEN_AI_CONVERSATION_ID] = options.conversationId;
   }
-  if (options.toolDescription) {
-    attrs[ATTR_GEN_AI_TOOL_DESCRIPTION] = options.toolDescription;
+  const toolDescription = nonEmptyString(options.toolDescription);
+  if (toolDescription) {
+    attrs[ATTR_GEN_AI_TOOL_DESCRIPTION] = toolDescription;
   }
-  if (options.toolCallId) {
-    attrs[ATTR_GEN_AI_TOOL_CALL_ID] = options.toolCallId;
+  const toolCallId = nonEmptyString(options.toolCallId);
+  if (toolCallId) {
+    attrs[ATTR_GEN_AI_TOOL_CALL_ID] = toolCallId;
   }
   if (options.toolType) {
     attrs[ATTR_GEN_AI_TOOL_TYPE] = options.toolType;
+  }
+  const transferMode = nonEmptyString(options.transferMode);
+  if (transferMode) {
+    attrs[ATTR_GEN_AI_TRANSFER_MODE] = transferMode;
+    const transferTargetName = nonEmptyString(options.transferTargetName);
+    if (transferTargetName) {
+      attrs[ATTR_GEN_AI_TRANSFER_TARGET_NAME] = transferTargetName;
+    }
   }
   if (
     options.toolArguments !== undefined &&
@@ -83,9 +102,11 @@ function buildInitialAttributes(
  */
 export class ToolInvocation extends BaseInvocation {
   private readonly _contentCaptureMode: ContentCaptureMode;
-  private readonly _toolName: string;
+  private readonly _operationName: string;
+  private _toolName: string;
   private readonly _toolType?: ToolType;
   private readonly _agentName?: string;
+  private _arguments?: unknown;
   private _result?: unknown;
 
   /**
@@ -100,15 +121,17 @@ export class ToolInvocation extends BaseInvocation {
     const contentCaptureMode = handler.getContentCaptureMode();
     const operationName =
       options.operationName ?? GEN_AI_OPERATION_NAME_VALUE_EXECUTE_TOOL;
+    const toolName = nonEmptyString(options.toolName) ?? options.toolName;
 
     // Span name follows `{gen_ai.operation.name} {gen_ai.tool.name}`, so it is built from
     // the resolved operation name rather than the `execute_tool` constant: overriding the
     // operation name must not leave the span name disagreeing with the attribute.
-    super(`${operationName} ${options.toolName}`, handler, {
+    super(`${operationName} ${toolName}`, handler, {
       kind: SpanKind.INTERNAL,
       attributes: buildInitialAttributes(
         options,
         operationName,
+        toolName,
         contentCaptureMode
       ),
       metricAttributes: options.metricAttributes,
@@ -117,9 +140,64 @@ export class ToolInvocation extends BaseInvocation {
     });
 
     this._contentCaptureMode = contentCaptureMode;
-    this._toolName = options.toolName;
+    this._operationName = operationName;
+    this._toolName = toolName;
     this._toolType = options.toolType;
     this._agentName = options.agentName;
+  }
+
+  /**
+   * Update the tool name (`gen_ai.tool.name`), span name, and duration metric
+   * dimension when the final tool name is only known after span start.
+   * Empty or whitespace-only names are ignored.
+   */
+  public setToolName(name: string): this {
+    const trimmed = nonEmptyString(name);
+    if (!trimmed) {
+      return this;
+    }
+    this._toolName = trimmed;
+    this._span.setAttribute(ATTR_GEN_AI_TOOL_NAME, trimmed);
+    this._span.updateName(`${this._operationName} ${trimmed}`);
+    return this;
+  }
+
+  /**
+   * Set the unique identifier of the tool call (`gen_ai.tool.call.id`).
+   * Empty or whitespace-only values are ignored.
+   */
+  public setToolCallId(id: string): this {
+    const trimmed = nonEmptyString(id);
+    if (trimmed) {
+      this._span.setAttribute(ATTR_GEN_AI_TOOL_CALL_ID, trimmed);
+    }
+    return this;
+  }
+
+  /**
+   * Set the description of the tool (`gen_ai.tool.description`).
+   * Empty or whitespace-only values are ignored.
+   */
+  public setToolDescription(description: string): this {
+    const trimmed = nonEmptyString(description);
+    if (trimmed) {
+      this._span.setAttribute(ATTR_GEN_AI_TOOL_DESCRIPTION, trimmed);
+    }
+    return this;
+  }
+
+  /**
+   * Record the arguments passed to the tool call (`gen_ai.tool.call.arguments`).
+   *
+   * Useful for callback-based SDKs where tool arguments are populated after the
+   * tool span has already started. Finalized onto the span when the invocation ends
+   * if `contentCaptureMode` is `'span_only'`.
+   */
+  public setArguments(args: unknown): this {
+    if (this._contentCaptureMode === 'span_only') {
+      this._arguments = args;
+    }
+    return this;
   }
 
   /**
@@ -131,6 +209,25 @@ export class ToolInvocation extends BaseInvocation {
    */
   public setResult(result: unknown): this {
     this._result = result;
+    return this;
+  }
+
+  /**
+   * Mark this tool invocation as an agent transfer (`gen_ai.transfer.mode` and
+   * optionally `gen_ai.transfer.target.name`).
+   * Empty or whitespace-only modes are ignored; the target name is only emitted
+   * when a non-empty mode is provided.
+   */
+  public setTransfer(mode: TransferMode, targetName?: string): this {
+    const trimmedMode = nonEmptyString(mode);
+    if (!trimmedMode) {
+      return this;
+    }
+    this._span.setAttribute(ATTR_GEN_AI_TRANSFER_MODE, trimmedMode);
+    const trimmedTarget = nonEmptyString(targetName);
+    if (trimmedTarget) {
+      this._span.setAttribute(ATTR_GEN_AI_TRANSFER_TARGET_NAME, trimmedTarget);
+    }
     return this;
   }
 
@@ -179,6 +276,13 @@ export class ToolInvocation extends BaseInvocation {
     _endTime: HrTime,
     _errorType?: string
   ): void {
+    if (this._arguments !== undefined) {
+      const formattedArgs = serializeContent(this._arguments);
+      if (formattedArgs) {
+        this._span.setAttribute(ATTR_GEN_AI_TOOL_CALL_ARGUMENTS, formattedArgs);
+      }
+    }
+
     // Set the result if it is set and invocation completed successfully
     if (_errorType === undefined) {
       if (

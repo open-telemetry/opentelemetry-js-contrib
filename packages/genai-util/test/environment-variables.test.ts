@@ -33,6 +33,16 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('span'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('SPAN'), 'span_only');
       assert.strictEqual(parseContentCaptureMode('  span  '), 'span_only');
+      assert.strictEqual(
+        parseContentCaptureMode('span_and_event'),
+        'span_only'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('SPAN_AND_EVENT'),
+        'span_only'
+      );
+      assert.strictEqual(parseContentCaptureMode('true'), 'span_only');
+      assert.strictEqual(parseContentCaptureMode('TRUE'), 'span_only');
     });
 
     it('should parse explicit none / no content modes', () => {
@@ -40,17 +50,46 @@ describe('Environment Variables and Content Capture', () => {
       assert.strictEqual(parseContentCaptureMode('NONE'), 'none');
       assert.strictEqual(parseContentCaptureMode('no_content'), 'none');
       assert.strictEqual(parseContentCaptureMode('NO_CONTENT'), 'none');
+      assert.strictEqual(parseContentCaptureMode('false'), 'none');
+      assert.strictEqual(parseContentCaptureMode('FALSE'), 'none');
       assert.strictEqual(parseContentCaptureMode(''), 'none');
       assert.strictEqual(parseContentCaptureMode('   '), 'none');
     });
 
+    it('should warn when downgrading or ignoring unsupported values', () => {
+      const warnings: string[] = [];
+      const mockDiag = {
+        error() {},
+        warn(msg: string) {
+          warnings.push(msg);
+        },
+        info() {},
+        debug() {},
+        verbose() {},
+      };
+
+      assert.strictEqual(
+        parseContentCaptureMode('span_and_event', mockDiag),
+        'span_only'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('event_only', mockDiag),
+        'none'
+      );
+      assert.strictEqual(
+        parseContentCaptureMode('unknown_mode', mockDiag),
+        'none'
+      );
+      assert.strictEqual(warnings.length, 3);
+      assert.match(warnings[0], /span_and_event/);
+      assert.match(warnings[1], /event_only/);
+      assert.match(warnings[2], /unknown_mode/);
+    });
+
     it('should fall back to "none" for unknown or unsupported values', () => {
-      assert.strictEqual(parseContentCaptureMode('true'), 'none');
-      assert.strictEqual(parseContentCaptureMode('false'), 'none');
       assert.strictEqual(parseContentCaptureMode('1'), 'none');
       assert.strictEqual(parseContentCaptureMode('0'), 'none');
       assert.strictEqual(parseContentCaptureMode('event_only'), 'none');
-      assert.strictEqual(parseContentCaptureMode('span_and_event'), 'none');
       assert.strictEqual(parseContentCaptureMode('unknown_mode'), 'none');
     });
   });

@@ -45,7 +45,7 @@ npm install --save @opentelemetry/genai-util
   - `gen_ai.invoke_agent.duration` (in seconds)
   - `gen_ai.invoke_agent.inference_calls` and `gen_ai.invoke_agent.tool_calls` (per-invocation call count histograms)
   - `gen_ai.client.invoke_agent.duration` (in seconds)
-- **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via environment variables.
+- **Content Capturing & Privacy**: Flexible message content capturing modes (`none`, `span_only`) configurable in code or via `OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT` (`span_only`, `span`, `span_and_event`, and `true` enable span capture; `none`, `no_content`, and `false` disable it).
 
 ---
 

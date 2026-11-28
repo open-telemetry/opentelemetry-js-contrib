@@ -157,11 +157,14 @@ export class TelemetryHandler {
 
     if (options.contentCaptureMode) {
       this._contentCaptureMode = parseContentCaptureMode(
-        options.contentCaptureMode
+        options.contentCaptureMode,
+        this._diag
       );
     } else {
       this._contentCaptureMode = getContentCaptureMode(
-        options.config?.captureMessageContent
+        options.config?.captureMessageContent,
+        undefined,
+        this._diag
       );
     }
 

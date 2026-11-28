@@ -338,6 +338,9 @@ export abstract class BaseInvocation {
               }
             : { code: SpanStatusCode.ERROR }
         );
+        if (error.recordException && error.exception) {
+          this._span.recordException(error.exception, endHr);
+        }
       }
 
       this._onInvocationEnd(endHr, errorType);

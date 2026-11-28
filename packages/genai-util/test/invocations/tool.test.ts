@@ -23,6 +23,10 @@ import {
   ATTR_GEN_AI_TOOL_TYPE,
   ATTR_GEN_AI_TOOL_CALL_ARGUMENTS,
   ATTR_GEN_AI_TOOL_CALL_RESULT,
+  ATTR_GEN_AI_TRANSFER_MODE,
+  ATTR_GEN_AI_TRANSFER_TARGET_NAME,
+  GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL,
+  GEN_AI_TRANSFER_MODE_VALUE_RETURN_TO_CALLER,
   METRIC_GEN_AI_EXECUTE_TOOL_DURATION,
 } from '../../src/semconv';
 import {
@@ -256,6 +260,34 @@ describe('ToolInvocation', () => {
       );
     });
 
+    it('should record arguments set via setArguments on both success and failure', () => {
+      const ok = createHandler().startTool({ toolName: 'calculator' });
+      ok.setArguments({ expr: '2+2' });
+      ok.setResult({ value: 4 });
+      ok.stop();
+
+      const failed = createHandler().startTool({ toolName: 'calculator' });
+      failed.setArguments({ expr: '1/0' });
+      failed.fail({
+        exception: new RangeError('Division by zero'),
+        recordException: true,
+      });
+
+      const [okSpan, failedSpan] = ctx.memoryExporter.getFinishedSpans();
+      assert.strictEqual(
+        okSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"expr":"2+2"}'
+      );
+      assert.strictEqual(
+        failedSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ARGUMENTS],
+        '{"expr":"1/0"}'
+      );
+      assert.strictEqual(
+        failedSpan.events[0]?.attributes?.['exception.message'],
+        'Division by zero'
+      );
+    });
+
     it('should suppress a result that was set before the execution failed', () => {
       const inv = createHandler().startTool({
         toolName: 'calculator',
@@ -320,6 +352,79 @@ describe('ToolInvocation', () => {
     assert.strictEqual(
       span.attributes[ATTR_GEN_AI_CONVERSATION_ID],
       'conv_5j66UpCpwteGg4YSxUnt7lPY'
+    );
+  });
+
+  it('should record transfer mode and target name from options and setTransfer', () => {
+    const handler = new TelemetryHandler({
+      instrumentationName: 'test-instrumentation',
+      instrumentationVersion: '1.0.0',
+      tracerProvider: ctx.tracerProvider,
+    });
+
+    handler
+      .startTool({
+        toolName: 'transfer_to_billing',
+        transferMode: GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL,
+        transferTargetName: 'billing',
+      })
+      .stop();
+
+    const inv = handler.startTool({ toolName: '  ask_specialist  ' });
+    inv.setToolName('   ');
+    inv.setToolName('  transfer_to_specialist  ');
+    inv.setToolCallId('   ');
+    inv.setToolCallId('  call_xyz  ');
+    inv.setToolDescription('   ');
+    inv.setToolDescription('  Delegates to specialist  ');
+    inv.setTransfer(GEN_AI_TRANSFER_MODE_VALUE_RETURN_TO_CALLER, 'specialist');
+    inv.stop();
+
+    const targetWithoutMode = handler.startTool({
+      toolName: 'regular_tool',
+      transferTargetName: 'ignored_target',
+    });
+    targetWithoutMode.setTransfer('   ' as never, 'also_ignored');
+    targetWithoutMode.stop();
+
+    const [handoffSpan, asToolSpan, regularSpan] =
+      ctx.memoryExporter.getFinishedSpans();
+    assert.strictEqual(
+      handoffSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
+      GEN_AI_TRANSFER_MODE_VALUE_PASS_CONTROL
+    );
+    assert.strictEqual(
+      handoffSpan.attributes[ATTR_GEN_AI_TRANSFER_TARGET_NAME],
+      'billing'
+    );
+    assert.strictEqual(asToolSpan.name, 'execute_tool transfer_to_specialist');
+    assert.strictEqual(
+      asToolSpan.attributes[ATTR_GEN_AI_TOOL_NAME],
+      'transfer_to_specialist'
+    );
+    assert.strictEqual(
+      asToolSpan.attributes[ATTR_GEN_AI_TOOL_CALL_ID],
+      'call_xyz'
+    );
+    assert.strictEqual(
+      asToolSpan.attributes[ATTR_GEN_AI_TOOL_DESCRIPTION],
+      'Delegates to specialist'
+    );
+    assert.strictEqual(
+      asToolSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
+      GEN_AI_TRANSFER_MODE_VALUE_RETURN_TO_CALLER
+    );
+    assert.strictEqual(
+      asToolSpan.attributes[ATTR_GEN_AI_TRANSFER_TARGET_NAME],
+      'specialist'
+    );
+    assert.strictEqual(
+      regularSpan.attributes[ATTR_GEN_AI_TRANSFER_MODE],
+      undefined
+    );
+    assert.strictEqual(
+      regularSpan.attributes[ATTR_GEN_AI_TRANSFER_TARGET_NAME],
+      undefined
     );
   });
 
