@@ -1,6 +1,13 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.78.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.78.0...instrumentation-pg-v0.78.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **instrumentation-pg:** record error.type for Promise queries ([#3903](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3903)) ([4fba670](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/4fba6709f499a831c23b7b006da38a0ce1dd0baf))
+
 ## [0.78.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-pg-v0.77.0...instrumentation-pg-v0.78.0) (2026-11-05)
 
 

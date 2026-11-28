@@ -1,6 +1,6 @@
 {
   "name": "@opentelemetry/instrumentation-web-exception",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "OpenTelemetry instrumentation for web exceptions",
   "main": "./dist/index.cjs",
   "types": "./dist/index.d.cts",

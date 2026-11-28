@@ -1,6 +1,16 @@
 <!-- markdownlint-disable MD007 MD034 -->
 # Changelog
 
+## [0.83.2](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.83.1...auto-instrumentations-node-v0.83.2) (2026-11-28)
+
+
+### Dependencies
+
+* The following workspace dependencies were updated
+  * dependencies
+    * @opentelemetry/instrumentation-pg bumped from ^0.78.0 to ^0.78.1
+    * @opentelemetry/instrumentation-undici bumped from ^0.35.1 to ^0.35.2
+
 ## [0.83.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/auto-instrumentations-node-v0.83.0...auto-instrumentations-node-v0.83.1) (2026-11-12)
 
 

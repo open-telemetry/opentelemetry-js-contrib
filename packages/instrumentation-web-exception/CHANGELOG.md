@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.18.1](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-web-exception-v0.18.0...instrumentation-web-exception-v0.18.1) (2026-11-28)
+
+
+### Bug Fixes
+
+* **instrumentation-web-exception:** ignore events with a null error instead of throwing ([#3933](https://github.com/open-telemetry/opentelemetry-js-contrib/issues/3933)) ([f7737ee](https://github.com/open-telemetry/opentelemetry-js-contrib/commit/f7737ee224ee13a24d389cf5ef42cec169e3843a))
+
 ## [0.18.0](https://github.com/open-telemetry/opentelemetry-js-contrib/compare/instrumentation-web-exception-v0.17.0...instrumentation-web-exception-v0.18.0) (2026-11-05)
 
 
