@@ -207,6 +207,10 @@ export class RouterInstrumentation extends InstrumentationBase {
     const onClose = () => {
       if (!spanEnded) {
         spanEnded = true;
+        const currentMax = res.getMaxListeners();
+        if (currentMax !== 0) {
+          res.setMaxListeners(Math.max(currentMax - 1, 1));
+        }
         span.end();
       }
     };
@@ -219,6 +223,10 @@ export class RouterInstrumentation extends InstrumentationBase {
         spanEnded = true;
         if (listenerAttached) {
           res.removeListener('close', onClose);
+          const currentMax = res.getMaxListeners();
+          if (currentMax !== 0) {
+            res.setMaxListeners(Math.max(currentMax - 1, 1));
+          }
         }
         span.end();
       }
@@ -234,6 +242,10 @@ export class RouterInstrumentation extends InstrumentationBase {
     const ensureFallbackListener = () => {
       if (!spanEnded && !listenerAttached) {
         listenerAttached = true;
+        const currentMax = res.getMaxListeners();
+        if (currentMax !== 0) {
+          res.setMaxListeners(currentMax + 1);
+        }
         res.once('close', onClose);
       }
     };
